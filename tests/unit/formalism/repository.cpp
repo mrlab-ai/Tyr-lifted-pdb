@@ -15,9 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/cista/indexed_hash_set.hpp"
-
-#include "tyr/formalism/relation.hpp"
+#include "tyr/formalism/repository.hpp"
 
 #include <gtest/gtest.h>
 
@@ -27,9 +25,9 @@ using namespace tyr::formalism;
 namespace tyr::tests
 {
 
-TEST(TyrTests, TyrCistaIndexedHashSet)
+TEST(TyrTests, TyrFormalismRepository)
 {
-    auto repository = IndexedHashSet<RelationImpl<FluentTag>>();
+    auto repository = Repository();
     auto buffer = Buffer();
     auto builder = RelationImpl<FluentTag>();
 
@@ -37,7 +35,7 @@ TEST(TyrTests, TyrCistaIndexedHashSet)
     builder.name = "relation_0";
     builder.arity = 2;
 
-    auto [relation_0, success_0] = repository.insert(builder, buffer);
+    auto [relation_0, success_0] = repository.get_or_create(builder, buffer);
 
     EXPECT_EQ(relation_0->index.value, 0);
     EXPECT_EQ(relation_0->name, "relation_0");
@@ -47,7 +45,7 @@ TEST(TyrTests, TyrCistaIndexedHashSet)
     builder.name = "relation_1";
     builder.arity = 3;
 
-    auto [relation_1, success_1] = repository.insert(builder, buffer);
+    auto [relation_1, success_1] = repository.get_or_create(builder, buffer);
 
     EXPECT_EQ(relation_1->index.value, 1);
     EXPECT_EQ(relation_1->name, "relation_1");
@@ -57,7 +55,7 @@ TEST(TyrTests, TyrCistaIndexedHashSet)
     builder.name = "relation_1";
     builder.arity = 3;
 
-    auto [relation_2, success_2] = repository.insert(builder, buffer);
+    auto [relation_2, success_2] = repository.get_or_create(builder, buffer);
 
     EXPECT_EQ(relation_2->index.value, 1);
     EXPECT_EQ(relation_2->name, "relation_1");

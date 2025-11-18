@@ -36,7 +36,7 @@ struct ProgramIndex
     auto cista_members() const noexcept { return std::tie(value); }
 };
 
-using ProgramIndexList = cista::offset::vector<ProgramIndex>;
+using ProgramIndexList = ::cista::offset::vector<ProgramIndex>;
 
 struct ProgramImpl
 {
@@ -57,6 +57,7 @@ struct ProgramImpl
     }
 
     auto cista_members() const noexcept { return std::tie(index, static_atoms, fluent_atoms, rules); }
+    auto identifying_members() const noexcept { return std::tie(static_atoms, fluent_atoms, rules); }
 };
 
 }

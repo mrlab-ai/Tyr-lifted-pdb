@@ -20,39 +20,41 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/relation.hpp"
-#include "tyr/formalism/variable.hpp"
+#include "tyr/formalism/term.hpp"
 
 namespace tyr::formalism
 {
 template<IsStaticOrFluentTag T>
 struct AtomIndex
 {
+    RelationIndex<T> relation_index {};
     uint_t value {};
 
     AtomIndex() = default;
-    explicit AtomIndex(uint_t value) : value(value) {}
+    explicit AtomIndex(RelationIndex<T> relation_index, uint_t value) : relation_index(relation_index), value(value) {}
 
     uint_t get() const noexcept { return value; }
 
-    auto cista_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(relation_index, value); }
+    auto identifying_members() const noexcept { return std::tie(relation_index, value); }
 };
 
 template<IsStaticOrFluentTag T>
-using AtomIndexList = cista::offset::vector<AtomIndex<T>>;
+using AtomIndexList = ::cista::offset::vector<AtomIndex<T>>;
 
 template<IsStaticOrFluentTag T>
 struct AtomImpl
 {
     AtomIndex<T> index;
-    RelationIndex<T> relation_index;
-    VariableList terms;
+    TermList terms;
 
     using IndexType = AtomIndex<T>;
 
     AtomImpl() = default;
-    AtomImpl(AtomIndex<T> index, RelationIndex<T> relation_index, VariableList terms) : index(index), relation_index(relation_index), terms(std::move(terms)) {}
+    AtomImpl(AtomIndex<T> index, TermList terms) : index(index), terms(std::move(terms)) {}
 
-    auto cista_members() const noexcept { return std::tie(index, relation_index, terms); }
+    auto cista_members() const noexcept { return std::tie(index, terms); }
+    auto identifying_members() const noexcept { return std::tie(index.relation_index, terms); }
 };
 }
 

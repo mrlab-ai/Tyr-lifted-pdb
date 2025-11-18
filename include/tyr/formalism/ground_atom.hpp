@@ -27,37 +27,34 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct GroundAtomIndex
 {
+    RelationIndex<T> relation_index {};
     uint_t value {};
 
     GroundAtomIndex() = default;
-    explicit GroundAtomIndex(uint_t value) : value(value) {}
+    explicit GroundAtomIndex(RelationIndex<T> relation_index, uint_t value) : relation_index(relation_index), value(value) {}
 
     uint_t get() const noexcept { return value; }
 
-    auto cista_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(relation_index, value); }
+    auto identifying_members() const noexcept { return std::tie(relation_index, value); }
 };
 
 template<IsStaticOrFluentTag T>
-using GroundAtomIndexList = cista::offset::vector<GroundAtomIndex<T>>;
+using GroundAtomIndexList = ::cista::offset::vector<GroundAtomIndex<T>>;
 
 template<IsStaticOrFluentTag T>
 struct GroundAtomImpl
 {
     GroundAtomIndex<T> index;
-    RelationIndex<T> relation_index;
     GroundTermList terms;
 
     using IndexType = GroundAtomIndex<T>;
 
     GroundAtomImpl() = default;
-    GroundAtomImpl(GroundAtomIndex<T> index, RelationIndex<T> relation_index, GroundTermList terms) :
-        index(index),
-        relation_index(relation_index),
-        terms(std::move(terms))
-    {
-    }
+    GroundAtomImpl(GroundAtomIndex<T> index, GroundTermList terms) : index(index), terms(std::move(terms)) {}
 
-    auto cista_members() const noexcept { return std::tie(index, relation_index, terms); }
+    auto cista_members() const noexcept { return std::tie(index, terms); }
+    auto identifying_members() const noexcept { return std::tie(index.relation_index, terms); }
 };
 
 }

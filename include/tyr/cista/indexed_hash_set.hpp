@@ -20,6 +20,7 @@
 
 #include "cista/serialization.h"
 #include "tyr/cista/byte_buffer_segmented.hpp"
+#include "tyr/cista/declarations.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/observer_ptr.hpp"
@@ -89,7 +90,7 @@ public:
         }
 
         // 2. Assign next index
-        element.index = IndexType(m_set.size());
+        element.index.value = m_set.size();
 
         // 3. Serialize
         buf.reset();

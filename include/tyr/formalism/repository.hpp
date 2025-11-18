@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_REPOSITORY_HPP_
 #define TYR_FORMALISM_REPOSITORY_HPP_
 
+#include "tyr/cista/declarations.hpp"
 #include "tyr/cista/indexed_hash_set.hpp"
 #include "tyr/formalism/atom.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -39,32 +40,106 @@
 
 namespace tyr::formalism
 {
+
+template<typename T>
+using MappedType = boost::hana::pair<boost::hana::type<T>, cista::IndexedHashSet<T>>;
+
+template<typename T>
+using MappedTypePerIndex = boost::hana::pair<boost::hana::type<T>, cista::IndexedHashSetList<T>>;
+
+template<typename T>
+struct TypeProperties
+{
+    using PairType = MappedType<T>;
+};
+
+template<IsStaticOrFluentTag T>
+struct TypeProperties<AtomImpl<T>>
+{
+    using PairType = MappedTypePerIndex<AtomImpl<T>>;
+    static auto get_index(const AtomImpl<T>& self) noexcept { return self.index.relation_index; }
+};
+
+template<IsStaticOrFluentTag T>
+struct TypeProperties<LiteralImpl<T>>
+{
+    using PairType = MappedTypePerIndex<LiteralImpl<T>>;
+    static auto get_index(const LiteralImpl<T>& self) noexcept { return self.index.relation_index; }
+};
+
+template<IsStaticOrFluentTag T>
+struct TypeProperties<GroundAtomImpl<T>>
+{
+    using PairType = MappedTypePerIndex<GroundAtomImpl<T>>;
+    static auto get_index(const GroundAtomImpl<T>& self) noexcept { return self.index.relation_index; }
+};
+
+template<IsStaticOrFluentTag T>
+struct TypeProperties<GroundLiteralImpl<T>>
+{
+    using PairType = MappedTypePerIndex<GroundLiteralImpl<T>>;
+    static auto get_index(const GroundLiteralImpl<T>& self) noexcept { return self.index.relation_index; }
+};
+
+template<>
+struct TypeProperties<GroundRuleImpl>
+{
+    using PairType = MappedTypePerIndex<GroundRuleImpl>;
+    static auto get_index(const GroundRuleImpl& self) noexcept { return self.index.rule_index; }
+};
+
+template<typename T>
+concept IsMappedType = std::same_as<typename TypeProperties<T>::PairType, MappedType<T>>;
+
+template<typename T>
+concept IsMappedTypePerIndex = std::same_as<typename TypeProperties<T>::PairType, MappedTypePerIndex<T>>;
+
 class Repository
 {
 private:
-    template<typename T>
-    using MappedType = boost::hana::pair<boost::hana::type<T>, cista::IndexedHashSet<T>>;
-
-    template<typename T>
-    using MappedListType = boost::hana::pair<boost::hana::type<T>, cista::IndexedHashSetList<T>>;
-
-    using HanaRepository = boost::hana::map<MappedListType<AtomImpl<StaticTag>>,
-                                            MappedListType<AtomImpl<StaticTag>>,
-                                            MappedListType<LiteralImpl<StaticTag>>,
-                                            MappedListType<LiteralImpl<StaticTag>>,
-                                            MappedListType<GroundAtomImpl<StaticTag>>,
-                                            MappedListType<GroundAtomImpl<StaticTag>>,
-                                            MappedListType<GroundLiteralImpl<StaticTag>>,
-                                            MappedListType<GroundLiteralImpl<StaticTag>>,
-                                            MappedListType<RelationImpl<StaticTag>>,
-                                            MappedListType<RelationImpl<FluentTag>>,
-                                            MappedType<VariableImpl>,
-                                            MappedType<SymbolImpl>,
-                                            MappedType<RuleImpl>,
-                                            MappedType<GroundRuleImpl>,
-                                            MappedType<ProgramImpl>>;
+    using HanaRepository = boost::hana::map<TypeProperties<AtomImpl<StaticTag>>::PairType,
+                                            TypeProperties<AtomImpl<FluentTag>>::PairType,
+                                            TypeProperties<LiteralImpl<StaticTag>>::PairType,
+                                            TypeProperties<LiteralImpl<FluentTag>>::PairType,
+                                            TypeProperties<GroundAtomImpl<StaticTag>>::PairType,
+                                            TypeProperties<GroundAtomImpl<FluentTag>>::PairType,
+                                            TypeProperties<GroundLiteralImpl<StaticTag>>::PairType,
+                                            TypeProperties<GroundLiteralImpl<FluentTag>>::PairType,
+                                            TypeProperties<RelationImpl<StaticTag>>::PairType,
+                                            TypeProperties<RelationImpl<FluentTag>>::PairType,
+                                            TypeProperties<VariableImpl>::PairType,
+                                            TypeProperties<SymbolImpl>::PairType,
+                                            TypeProperties<RuleImpl>::PairType,
+                                            TypeProperties<GroundRuleImpl>::PairType,
+                                            TypeProperties<ProgramImpl>::PairType>;
 
     HanaRepository m_repository;
+
+public:
+    Repository() = default;
+
+    template<IsMappedTypePerIndex T>
+    auto get_or_create(T& builder, cista::Buffer& buf)
+    {
+        auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+
+        const auto index = TypeProperties<T>::get_index(builder).get();
+
+        if (index >= list.size())
+            list.resize(index + 1);
+
+        auto& repository = list[index];
+
+        return repository.insert(builder, buf);
+    }
+
+    template<IsMappedType T>
+    auto get_or_create(T& builder, cista::Buffer& buf)
+    {
+        auto& repository = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+
+        return repository.insert(builder, buf);
+    }
 };
 }
 

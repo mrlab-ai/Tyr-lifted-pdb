@@ -13,3 +13,5 @@ endfunction()
 
 # Add each test source file as a separate test executable
 add_gtest(cista_indexed_hash_set                        "cista/indexed_hash_set.cpp")
+
+add_gtest(formalism_repository                          "formalism/repository.cpp")

@@ -20,22 +20,25 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_literal.hpp"
+#include "tyr/formalism/rule.hpp"
 
 namespace tyr::formalism
 {
 struct GroundRuleIndex
 {
+    RuleIndex rule_index;
     uint_t value {};
 
     GroundRuleIndex() = default;
-    explicit GroundRuleIndex(uint_t value) : value(value) {}
+    explicit GroundRuleIndex(RuleIndex rule_index, uint_t value) : rule_index(rule_index), value(value) {}
 
     uint_t get() const noexcept { return value; }
 
-    auto cista_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(rule_index, value); }
+    auto identifying_members() const noexcept { return std::tie(rule_index, value); }
 };
 
-using GroundRuleIndexList = cista::offset::vector<GroundRuleIndex>;
+using GroundRuleIndexList = ::cista::offset::vector<GroundRuleIndex>;
 
 struct GroundRuleImpl
 {
@@ -59,6 +62,7 @@ struct GroundRuleImpl
     }
 
     auto cista_members() const noexcept { return std::tie(index, static_body, fluent_body, head); }
+    auto identifying_members() const noexcept { return std::tie(index.rule_index, static_body, fluent_body, head); }
 };
 
 }

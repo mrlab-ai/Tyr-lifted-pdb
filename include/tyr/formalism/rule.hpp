@@ -35,7 +35,7 @@ struct RuleIndex
     auto cista_members() const noexcept { return std::tie(value); }
 };
 
-using RuleIndexList = cista::offset::vector<RuleIndex>;
+using RuleIndexList = ::cista::offset::vector<RuleIndex>;
 
 struct RuleImpl
 {
@@ -56,6 +56,7 @@ struct RuleImpl
     }
 
     auto cista_members() const noexcept { return std::tie(index, static_body, fluent_body, head); }
+    auto identifying_members() const noexcept { return std::tie(static_body, fluent_body, head); }
 };
 
 }

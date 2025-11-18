@@ -26,18 +26,20 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct LiteralIndex
 {
+    RelationIndex<T> relation_index {};
     uint_t value {};
 
     LiteralIndex() = default;
-    explicit LiteralIndex(uint_t value) : value(value) {}
+    explicit LiteralIndex(RelationIndex<T> relation_index, uint_t value) : relation_index(relation_index), value(value) {}
 
     uint_t get() const noexcept { return value; }
 
-    auto cista_members() const noexcept { return std::tie(value); }
+    auto cista_members() const noexcept { return std::tie(relation_index, value); }
+    auto identifying_members() const noexcept { return std::tie(relation_index, value); }
 };
 
 template<IsStaticOrFluentTag T>
-using LiteralIndexList = cista::offset::vector<LiteralIndex<T>>;
+using LiteralIndexList = ::cista::offset::vector<LiteralIndex<T>>;
 
 template<IsStaticOrFluentTag T>
 struct LiteralImpl
@@ -52,6 +54,7 @@ struct LiteralImpl
     LiteralImpl(LiteralIndex<T> index, AtomIndex<T> atom_index, bool polarity) : index(index), atom_index(atom_index), polarity(polarity) {}
 
     auto cista_members() const noexcept { return std::tie(index, atom_index, polarity); }
+    auto identifying_members() const noexcept { return std::tie(index.relation_index, atom_index, polarity); }
 };
 
 }

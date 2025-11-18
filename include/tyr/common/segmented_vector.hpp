@@ -32,7 +32,7 @@ private:
     size_t m_capacity;
     size_t m_size;
 
-    static constexpr size_t INITIAL_SEGMENT_SIZE = 1024;
+    static constexpr size_t INITIAL_SEGMENT_SIZE = 32;
 
     // TODO assert that initial segment size is a power of 2
     static_assert((INITIAL_SEGMENT_SIZE & (INITIAL_SEGMENT_SIZE - 1)) == 0, "INITIAL_SEGMENT_SIZE must be a power of 2");
