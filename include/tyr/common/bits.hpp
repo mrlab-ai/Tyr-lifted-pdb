@@ -15,23 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_CONFIG_HPP_
-#define TYR_COMMON_CONFIG_HPP_
+#ifndef TYR_COMMON_BITS_HPP_
+#define TYR_COMMON_BITS_HPP_
 
-#include <cassert>
+#include <bit>
 #include <concepts>
 #include <cstddef>
-#include <cstdint>
-#include <ranges>
-#include <string>
-#include <string_view>
-#include <tuple>
-#include <type_traits>
 
 namespace tyr
 {
-using int_t = std::int32_t;
-using uint_t = std::uint32_t;
+template<std::unsigned_integral T>
+inline bool is_power_of_two(T x)
+{
+    return std::has_single_bit(x);
+}
 }
 
 #endif

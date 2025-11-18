@@ -35,29 +35,29 @@ struct RuleIndex
     auto cista_members() const noexcept { return std::tie(value); }
 };
 
-class Rule
-{
-private:
-    RuleIndex m_index;
-    LiteralIndexList<StaticTag> m_static_body;
-    LiteralIndexList<FluentTag> m_fluent_body;
-    AtomIndex<FluentTag> m_head;
+using RuleIndexList = cista::offset::vector<RuleIndex>;
 
-public:
+struct RuleImpl
+{
+    RuleIndex index;
+    LiteralIndexList<StaticTag> static_body;
+    LiteralIndexList<FluentTag> fluent_body;
+    AtomIndex<FluentTag> head;
+
     using IndexType = RuleIndex;
 
-    Rule();
-    Rule(RuleIndex index, LiteralIndexList<StaticTag> static_body, LiteralIndexList<FluentTag> fluent_body, AtomIndex<FluentTag> head);
+    RuleImpl() = default;
+    RuleImpl(RuleIndex index, LiteralIndexList<StaticTag> static_body, LiteralIndexList<FluentTag> fluent_body, AtomIndex<FluentTag> head) :
+        index(index),
+        static_body(std::move(static_body)),
+        fluent_body(std::move(fluent_body)),
+        head(head)
+    {
+    }
 
-    RuleIndex get_index() const noexcept;
-    const LiteralIndexList<StaticTag>& get_static_body() const noexcept;
-    const LiteralIndexList<FluentTag>& get_fluent_body() const noexcept;
-    AtomIndex<FluentTag> get_head() const noexcept;
-
-    auto cista_members() const noexcept { return std::tie(m_index, m_static_body, m_fluent_body, m_head); }
+    auto cista_members() const noexcept { return std::tie(index, static_body, fluent_body, head); }
 };
 
-using RuleIndexList = cista::offset::vector<RuleIndex>;
 }
 
 #endif

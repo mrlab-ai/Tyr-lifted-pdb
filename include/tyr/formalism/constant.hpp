@@ -27,7 +27,7 @@ enum class Constant : uint_t
 {
 };
 
-using ConstantList = cista::offset::vector<Constant>;
+using ConstantList = ::cista::offset::vector<Constant>;
 
 }
 

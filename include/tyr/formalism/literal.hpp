@@ -37,28 +37,23 @@ struct LiteralIndex
 };
 
 template<IsStaticOrFluentTag T>
-class Literal
-{
-private:
-    LiteralIndex<T> m_index;
-    AtomIndex<T> m_atom_index;
-    bool m_polarity;
-
-public:
-    using IndexType = LiteralIndex<T>;
-
-    Literal();
-    Literal(LiteralIndex<T> index, AtomIndex<T> atom_index, bool polarity);
-
-    LiteralIndex<T> get_index() const noexcept;
-    AtomIndex<T> get_atom_index() const noexcept;
-    bool get_polarity() const noexcept;
-
-    auto cista_members() const noexcept { return std::tie(m_index, m_atom_index, m_polarity); }
-};
+using LiteralIndexList = cista::offset::vector<LiteralIndex<T>>;
 
 template<IsStaticOrFluentTag T>
-using LiteralIndexList = cista::offset::vector<LiteralIndex<T>>;
+struct LiteralImpl
+{
+    LiteralIndex<T> index;
+    AtomIndex<T> atom_index;
+    bool polarity;
+
+    using IndexType = LiteralIndex<T>;
+
+    LiteralImpl() = default;
+    LiteralImpl(LiteralIndex<T> index, AtomIndex<T> atom_index, bool polarity) : index(index), atom_index(atom_index), polarity(polarity) {}
+
+    auto cista_members() const noexcept { return std::tie(index, atom_index, polarity); }
+};
+
 }
 
 #endif

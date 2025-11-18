@@ -37,25 +37,22 @@ struct RelationIndex
 };
 
 template<IsStaticOrFluentTag T>
-class Relation
+struct RelationImpl
 {
-private:
-    RelationIndex<T> m_index;
-    std::string m_name;
-    uint_t m_arity;
+    RelationIndex<T> index;
+    ::cista::offset::string name;
+    uint_t arity;
 
-public:
     using IndexType = RelationIndex<T>;
 
-    Relation();
-    Relation(RelationIndex<T> index, std::string name, uint_t arity);
+    RelationImpl() = default;
+    RelationImpl(RelationIndex<T> index, ::cista::offset::string name, uint_t arity) : index(index), name(std::move(name)), arity(arity) {}
 
-    RelationIndex<T> get_index() const noexcept;
-    const std::string& get_name() const noexcept;
-    uint_t get_arity() const noexcept;
-
-    auto cista_members() const noexcept { return std::tie(m_index, m_name, m_arity); }
+    auto cista_members() const noexcept { return std::tie(index, name, arity); }
+    auto identifying_members() const noexcept { return std::tie(name, arity); }
 };
+
+static_assert(HasIdentifyingMembers<RelationImpl<StaticTag>>);
 }
 
 #endif

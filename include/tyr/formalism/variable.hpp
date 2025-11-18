@@ -26,7 +26,7 @@ enum class Variable : int_t
 {
 };
 
-using VariableList = cista::offset::vector<Variable>;
+using VariableList = ::cista::offset::vector<Variable>;
 
 constexpr int_t to_int(Variable v) noexcept { return static_cast<int_t>(v); }
 

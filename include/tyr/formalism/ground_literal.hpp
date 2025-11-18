@@ -37,28 +37,22 @@ struct GroundLiteralIndex
 };
 
 template<IsStaticOrFluentTag T>
-class GroundLiteral
-{
-private:
-    GroundLiteralIndex<T> m_index;
-    GroundAtomIndex<T> m_atom_index;
-    bool m_polarity;
-
-public:
-    using IndexType = GroundLiteralIndex<T>;
-
-    GroundLiteral();
-    GroundLiteral(GroundLiteralIndex<T> index, GroundAtomIndex<T> atom_index, bool polarity);
-
-    GroundLiteralIndex<T> get_index() const noexcept;
-    GroundAtomIndex<T> get_atom_index() const noexcept;
-    bool get_polarity() const noexcept;
-
-    auto cista_members() const noexcept { return std::tie(m_index, m_atom_index, m_polarity); }
-};
+using GroundLiteralIndexList = cista::offset::vector<GroundLiteralIndex<T>>;
 
 template<IsStaticOrFluentTag T>
-using GroundLiteralIndexList = cista::offset::vector<GroundLiteralIndex<T>>;
+struct GroundLiteralImpl
+{
+    GroundLiteralIndex<T> index;
+    GroundAtomIndex<T> atom_index;
+    bool polarity;
+
+    using IndexType = GroundLiteralIndex<T>;
+
+    GroundLiteralImpl() = default;
+    GroundLiteralImpl(GroundLiteralIndex<T> index, GroundAtomIndex<T> atom_index, bool polarity) : index(index), atom_index(atom_index), polarity(polarity) {}
+
+    auto cista_members() const noexcept { return std::tie(index, atom_index, polarity); }
+};
 }
 
 #endif

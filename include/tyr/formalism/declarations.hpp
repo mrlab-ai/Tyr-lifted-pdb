@@ -41,38 +41,51 @@ enum class Constant;
 enum class Variable;
 
 template<IsStaticOrFluentTag T>
-class RelationIndex;
+struct RelationIndex;
 template<IsStaticOrFluentTag T>
-class Relation;
+struct RelationImpl;
+template<IsStaticOrFluentTag T>
+using Relation = const RelationImpl<T>*;
 
 template<IsStaticOrFluentTag T>
-class AtomIndex;
+struct AtomIndex;
 template<IsStaticOrFluentTag T>
-class Atom;
+struct AtomImpl;
+template<IsStaticOrFluentTag T>
+using Atom = const AtomImpl<T>*;
 
 template<IsStaticOrFluentTag T>
-class LiteralIndex;
+struct LiteralIndex;
 template<IsStaticOrFluentTag T>
-class Literal;
+struct LiteralImpl;
+template<IsStaticOrFluentTag T>
+using Literal = const LiteralImpl<T>*;
 
-class RuleIndex;
-class Rule;
-
-template<IsStaticOrFluentTag T>
-class GroundAtomIndex;
-template<IsStaticOrFluentTag T>
-class GroundAtom;
+struct RuleIndex;
+struct RuleImpl;
+using Rule = const RuleImpl*;
 
 template<IsStaticOrFluentTag T>
-class GroundLiteralIndex;
+struct GroundAtomIndex;
 template<IsStaticOrFluentTag T>
-class GroundLiteral;
+struct GroundAtomImpl;
+template<IsStaticOrFluentTag T>
+using GroundAtom = const GroundAtomImpl<T>*;
 
-class GroundRuleIndex;
-class GroundRule;
+template<IsStaticOrFluentTag T>
+struct GroundLiteralIndex;
+template<IsStaticOrFluentTag T>
+struct GroundLiteralImpl;
+template<IsStaticOrFluentTag T>
+using GroundLiteral = const GroundLiteralImpl<T>*;
 
-class ProgramIndex;
-class Program;
+struct GroundRuleIndex;
+struct GroundRuleImpl;
+using GroundRule = const GroundRuleImpl*;
+
+struct ProgramIndex;
+struct ProgramImpl;
+using Program = const ProgramImpl*;
 }
 
 #endif

@@ -35,32 +35,32 @@ struct GroundRuleIndex
     auto cista_members() const noexcept { return std::tie(value); }
 };
 
-class GroundRule
-{
-private:
-    GroundRuleIndex m_index;
-    GroundLiteralIndexList<StaticTag> m_static_body;
-    GroundLiteralIndexList<FluentTag> m_fluent_body;
-    GroundAtomIndex<FluentTag> m_head;
+using GroundRuleIndexList = cista::offset::vector<GroundRuleIndex>;
 
-public:
+struct GroundRuleImpl
+{
+    GroundRuleIndex index;
+    GroundLiteralIndexList<StaticTag> static_body;
+    GroundLiteralIndexList<FluentTag> fluent_body;
+    GroundAtomIndex<FluentTag> head;
+
     using IndexType = GroundRuleIndex;
 
-    GroundRule();
-    GroundRule(GroundRuleIndex index,
-               GroundLiteralIndexList<StaticTag> static_body,
-               GroundLiteralIndexList<FluentTag> fluent_body,
-               GroundAtomIndex<FluentTag> head);
+    GroundRuleImpl() = default;
+    GroundRuleImpl(GroundRuleIndex index,
+                   GroundLiteralIndexList<StaticTag> static_body,
+                   GroundLiteralIndexList<FluentTag> fluent_body,
+                   GroundAtomIndex<FluentTag> head) :
+        index(index),
+        static_body(std::move(static_body)),
+        fluent_body(std::move(fluent_body)),
+        head(head)
+    {
+    }
 
-    GroundRuleIndex get_index() const noexcept;
-    const GroundLiteralIndexList<StaticTag>& get_static_body() const noexcept;
-    const GroundLiteralIndexList<FluentTag>& get_fluent_body() const noexcept;
-    GroundAtomIndex<FluentTag> get_head() const noexcept;
-
-    auto cista_members() const noexcept { return std::tie(m_index, m_static_body, m_fluent_body, m_head); }
+    auto cista_members() const noexcept { return std::tie(index, static_body, fluent_body, head); }
 };
 
-using GroundRuleIndexList = cista::offset::vector<GroundRuleIndex>;
 }
 
 #endif

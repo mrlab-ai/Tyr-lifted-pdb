@@ -38,28 +38,28 @@ struct GroundAtomIndex
 };
 
 template<IsStaticOrFluentTag T>
-class GroundAtom
-{
-private:
-    GroundAtomIndex<T> m_index;
-    RelationIndex<T> m_relation_index;
-    ConstantList m_constants;
-
-public:
-    using IndexType = GroundAtomIndex<T>;
-
-    GroundAtom();
-    GroundAtom(GroundAtomIndex<T> index, RelationIndex<T> relation_index, ConstantList constants);
-
-    GroundAtomIndex<T> get_index() const noexcept;
-    RelationIndex<T> get_relation_index() const noexcept;
-    const ConstantList& get_constants() const noexcept;
-
-    auto cista_members() const noexcept { return std::tie(m_index, m_relation_index, m_constants); }
-};
+using GroundAtomIndexList = cista::offset::vector<GroundAtomIndex<T>>;
 
 template<IsStaticOrFluentTag T>
-using GroundAtomIndexList = cista::offset::vector<GroundAtomIndex<T>>;
+struct GroundAtomImpl
+{
+    GroundAtomIndex<T> index;
+    RelationIndex<T> relation_index;
+    ConstantList constants;
+
+    using IndexType = GroundAtomIndex<T>;
+
+    GroundAtomImpl() = default;
+    GroundAtomImpl(GroundAtomIndex<T> index, RelationIndex<T> relation_index, ConstantList constants) :
+        index(index),
+        relation_index(relation_index),
+        constants(std::move(constants))
+    {
+    }
+
+    auto cista_members() const noexcept { return std::tie(index, relation_index, constants); }
+};
+
 }
 
 #endif

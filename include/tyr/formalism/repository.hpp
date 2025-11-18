@@ -15,23 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_CONFIG_HPP_
-#define TYR_COMMON_CONFIG_HPP_
+#ifndef TYR_FORMALISM_REPOSITORY_HPP_
+#define TYR_FORMALISM_REPOSITORY_HPP_
 
-#include <cassert>
-#include <concepts>
-#include <cstddef>
-#include <cstdint>
-#include <ranges>
-#include <string>
-#include <string_view>
-#include <tuple>
-#include <type_traits>
-
-namespace tyr
+namespace tyr::formalism
 {
-using int_t = std::int32_t;
-using uint_t = std::uint32_t;
+class Repository
+{
+};
 }
 
 #endif

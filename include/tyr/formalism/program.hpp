@@ -36,29 +36,29 @@ struct ProgramIndex
     auto cista_members() const noexcept { return std::tie(value); }
 };
 
-class Program
-{
-private:
-    ProgramIndex m_index;
-    GroundAtomIndexList<StaticTag> m_static_atoms;
-    GroundAtomIndexList<FluentTag> m_fluent_atoms;
-    RuleIndexList m_rules;
+using ProgramIndexList = cista::offset::vector<ProgramIndex>;
 
-public:
+struct ProgramImpl
+{
+    ProgramIndex index;
+    GroundAtomIndexList<StaticTag> static_atoms;
+    GroundAtomIndexList<FluentTag> fluent_atoms;
+    RuleIndexList rules;
+
     using IndexType = ProgramIndex;
 
-    Program();
-    Program(ProgramIndex index, GroundAtomIndexList<StaticTag> static_atoms, GroundAtomIndexList<FluentTag> fluent_atoms, RuleIndexList rules);
+    ProgramImpl() = default;
+    ProgramImpl(ProgramIndex index, GroundAtomIndexList<StaticTag> static_atoms, GroundAtomIndexList<FluentTag> fluent_atoms, RuleIndexList rules) :
+        index(index),
+        static_atoms(std::move(static_atoms)),
+        fluent_atoms(std::move(fluent_atoms)),
+        rules(std::move(rules))
+    {
+    }
 
-    ProgramIndex get_index() const noexcept;
-    const GroundAtomIndexList<StaticTag>& get_static_atoms() const noexcept;
-    const GroundAtomIndexList<FluentTag>& get_fluent_atoms() const noexcept;
-    const RuleIndexList& get_rules() const noexcept;
-
-    auto cista_members() const noexcept { return std::tie(m_index, m_static_atoms, m_fluent_atoms, m_rules); }
+    auto cista_members() const noexcept { return std::tie(index, static_atoms, fluent_atoms, rules); }
 };
 
-using ProgramIndexList = cista::offset::vector<ProgramIndex>;
 }
 
 #endif

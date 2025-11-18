@@ -38,28 +38,22 @@ struct AtomIndex
 };
 
 template<IsStaticOrFluentTag T>
-class Atom
-{
-private:
-    AtomIndex<T> m_index;
-    RelationIndex<T> m_relation_index;
-    VariableList m_terms;
-
-public:
-    using IndexType = AtomIndex<T>;
-
-    Atom();
-    Atom(AtomIndex<T> index, RelationIndex<T> relation_index, VariableList terms);
-
-    AtomIndex<T> get_index() const noexcept;
-    RelationIndex<T> get_relation_index() const noexcept;
-    const VariableList& get_terms() const noexcept;
-
-    auto cista_members() const noexcept { return std::tie(m_index, m_relation_index, m_terms); }
-};
+using AtomIndexList = cista::offset::vector<AtomIndex<T>>;
 
 template<IsStaticOrFluentTag T>
-using AtomIndexList = cista::offset::vector<AtomIndex<T>>;
+struct AtomImpl
+{
+    AtomIndex<T> index;
+    RelationIndex<T> relation_index;
+    VariableList terms;
+
+    using IndexType = AtomIndex<T>;
+
+    AtomImpl() = default;
+    AtomImpl(AtomIndex<T> index, RelationIndex<T> relation_index, VariableList terms) : index(index), relation_index(relation_index), terms(std::move(terms)) {}
+
+    auto cista_members() const noexcept { return std::tie(index, relation_index, terms); }
+};
 }
 
 #endif

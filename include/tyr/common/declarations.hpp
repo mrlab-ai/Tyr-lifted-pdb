@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Dominik Drexler
+ * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -10,28 +10,39 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *
+ *<
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_CONFIG_HPP_
-#define TYR_COMMON_CONFIG_HPP_
+#ifndef TYR_COMMON_CONCEPTS_HPP_
+#define TYR_COMMON_CONCEPTS_HPP_
 
-#include <cassert>
+#include <cista/containers/string.h>
+#include <cista/containers/vector.h>
 #include <concepts>
-#include <cstddef>
-#include <cstdint>
-#include <ranges>
-#include <string>
-#include <string_view>
+#include <functional>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 
 namespace tyr
 {
-using int_t = std::int32_t;
-using uint_t = std::uint32_t;
+
+template<typename T>
+concept IsFloatingPoint = std::is_floating_point_v<T>;
+
+/**
+ * Concept to check whether a type T has a member function identifying_members.
+ *
+ * We use it to automatically generate hash and comparison operators based on the tuple of references.
+ */
+
+template<typename T>
+concept HasIdentifyingMembers = requires(const T a) {
+    { a.identifying_members() };
+};
+
 }
 
 #endif
