@@ -18,28 +18,14 @@
 #ifndef TYR_FORMALISM_RULE_HPP_
 #define TYR_FORMALISM_RULE_HPP_
 
+#include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/literal.hpp"
+#include "tyr/formalism/literal_index.hpp"
+#include "tyr/formalism/rule_index.hpp"
 
 namespace tyr::formalism
 {
-struct RuleIndex
-{
-    uint_t value {};
-
-    RuleIndex() = default;
-    explicit RuleIndex(uint_t value) : value(value) {}
-
-    friend bool operator==(const RuleIndex& lhs, const RuleIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
-
-    uint_t get() const noexcept { return value; }
-
-    auto cista_members() const noexcept { return std::tie(value); }
-};
-
-using RuleIndexList = ::cista::offset::vector<RuleIndex>;
-
-struct RuleImpl
+struct Rule
 {
     RuleIndex index;
     LiteralIndexList<StaticTag> static_body;
@@ -48,8 +34,8 @@ struct RuleImpl
 
     using IndexType = RuleIndex;
 
-    RuleImpl() = default;
-    RuleImpl(RuleIndex index, LiteralIndexList<StaticTag> static_body, LiteralIndexList<FluentTag> fluent_body, AtomIndex<FluentTag> head) :
+    Rule() = default;
+    Rule(RuleIndex index, LiteralIndexList<StaticTag> static_body, LiteralIndexList<FluentTag> fluent_body, AtomIndex<FluentTag> head) :
         index(index),
         static_body(std::move(static_body)),
         fluent_body(std::move(fluent_body)),
@@ -60,7 +46,6 @@ struct RuleImpl
     auto cista_members() const noexcept { return std::tie(index, static_body, fluent_body, head); }
     auto identifying_members() const noexcept { return std::tie(static_body, fluent_body, head); }
 };
-
 }
 
 #endif

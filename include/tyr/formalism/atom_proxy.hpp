@@ -15,29 +15,33 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_VARIABLE_HPP_
-#define TYR_FORMALISM_VARIABLE_HPP_
+#ifndef TYR_FORMALISM_ATOM_PROXY_HPP_
+#define TYR_FORMALISM_ATOM_PROXY_HPP_
 
+#include "tyr/common/span.hpp"
+#include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/variable_index.hpp"
+#include "tyr/formalism/relation_proxy.hpp"
+#include "tyr/formalism/repository.hpp"
 
 namespace tyr::formalism
 {
-struct Variable
+template<IsStaticOrFluentTag T>
+class AtomProxy
 {
-    VariableIndex index;
-    ::cista::offset::string name;
+private:
+    const Repository* repository;
+    AtomIndex<T> index;
 
-    using IndexType = VariableIndex;
+public:
+    AtomProxy(const Repository& repository, AtomIndex<T> index) : repository(&repository), index(index) {}
 
-    Variable() = default;
-    Variable(VariableIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
+    const auto& get() const { return repository->operator[]<Atom<T>>(index); }
 
-    auto cista_members() const noexcept { return std::tie(index, name); }
-    auto identifying_members() const noexcept { return std::tie(name); }
+    auto get_index() const { return index; }
+    auto get_relation() const { return RelationProxy(*repository, index.relation_index); }
+    auto get_terms() const { return SpanProxy((*repository), get().terms); }
 };
-
-static_assert(HasIdentifyingMembers<Variable>);
 }
 
 #endif

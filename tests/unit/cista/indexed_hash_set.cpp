@@ -29,9 +29,9 @@ namespace tyr::tests
 
 TEST(TyrTests, TyrCistaIndexedHashSet)
 {
-    auto repository = IndexedHashSet<RelationImpl<FluentTag>>();
+    auto repository = IndexedHashSet<Relation<FluentTag>>();
     auto buffer = Buffer();
-    auto builder = RelationImpl<FluentTag>();
+    auto builder = Relation<FluentTag>();
 
     // Create a unique relation
     builder.name = "relation_0";

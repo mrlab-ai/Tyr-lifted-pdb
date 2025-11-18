@@ -15,29 +15,32 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_VARIABLE_HPP_
-#define TYR_FORMALISM_VARIABLE_HPP_
+#ifndef TYR_FORMALISM_RULE_INDEX_HPP_
+#define TYR_FORMALISM_RULE_INDEX_HPP_
 
+#include "tyr/common/equal_to.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/variable_index.hpp"
 
 namespace tyr::formalism
 {
-struct Variable
+struct RuleIndex
 {
-    VariableIndex index;
-    ::cista::offset::string name;
+    using ProxyType = RuleProxy;
 
-    using IndexType = VariableIndex;
+    uint_t value {};
 
-    Variable() = default;
-    Variable(VariableIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
+    RuleIndex() = default;
+    explicit RuleIndex(uint_t value) : value(value) {}
 
-    auto cista_members() const noexcept { return std::tie(index, name); }
-    auto identifying_members() const noexcept { return std::tie(name); }
+    friend bool operator==(const RuleIndex& lhs, const RuleIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
+
+    uint_t get() const noexcept { return value; }
+
+    auto cista_members() const noexcept { return std::tie(value); }
 };
 
-static_assert(HasIdentifyingMembers<Variable>);
+using RuleIndexList = ::cista::offset::vector<RuleIndex>;
+
 }
 
 #endif

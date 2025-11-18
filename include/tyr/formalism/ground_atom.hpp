@@ -19,44 +19,21 @@
 #define TYR_FORMALISM_GROUND_ATOM_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/ground_atom_index.hpp"
 #include "tyr/formalism/ground_term.hpp"
-#include "tyr/formalism/relation.hpp"
 
 namespace tyr::formalism
 {
 template<IsStaticOrFluentTag T>
-struct GroundAtomIndex
-{
-    RelationIndex<T> relation_index {};
-    uint_t value {};
-
-    GroundAtomIndex() = default;
-    explicit GroundAtomIndex(RelationIndex<T> relation_index, uint_t value) : relation_index(relation_index), value(value) {}
-
-    friend bool operator==(const GroundAtomIndex& lhs, const GroundAtomIndex& rhs)
-    {
-        return EqualTo<RelationIndex<T>> {}(lhs.relation_index, rhs.relation_index) && EqualTo<uint_t> {}(lhs.value, rhs.value);
-    }
-
-    uint_t get() const noexcept { return value; }
-
-    auto cista_members() const noexcept { return std::tie(relation_index, value); }
-    auto identifying_members() const noexcept { return std::tie(relation_index, value); }
-};
-
-template<IsStaticOrFluentTag T>
-using GroundAtomIndexList = ::cista::offset::vector<GroundAtomIndex<T>>;
-
-template<IsStaticOrFluentTag T>
-struct GroundAtomImpl
+struct GroundAtom
 {
     GroundAtomIndex<T> index;
     GroundTermList terms;
 
     using IndexType = GroundAtomIndex<T>;
 
-    GroundAtomImpl() = default;
-    GroundAtomImpl(GroundAtomIndex<T> index, GroundTermList terms) : index(index), terms(std::move(terms)) {}
+    GroundAtom() = default;
+    GroundAtom(GroundAtomIndex<T> index, GroundTermList terms) : index(index), terms(std::move(terms)) {}
 
     auto cista_members() const noexcept { return std::tie(index, terms); }
     auto identifying_members() const noexcept { return std::tie(index.relation_index, terms); }

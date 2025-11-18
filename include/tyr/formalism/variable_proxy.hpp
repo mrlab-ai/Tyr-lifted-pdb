@@ -15,29 +15,29 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_VARIABLE_HPP_
-#define TYR_FORMALISM_VARIABLE_HPP_
+#ifndef TYR_FORMALISM_VARIABLE_PROXY_HPP_
+#define TYR_FORMALISM_VARIABLE_PROXY_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
 namespace tyr::formalism
 {
-struct Variable
+class VariableProxy
 {
+private:
+    const Repository* repository;
     VariableIndex index;
-    ::cista::offset::string name;
 
-    using IndexType = VariableIndex;
+public:
+    VariableProxy(const Repository& repository, VariableIndex index) : repository(&repository), index(index) {}
 
-    Variable() = default;
-    Variable(VariableIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
+    const auto& get() const { return repository->operator[]<Variable>(index); }
 
-    auto cista_members() const noexcept { return std::tie(index, name); }
-    auto identifying_members() const noexcept { return std::tie(name); }
+    auto get_index() const { return index; }
+    const auto& get_name() const { return get().name; }
 };
-
-static_assert(HasIdentifyingMembers<Variable>);
 }
 
 #endif

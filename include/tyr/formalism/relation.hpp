@@ -19,28 +19,13 @@
 #define TYR_FORMALISM_RELATION_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/variable.hpp"
+#include "tyr/formalism/relation_index.hpp"
 
 namespace tyr::formalism
 {
-template<IsStaticOrFluentTag T>
-struct RelationIndex
-{
-    uint_t value {};
-
-    RelationIndex() = default;
-    explicit RelationIndex(uint_t value) : value(value) {}
-
-    friend bool operator==(const RelationIndex& lhs, const RelationIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
-
-    uint_t get() const noexcept { return value; }
-
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
-};
 
 template<IsStaticOrFluentTag T>
-struct RelationImpl
+struct Relation
 {
     RelationIndex<T> index;
     ::cista::offset::string name;
@@ -48,14 +33,14 @@ struct RelationImpl
 
     using IndexType = RelationIndex<T>;
 
-    RelationImpl() = default;
-    RelationImpl(RelationIndex<T> index, ::cista::offset::string name, uint_t arity) : index(index), name(std::move(name)), arity(arity) {}
+    Relation() = default;
+    Relation(RelationIndex<T> index, ::cista::offset::string name, uint_t arity) : index(index), name(std::move(name)), arity(arity) {}
 
     auto cista_members() const noexcept { return std::tie(index, name, arity); }
     auto identifying_members() const noexcept { return std::tie(name, arity); }
 };
 
-static_assert(HasIdentifyingMembers<RelationImpl<StaticTag>>);
+static_assert(HasIdentifyingMembers<Relation<StaticTag>>);
 }
 
 #endif

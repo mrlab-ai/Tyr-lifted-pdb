@@ -15,29 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_VARIABLE_HPP_
-#define TYR_FORMALISM_VARIABLE_HPP_
+#ifndef TYR_FORMALISM_RELATION_INDEX_HPP_
+#define TYR_FORMALISM_RELATION_INDEX_HPP_
 
+#include "tyr/common/equal_to.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/variable_index.hpp"
 
 namespace tyr::formalism
 {
-struct Variable
+template<IsStaticOrFluentTag T>
+struct RelationIndex
 {
-    VariableIndex index;
-    ::cista::offset::string name;
+    using ProxyType = RelationProxy<T>;
 
-    using IndexType = VariableIndex;
+    uint_t value {};
 
-    Variable() = default;
-    Variable(VariableIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
+    RelationIndex() = default;
+    explicit RelationIndex(uint_t value) : value(value) {}
 
-    auto cista_members() const noexcept { return std::tie(index, name); }
-    auto identifying_members() const noexcept { return std::tie(name); }
+    friend bool operator==(const RelationIndex& lhs, const RelationIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
+
+    uint_t get() const noexcept { return value; }
+
+    auto cista_members() const noexcept { return std::tie(value); }
+    auto identifying_members() const noexcept { return std::tie(value); }
 };
-
-static_assert(HasIdentifyingMembers<Variable>);
 }
 
 #endif

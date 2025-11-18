@@ -19,39 +19,25 @@
 #define TYR_FORMALISM_SYMBOL_HPP_
 
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/symbol_index.hpp"
 
 namespace tyr::formalism
 {
-struct SymbolIndex
-{
-    uint_t value {};
-
-    SymbolIndex() = default;
-    explicit SymbolIndex(uint_t value) : value(value) {}
-
-    friend bool operator==(const SymbolIndex& lhs, const SymbolIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
-
-    uint_t get() const noexcept { return value; }
-
-    auto cista_members() const noexcept { return std::tie(value); }
-    auto identifying_members() const noexcept { return std::tie(value); }
-};
-
-struct SymbolImpl
+struct Symbol
 {
     SymbolIndex index;
     ::cista::offset::string name;
 
     using IndexType = SymbolIndex;
 
-    SymbolImpl() = default;
-    SymbolImpl(SymbolIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
+    Symbol() = default;
+    Symbol(SymbolIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
 
     auto cista_members() const noexcept { return std::tie(index, name); }
     auto identifying_members() const noexcept { return std::tie(name); }
 };
 
-static_assert(HasIdentifyingMembers<SymbolImpl>);
+static_assert(HasIdentifyingMembers<Symbol>);
 }
 
 #endif

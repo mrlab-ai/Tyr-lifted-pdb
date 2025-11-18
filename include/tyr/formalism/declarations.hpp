@@ -38,63 +38,65 @@ concept IsStaticOrFluentTag = std::same_as<T, StaticTag> || std::same_as<T, Flue
  * Forward declarations
  */
 
+class Repository;
+
 struct Term;
 struct GroundTerm;
 
 struct VariableIndex;
-struct VariableImpl;
-using Variable = const VariableImpl*;
+struct Variable;
+class VariableProxy;
 
 struct SymbolIndex;
-struct SymbolImpl;
-using Symbol = const SymbolImpl*;
+struct Symbol;
+class SymbolProxy;
 
 template<IsStaticOrFluentTag T>
 struct RelationIndex;
 template<IsStaticOrFluentTag T>
-struct RelationImpl;
+struct Relation;
 template<IsStaticOrFluentTag T>
-using Relation = const RelationImpl<T>*;
+class RelationProxy;
 
 template<IsStaticOrFluentTag T>
 struct AtomIndex;
 template<IsStaticOrFluentTag T>
-struct AtomImpl;
+struct Atom;
 template<IsStaticOrFluentTag T>
-using Atom = const AtomImpl<T>*;
+class AtomProxy;
 
 template<IsStaticOrFluentTag T>
 struct LiteralIndex;
 template<IsStaticOrFluentTag T>
-struct LiteralImpl;
+struct Literal;
 template<IsStaticOrFluentTag T>
-using Literal = const LiteralImpl<T>*;
+class LiteralProxy;
 
 struct RuleIndex;
-struct RuleImpl;
-using Rule = const RuleImpl*;
+struct Rule;
+class RuleProxy;
 
 template<IsStaticOrFluentTag T>
 struct GroundAtomIndex;
 template<IsStaticOrFluentTag T>
-struct GroundAtomImpl;
+struct GroundAtom;
 template<IsStaticOrFluentTag T>
-using GroundAtom = const GroundAtomImpl<T>*;
+class GroundAtomProxy;
 
 template<IsStaticOrFluentTag T>
 struct GroundLiteralIndex;
 template<IsStaticOrFluentTag T>
-struct GroundLiteralImpl;
+struct GroundLiteral;
 template<IsStaticOrFluentTag T>
-using GroundLiteral = const GroundLiteralImpl<T>*;
+class GroundLiteralProxy;
 
 struct GroundRuleIndex;
-struct GroundRuleImpl;
-using GroundRule = const GroundRuleImpl*;
+struct GroundRule;
+class GroundRuleProxy;
 
 struct ProgramIndex;
-struct ProgramImpl;
-using Program = const ProgramImpl*;
+struct Program;
+class ProgramProxy;
 }
 
 #endif

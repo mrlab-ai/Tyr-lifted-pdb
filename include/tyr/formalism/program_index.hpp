@@ -15,29 +15,32 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_VARIABLE_HPP_
-#define TYR_FORMALISM_VARIABLE_HPP_
+#ifndef TYR_FORMALISM_PROGRAM_INDEX_HPP_
+#define TYR_FORMALISM_PROGRAM_INDEX_HPP_
 
+#include "tyr/common/equal_to.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/variable_index.hpp"
 
 namespace tyr::formalism
 {
-struct Variable
+struct ProgramIndex
 {
-    VariableIndex index;
-    ::cista::offset::string name;
+    using ProxyType = ProgramProxy;
 
-    using IndexType = VariableIndex;
+    uint_t value {};
 
-    Variable() = default;
-    Variable(VariableIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
+    ProgramIndex() = default;
+    explicit ProgramIndex(uint_t value) : value(value) {}
 
-    auto cista_members() const noexcept { return std::tie(index, name); }
-    auto identifying_members() const noexcept { return std::tie(name); }
+    friend bool operator==(const ProgramIndex& lhs, const ProgramIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
+
+    uint_t get() const noexcept { return value; }
+
+    auto cista_members() const noexcept { return std::tie(value); }
 };
 
-static_assert(HasIdentifyingMembers<Variable>);
+using ProgramIndexList = ::cista::offset::vector<ProgramIndex>;
+
 }
 
 #endif

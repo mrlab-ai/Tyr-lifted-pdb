@@ -54,38 +54,38 @@ struct TypeProperties
 };
 
 template<IsStaticOrFluentTag T>
-struct TypeProperties<AtomImpl<T>>
+struct TypeProperties<Atom<T>>
 {
-    using PairType = MappedTypePerIndex<AtomImpl<T>>;
-    static auto get_index(const AtomImpl<T>& self) noexcept { return self.index.relation_index; }
+    using PairType = MappedTypePerIndex<Atom<T>>;
+    static auto get_index(AtomIndex<T>& self) noexcept { return self.relation_index; }
 };
 
 template<IsStaticOrFluentTag T>
-struct TypeProperties<LiteralImpl<T>>
+struct TypeProperties<Literal<T>>
 {
-    using PairType = MappedTypePerIndex<LiteralImpl<T>>;
-    static auto get_index(const LiteralImpl<T>& self) noexcept { return self.index.relation_index; }
+    using PairType = MappedTypePerIndex<Literal<T>>;
+    static auto get_index(LiteralIndex<T> self) noexcept { return self.relation_index; }
 };
 
 template<IsStaticOrFluentTag T>
-struct TypeProperties<GroundAtomImpl<T>>
+struct TypeProperties<GroundAtom<T>>
 {
-    using PairType = MappedTypePerIndex<GroundAtomImpl<T>>;
-    static auto get_index(const GroundAtomImpl<T>& self) noexcept { return self.index.relation_index; }
+    using PairType = MappedTypePerIndex<GroundAtom<T>>;
+    static auto get_index(GroundAtomIndex<T> self) noexcept { return self.relation_index; }
 };
 
 template<IsStaticOrFluentTag T>
-struct TypeProperties<GroundLiteralImpl<T>>
+struct TypeProperties<GroundLiteral<T>>
 {
-    using PairType = MappedTypePerIndex<GroundLiteralImpl<T>>;
-    static auto get_index(const GroundLiteralImpl<T>& self) noexcept { return self.index.relation_index; }
+    using PairType = MappedTypePerIndex<GroundLiteral<T>>;
+    static auto get_index(GroundLiteralIndex<T> self) noexcept { return self.relation_index; }
 };
 
 template<>
-struct TypeProperties<GroundRuleImpl>
+struct TypeProperties<GroundRule>
 {
-    using PairType = MappedTypePerIndex<GroundRuleImpl>;
-    static auto get_index(const GroundRuleImpl& self) noexcept { return self.index.rule_index; }
+    using PairType = MappedTypePerIndex<GroundRule>;
+    static auto get_index(GroundRuleIndex self) noexcept { return self.rule_index; }
 };
 
 template<typename T>
@@ -97,21 +97,21 @@ concept IsMappedTypePerIndex = std::same_as<typename TypeProperties<T>::PairType
 class Repository
 {
 private:
-    using HanaRepository = boost::hana::map<TypeProperties<AtomImpl<StaticTag>>::PairType,
-                                            TypeProperties<AtomImpl<FluentTag>>::PairType,
-                                            TypeProperties<LiteralImpl<StaticTag>>::PairType,
-                                            TypeProperties<LiteralImpl<FluentTag>>::PairType,
-                                            TypeProperties<GroundAtomImpl<StaticTag>>::PairType,
-                                            TypeProperties<GroundAtomImpl<FluentTag>>::PairType,
-                                            TypeProperties<GroundLiteralImpl<StaticTag>>::PairType,
-                                            TypeProperties<GroundLiteralImpl<FluentTag>>::PairType,
-                                            TypeProperties<RelationImpl<StaticTag>>::PairType,
-                                            TypeProperties<RelationImpl<FluentTag>>::PairType,
-                                            TypeProperties<VariableImpl>::PairType,
-                                            TypeProperties<SymbolImpl>::PairType,
-                                            TypeProperties<RuleImpl>::PairType,
-                                            TypeProperties<GroundRuleImpl>::PairType,
-                                            TypeProperties<ProgramImpl>::PairType>;
+    using HanaRepository = boost::hana::map<TypeProperties<Atom<StaticTag>>::PairType,
+                                            TypeProperties<Atom<FluentTag>>::PairType,
+                                            TypeProperties<Literal<StaticTag>>::PairType,
+                                            TypeProperties<Literal<FluentTag>>::PairType,
+                                            TypeProperties<GroundAtom<StaticTag>>::PairType,
+                                            TypeProperties<GroundAtom<FluentTag>>::PairType,
+                                            TypeProperties<GroundLiteral<StaticTag>>::PairType,
+                                            TypeProperties<GroundLiteral<FluentTag>>::PairType,
+                                            TypeProperties<Relation<StaticTag>>::PairType,
+                                            TypeProperties<Relation<FluentTag>>::PairType,
+                                            TypeProperties<Variable>::PairType,
+                                            TypeProperties<Symbol>::PairType,
+                                            TypeProperties<Rule>::PairType,
+                                            TypeProperties<GroundRule>::PairType,
+                                            TypeProperties<Program>::PairType>;
 
     HanaRepository m_repository;
 
@@ -123,12 +123,12 @@ public:
     {
         auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
-        const auto index = TypeProperties<T>::get_index(builder).get();
+        const auto i = TypeProperties<T>::get_index(builder.index).get();
 
-        if (index >= list.size())
-            list.resize(index + 1);
+        if (i >= list.size())
+            list.resize(i + 1);
 
-        auto& repository = list[index];
+        auto& repository = list[i];
 
         return repository.insert(builder, buf);
     }
@@ -139,6 +139,28 @@ public:
         auto& repository = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
         return repository.insert(builder, buf);
+    }
+
+    template<IsMappedTypePerIndex T>
+    const auto& operator[](typename T::IndexType index) const
+    {
+        auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+
+        const auto i = TypeProperties<T>::get_index(index).get();
+
+        assert(i < list.size());
+
+        auto& repository = list[i];
+
+        return *repository[index];
+    }
+
+    template<IsMappedType T>
+    const auto& operator[](typename T::IndexType index) const
+    {
+        auto& repository = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+
+        return *repository[index];
     }
 };
 }

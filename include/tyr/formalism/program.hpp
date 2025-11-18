@@ -19,28 +19,13 @@
 #define TYR_FORMALISM_PROGRAM_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom.hpp"
-#include "tyr/formalism/rule.hpp"
+#include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/formalism/program_index.hpp"
+#include "tyr/formalism/rule_index.hpp"
 
 namespace tyr::formalism
 {
-struct ProgramIndex
-{
-    uint_t value {};
-
-    ProgramIndex() = default;
-    explicit ProgramIndex(uint_t value) : value(value) {}
-
-    friend bool operator==(const ProgramIndex& lhs, const ProgramIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
-
-    uint_t get() const noexcept { return value; }
-
-    auto cista_members() const noexcept { return std::tie(value); }
-};
-
-using ProgramIndexList = ::cista::offset::vector<ProgramIndex>;
-
-struct ProgramImpl
+struct Program
 {
     ProgramIndex index;
     GroundAtomIndexList<StaticTag> static_atoms;
@@ -49,8 +34,8 @@ struct ProgramImpl
 
     using IndexType = ProgramIndex;
 
-    ProgramImpl() = default;
-    ProgramImpl(ProgramIndex index, GroundAtomIndexList<StaticTag> static_atoms, GroundAtomIndexList<FluentTag> fluent_atoms, RuleIndexList rules) :
+    Program() = default;
+    Program(ProgramIndex index, GroundAtomIndexList<StaticTag> static_atoms, GroundAtomIndexList<FluentTag> fluent_atoms, RuleIndexList rules) :
         index(index),
         static_atoms(std::move(static_atoms)),
         fluent_atoms(std::move(fluent_atoms)),

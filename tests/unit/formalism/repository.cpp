@@ -17,6 +17,8 @@
 
 #include "tyr/formalism/repository.hpp"
 
+#include "tyr/formalism/atom_proxy.hpp"
+
 #include <gtest/gtest.h>
 
 using namespace tyr::cista;
@@ -29,9 +31,9 @@ TEST(TyrTests, TyrFormalismRepository)
 {
     auto repository = Repository();
     auto buffer = Buffer();
-    auto relation_builder = RelationImpl<FluentTag>();
-    auto symbol_builder = SymbolImpl();
-    auto atom_builder = AtomImpl<FluentTag>();
+    auto relation_builder = Relation<FluentTag>();
+    auto symbol_builder = Symbol();
+    auto atom_builder = Atom<FluentTag>();
 
     // Create a unique relation
     relation_builder.name = "relation_0";
@@ -95,6 +97,10 @@ TEST(TyrTests, TyrFormalismRepository)
     // Create same atom again
     auto [atom_1, atom_success_1] = repository.get_or_create(atom_builder, buffer);
     EXPECT_FALSE(atom_success_1);
+
+    auto atom_0_proxy = AtomProxy(repository, atom_0->index);
+    auto atom_0_relation_proxy = atom_0_proxy.get_relation();
+    EXPECT_EQ(atom_0_relation_proxy.get_name(), "relation_0");
 }
 
 }

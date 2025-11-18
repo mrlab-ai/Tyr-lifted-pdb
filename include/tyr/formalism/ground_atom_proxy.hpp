@@ -15,31 +15,33 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_LITERAL_HPP_
-#define TYR_FORMALISM_LITERAL_HPP_
+#ifndef TYR_FORMALISM_GROUND_ATOM_PROXY_HPP_
+#define TYR_FORMALISM_GROUND_ATOM_PROXY_HPP_
 
-#include "tyr/formalism/atom.hpp"
+#include "tyr/common/span.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/literal_index.hpp"
+#include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/formalism/relation_proxy.hpp"
+#include "tyr/formalism/repository.hpp"
 
 namespace tyr::formalism
 {
 template<IsStaticOrFluentTag T>
-struct Literal
+class GroundAtomProxy
 {
-    LiteralIndex<T> index;
-    AtomIndex<T> atom_index;
-    bool polarity;
+private:
+    const Repository* repository;
+    GroundAtomIndex<T> index;
 
-    using IndexType = LiteralIndex<T>;
+public:
+    GroundAtomProxy(const Repository& repository, GroundAtomIndex<T> index) : repository(&repository), index(index) {}
 
-    Literal() = default;
-    Literal(LiteralIndex<T> index, AtomIndex<T> atom_index, bool polarity) : index(index), atom_index(atom_index), polarity(polarity) {}
+    const auto& get() const { return repository->operator[]<GroundAtom<T>>(index); }
 
-    auto cista_members() const noexcept { return std::tie(index, atom_index, polarity); }
-    auto identifying_members() const noexcept { return std::tie(index.relation_index, atom_index, polarity); }
+    auto get_index() const { return index; }
+    auto get_relation() const { return RelationProxy(*repository, index.relation_index); }
+    auto get_terms() const { return SpanProxy((*repository), get().terms); }
 };
-
 }
 
 #endif
