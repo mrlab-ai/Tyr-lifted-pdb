@@ -15,29 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FUNCTION_EXPRESSION_MULTI_PROXY_HPP_
-#define TYR_FORMALISM_FUNCTION_EXPRESSION_MULTI_PROXY_HPP_
+#ifndef TYR_FORMALISM_MULTI_OPERATOR_PROXY_HPP_
+#define TYR_FORMALISM_MULTI_OPERATOR_PROXY_HPP_
 
 #include "tyr/common/span.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_expression_multi_index.hpp"
-#include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/multi_operator_index.hpp"
 
 namespace tyr::formalism
 {
-struct FunctionExpressionMultiProxy
+template<IsOp Op, typename T>
+class MultiOperatorProxy
 {
 private:
+    using IndexType = typename T::IndexType;
+
     const Repository* repository;
-    FunctionExpressionMultiIndex index;
+    IndexType index;
 
 public:
-    FunctionExpressionMultiProxy(const Repository& repository, FunctionExpressionMultiIndex index) : repository(&repository), index(index) {}
+    MultiOperatorProxy(const Repository& repository, IndexType index) : repository(&repository), index(index) {}
 
-    const auto& get() const { return repository->operator[]<FunctionExpressionMulti>(index); }
+    const auto& get() const { return repository->operator[]<MultiOperator<Op, T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_fexprs() const { return SpanProxy<FunctionExpression, Repository>(*repository, get().fexprs); }
+    auto get_args() const { return SpanProxy<T, Repository>(*repository, get().args); }
 };
 
 }

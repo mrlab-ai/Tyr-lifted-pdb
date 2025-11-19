@@ -28,17 +28,80 @@ namespace tyr::formalism
  * Tags to distinguish predicates and downstream types
  */
 
-struct StaticTag;
-struct FluentTag;
+struct StaticTag
+{
+};
+struct FluentTag
+{
+};
 
 template<typename T>
 concept IsStaticOrFluentTag = std::same_as<T, StaticTag> || std::same_as<T, FluentTag>;
+
+/**
+ * Tags to dispatch operators
+ */
+
+struct OpEq
+{
+};
+struct OpLe
+{
+};
+struct OpLt
+{
+};
+struct OpGe
+{
+};
+struct OpGt
+{
+};
+struct OpAdd
+{
+};
+struct OpMul
+{
+};
+struct OpDiv
+{
+};
+struct OpSub
+{
+};
+
+template<typename T>
+concept IsOp = std::same_as<T, OpEq> || std::same_as<T, OpLe> || std::same_as<T, OpLt> || std::same_as<T, OpGe> || std::same_as<T, OpGt>
+               || std::same_as<T, OpAdd> || std::same_as<T, OpMul> || std::same_as<T, OpDiv> || std::same_as<T, OpSub>;
 
 /**
  * Forward declarations
  */
 
 class Repository;
+
+struct Double;
+
+template<IsOp Op, typename T>
+struct UnaryOperatorIndex;
+template<IsOp Op, typename T>
+class UnaryOperatorProxy;
+template<IsOp Op, typename T>
+struct UnaryOperator;
+
+template<IsOp Op, typename T>
+struct BinaryOperatorIndex;
+template<IsOp Op, typename T>
+class BinaryOperatorProxy;
+template<IsOp Op, typename T>
+struct BinaryOperator;
+
+template<IsOp Op, typename T>
+struct MultiOperatorIndex;
+template<IsOp Op, typename T>
+class MultiOperatorProxy;
+template<IsOp Op, typename T>
+struct MultiOperator;
 
 struct VariableIndex;
 struct Variable;
@@ -107,15 +170,11 @@ struct GroundFunctionTerm;
 template<IsStaticOrFluentTag T>
 class GroundFunctionTermProxy;
 
-struct FunctionExpressionNumber;
-struct FunctionExpressionBinaryIndex;
-struct FunctionExpressionBinary;
-class FunctionExpressionBinaryProxy;
-struct FunctionExpressionMultiIndex;
-struct FunctionExpressionMulti;
-class FunctionExpressionMultiProxy;
 struct FunctionExpression;
 class FunctionExpressionProxy;
+
+struct GroundFunctionExpression;
+class GroundFunctionExpressionProxy;
 
 struct RuleIndex;
 struct Rule;

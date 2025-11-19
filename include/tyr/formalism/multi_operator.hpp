@@ -15,28 +15,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FUNCTION_EXPRESSION_BINARY_HPP_
-#define TYR_FORMALISM_FUNCTION_EXPRESSION_BINARY_HPP_
+#ifndef TYR_FORMALISM_MULTI_OPERATOR_HPP_
+#define TYR_FORMALISM_MULTI_OPERATOR_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_expression.hpp"
-#include "tyr/formalism/function_expression_binary_index.hpp"
+#include "tyr/formalism/multi_operator_index.hpp"
 
 namespace tyr::formalism
 {
-struct FunctionExpressionBinary
+template<IsOp Op, typename T>
+struct MultiOperator
 {
-    FunctionExpressionBinaryIndex index;
-    FunctionExpression lhs;
-    FunctionExpression rhs;
+    using IndexType = MultiOperatorIndex<Op, T>;
 
-    using IndexType = FunctionExpressionBinaryIndex;
+    IndexType index;
+    ::cista::offset::vector<T> args;
 
-    FunctionExpressionBinary() = default;
-    FunctionExpressionBinary(FunctionExpressionBinaryIndex index, FunctionExpression lhs, FunctionExpression rhs) : index(index), lhs(lhs), rhs(rhs) {}
+    MultiOperator() = default;
+    MultiOperator(IndexType index, ::cista::offset::vector<T> args) : index(index), args(std::move(args)) {}
 
-    auto cista_members() const noexcept { return std::tie(index, lhs, rhs); }
-    auto identifying_members() const noexcept { return std::tie(lhs, rhs); }
+    auto cista_members() const noexcept { return std::tie(index, args); }
+    auto identifying_members() const noexcept { return std::tie(args); }
 };
 
 }

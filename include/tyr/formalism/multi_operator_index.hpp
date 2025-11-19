@@ -15,34 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FUNCTION_EXPRESSION_BINARY_INDEX_HPP_
-#define TYR_FORMALISM_FUNCTION_EXPRESSION_BINARY_INDEX_HPP_
+#ifndef TYR_FORMALISM_MULTI_OPERATOR_INDEX_HPP_
+#define TYR_FORMALISM_MULTI_OPERATOR_INDEX_HPP_
 
 #include "tyr/common/equal_to.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 namespace tyr::formalism
 {
-struct FunctionExpressionBinaryIndex
+template<IsOp Op, typename T>
+struct MultiOperatorIndex
 {
-    using ProxyType = FunctionExpressionBinaryProxy;
+    using ProxyType = BinaryOperatorProxy<Op, T>;
 
     uint_t value {};
 
-    FunctionExpressionBinaryIndex() = default;
-    explicit FunctionExpressionBinaryIndex(uint_t value) : value(value) {}
+    MultiOperatorIndex() = default;
+    explicit MultiOperatorIndex(uint_t value) : value(value) {}
 
-    friend bool operator==(const FunctionExpressionBinaryIndex& lhs, const FunctionExpressionBinaryIndex& rhs)
-    {
-        return EqualTo<uint_t> {}(lhs.value, rhs.value);
-    }
+    friend bool operator==(const MultiOperatorIndex& lhs, const MultiOperatorIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
 
     uint_t get() const noexcept { return value; }
 
     auto cista_members() const noexcept { return std::tie(value); }
     auto identifying_members() const noexcept { return std::tie(value); }
 };
-
 }
 
 #endif

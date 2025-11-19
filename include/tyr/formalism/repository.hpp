@@ -21,22 +21,24 @@
 #include "tyr/cista/declarations.hpp"
 #include "tyr/cista/indexed_hash_set.hpp"
 #include "tyr/formalism/atom.hpp"
+#include "tyr/formalism/binary_operator.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function.hpp"
 #include "tyr/formalism/function_expression.hpp"
-#include "tyr/formalism/function_expression_binary.hpp"
-#include "tyr/formalism/function_expression_multi.hpp"
 #include "tyr/formalism/function_term.hpp"
 #include "tyr/formalism/ground_atom.hpp"
+#include "tyr/formalism/ground_function_expression.hpp"
 #include "tyr/formalism/ground_function_term.hpp"
 #include "tyr/formalism/ground_literal.hpp"
 #include "tyr/formalism/ground_rule.hpp"
 #include "tyr/formalism/literal.hpp"
+#include "tyr/formalism/multi_operator.hpp"
 #include "tyr/formalism/object.hpp"
 #include "tyr/formalism/predicate.hpp"
 #include "tyr/formalism/program.hpp"
 #include "tyr/formalism/rule.hpp"
 #include "tyr/formalism/term.hpp"
+#include "tyr/formalism/unary_operator.hpp"
 #include "tyr/formalism/variable.hpp"
 
 #include <boost/hana.hpp>
@@ -123,8 +125,20 @@ private:
                                             TypeProperties<Function<FluentTag>>::PairType,
                                             TypeProperties<FunctionTerm<StaticTag>>::PairType,
                                             TypeProperties<FunctionTerm<FluentTag>>::PairType,
-                                            TypeProperties<FunctionExpressionBinary>::PairType,
-                                            TypeProperties<FunctionExpressionMulti>::PairType,
+                                            TypeProperties<UnaryOperator<OpSub, FunctionExpression>>::PairType,
+                                            TypeProperties<BinaryOperator<OpAdd, FunctionExpression>>::PairType,
+                                            TypeProperties<BinaryOperator<OpSub, FunctionExpression>>::PairType,
+                                            TypeProperties<BinaryOperator<OpMul, FunctionExpression>>::PairType,
+                                            TypeProperties<BinaryOperator<OpDiv, FunctionExpression>>::PairType,
+                                            TypeProperties<MultiOperator<OpAdd, FunctionExpression>>::PairType,
+                                            TypeProperties<MultiOperator<OpMul, FunctionExpression>>::PairType,
+                                            TypeProperties<UnaryOperator<OpSub, GroundFunctionExpression>>::PairType,
+                                            TypeProperties<BinaryOperator<OpAdd, GroundFunctionExpression>>::PairType,
+                                            TypeProperties<BinaryOperator<OpSub, GroundFunctionExpression>>::PairType,
+                                            TypeProperties<BinaryOperator<OpMul, GroundFunctionExpression>>::PairType,
+                                            TypeProperties<BinaryOperator<OpDiv, GroundFunctionExpression>>::PairType,
+                                            TypeProperties<MultiOperator<OpAdd, GroundFunctionExpression>>::PairType,
+                                            TypeProperties<MultiOperator<OpMul, GroundFunctionExpression>>::PairType,
                                             TypeProperties<Rule>::PairType,
                                             TypeProperties<GroundRule>::PairType,
                                             TypeProperties<Program>::PairType>;

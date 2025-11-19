@@ -15,19 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FUNCTION_EXPRESSION_HPP_
-#define TYR_FORMALISM_FUNCTION_EXPRESSION_HPP_
+#ifndef TYR_FORMALISM_GROUND_FUNCTION_EXPRESSION_HPP_
+#define TYR_FORMALISM_GROUND_FUNCTION_EXPRESSION_HPP_
 
 #include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/double.hpp"
-#include "tyr/formalism/function_term_index.hpp"
+#include "tyr/formalism/ground_function_term_index.hpp"
 #include "tyr/formalism/multi_operator_index.hpp"
 #include "tyr/formalism/unary_operator_index.hpp"
 
 namespace tyr::formalism
 {
-struct FunctionExpression
+struct GroundFunctionExpression
 {
     using Variant = ::cista::offset::variant<Double,
                                              UnaryOperatorIndex<OpSub, FunctionExpression>,
@@ -37,22 +37,22 @@ struct FunctionExpression
                                              BinaryOperatorIndex<OpDiv, FunctionExpression>,
                                              MultiOperatorIndex<OpAdd, FunctionExpression>,
                                              MultiOperatorIndex<OpMul, FunctionExpression>,
-                                             FunctionTermIndex<StaticTag>,
-                                             FunctionTermIndex<FluentTag>>;
-    using ProxyType = FunctionExpressionProxy;
+                                             GroundFunctionTermIndex<StaticTag>,
+                                             GroundFunctionTermIndex<FluentTag>>;
+    using ProxyType = GroundFunctionExpressionProxy;
 
     Variant value;
 
-    FunctionExpression() = default;
-    FunctionExpression(Variant value) : value(value) {}
+    GroundFunctionExpression() = default;
+    GroundFunctionExpression(Variant value) : value(value) {}
 
-    friend bool operator==(const FunctionExpression& lhs, const FunctionExpression& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
+    friend bool operator==(const GroundFunctionExpression& lhs, const GroundFunctionExpression& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
 
     auto cista_members() const noexcept { return std::tie(value); }
     auto identifying_members() const noexcept { return std::tie(value); }
 };
 
-using FunctionExpressionList = ::cista::offset::vector<FunctionExpression>;
+using GroundFunctionExpressionList = ::cista::offset::vector<GroundFunctionExpression>;
 
 }
 

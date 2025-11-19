@@ -15,20 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FUNCTION_EXPRESSION_NUMBER_HPP_
-#define TYR_FORMALISM_FUNCTION_EXPRESSION_NUMBER_HPP_
+#ifndef TYR_FORMALISM_DOUBLE_HPP_
+#define TYR_FORMALISM_DOUBLE_HPP_
 
 #include "tyr/common/equal_to.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 namespace tyr::formalism
 {
-struct FunctionExpressionNumber
+struct Double
 {
     double value {};
 
-    FunctionExpressionNumber() = default;
-    explicit FunctionExpressionNumber(double v) : value(v) {}
+    Double() = default;
+    explicit Double(double v) : value(v) {}
 
     operator double() const noexcept { return value; }
 
