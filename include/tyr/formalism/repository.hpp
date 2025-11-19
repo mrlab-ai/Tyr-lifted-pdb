@@ -23,8 +23,12 @@
 #include "tyr/formalism/atom.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function.hpp"
+#include "tyr/formalism/function_expression.hpp"
+#include "tyr/formalism/function_expression_binary.hpp"
+#include "tyr/formalism/function_expression_multi.hpp"
 #include "tyr/formalism/function_term.hpp"
 #include "tyr/formalism/ground_atom.hpp"
+#include "tyr/formalism/ground_function_term.hpp"
 #include "tyr/formalism/ground_literal.hpp"
 #include "tyr/formalism/ground_rule.hpp"
 #include "tyr/formalism/literal.hpp"
@@ -60,13 +64,6 @@ struct TypeProperties<Atom<T>>
 };
 
 template<IsStaticOrFluentTag T>
-struct TypeProperties<Literal<T>>
-{
-    using PairType = MappedTypePerIndex<Literal<T>>;
-    static auto get_index(LiteralIndex<T> self) noexcept { return self.predicate_index; }
-};
-
-template<IsStaticOrFluentTag T>
 struct TypeProperties<GroundAtom<T>>
 {
     using PairType = MappedTypePerIndex<GroundAtom<T>>;
@@ -74,10 +71,24 @@ struct TypeProperties<GroundAtom<T>>
 };
 
 template<IsStaticOrFluentTag T>
-struct TypeProperties<GroundLiteral<T>>
+struct TypeProperties<Literal<T>>
 {
-    using PairType = MappedTypePerIndex<GroundLiteral<T>>;
-    static auto get_index(GroundLiteralIndex<T> self) noexcept { return self.predicate_index; }
+    using PairType = MappedTypePerIndex<Literal<T>>;
+    static auto get_index(LiteralIndex<T> self) noexcept { return self.predicate_index; }
+};
+
+template<IsStaticOrFluentTag T>
+struct TypeProperties<FunctionTerm<T>>
+{
+    using PairType = MappedTypePerIndex<FunctionTerm<T>>;
+    static auto get_index(FunctionTermIndex<T> self) noexcept { return self.function_index; }
+};
+
+template<IsStaticOrFluentTag T>
+struct TypeProperties<GroundFunctionTerm<T>>
+{
+    using PairType = MappedTypePerIndex<GroundFunctionTerm<T>>;
+    static auto get_index(GroundFunctionTermIndex<T>& self) noexcept { return self.function_index; }
 };
 
 template<>
@@ -96,22 +107,24 @@ concept IsMappedTypePerIndex = std::same_as<typename TypeProperties<T>::PairType
 class Repository
 {
 private:
-    using HanaRepository = boost::hana::map<TypeProperties<Atom<StaticTag>>::PairType,
-                                            TypeProperties<Atom<FluentTag>>::PairType,
-                                            TypeProperties<Literal<StaticTag>>::PairType,
-                                            TypeProperties<Literal<FluentTag>>::PairType,
-                                            TypeProperties<GroundAtom<StaticTag>>::PairType,
-                                            TypeProperties<GroundAtom<FluentTag>>::PairType,
-                                            TypeProperties<GroundLiteral<StaticTag>>::PairType,
-                                            TypeProperties<GroundLiteral<FluentTag>>::PairType,
+    using HanaRepository = boost::hana::map<TypeProperties<Variable>::PairType,
+                                            TypeProperties<Object>::PairType,
                                             TypeProperties<Predicate<StaticTag>>::PairType,
                                             TypeProperties<Predicate<FluentTag>>::PairType,
+                                            TypeProperties<Atom<StaticTag>>::PairType,
+                                            TypeProperties<Atom<FluentTag>>::PairType,
+                                            TypeProperties<GroundAtom<StaticTag>>::PairType,
+                                            TypeProperties<GroundAtom<FluentTag>>::PairType,
+                                            TypeProperties<Literal<StaticTag>>::PairType,
+                                            TypeProperties<Literal<FluentTag>>::PairType,
+                                            TypeProperties<GroundLiteral<StaticTag>>::PairType,
+                                            TypeProperties<GroundLiteral<FluentTag>>::PairType,
                                             TypeProperties<Function<StaticTag>>::PairType,
                                             TypeProperties<Function<FluentTag>>::PairType,
                                             TypeProperties<FunctionTerm<StaticTag>>::PairType,
                                             TypeProperties<FunctionTerm<FluentTag>>::PairType,
-                                            TypeProperties<Variable>::PairType,
-                                            TypeProperties<Object>::PairType,
+                                            TypeProperties<FunctionExpressionBinary>::PairType,
+                                            TypeProperties<FunctionExpressionMulti>::PairType,
                                             TypeProperties<Rule>::PairType,
                                             TypeProperties<GroundRule>::PairType,
                                             TypeProperties<Program>::PairType>;

@@ -15,25 +15,25 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_TERM_PROXY_HPP_
-#define TYR_FORMALISM_TERM_PROXY_HPP_
+#ifndef TYR_FORMALISM_FUNCTION_EXPRESSION_PROXY_HPP_
+#define TYR_FORMALISM_FUNCTION_EXPRESSION_PROXY_HPP_
 
 #include "tyr/common/variant.hpp"
+#include "tyr/formalism/function_expression.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/term.hpp"
 
 namespace tyr::formalism
 {
-class TermProxy
+class FunctionExpressionProxy
 {
 private:
     const Repository* m_repo;
-    Term m_term;
+    const FunctionExpression* m_fexpr;
 
 public:
-    TermProxy(const Repository& repo, Term term) : m_repo(&repo), m_term(term) {}
+    FunctionExpressionProxy(const Repository& repo, const FunctionExpression& fexpr) : m_repo(&repo), m_fexpr(&fexpr) {}
 
-    const auto& index_variant() const noexcept { return m_term.value; }
+    const auto& index_variant() const noexcept { return m_fexpr->value; }
     const auto& context() const noexcept { return *m_repo; }
 
     template<typename F>

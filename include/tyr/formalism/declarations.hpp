@@ -40,9 +40,6 @@ concept IsStaticOrFluentTag = std::same_as<T, StaticTag> || std::same_as<T, Flue
 
 class Repository;
 
-struct Term;
-class TermProxy;
-
 struct VariableIndex;
 struct Variable;
 class VariableProxy;
@@ -51,12 +48,43 @@ struct ObjectIndex;
 struct Object;
 class ObjectProxy;
 
+struct Term;
+class TermProxy;
+
 template<IsStaticOrFluentTag T>
 struct PredicateIndex;
 template<IsStaticOrFluentTag T>
 struct Predicate;
 template<IsStaticOrFluentTag T>
 class PredicateProxy;
+
+template<IsStaticOrFluentTag T>
+struct AtomIndex;
+template<IsStaticOrFluentTag T>
+struct Atom;
+template<IsStaticOrFluentTag T>
+class AtomProxy;
+
+template<IsStaticOrFluentTag T>
+struct LiteralIndex;
+template<IsStaticOrFluentTag T>
+struct Literal;
+template<IsStaticOrFluentTag T>
+class LiteralProxy;
+
+template<IsStaticOrFluentTag T>
+struct GroundAtomIndex;
+template<IsStaticOrFluentTag T>
+struct GroundAtom;
+template<IsStaticOrFluentTag T>
+class GroundAtomProxy;
+
+template<IsStaticOrFluentTag T>
+struct GroundLiteralIndex;
+template<IsStaticOrFluentTag T>
+struct GroundLiteral;
+template<IsStaticOrFluentTag T>
+class GroundLiteralProxy;
 
 template<IsStaticOrFluentTag T>
 struct FunctionIndex;
@@ -73,36 +101,25 @@ template<IsStaticOrFluentTag T>
 class FunctionTermProxy;
 
 template<IsStaticOrFluentTag T>
-struct AtomIndex;
+struct GroundFunctionTermIndex;
 template<IsStaticOrFluentTag T>
-struct Atom;
+struct GroundFunctionTerm;
 template<IsStaticOrFluentTag T>
-class AtomProxy;
+class GroundFunctionTermProxy;
 
-template<IsStaticOrFluentTag T>
-struct LiteralIndex;
-template<IsStaticOrFluentTag T>
-struct Literal;
-template<IsStaticOrFluentTag T>
-class LiteralProxy;
+struct FunctionExpressionNumber;
+struct FunctionExpressionBinaryIndex;
+struct FunctionExpressionBinary;
+class FunctionExpressionBinaryProxy;
+struct FunctionExpressionMultiIndex;
+struct FunctionExpressionMulti;
+class FunctionExpressionMultiProxy;
+struct FunctionExpression;
+class FunctionExpressionProxy;
 
 struct RuleIndex;
 struct Rule;
 class RuleProxy;
-
-template<IsStaticOrFluentTag T>
-struct GroundAtomIndex;
-template<IsStaticOrFluentTag T>
-struct GroundAtom;
-template<IsStaticOrFluentTag T>
-class GroundAtomProxy;
-
-template<IsStaticOrFluentTag T>
-struct GroundLiteralIndex;
-template<IsStaticOrFluentTag T>
-struct GroundLiteral;
-template<IsStaticOrFluentTag T>
-class GroundLiteralProxy;
 
 struct GroundRuleIndex;
 struct GroundRule;
