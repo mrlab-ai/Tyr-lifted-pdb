@@ -24,16 +24,17 @@
 
 namespace tyr::formalism
 {
+template<IsContext C>
 class VariableProxy
 {
 private:
-    const Repository* repository;
+    const C* context;
     VariableIndex index;
 
 public:
-    VariableProxy(const Repository& repository, VariableIndex index) : repository(&repository), index(index) {}
+    VariableProxy(const C& context, VariableIndex index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<Variable>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<Variable>(index); }
 
     auto get_index() const { return index; }
     const auto& get_name() const { return get().name; }

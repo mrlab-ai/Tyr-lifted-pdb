@@ -39,7 +39,9 @@ struct GroundFunctionExpression
                                              MultiOperatorIndex<OpMul, FunctionExpression>,
                                              GroundFunctionTermIndex<StaticTag>,
                                              GroundFunctionTermIndex<FluentTag>>;
-    using ProxyType = GroundFunctionExpressionProxy;
+
+    template<IsContext C>
+    using ProxyType = GroundFunctionExpressionProxy<C>;
 
     Variant value;
 

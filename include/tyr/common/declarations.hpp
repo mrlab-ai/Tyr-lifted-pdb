@@ -44,8 +44,11 @@ concept HasIdentifyingMembers = requires(const T a) {
     { a.identifying_members() };
 };
 
-template<typename T>
-concept HasProxyType = requires { typename T::ProxyType; };
+template<typename T, typename C>
+concept HasProxyType = requires { typename T::template ProxyType<C>; };
+
+template<typename P, typename C, typename Elem>
+concept IsProxyFor = std::constructible_from<P, const C&, const Elem&>;
 
 }
 

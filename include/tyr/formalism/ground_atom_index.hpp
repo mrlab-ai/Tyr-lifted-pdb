@@ -27,7 +27,8 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct GroundAtomIndex
 {
-    using ProxyType = GroundAtomProxy<T>;
+    template<IsContext C>
+    using ProxyType = GroundAtomProxy<C, T>;
 
     PredicateIndex<T> predicate_index {};
     uint_t value {};

@@ -27,8 +27,7 @@ namespace tyr::tests
 TEST(TyrTests, TyrFormalismProxy)
 {
     auto repository = Repository();
-    auto program_builder = Program();
-    auto program_proxy = ProgramProxy(repository, program_builder.index);
-    analysis::compute_variable_list_per_predicate(program_proxy);
+    auto program = Program();
+    analysis::compute_variable_list_per_predicate(program, repository);
 }
 }

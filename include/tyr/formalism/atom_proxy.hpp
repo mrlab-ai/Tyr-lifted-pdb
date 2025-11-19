@@ -27,21 +27,21 @@
 
 namespace tyr::formalism
 {
-template<IsStaticOrFluentTag T>
+template<IsContext C, IsStaticOrFluentTag T>
 class AtomProxy
 {
 private:
-    const Repository* repository;
+    const C* context;
     AtomIndex<T> index;
 
 public:
-    AtomProxy(const Repository& repository, AtomIndex<T> index) : repository(&repository), index(index) {}
+    AtomProxy(const C& context, AtomIndex<T> index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<Atom<T>>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<Atom<T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_predicate() const { return PredicateProxy(*repository, index.predicate_index); }
-    auto get_terms() const { return SpanProxy<Term, Repository>(*repository, get().terms); }
+    auto get_predicate() const { return PredicateProxy(*context, index.predicate_index); }
+    auto get_terms() const { return SpanProxy<C, Term>(*context, get().terms); }
 };
 }
 

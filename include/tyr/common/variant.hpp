@@ -29,7 +29,7 @@
 namespace tyr
 {
 
-template<typename Variant, typename Context>
+template<typename Context, typename Variant>
 class VariantProxy
 {
 private:
@@ -53,8 +53,15 @@ public:
     template<typename T>
     auto get() const
     {
-        using Proxy = typename T::ProxyType;
-        return Proxy(context(), std::get<T>(index_variant()));
+        if constexpr (HasProxyType<T, Context>)
+        {
+            using Proxy = typename T::ProxyType<Context>;
+            return Proxy(context(), std::get<T>(index_variant()));
+        }
+        else
+        {
+            return std::get<T>(index_variant());
+        }
     }
 
     template<typename F>
@@ -65,9 +72,9 @@ public:
             {
                 using Index = std::decay_t<decltype(index)>;
 
-                if constexpr (HasProxyType<Index>)
+                if constexpr (HasProxyType<Index, Context>)
                 {
-                    using Proxy = typename Index::ProxyType;
+                    using Proxy = typename Index::ProxyType<Context>;
                     return std::forward<F>(f)(Proxy(context(), index));
                 }
                 else

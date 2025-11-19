@@ -27,7 +27,8 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct LiteralIndex
 {
-    using ProxyType = LiteralProxy<T>;
+    template<IsContext C>
+    using ProxyType = LiteralProxy<C, T>;
 
     PredicateIndex<T> predicate_index {};
     uint_t value {};

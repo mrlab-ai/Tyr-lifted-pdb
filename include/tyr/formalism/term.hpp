@@ -28,7 +28,9 @@ namespace tyr::formalism
 struct Term
 {
     using Variant = ::cista::offset::variant<ObjectIndex, ParameterIndex>;
-    using ProxyType = TermProxy;
+
+    template<IsContext C>
+    using ProxyType = TermProxy<C>;
 
     Variant value;
 

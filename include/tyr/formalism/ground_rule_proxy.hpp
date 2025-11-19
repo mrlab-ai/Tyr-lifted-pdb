@@ -27,21 +27,22 @@
 
 namespace tyr::formalism
 {
+template<IsContext C>
 class GroundRuleProxy
 {
 private:
-    const Repository* repository;
+    const C* context;
     GroundRuleIndex index;
 
 public:
-    GroundRuleProxy(const Repository& repository, GroundRuleIndex index) : repository(&repository), index(index) {}
+    GroundRuleProxy(const C& context, GroundRuleIndex index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<GroundRule>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<GroundRule>(index); }
 
     auto get_index() const { return index; }
-    auto get_static_body() const { return SpanProxy<GroundLiteralIndex<StaticTag>, Repository>(*repository, get().static_body); }
-    auto get_fluent_body() const { return SpanProxy<GroundLiteralIndex<FluentTag>, Repository>(*repository, get().fluent_body); }
-    auto get_head() const { return GroundAtomProxy<FluentTag>(*repository, get().head); }
+    auto get_static_body() const { return SpanProxy<C, GroundLiteralIndex<StaticTag>>(*context, get().static_body); }
+    auto get_fluent_body() const { return SpanProxy<C, GroundLiteralIndex<FluentTag>>(*context, get().fluent_body); }
+    auto get_head() const { return GroundAtomProxy(*context, get().head); }
 };
 }
 

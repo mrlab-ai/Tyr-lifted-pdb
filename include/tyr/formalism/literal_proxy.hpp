@@ -25,21 +25,21 @@
 
 namespace tyr::formalism
 {
-template<IsStaticOrFluentTag T>
+template<IsContext C, IsStaticOrFluentTag T>
 class LiteralProxy
 {
 private:
-    const Repository* repository;
+    const C* context;
     LiteralIndex<T> index;
 
 public:
-    LiteralProxy(const Repository& repository, LiteralIndex<T> index) : repository(&repository), index(index) {}
+    LiteralProxy(const C& context, LiteralIndex<T> index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<Literal<T>>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<Literal<T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_predicate() const { return PredicateProxy(*repository, index.predicate_index); }
-    auto get_atom() const { return AtomProxy((*repository), get().atom_index); }
+    auto get_predicate() const { return PredicateProxy(*context, index.predicate_index); }
+    auto get_atom() const { return AtomProxy((*context), get().atom_index); }
     auto get_polarity() const { return get().polarity; }
 };
 }

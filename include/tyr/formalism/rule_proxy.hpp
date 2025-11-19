@@ -28,22 +28,23 @@
 
 namespace tyr::formalism
 {
+template<IsContext C>
 class RuleProxy
 {
 private:
-    const Repository* repository;
+    const C* context;
     RuleIndex index;
 
 public:
-    RuleProxy(const Repository& repository, RuleIndex index) : repository(&repository), index(index) {}
+    RuleProxy(const C& context, RuleIndex index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<Rule>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<Rule>(index); }
 
     auto get_index() const { return index; }
-    auto get_variables() const { return SpanProxy<VariableIndex, Repository>(*repository, get().variables); }
-    auto get_static_body() const { return SpanProxy<LiteralIndex<StaticTag>, Repository>(*repository, get().static_body); }
-    auto get_fluent_body() const { return SpanProxy<LiteralIndex<FluentTag>, Repository>(*repository, get().fluent_body); }
-    auto get_head() const { return AtomProxy<FluentTag>(*repository, get().head); }
+    auto get_variables() const { return SpanProxy<C, VariableIndex>(*context, get().variables); }
+    auto get_static_body() const { return SpanProxy<C, LiteralIndex<StaticTag>>(*context, get().static_body); }
+    auto get_fluent_body() const { return SpanProxy<C, LiteralIndex<FluentTag>>(*context, get().fluent_body); }
+    auto get_head() const { return AtomProxy(*context, get().head); }
 };
 }
 

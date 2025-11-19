@@ -28,30 +28,31 @@
 
 namespace tyr::formalism
 {
+template<IsContext C>
 class ProgramProxy
 {
 private:
-    const Repository* repository;
+    const C* context;
     ProgramIndex index;
 
 public:
-    ProgramProxy(const Repository& repository, ProgramIndex index) : repository(&repository), index(index) {}
+    ProgramProxy(const C& context, ProgramIndex index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<Program>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<Program>(index); }
 
     auto get_index() const { return index; }
     template<IsStaticOrFluentTag T>
     auto get_predicates() const
     {
-        return SpanProxy<PredicateIndex<T>, Repository>(*repository, get().template get_predicates<T>());
+        return SpanProxy<C, PredicateIndex<T>>(*context, get().template get_predicates<T>());
     }
-    auto get_objects() const { return SpanProxy<ObjectIndex, Repository>(*repository, get().objects); }
+    auto get_objects() const { return SpanProxy<C, ObjectIndex>(*context, get().objects); }
     template<IsStaticOrFluentTag T>
     auto get_atoms() const
     {
-        return SpanProxy<GroundAtomIndex<T>, Repository>(*repository, get().template get_atoms<T>());
+        return SpanProxy<C, GroundAtomIndex<T>>(*context, get().template get_atoms<T>());
     }
-    auto get_rules() const { return SpanProxy<RuleIndex, Repository>(*repository, get().rules); }
+    auto get_rules() const { return SpanProxy<C, RuleIndex>(*context, get().rules); }
 };
 }
 

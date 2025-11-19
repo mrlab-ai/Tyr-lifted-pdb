@@ -24,38 +24,14 @@
 
 namespace tyr::formalism
 {
-class GroundFunctionExpressionProxy
+template<IsContext C>
+class GroundFunctionExpressionProxy : public VariantProxy<C, GroundFunctionExpression::Variant>
 {
 private:
-    const Repository* m_repo;
-    const GroundFunctionExpression* m_fexpr;
+    using Base = VariantProxy<C, GroundFunctionExpression::Variant>;
 
 public:
-    GroundFunctionExpressionProxy(const Repository& repo, const GroundFunctionExpression& fexpr) : m_repo(&repo), m_fexpr(&fexpr) {}
-
-    const auto& index_variant() const noexcept { return m_fexpr->value; }
-    const auto& context() const noexcept { return *m_repo; }
-
-    template<typename F>
-    decltype(auto) visit(F&& f) const
-    {
-        return std::visit(
-            [&](auto&& index) -> decltype(auto)
-            {
-                using Index = std::decay_t<decltype(index)>;
-
-                if constexpr (HasProxyType<Index>)
-                {
-                    using Proxy = typename Index::ProxyType;
-                    return std::forward<F>(f)(Proxy(context(), index));
-                }
-                else
-                {
-                    return std::forward<F>(f)(index);
-                }
-            },
-            index_variant());
-    }
+    GroundFunctionExpressionProxy(const C& context, const Term& term) : Base(context, term.value) {}
 };
 }
 

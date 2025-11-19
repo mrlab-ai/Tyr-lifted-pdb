@@ -24,23 +24,23 @@
 
 namespace tyr::formalism
 {
-template<IsOp Op, typename T>
+template<IsContext C, IsOp Op, typename T>
 class BinaryOperatorProxy
 {
 private:
     using IndexType = typename T::IndexType;
 
-    const Repository* repository;
+    const C* context;
     IndexType index;
 
 public:
-    BinaryOperatorProxy(const Repository& repository, IndexType index) : repository(&repository), index(index) {}
+    BinaryOperatorProxy(const C& context, IndexType index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<BinaryOperator<Op, T>>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<BinaryOperator<Op, T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_lhs() const { return VariantProxy(*repository, get().lhs); }
-    auto get_rhs() const { return VariantProxy(*repository, get().rhs); }
+    auto get_lhs() const { return VariantProxy(*context, get().lhs); }
+    auto get_rhs() const { return VariantProxy(*context, get().rhs); }
 };
 
 }

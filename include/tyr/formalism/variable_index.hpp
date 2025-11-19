@@ -25,7 +25,8 @@ namespace tyr::formalism
 {
 struct VariableIndex
 {
-    using ProxyType = VariableProxy;
+    template<IsContext C>
+    using ProxyType = VariableProxy<C>;
 
     uint_t value {};
 

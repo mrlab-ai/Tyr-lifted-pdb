@@ -39,7 +39,9 @@ struct FunctionExpression
                                              MultiOperatorIndex<OpMul, FunctionExpression>,
                                              FunctionTermIndex<StaticTag>,
                                              FunctionTermIndex<FluentTag>>;
-    using ProxyType = FunctionExpressionProxy;
+
+    template<IsContext C>
+    using ProxyType = FunctionExpressionProxy<C>;
 
     Variant value;
 

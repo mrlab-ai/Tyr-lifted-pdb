@@ -25,21 +25,21 @@
 
 namespace tyr::formalism
 {
-template<IsStaticOrFluentTag T>
+template<IsContext C, IsStaticOrFluentTag T>
 class FunctionTermProxy
 {
 private:
-    const Repository* repository;
+    const C* context;
     FunctionTermIndex<T> index;
 
 public:
-    FunctionTermProxy(const Repository& repository, FunctionTermIndex<T> index) : repository(&repository), index(index) {}
+    FunctionTermProxy(const C& context, FunctionTermIndex<T> index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<FunctionTerm<T>>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<FunctionTerm<T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_function() const { return FunctionProxy(*repository, index.function_index); }
-    auto get_terms() const { return SpanProxy<Term, Repository>((*repository), get().terms); }
+    auto get_function() const { return FunctionProxy(*context, index.function_index); }
+    auto get_terms() const { return SpanProxy<C, Term>((*context), get().terms); }
 };
 }
 

@@ -26,19 +26,19 @@
 
 namespace tyr
 {
-template<typename T, typename Context>
+template<typename Context, typename T>
 class SpanProxy
 {
 private:
-    const Context& m_context;
+    const Context* m_context;
     std::span<const T> m_span;
 
 public:
     // If T has a ProxyType, use it; otherwise the "proxy" is just T itself.
-    using ProxyType = std::conditional_t<HasProxyType<T>, typename T::ProxyType, T>;
+    using ProxyType = std::conditional_t<HasProxyType<T, Context>, typename T::ProxyType<Context>, T>;
 
     template<class Container>
-    explicit SpanProxy(const Context& context, const Container& container) : m_context(context), m_span(std::data(container), std::size(container))
+    explicit SpanProxy(const Context& context, const Container& container) : m_context(&context), m_span(std::data(container), std::size(container))
     {
     }
 
@@ -47,9 +47,9 @@ public:
 
     ProxyType operator[](size_t i) const
     {
-        if constexpr (HasProxyType<T>)
+        if constexpr (HasProxyType<T, Context>)
         {
-            return ProxyType(m_context, m_span[i]);
+            return ProxyType(*m_context, m_span[i]);
         }
         else
         {
@@ -72,7 +72,7 @@ public:
 
         ProxyType operator*() const
         {
-            if constexpr (HasProxyType<T>)
+            if constexpr (HasProxyType<T, Context>)
             {
                 return ProxyType(*ctx, *ptr);
             }
@@ -98,9 +98,9 @@ public:
         friend bool operator!=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(lhs == rhs); }
     };
 
-    const_iterator begin() const { return const_iterator { m_context, m_span.data() }; }
+    const_iterator begin() const { return const_iterator { *m_context, m_span.data() }; }
 
-    const_iterator end() const { return const_iterator { m_context, m_span.data() + m_span.size() }; }
+    const_iterator end() const { return const_iterator { *m_context, m_span.data() + m_span.size() }; }
 };
 }
 

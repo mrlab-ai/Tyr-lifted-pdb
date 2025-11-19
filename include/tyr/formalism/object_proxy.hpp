@@ -24,16 +24,17 @@
 
 namespace tyr::formalism
 {
+template<IsContext C>
 class ObjectProxy
 {
 private:
-    const Repository* repository;
+    const C* context;
     ObjectIndex index;
 
 public:
-    ObjectProxy(const Repository& repository, ObjectIndex index) : repository(&repository), index(index) {}
+    ObjectProxy(const C& context, ObjectIndex index) : context(&context), index(index) {}
 
-    const auto& get() const { return repository->operator[]<Object>(index); }
+    const auto& get() const { return get_repository(*context).template operator[]<Object>(index); }
 
     auto get_index() const { return index; }
     const auto& get_name() const { return get().name; }

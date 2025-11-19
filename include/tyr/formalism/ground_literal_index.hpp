@@ -27,7 +27,8 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct GroundLiteralIndex
 {
-    using ProxyType = GroundLiteralProxy<T>;
+    template<IsContext C>
+    using ProxyType = GroundLiteralProxy<C, T>;
 
     PredicateIndex<T> predicate_index {};
     uint_t value {};

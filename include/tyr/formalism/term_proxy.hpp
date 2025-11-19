@@ -24,38 +24,14 @@
 
 namespace tyr::formalism
 {
-class TermProxy
+template<IsContext C>
+class TermProxy : public VariantProxy<C, Term::Variant>
 {
 private:
-    const Repository* m_repo;
-    Term m_term;
+    using Base = VariantProxy<C, Term::Variant>;
 
 public:
-    TermProxy(const Repository& repo, Term term) : m_repo(&repo), m_term(term) {}
-
-    const auto& index_variant() const noexcept { return m_term.value; }
-    const auto& context() const noexcept { return *m_repo; }
-
-    template<typename F>
-    decltype(auto) visit(F&& f) const
-    {
-        return std::visit(
-            [&](auto&& index) -> decltype(auto)
-            {
-                using Index = std::decay_t<decltype(index)>;
-
-                if constexpr (HasProxyType<Index>)
-                {
-                    using Proxy = typename Index::ProxyType;
-                    return std::forward<F>(f)(Proxy(context(), index));
-                }
-                else
-                {
-                    return std::forward<F>(f)(index);
-                }
-            },
-            index_variant());
-    }
+    TermProxy(const C& context, const Term& term) : Base(context, term.value) {}
 };
 }
 

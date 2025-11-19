@@ -25,7 +25,8 @@ namespace tyr::formalism
 {
 struct RuleIndex
 {
-    using ProxyType = RuleProxy;
+    template<IsContext C>
+    using ProxyType = RuleProxy<C>;
 
     uint_t value {};
 
