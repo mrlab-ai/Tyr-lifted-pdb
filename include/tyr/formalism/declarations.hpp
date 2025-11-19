@@ -170,6 +170,13 @@ struct GroundFunctionTerm;
 template<IsStaticOrFluentTag T>
 class GroundFunctionTermProxy;
 
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTermValueIndex;
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTermValue;
+template<IsStaticOrFluentTag T>
+class GroundFunctionTermValueProxy;
+
 struct FunctionExpression;
 class FunctionExpressionProxy;
 

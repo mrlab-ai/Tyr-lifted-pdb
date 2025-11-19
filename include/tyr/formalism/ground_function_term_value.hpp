@@ -15,31 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_GROUND_FUNCTION_TERM_PROXY_HPP_
-#define TYR_FORMALISM_GROUND_FUNCTION_TERM_PROXY_HPP_
+#ifndef TYR_FORMALISM_GROUND_FUNCTION_TERM_VALUE_HPP_
+#define TYR_FORMALISM_GROUND_FUNCTION_TERM_VALUE_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_proxy.hpp"
 #include "tyr/formalism/ground_function_term_index.hpp"
-#include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/ground_function_term_value_index.hpp"
+#include "tyr/formalism/term.hpp"
 
 namespace tyr::formalism
 {
+
 template<IsStaticOrFluentTag T>
-class GroundFunctionTermProxy
+struct GroundFunctionTermValue
 {
-private:
-    const Repository* repository;
-    GroundFunctionTermIndex<T> index;
+    GroundFunctionTermValueIndex<T> index;
+    GroundFunctionTermIndex<T> term;
+    Double value;
 
-public:
-    GroundFunctionTermProxy(const Repository& repository, GroundFunctionTermIndex<T> index) : repository(&repository), index(index) {}
+    using IndexType = GroundFunctionTermValueIndex<T>;
 
-    const auto& get() const { return repository->operator[]<GroundFunctionTerm<T>>(index); }
+    GroundFunctionTermValue() = default;
+    GroundFunctionTermValue(GroundFunctionTermValueIndex<T> index, GroundFunctionTermIndex<T> term, Double value) : index(index), term(term), value(value) {}
 
-    auto get_index() const { return index; }
-    auto get_function() const { return FunctionProxy(*repository, index.function_index); }
-    auto get_terms() const { return SpanProxy((*repository), get().terms); }
+    auto cista_members() const noexcept { return std::tie(index, term, value); }
+    auto identifying_members() const noexcept { return std::tie(index.function_index, term, value); }
 };
 }
 

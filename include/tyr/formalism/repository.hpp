@@ -29,6 +29,7 @@
 #include "tyr/formalism/ground_atom.hpp"
 #include "tyr/formalism/ground_function_expression.hpp"
 #include "tyr/formalism/ground_function_term.hpp"
+#include "tyr/formalism/ground_function_term_value.hpp"
 #include "tyr/formalism/ground_literal.hpp"
 #include "tyr/formalism/ground_rule.hpp"
 #include "tyr/formalism/literal.hpp"
@@ -93,6 +94,13 @@ struct TypeProperties<GroundFunctionTerm<T>>
     static auto get_index(GroundFunctionTermIndex<T>& self) noexcept { return self.function_index; }
 };
 
+template<IsStaticOrFluentTag T>
+struct TypeProperties<GroundFunctionTermValue<T>>
+{
+    using PairType = MappedTypePerIndex<GroundFunctionTermValue<T>>;
+    static auto get_index(GroundFunctionTermValueIndex<T>& self) noexcept { return self.function_index; }
+};
+
 template<>
 struct TypeProperties<GroundRule>
 {
@@ -125,6 +133,10 @@ private:
                                             TypeProperties<Function<FluentTag>>::PairType,
                                             TypeProperties<FunctionTerm<StaticTag>>::PairType,
                                             TypeProperties<FunctionTerm<FluentTag>>::PairType,
+                                            TypeProperties<GroundFunctionTerm<StaticTag>>::PairType,
+                                            TypeProperties<GroundFunctionTerm<FluentTag>>::PairType,
+                                            TypeProperties<GroundFunctionTermValue<StaticTag>>::PairType,
+                                            TypeProperties<GroundFunctionTermValue<FluentTag>>::PairType,
                                             TypeProperties<UnaryOperator<OpSub, FunctionExpression>>::PairType,
                                             TypeProperties<BinaryOperator<OpAdd, FunctionExpression>>::PairType,
                                             TypeProperties<BinaryOperator<OpSub, FunctionExpression>>::PairType,
