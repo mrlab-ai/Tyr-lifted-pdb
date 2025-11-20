@@ -15,6 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../utils.hpp"
+
 #include <gtest/gtest.h>
 #include <tyr/analysis/variable_domains.hpp>
 
@@ -26,9 +28,9 @@ namespace tyr::tests
 
 TEST(TyrTests, TyrFormalismProxy)
 {
-    auto repository = Repository();
-    auto program = Program();
-    auto proxy = ProgramProxy<>(program.index, repository);
-    analysis::compute_variable_list_per_predicate(proxy);
+    auto [program_index, repository] = create_example_problem();
+    auto program = ProgramProxy<>(program_index, repository);
+
+    analysis::compute_variable_list_per_predicate(program);
 }
 }

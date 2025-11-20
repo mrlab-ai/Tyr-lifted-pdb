@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 #include <vector>
 
@@ -88,21 +89,31 @@ public:
         increase_capacity(seg_size);
     }
 
-    /// @brief Write the data starting from the m_cur_pos
-    ///        in the segment with m_cur_seg, if it fits,
-    ///        and otherwise, push_back a new segment first.
-    uint8_t* write(const uint8_t* data, size_t amount)
+    /// @brief Write the data with alignment requirement.
+    const uint8_t* write(const uint8_t* data, size_t amount, size_t align = 1)
     {
         assert(data);
 
-        increase_capacity(amount);
+        // Ensure that there is enough capacity for data written with correct alignment
+        const auto worst_padding = (align > 1) ? (align - 1) : 0;
+        auto required = amount + worst_padding;
 
-        uint8_t* pos = &m_segments[m_cur_seg][m_cur_pos];
+        increase_capacity(required);
+
+        // Ensure pos satisfies alignment.
+        const auto old_pos = m_cur_pos;
+        if (align > 1)
+            m_cur_pos = (m_cur_pos + align - 1) & ~(align - 1);
+        const auto padding = m_cur_pos - old_pos;
+
+        assert(m_cur_pos % align == 0);
+
+        const auto pos = &m_segments[m_cur_seg][m_cur_pos];
 
         memcpy(pos, data, amount);
 
         m_cur_pos += amount;
-        m_size += amount;
+        m_size += amount + padding;
 
         return pos;
     }

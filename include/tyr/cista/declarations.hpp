@@ -20,6 +20,8 @@
 
 #include "cista/serialization.h"
 
+#include <iostream>
+
 namespace tyr::cista
 {
 using Buffer = ::cista::buf<std::vector<uint8_t>>;

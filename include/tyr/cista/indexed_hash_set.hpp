@@ -97,7 +97,7 @@ public:
         ::cista::serialize<Mode>(buf, element);
 
         // 4. Write to storage
-        auto begin = m_storage.write(buf.base(), buf.size());
+        auto begin = m_storage.write(buf.base(), buf.size(), alignof(T));
 
         // 5. Insert to set
         auto [observer_ptr, success] = m_set.insert(::cista::deserialize<const T, Mode>(begin, begin + buf.size()));
