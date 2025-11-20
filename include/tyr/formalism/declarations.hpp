@@ -123,12 +123,12 @@ class MultiOperatorProxy;
 
 template<typename T>
 struct ArithmeticOperator;
-template<typename T, IsContext C>
+template<typename T, IsContext C = Repository>
 class ArithmeticOperatorProxy;
 
 template<typename T>
 struct BooleanOperator;
-template<typename T, IsContext C>
+template<typename T, IsContext C = Repository>
 class BooleanOperatorProxy;
 
 struct VariableIndex;

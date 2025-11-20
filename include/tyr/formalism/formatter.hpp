@@ -19,12 +19,16 @@
 #define TYR_FORMALISM_FORMATTER_HPP_
 
 #include "tyr/common/formatter.hpp"
+#include "tyr/formalism/arithmetic_operator.hpp"
+#include "tyr/formalism/arithmetic_operator_proxy.hpp"
 #include "tyr/formalism/atom.hpp"
 #include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/atom_proxy.hpp"
 #include "tyr/formalism/binary_operator.hpp"
 #include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/binary_operator_proxy.hpp"
+#include "tyr/formalism/boolean_operator.hpp"
+#include "tyr/formalism/boolean_operator_proxy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/double.hpp"
 #include "tyr/formalism/function.hpp"
@@ -88,6 +92,12 @@
 namespace tyr
 {
 inline std::ostream& print(std::ostream& os, const formalism::Double& el) { return os; }
+
+inline std::ostream& print(std::ostream& os, const formalism::ParameterIndex& el)
+{
+    fmt::print(os, "{}", to_uint_t(el));
+    return os;
+}
 
 template<formalism::IsOp Op, typename T>
 inline std::ostream& print(std::ostream& os, const formalism::UnaryOperatorIndex<Op, T>& el)
@@ -410,6 +420,8 @@ inline std::ostream& print(std::ostream& os, const formalism::ProgramProxy<C>& e
 namespace formalism
 {
 inline std::ostream& operator<<(std::ostream& os, const Double& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const ParameterIndex& el) { return tyr::print(os, el); }
 
 template<IsOp Op, typename T>
 inline std::ostream& operator<<(std::ostream& os, const UnaryOperatorIndex<Op, T>& el)

@@ -33,7 +33,8 @@ private:
     using Base = VariantProxy<Term::Variant, C>;
 
 public:
-    TermProxy(IndexType term, const C& context) : Base(term.value, context) {}
+    // Have to pass by const ref because VariantProxy holds a pointer
+    TermProxy(const IndexType& term, const C& context) : Base(term.value, context) {}
 };
 }
 

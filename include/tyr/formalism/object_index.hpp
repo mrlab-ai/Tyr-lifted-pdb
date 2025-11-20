@@ -33,6 +33,7 @@ struct ObjectIndex
     ObjectIndex() = default;
     explicit ObjectIndex(uint_t value) : value(value) {}
 
+    friend bool operator<(const ObjectIndex& lhs, const ObjectIndex& rhs) { return lhs.value < rhs.value; }
     friend bool operator==(const ObjectIndex& lhs, const ObjectIndex& rhs) { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
 
     uint_t get() const noexcept { return value; }

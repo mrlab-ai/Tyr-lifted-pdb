@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_BOOLEAN_OPERATOR_HPP_
-#define TYR_FORMALISM_BOOLEAN_OPERATOR_HPP_
+#ifndef TYR_FORMALISM_ARITHMETIC_OPERATOR_HPP_
+#define TYR_FORMALISM_ARITHMETIC_OPERATOR_HPP_
 
 #include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/declarations.hpp"

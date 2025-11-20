@@ -33,7 +33,8 @@ private:
     using Base = VariantProxy<typename ArithmeticOperator<T>::Variant, C>;
 
 public:
-    ArithmeticOperatorProxy(IndexType op, const C& context) : Base(op.value, context) {}
+    // Have to pass by const ref because VariantProxy holds a pointer
+    ArithmeticOperatorProxy(const IndexType& op, const C& context) : Base(op.value, context) {}
 };
 }
 

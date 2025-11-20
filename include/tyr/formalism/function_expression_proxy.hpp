@@ -33,7 +33,8 @@ private:
     using Base = VariantProxy<FunctionExpression::Variant, C>;
 
 public:
-    FunctionExpressionProxy(IndexType fexpr, const C& context) : Base(fexpr.value, context) {}
+    // Have to pass by const ref because VariantProxy holds a pointer
+    FunctionExpressionProxy(const IndexType& fexpr, const C& context) : Base(fexpr.value, context) {}
 };
 }
 

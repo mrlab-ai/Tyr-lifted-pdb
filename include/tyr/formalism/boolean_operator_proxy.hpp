@@ -33,7 +33,8 @@ private:
     using Base = VariantProxy<typename BooleanOperator<T>::Variant, C>;
 
 public:
-    BooleanOperatorProxy(IndexType op, const C& context) : Base(op.value, context) {}
+    // Have to pass by const ref because VariantProxy holds a pointer
+    BooleanOperatorProxy(const IndexType& op, const C& context) : Base(op.value, context) {}
 };
 }
 

@@ -54,7 +54,9 @@ inline DomainListListList to_list(const DomainSetListList& set)
         predicate_domains_vec.reserve(parameter_domains.size());
         for (const auto& parameter_domain : parameter_domains)
         {
-            predicate_domains_vec.push_back(DomainList(parameter_domain.begin(), parameter_domain.end()));
+            auto domain = DomainList(parameter_domain.begin(), parameter_domain.end());
+            std::sort(domain.begin(), domain.end());
+            predicate_domains_vec.push_back(std::move(domain));
         }
         vec.push_back(predicate_domains_vec);
     }
@@ -102,6 +104,92 @@ inline DomainSetListList initialize_function_domain_sets(formalism::ProgramProxy
     return function_domain_sets;
 }
 
+void restrict_parameter_domain_from_static_atom(formalism::AtomProxy<formalism::StaticTag> atom,
+                                                DomainSetList& parameter_domains,
+                                                const DomainSetListList& static_predicate_domain_sets)
+{
+    const auto predicate = atom.get_predicate();
+
+    auto pos = size_t { 0 };
+    for (const auto term : atom.get_terms())
+    {
+        term.visit(
+            [&](auto&& arg)
+            {
+                using ProxyType = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<ProxyType, formalism::ObjectProxy<>>) {}
+                else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
+                {
+                    const auto parameter_index = to_uint_t(arg);
+                    auto& parameter_domain = parameter_domains[parameter_index];
+                    const auto& predicate_domain = static_predicate_domain_sets[predicate.get_index().value][pos];
+
+                    intersect_inplace(parameter_domain, predicate_domain);
+                }
+                else
+                {
+                    static_assert(dependent_false<ProxyType>::value, "Missing case");
+                }
+            });
+        ++pos;
+    }
+}
+
+void restrict_parameter_domain_from_function_expression(formalism::FunctionExpressionProxy<> fexpr,
+                                                        DomainSetList& parameter_domains,
+                                                        const DomainSetListList& static_function_domain_sets)
+{
+    fexpr.visit(
+        [&](auto&& arg) {
+
+        });
+};
+
+void restrict_parameter_domain_from_boolean_operator(formalism::BooleanOperatorProxy<formalism::FunctionExpression> op,
+                                                     DomainSetList& parameter_domains,
+                                                     const DomainSetListList& static_function_domain_sets)
+{
+    op.visit(
+        [&](auto&& arg)
+        {
+            restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
+            restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
+        });
+};
+
+void lift_parameter_domain_from_fluent_atom(formalism::AtomProxy<formalism::FluentTag> atom,
+                                            const DomainSetList& parameter_domains,
+                                            DomainSetListList& fluent_predicate_domain_sets)
+{
+    const auto predicate = atom.get_predicate();
+
+    auto pos = size_t { 0 };
+    for (const auto term : atom.get_terms())
+    {
+        term.visit(
+            [&](auto&& arg)
+            {
+                using ProxyType = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<ProxyType, formalism::ObjectProxy<>>) {}
+                else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
+                {
+                    const auto parameter_index = to_uint_t(arg);
+                    auto& parameter_domain = parameter_domains[parameter_index];
+                    auto& predicate_domain = fluent_predicate_domain_sets[predicate.get_index().value][pos];
+
+                    union_inplace(predicate_domain, parameter_domain);
+                }
+                else
+                {
+                    static_assert(dependent_false<ProxyType>::value, "Missing case");
+                }
+            });
+        ++pos;
+    }
+};
+
 VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> program)
 {
     auto objects = std::vector<formalism::ObjectIndex> {};
@@ -121,54 +209,6 @@ VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> pr
 
     ///--- Step 3: Compute rule parameter domains as tightest bound from the previously computed domains of the static predicates.
 
-    auto func_restrict_parameter_domain_from_atom = [&](auto&& atom, auto&& parameter_domains)
-    {
-        const auto predicate = atom.get_predicate();
-
-        auto pos = size_t { 0 };
-        for (const auto term : atom.get_terms())
-        {
-            term.visit(
-                [&](auto&& arg)
-                {
-                    using ProxyType = std::decay_t<decltype(arg)>;
-
-                    if constexpr (std::is_same_v<ProxyType, formalism::ObjectProxy<>>) {}
-                    else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
-                    {
-                        const auto parameter_index = to_uint_t(arg);
-                        auto& parameter_domain = parameter_domains[parameter_index];
-                        auto& predicate_domain = static_predicate_domain_sets[predicate.get_index().value][pos];
-
-                        intersect_inplace(parameter_domain, predicate_domain);
-                    }
-                    else
-                    {
-                        static_assert(dependent_false<ProxyType>::value, "Missing case");
-                    }
-                });
-            ++pos;
-        }
-    };
-
-    auto func_restrict_parameter_domain_from_function_expression = [&](auto&& fexpr, auto&& parameter_domains)
-    {
-        fexpr.visit(
-            [&](auto&& arg) {
-
-            });
-    };
-
-    auto func_restrict_parameter_domain_from_boolean_operator = [&](auto&& op, auto&& parameter_domains)
-    {
-        op.visit(
-            [&](auto&& arg)
-            {
-                func_restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains);
-                func_restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains);
-            });
-    };
-
     auto rule_domain_sets = DomainSetListList();
     {
         for (const auto rule : program.get_rules())
@@ -177,10 +217,10 @@ VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> pr
             auto parameter_domains = DomainSetList(variables.size(), universe);
 
             for (const auto literal : rule.get_static_body())
-                func_restrict_parameter_domain_from_atom(literal.get_atom(), parameter_domains);
+                restrict_parameter_domain_from_static_atom(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
 
             for (const auto op : rule.get_numeric_body())
-                func_restrict_parameter_domain_from_boolean_operator(op, parameter_domains);
+                restrict_parameter_domain_from_boolean_operator(op, parameter_domains, static_function_domain_sets);
 
             rule_domain_sets.push_back(std::move(parameter_domains));
         }
@@ -188,46 +228,16 @@ VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> pr
 
     ///--- Step 4: Lift the fluent predicate domains given the variable relationships in the rules.
 
-    auto func_lift_parameter_domain_from_atom = [&](auto&& atom, auto&& parameter_domains)
-    {
-        const auto predicate = atom.get_predicate();
-
-        auto pos = size_t { 0 };
-        for (const auto term : atom.get_terms())
-        {
-            term.visit(
-                [&](auto&& arg)
-                {
-                    using ProxyType = std::decay_t<decltype(arg)>;
-
-                    if constexpr (std::is_same_v<ProxyType, formalism::ObjectProxy<>>) {}
-                    else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
-                    {
-                        const auto parameter_index = to_uint_t(arg);
-                        auto& parameter_domain = parameter_domains[parameter_index];
-                        auto& predicate_domain = fluent_predicate_domain_sets[predicate.get_index().value][pos];
-
-                        union_inplace(predicate_domain, parameter_domain);
-                    }
-                    else
-                    {
-                        static_assert(dependent_false<ProxyType>::value, "Missing case");
-                    }
-                });
-            ++pos;
-        }
-    };
-
     for (const auto rule : program.get_rules())
     {
         auto& parameter_domains = rule_domain_sets[rule.get_index().value];
 
         for (const auto literal : rule.get_fluent_body())
         {
-            func_lift_parameter_domain_from_atom(literal.get_atom(), parameter_domains);
+            lift_parameter_domain_from_fluent_atom(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets);
         }
 
-        func_lift_parameter_domain_from_atom(rule.get_head(), parameter_domains);
+        lift_parameter_domain_from_fluent_atom(rule.get_head(), parameter_domains, fluent_predicate_domain_sets);
     }
 
     ///--- Step 5: Compress sets to vectors.

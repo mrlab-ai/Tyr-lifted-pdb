@@ -33,7 +33,8 @@ private:
     using Base = VariantProxy<GroundFunctionExpression::Variant, C>;
 
 public:
-    GroundFunctionExpressionProxy(IndexType fexpr, const C& context) : Base(fexpr.value, context) {}
+    // Have to pass by const ref because VariantProxy holds a pointer
+    GroundFunctionExpressionProxy(const IndexType& fexpr, const C& context) : Base(fexpr.value, context) {}
 };
 }
 

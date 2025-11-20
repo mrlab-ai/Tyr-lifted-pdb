@@ -18,12 +18,16 @@
 #ifndef TYR_FORMALISM_FORMALISM_HPP_
 #define TYR_FORMALISM_FORMALISM_HPP_
 
+#include "tyr/formalism/arithmetic_operator.hpp"
+#include "tyr/formalism/arithmetic_operator_proxy.hpp"
 #include "tyr/formalism/atom.hpp"
 #include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/atom_proxy.hpp"
 #include "tyr/formalism/binary_operator.hpp"
 #include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/binary_operator_proxy.hpp"
+#include "tyr/formalism/boolean_operator.hpp"
+#include "tyr/formalism/boolean_operator_proxy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/double.hpp"
 #include "tyr/formalism/formatter.hpp"
