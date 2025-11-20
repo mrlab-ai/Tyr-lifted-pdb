@@ -24,7 +24,7 @@
 
 namespace tyr::formalism
 {
-template<IsContext C, IsOp Op, typename T>
+template<IsOp Op, typename T, IsContext C>
 class MultiOperatorProxy
 {
 private:
@@ -34,12 +34,12 @@ private:
     IndexType index;
 
 public:
-    MultiOperatorProxy(const C& context, IndexType index) : context(&context), index(index) {}
+    MultiOperatorProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<MultiOperator<Op, T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_args() const { return SpanProxy<C, IndexType>(*context, get().args); }
+    auto get_args() const { return SpanProxy<IndexType, C>(get().args, *context); }
 };
 
 }

@@ -26,7 +26,7 @@
 
 namespace tyr::formalism
 {
-template<IsContext C, IsStaticOrFluentTag T>
+template<IsStaticOrFluentTag T, IsContext C>
 class GroundLiteralProxy
 {
 private:
@@ -34,13 +34,13 @@ private:
     GroundLiteralIndex<T> index;
 
 public:
-    GroundLiteralProxy(const C& context, GroundLiteralIndex<T> index) : context(&context), index(index) {}
+    GroundLiteralProxy(GroundLiteralIndex<T> index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(context).template operator[]<GroundLiteral<T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_predicate() const { return PredicateProxy(*context, index.predicate_index); }
-    auto get_atom() const { return GroundAtomProxy((*context), get().atom_index); }
+    auto get_predicate() const { return PredicateProxy(index.predicate_index, *context); }
+    auto get_atom() const { return GroundAtomProxy(get().atom_index, *context); }
     auto get_polarity() const { return get().polarity; }
 };
 }

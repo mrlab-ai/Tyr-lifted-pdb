@@ -32,7 +32,7 @@ private:
     VariableIndex index;
 
 public:
-    VariableProxy(const C& context, VariableIndex index) : context(&context), index(index) {}
+    VariableProxy(VariableIndex index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Variable>(index); }
 

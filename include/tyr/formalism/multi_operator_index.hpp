@@ -27,7 +27,7 @@ template<IsOp Op, typename T>
 struct MultiOperatorIndex
 {
     template<IsContext C>
-    using ProxyType = BinaryOperatorProxy<C, Op, T>;
+    using ProxyType = BinaryOperatorProxy<Op, T, C>;
 
     uint_t value {};
 

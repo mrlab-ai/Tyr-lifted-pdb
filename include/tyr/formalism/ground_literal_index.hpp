@@ -28,7 +28,7 @@ template<IsStaticOrFluentTag T>
 struct GroundLiteralIndex
 {
     template<IsContext C>
-    using ProxyType = GroundLiteralProxy<C, T>;
+    using ProxyType = GroundLiteralProxy<T, C>;
 
     PredicateIndex<T> predicate_index {};
     uint_t value {};

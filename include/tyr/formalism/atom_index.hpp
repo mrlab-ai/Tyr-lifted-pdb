@@ -28,7 +28,7 @@ template<IsStaticOrFluentTag T>
 struct AtomIndex
 {
     template<IsContext C>
-    using ProxyType = AtomProxy<C, T>;
+    using ProxyType = AtomProxy<T, C>;
 
     PredicateIndex<T> predicate_index {};
     uint_t value {};

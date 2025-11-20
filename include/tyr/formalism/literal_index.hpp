@@ -28,7 +28,7 @@ template<IsStaticOrFluentTag T>
 struct LiteralIndex
 {
     template<IsContext C>
-    using ProxyType = LiteralProxy<C, T>;
+    using ProxyType = LiteralProxy<T, C>;
 
     PredicateIndex<T> predicate_index {};
     uint_t value {};

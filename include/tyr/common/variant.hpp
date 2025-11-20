@@ -29,7 +29,7 @@
 namespace tyr
 {
 
-template<typename Context, typename Variant>
+template<typename Variant, typename Context>
 class VariantProxy
 {
 private:
@@ -39,7 +39,7 @@ private:
 public:
     using VariantType = Variant;
 
-    VariantProxy(const Context& context, const Variant& value) : m_context(&context), m_value(&value) {}
+    VariantProxy(const Variant& value, const Context& context) : m_context(&context), m_value(&value) {}
 
     const Variant& index_variant() const noexcept { return *m_value; }
     const Context& context() const noexcept { return *m_context; }
@@ -56,7 +56,7 @@ public:
         if constexpr (HasProxyType<T, Context>)
         {
             using Proxy = typename T::ProxyType<Context>;
-            return Proxy(context(), std::get<T>(index_variant()));
+            return Proxy(std::get<T>(index_variant()), context());
         }
         else
         {
@@ -75,7 +75,7 @@ public:
                 if constexpr (HasProxyType<Index, Context>)
                 {
                     using Proxy = typename Index::ProxyType<Context>;
-                    return std::forward<F>(f)(Proxy(context(), index));
+                    return std::forward<F>(f)(Proxy(index, context()));
                 }
                 else
                 {

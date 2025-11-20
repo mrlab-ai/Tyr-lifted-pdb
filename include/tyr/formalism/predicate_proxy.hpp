@@ -24,7 +24,7 @@
 
 namespace tyr::formalism
 {
-template<IsContext C, IsStaticOrFluentTag T>
+template<IsStaticOrFluentTag T, IsContext C>
 class PredicateProxy
 {
 private:
@@ -32,7 +32,7 @@ private:
     PredicateIndex<T> index;
 
 public:
-    PredicateProxy(const C& context, PredicateIndex<T> index) : context(&context), index(index) {}
+    PredicateProxy(PredicateIndex<T> index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Predicate<T>>(index); }
 

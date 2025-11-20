@@ -34,26 +34,25 @@ using DomainList = std::vector<formalism::ObjectIndex>;
 using DomainListList = std::vector<DomainList>;
 using DomainListListList = std::vector<DomainListList>;
 
-std::pair<DomainSetListList, DomainSetListList> compute_variable_list_per_predicate(const formalism::Program& program, const formalism::Repository& repository)
+std::pair<DomainSetListList, DomainSetListList> compute_variable_list_per_predicate(formalism::ProgramProxy<> program)
 {
-    const auto proxy = formalism::ProgramProxy(repository, program.index);
-    const auto num_static_predicates = proxy.get_predicates<formalism::StaticTag>().size();
-    const auto num_fluent_predicates = proxy.get_predicates<formalism::FluentTag>().size();
+    const auto num_static_predicates = program.get_predicates<formalism::StaticTag>().size();
+    const auto num_fluent_predicates = program.get_predicates<formalism::FluentTag>().size();
 
     auto objects = std::vector<formalism::ObjectIndex> {};
-    for (const auto object : proxy.get_objects())
+    for (const auto object : program.get_objects())
         objects.push_back(object.get_index());
     auto universe = DomainSet(objects.begin(), objects.end());
 
     auto static_domains = DomainSetListList(num_static_predicates);
-    for (const auto predicate : proxy.get_predicates<formalism::StaticTag>())
+    for (const auto predicate : program.get_predicates<formalism::StaticTag>())
         static_domains[predicate.get_index().value].resize(predicate.get_arity());
 
     auto fluent_domains = DomainSetListList(num_fluent_predicates);
-    for (const auto predicate : proxy.get_predicates<formalism::FluentTag>())
+    for (const auto predicate : program.get_predicates<formalism::FluentTag>())
         fluent_domains[predicate.get_index().value].resize(predicate.get_arity());
 
-    for (const auto atom : proxy.get_atoms<formalism::StaticTag>())
+    for (const auto atom : program.get_atoms<formalism::StaticTag>())
     {
         const auto predicate = atom.get_predicate();
         auto pos = size_t { 0 };
@@ -61,7 +60,7 @@ std::pair<DomainSetListList, DomainSetListList> compute_variable_list_per_predic
             static_domains[predicate.get_index().value][pos++].insert(object.get_index());
     }
 
-    for (const auto atom : proxy.get_atoms<formalism::FluentTag>())
+    for (const auto atom : program.get_atoms<formalism::FluentTag>())
     {
         const auto predicate = atom.get_predicate();
         auto pos = size_t { 0 };
@@ -72,7 +71,7 @@ std::pair<DomainSetListList, DomainSetListList> compute_variable_list_per_predic
     // Find tighest domain for each variable in each rule
     auto parameter_domains_per_rule = DomainSetListList();
     {
-        for (const auto rule : proxy.get_rules())
+        for (const auto rule : program.get_rules())
         {
             auto variables = rule.get_variables();
             auto parameter_domains = DomainSetList(variables.size(), universe);
@@ -104,9 +103,9 @@ std::pair<DomainSetListList, DomainSetListList> compute_variable_list_per_predic
     }
 
     // Copy static domain into fluent domain
-    for (const auto lhs_rule : proxy.get_rules())
+    for (const auto lhs_rule : program.get_rules())
     {
-        for (const auto rhs_rule : proxy.get_rules())
+        for (const auto rhs_rule : program.get_rules())
         {
             for (const auto lhs_static_literal : lhs_rule.get_static_body())
             {
@@ -116,9 +115,9 @@ std::pair<DomainSetListList, DomainSetListList> compute_variable_list_per_predic
     }
 
     // Merge fluent domains until reaching fixed point
-    for (const auto lhs_rule : proxy.get_rules())
+    for (const auto lhs_rule : program.get_rules())
     {
-        for (const auto rhs_rule : proxy.get_rules())
+        for (const auto rhs_rule : program.get_rules())
         {
             for (const auto lhs_fluent_literal : lhs_rule.get_fluent_body())
             {
@@ -130,9 +129,9 @@ std::pair<DomainSetListList, DomainSetListList> compute_variable_list_per_predic
     return { std::move(static_domains), std::move(fluent_domains) };
 }
 
-DomainListList compute_variable_list_per_function(const formalism::Program& program, const formalism::Repository& repository) {}
+DomainListList compute_variable_list_per_function(formalism::ProgramProxy<> program) {}
 
-DomainListList compute_variable_lists_per_rule(const formalism::Program& program, const formalism::Repository& repository) {}
+DomainListList compute_variable_lists_per_rule(formalism::ProgramProxy<> program) {}
 
 }
 

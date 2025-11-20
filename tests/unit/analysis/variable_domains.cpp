@@ -28,6 +28,7 @@ TEST(TyrTests, TyrFormalismProxy)
 {
     auto repository = Repository();
     auto program = Program();
-    analysis::compute_variable_list_per_predicate(program, repository);
+    auto proxy = ProgramProxy<>(program.index, repository);
+    analysis::compute_variable_list_per_predicate(proxy);
 }
 }

@@ -32,7 +32,7 @@ private:
     ObjectIndex index;
 
 public:
-    ObjectProxy(const C& context, ObjectIndex index) : context(&context), index(index) {}
+    ObjectProxy(ObjectIndex index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Object>(index); }
 

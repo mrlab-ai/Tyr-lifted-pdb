@@ -27,7 +27,7 @@ template<IsOp Op, typename T>
 struct UnaryOperatorIndex
 {
     template<IsContext C>
-    using ProxyType = UnaryOperatorProxy<C, Op, T>;
+    using ProxyType = UnaryOperatorProxy<Op, T, C>;
 
     uint_t value {};
 

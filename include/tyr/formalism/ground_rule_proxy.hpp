@@ -35,14 +35,14 @@ private:
     GroundRuleIndex index;
 
 public:
-    GroundRuleProxy(const C& context, GroundRuleIndex index) : context(&context), index(index) {}
+    GroundRuleProxy(GroundRuleIndex index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<GroundRule>(index); }
 
     auto get_index() const { return index; }
-    auto get_static_body() const { return SpanProxy<C, GroundLiteralIndex<StaticTag>>(*context, get().static_body); }
-    auto get_fluent_body() const { return SpanProxy<C, GroundLiteralIndex<FluentTag>>(*context, get().fluent_body); }
-    auto get_head() const { return GroundAtomProxy(*context, get().head); }
+    auto get_static_body() const { return SpanProxy<GroundLiteralIndex<StaticTag>, C>(get().static_body, *context); }
+    auto get_fluent_body() const { return SpanProxy<GroundLiteralIndex<FluentTag>, C>(get().fluent_body, *context); }
+    auto get_head() const { return GroundAtomProxy(get().head, *context); }
 };
 }
 

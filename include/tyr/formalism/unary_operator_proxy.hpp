@@ -24,7 +24,7 @@
 
 namespace tyr::formalism
 {
-template<IsContext C, IsOp Op, typename T>
+template<IsOp Op, typename T, IsContext C>
 class UnaryOperatorProxy
 {
 private:
@@ -34,12 +34,12 @@ private:
     IndexType index;
 
 public:
-    UnaryOperatorProxy(const C& context, IndexType index) : context(&context), index(index) {}
+    UnaryOperatorProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<UnaryOperator<Op, T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_arg() const { return VariantProxy(*context, get().arg); }
+    auto get_arg() const { return VariantProxy(get().arg, *context); }
 };
 
 }

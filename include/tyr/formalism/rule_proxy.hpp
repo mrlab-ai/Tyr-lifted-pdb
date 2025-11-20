@@ -36,15 +36,15 @@ private:
     RuleIndex index;
 
 public:
-    RuleProxy(const C& context, RuleIndex index) : context(&context), index(index) {}
+    RuleProxy(RuleIndex index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Rule>(index); }
 
     auto get_index() const { return index; }
-    auto get_variables() const { return SpanProxy<C, VariableIndex>(*context, get().variables); }
-    auto get_static_body() const { return SpanProxy<C, LiteralIndex<StaticTag>>(*context, get().static_body); }
-    auto get_fluent_body() const { return SpanProxy<C, LiteralIndex<FluentTag>>(*context, get().fluent_body); }
-    auto get_head() const { return AtomProxy(*context, get().head); }
+    auto get_variables() const { return SpanProxy<VariableIndex, C>(get().variables, *context); }
+    auto get_static_body() const { return SpanProxy<LiteralIndex<StaticTag>, C>(get().static_body, *context); }
+    auto get_fluent_body() const { return SpanProxy<LiteralIndex<FluentTag>, C>(get().fluent_body, *context); }
+    auto get_head() const { return AtomProxy(get().head, *context); }
 };
 }
 

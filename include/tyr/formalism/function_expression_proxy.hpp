@@ -25,13 +25,13 @@
 namespace tyr::formalism
 {
 template<IsContext C>
-class FunctionExpressionProxy : public VariantProxy<C, FunctionExpression::Variant>
+class FunctionExpressionProxy : public VariantProxy<FunctionExpression::Variant, C>
 {
 private:
-    using Base = VariantProxy<C, FunctionExpression::Variant>;
+    using Base = VariantProxy<FunctionExpression::Variant, C>;
 
 public:
-    FunctionExpressionProxy(const C& context, const Term& term) : Base(context, term.value) {}
+    FunctionExpressionProxy(const Term& term, const C& context) : Base(term.value, context) {}
 };
 }
 

@@ -24,7 +24,7 @@
 
 namespace tyr::formalism
 {
-template<IsContext C, IsStaticOrFluentTag T>
+template<IsStaticOrFluentTag T, IsContext C>
 class FunctionProxy
 {
 private:
@@ -32,7 +32,7 @@ private:
     FunctionIndex<T> index;
 
 public:
-    FunctionProxy(const C& context, FunctionIndex<T> index) : context(&context), index(index) {}
+    FunctionProxy(FunctionIndex<T> index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Function<T>>(index); }
 

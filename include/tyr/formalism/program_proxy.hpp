@@ -36,7 +36,7 @@ private:
     ProgramIndex index;
 
 public:
-    ProgramProxy(const C& context, ProgramIndex index) : context(&context), index(index) {}
+    ProgramProxy(ProgramIndex index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Program>(index); }
 
@@ -44,15 +44,15 @@ public:
     template<IsStaticOrFluentTag T>
     auto get_predicates() const
     {
-        return SpanProxy<C, PredicateIndex<T>>(*context, get().template get_predicates<T>());
+        return SpanProxy<PredicateIndex<T>, C>(get().template get_predicates<T>(), *context);
     }
-    auto get_objects() const { return SpanProxy<C, ObjectIndex>(*context, get().objects); }
+    auto get_objects() const { return SpanProxy<ObjectIndex, C>(get().objects, *context); }
     template<IsStaticOrFluentTag T>
     auto get_atoms() const
     {
-        return SpanProxy<C, GroundAtomIndex<T>>(*context, get().template get_atoms<T>());
+        return SpanProxy<GroundAtomIndex<T>, C>(get().template get_atoms<T>(), *context);
     }
-    auto get_rules() const { return SpanProxy<C, RuleIndex>(*context, get().rules); }
+    auto get_rules() const { return SpanProxy<RuleIndex, C>(get().rules, *context); }
 };
 }
 

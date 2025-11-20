@@ -25,7 +25,7 @@
 
 namespace tyr::formalism
 {
-template<IsContext C, IsStaticOrFluentTag T>
+template<IsStaticOrFluentTag T, IsContext C>
 class GroundFunctionTermValueProxy
 {
 private:
@@ -33,12 +33,12 @@ private:
     GroundFunctionTermValueIndex<T> index;
 
 public:
-    GroundFunctionTermValueProxy(const C& context, GroundFunctionTermValueIndex<T> index) : context(&context), index(index) {}
+    GroundFunctionTermValueProxy(GroundFunctionTermValueIndex<T> index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<GroundFunctionTermValue<T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_term() const { return GroundFunctionTermProxy(*context, index.term); }
+    auto get_term() const { return GroundFunctionTermProxy(index.term, *context); }
     auto get_value() const { return get().value; }
 };
 }

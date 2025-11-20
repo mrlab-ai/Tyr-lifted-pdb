@@ -28,7 +28,7 @@ template<IsStaticOrFluentTag T>
 struct GroundFunctionTermIndex
 {
     template<IsContext C>
-    using ProxyType = GroundFunctionTermProxy<C, T>;
+    using ProxyType = GroundFunctionTermProxy<T, C>;
 
     FunctionIndex<T> function_index {};
     uint_t value {};
