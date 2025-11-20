@@ -28,7 +28,7 @@ template<IsOp Op, typename T, IsContext C>
 class UnaryOperatorProxy
 {
 private:
-    using IndexType = typename T::IndexType;
+    using IndexType = UnaryOperatorIndex<Op, T>;
 
     const C* context;
     IndexType index;
@@ -39,7 +39,18 @@ public:
     const auto& get() const { return get_repository(*context).template operator[]<UnaryOperator<Op, T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_arg() const { return VariantProxy(get().arg, *context); }
+    auto get_arg() const
+    {
+        if constexpr (HasProxyType<T, C>)
+        {
+            using ProxyType = typename T::ProxyType<C>;
+            return ProxyType(get().arg, *context);
+        }
+        else
+        {
+            return get().arg;
+        }
+    }
 };
 
 }

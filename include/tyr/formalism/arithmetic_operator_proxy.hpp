@@ -28,10 +28,12 @@ template<typename T, IsContext C>
 class ArithmeticOperatorProxy : public VariantProxy<typename ArithmeticOperator<T>::Variant, C>
 {
 private:
+    using IndexType = ArithmeticOperator<T>;
+
     using Base = VariantProxy<typename ArithmeticOperator<T>::Variant, C>;
 
 public:
-    ArithmeticOperatorProxy(const ArithmeticOperator<T>& op, const C& context) : Base(op.value, context) {}
+    ArithmeticOperatorProxy(IndexType op, const C& context) : Base(op.value, context) {}
 };
 }
 

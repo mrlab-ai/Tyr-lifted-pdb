@@ -29,11 +29,13 @@ template<IsStaticOrFluentTag T, IsContext C>
 class LiteralProxy
 {
 private:
+    using IndexType = LiteralIndex<T>;
+
     const C* context;
     LiteralIndex<T> index;
 
 public:
-    LiteralProxy(LiteralIndex<T> index, const C& context) : context(&context), index(index) {}
+    LiteralProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Literal<T>>(index); }
 

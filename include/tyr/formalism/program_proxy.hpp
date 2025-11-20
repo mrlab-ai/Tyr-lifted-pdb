@@ -34,11 +34,13 @@ template<IsContext C>
 class ProgramProxy
 {
 private:
+    using IndexType = ProgramIndex;
+
     const C* context;
-    ProgramIndex index;
+    IndexType index;
 
 public:
-    ProgramProxy(ProgramIndex index, const C& context) : context(&context), index(index) {}
+    ProgramProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Program>(index); }
 

@@ -19,7 +19,7 @@
 #define TYR_FORMALISM_GROUND_FUNCTION_EXPRESSION_PROXY_HPP_
 
 #include "tyr/common/variant.hpp"
-#include "tyr/formalism/function_expression.hpp"
+#include "tyr/formalism/ground_function_expression.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr::formalism
@@ -28,10 +28,12 @@ template<IsContext C>
 class GroundFunctionExpressionProxy : public VariantProxy<GroundFunctionExpression::Variant, C>
 {
 private:
+    using IndexType = GroundFunctionExpression;
+
     using Base = VariantProxy<GroundFunctionExpression::Variant, C>;
 
 public:
-    GroundFunctionExpressionProxy(const Term& term, const C& context) : Base(term.value, context) {}
+    GroundFunctionExpressionProxy(IndexType fexpr, const C& context) : Base(fexpr.value, context) {}
 };
 }
 

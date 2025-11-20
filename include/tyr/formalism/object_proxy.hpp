@@ -28,11 +28,13 @@ template<IsContext C>
 class ObjectProxy
 {
 private:
+    using IndexType = ObjectIndex;
+
     const C* context;
-    ObjectIndex index;
+    IndexType index;
 
 public:
-    ObjectProxy(ObjectIndex index, const C& context) : context(&context), index(index) {}
+    ObjectProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Object>(index); }
 

@@ -28,10 +28,12 @@ template<IsContext C>
 class FunctionExpressionProxy : public VariantProxy<FunctionExpression::Variant, C>
 {
 private:
+    using IndexType = FunctionExpression;
+
     using Base = VariantProxy<FunctionExpression::Variant, C>;
 
 public:
-    FunctionExpressionProxy(const Term& term, const C& context) : Base(term.value, context) {}
+    FunctionExpressionProxy(IndexType fexpr, const C& context) : Base(fexpr.value, context) {}
 };
 }
 

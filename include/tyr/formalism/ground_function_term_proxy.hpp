@@ -21,6 +21,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_proxy.hpp"
 #include "tyr/formalism/ground_function_term_index.hpp"
+#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr::formalism
@@ -29,17 +30,19 @@ template<IsStaticOrFluentTag T, IsContext C>
 class GroundFunctionTermProxy
 {
 private:
+    using IndexType = GroundFunctionTermIndex<T>;
+
     const C* context;
-    GroundFunctionTermIndex<T> index;
+    IndexType index;
 
 public:
-    GroundFunctionTermProxy(GroundFunctionTermIndex<T> index, const C& context) : context(&context), index(index) {}
+    GroundFunctionTermProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<GroundFunctionTerm<T>>(index); }
 
     auto get_index() const { return index; }
     auto get_function() const { return FunctionProxy(index.function_index, *context); }
-    auto get_terms() const { return SpanProxy(get().terms, *context); }
+    auto get_terms() const { return SpanProxy<ObjectIndex, C>(get().terms, *context); }
 };
 }
 

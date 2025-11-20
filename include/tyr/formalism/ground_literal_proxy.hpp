@@ -30,11 +30,13 @@ template<IsStaticOrFluentTag T, IsContext C>
 class GroundLiteralProxy
 {
 private:
+    using IndexType = GroundLiteralIndex<T>;
+
     const C* context;
-    GroundLiteralIndex<T> index;
+    IndexType index;
 
 public:
-    GroundLiteralProxy(GroundLiteralIndex<T> index, const C& context) : context(&context), index(index) {}
+    GroundLiteralProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(context).template operator[]<GroundLiteral<T>>(index); }
 

@@ -28,7 +28,7 @@ template<IsOp Op, typename T, IsContext C>
 class MultiOperatorProxy
 {
 private:
-    using IndexType = typename T::IndexType;
+    using IndexType = MultiOperatorIndex<Op, T>;
 
     const C* context;
     IndexType index;
@@ -39,7 +39,7 @@ public:
     const auto& get() const { return get_repository(*context).template operator[]<MultiOperator<Op, T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_args() const { return SpanProxy<IndexType, C>(get().args, *context); }
+    auto get_args() const { return SpanProxy<T, C>(get().args, *context); }
 };
 
 }

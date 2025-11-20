@@ -31,11 +31,13 @@ template<IsStaticOrFluentTag T, IsContext C>
 class AtomProxy
 {
 private:
+    using IndexType = AtomIndex<T>;
+
     const C* context;
-    AtomIndex<T> index;
+    IndexType index;
 
 public:
-    AtomProxy(AtomIndex<T> index, const C& context) : context(&context), index(index) {}
+    AtomProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Atom<T>>(index); }
 

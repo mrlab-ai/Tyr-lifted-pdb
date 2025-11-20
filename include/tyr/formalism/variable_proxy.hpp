@@ -28,11 +28,13 @@ template<IsContext C>
 class VariableProxy
 {
 private:
+    using IndexType = VariableIndex;
+
     const C* context;
-    VariableIndex index;
+    IndexType index;
 
 public:
-    VariableProxy(VariableIndex index, const C& context) : context(&context), index(index) {}
+    VariableProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Variable>(index); }
 

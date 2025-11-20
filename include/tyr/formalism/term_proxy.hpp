@@ -28,10 +28,12 @@ template<IsContext C>
 class TermProxy : public VariantProxy<Term::Variant, C>
 {
 private:
+    using IndexType = Term;
+
     using Base = VariantProxy<Term::Variant, C>;
 
 public:
-    TermProxy(const Term& term, const C& context) : Base(term.value, context) {}
+    TermProxy(IndexType term, const C& context) : Base(term.value, context) {}
 };
 }
 

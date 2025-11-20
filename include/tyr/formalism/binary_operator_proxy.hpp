@@ -28,7 +28,7 @@ template<IsOp Op, typename T, IsContext C>
 class BinaryOperatorProxy
 {
 private:
-    using IndexType = typename T::IndexType;
+    using IndexType = BinaryOperatorIndex<Op, T>;
 
     const C* context;
     IndexType index;
@@ -39,8 +39,30 @@ public:
     const auto& get() const { return get_repository(*context).template operator[]<BinaryOperator<Op, T>>(index); }
 
     auto get_index() const { return index; }
-    auto get_lhs() const { return VariantProxy(get().lhs, *context); }
-    auto get_rhs() const { return VariantProxy(get().rhs, *context); }
+    auto get_lhs() const
+    {
+        if constexpr (HasProxyType<T, C>)
+        {
+            using ProxyType = typename T::ProxyType<C>;
+            return ProxyType(get().lhs, *context);
+        }
+        else
+        {
+            return get().lhs;
+        }
+    }
+    auto get_rhs() const
+    {
+        if constexpr (HasProxyType<T, C>)
+        {
+            using ProxyType = typename T::ProxyType<C>;
+            return ProxyType(get().rhs, *context);
+        }
+        else
+        {
+            return get().rhs;
+        }
+    }
 };
 
 }

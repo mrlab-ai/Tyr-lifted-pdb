@@ -28,11 +28,13 @@ template<IsStaticOrFluentTag T, IsContext C>
 class PredicateProxy
 {
 private:
+    using IndexType = PredicateIndex<T>;
+
     const C* context;
-    PredicateIndex<T> index;
+    IndexType index;
 
 public:
-    PredicateProxy(PredicateIndex<T> index, const C& context) : context(&context), index(index) {}
+    PredicateProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Predicate<T>>(index); }
 

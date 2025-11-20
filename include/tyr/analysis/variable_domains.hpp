@@ -39,14 +39,71 @@ struct VariableDomains
 {
     DomainListListList static_predicate_domains;
     DomainListListList fluent_predicate_domains;
+    DomainListListList static_function_domains;
+    DomainListListList fluent_function_domains;
     DomainListListList rule_domains;
 };
 
+inline DomainListListList to_list(const DomainSetListList& set)
+{
+    auto vec = DomainListListList();
+    vec.reserve(set.size());
+    for (const auto& parameter_domains : set)
+    {
+        auto predicate_domains_vec = DomainListList();
+        predicate_domains_vec.reserve(parameter_domains.size());
+        for (const auto& parameter_domain : parameter_domains)
+        {
+            predicate_domains_vec.push_back(DomainList(parameter_domain.begin(), parameter_domain.end()));
+        }
+        vec.push_back(predicate_domains_vec);
+    }
+    return vec;
+}
+
+template<formalism::IsStaticOrFluentTag T>
+inline DomainSetListList initialize_predicate_domain_sets(formalism::ProgramProxy<> program)
+{
+    const auto num_predicates = program.get_predicates<T>().size();
+    auto predicate_domain_sets = DomainSetListList(num_predicates);
+
+    for (const auto predicate : program.get_predicates<T>())
+        predicate_domain_sets[predicate.get_index().value].resize(predicate.get_arity());
+
+    for (const auto atom : program.get_atoms<T>())
+    {
+        const auto predicate = atom.get_predicate();
+        auto pos = size_t { 0 };
+        for (const auto object : atom.get_terms())
+            predicate_domain_sets[predicate.get_index().value][pos++].insert(object.get_index());
+    }
+
+    return predicate_domain_sets;
+}
+
+template<formalism::IsStaticOrFluentTag T>
+inline DomainSetListList initialize_function_domain_sets(formalism::ProgramProxy<> program)
+{
+    const auto num_functions = program.get_functions<T>().size();
+    auto function_domain_sets = DomainSetListList(num_functions);
+
+    for (const auto function : program.get_functions<T>())
+        function_domain_sets[function.get_index().value].resize(function.get_arity());
+
+    for (const auto term_value : program.get_function_values<T>())
+    {
+        const auto term = term_value.get_term();
+        const auto function = term.get_function();
+        auto pos = size_t { 0 };
+        for (const auto object : term.get_terms())
+            function_domain_sets[function.get_index().value][pos++].insert(object.get_index());
+    }
+
+    return function_domain_sets;
+}
+
 VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> program)
 {
-    const auto num_static_predicates = program.get_predicates<formalism::StaticTag>().size();
-    const auto num_fluent_predicates = program.get_predicates<formalism::FluentTag>().size();
-
     auto objects = std::vector<formalism::ObjectIndex> {};
     for (const auto object : program.get_objects())
         objects.push_back(object.get_index());
@@ -54,33 +111,17 @@ VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> pr
 
     ///--- Step 1: Initialize static and fluent predicate parameter domains
 
-    auto static_predicate_domain_sets = DomainSetListList(num_static_predicates);
-    for (const auto predicate : program.get_predicates<formalism::StaticTag>())
-        static_predicate_domain_sets[predicate.get_index().value].resize(predicate.get_arity());
+    auto static_predicate_domain_sets = initialize_predicate_domain_sets<formalism::StaticTag>(program);
+    auto fluent_predicate_domain_sets = initialize_predicate_domain_sets<formalism::FluentTag>(program);
 
-    auto fluent_predicate_domain_sets = DomainSetListList(num_fluent_predicates);
-    for (const auto predicate : program.get_predicates<formalism::FluentTag>())
-        fluent_predicate_domain_sets[predicate.get_index().value].resize(predicate.get_arity());
+    ///--- Step 2: Initialize static and fluent function parameter domains
 
-    for (const auto atom : program.get_atoms<formalism::StaticTag>())
-    {
-        const auto predicate = atom.get_predicate();
-        auto pos = size_t { 0 };
-        for (const auto& object : atom.get_terms())
-            static_predicate_domain_sets[predicate.get_index().value][pos++].insert(object.get_index());
-    }
+    auto static_function_domain_sets = initialize_function_domain_sets<formalism::StaticTag>(program);
+    auto fluent_function_domain_sets = initialize_function_domain_sets<formalism::FluentTag>(program);
 
-    for (const auto atom : program.get_atoms<formalism::FluentTag>())
-    {
-        const auto predicate = atom.get_predicate();
-        auto pos = size_t { 0 };
-        for (const auto& object : atom.get_terms())
-            fluent_predicate_domain_sets[predicate.get_index().value][pos++].insert(object.get_index());
-    }
+    ///--- Step 3: Compute rule parameter domains as tightest bound from the previously computed domains of the static predicates.
 
-    ///--- Step 2: Compute rule parameter domains as tightest bound from the previously computed domains of the static predicates.
-
-    auto func_restrict_rule_parameter_domain = [&](auto&& atom, auto&& parameter_domains)
+    auto func_restrict_parameter_domain_from_atom = [&](auto&& atom, auto&& parameter_domains)
     {
         const auto predicate = atom.get_predicate();
 
@@ -110,6 +151,24 @@ VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> pr
         }
     };
 
+    auto func_restrict_parameter_domain_from_function_expression = [&](auto&& fexpr, auto&& parameter_domains)
+    {
+        fexpr.visit(
+            [&](auto&& arg) {
+
+            });
+    };
+
+    auto func_restrict_parameter_domain_from_boolean_operator = [&](auto&& op, auto&& parameter_domains)
+    {
+        op.visit(
+            [&](auto&& arg)
+            {
+                func_restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains);
+                func_restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains);
+            });
+    };
+
     auto rule_domain_sets = DomainSetListList();
     {
         for (const auto rule : program.get_rules())
@@ -118,17 +177,18 @@ VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> pr
             auto parameter_domains = DomainSetList(variables.size(), universe);
 
             for (const auto literal : rule.get_static_body())
-            {
-                func_restrict_rule_parameter_domain(literal.get_atom(), parameter_domains);
-            }
+                func_restrict_parameter_domain_from_atom(literal.get_atom(), parameter_domains);
+
+            for (const auto op : rule.get_numeric_body())
+                func_restrict_parameter_domain_from_boolean_operator(op, parameter_domains);
 
             rule_domain_sets.push_back(std::move(parameter_domains));
         }
     }
 
-    ///--- Step 3: Lift the fluent predicate domains given the variable relationships in the rules.
+    ///--- Step 4: Lift the fluent predicate domains given the variable relationships in the rules.
 
-    auto func_lift_fluent_domain = [&](auto&& atom, auto&& parameter_domains)
+    auto func_lift_parameter_domain_from_atom = [&](auto&& atom, auto&& parameter_domains)
     {
         const auto predicate = atom.get_predicate();
 
@@ -164,57 +224,29 @@ VariableDomains compute_variable_list_per_predicate(formalism::ProgramProxy<> pr
 
         for (const auto literal : rule.get_fluent_body())
         {
-            func_lift_fluent_domain(literal.get_atom(), parameter_domains);
+            func_lift_parameter_domain_from_atom(literal.get_atom(), parameter_domains);
         }
 
-        func_lift_fluent_domain(rule.get_head(), parameter_domains);
+        func_lift_parameter_domain_from_atom(rule.get_head(), parameter_domains);
     }
 
-    ///--- Step 4: Compress sets to vectors.
-    auto static_predicate_domains = DomainListListList();
-    static_predicate_domains.reserve(static_predicate_domain_sets.size());
-    for (const auto& parameter_domains : static_predicate_domain_sets)
-    {
-        auto predicate_domains_vec = DomainListList();
-        predicate_domains_vec.reserve(parameter_domains.size());
-        for (const auto& parameter_domain : parameter_domains)
-        {
-            predicate_domains_vec.push_back(DomainList(parameter_domain.begin(), parameter_domain.end()));
-        }
-        static_predicate_domains.push_back(predicate_domains_vec);
-    }
+    ///--- Step 5: Compress sets to vectors.
 
-    auto fluent_predicate_domains = DomainListListList();
-    fluent_predicate_domains.reserve(fluent_predicate_domain_sets.size());
-    for (const auto& parameter_domains : fluent_predicate_domain_sets)
-    {
-        auto predicate_domains_vec = DomainListList();
-        predicate_domains_vec.reserve(parameter_domains.size());
-        for (const auto& parameter_domain : parameter_domains)
-        {
-            predicate_domains_vec.push_back(DomainList(parameter_domain.begin(), parameter_domain.end()));
-        }
-        fluent_predicate_domains.push_back(predicate_domains_vec);
-    }
-
-    auto rule_domains = DomainListListList();
-    rule_domains.reserve(rule_domain_sets.size());
-    for (const auto& parameter_domains : rule_domain_sets)
-    {
-        auto parameter_domains_vec = DomainListList();
-        parameter_domains_vec.reserve(parameter_domains.size());
-        for (const auto& parameter_domain : parameter_domains)
-        {
-            parameter_domains_vec.push_back(DomainList(parameter_domain.begin(), parameter_domain.end()));
-        }
-        rule_domains.push_back(parameter_domains_vec);
-    }
+    auto static_predicate_domains = to_list(static_predicate_domain_sets);
+    auto fluent_predicate_domains = to_list(fluent_predicate_domain_sets);
+    auto static_function_domains = to_list(static_function_domain_sets);
+    auto fluent_function_domains = to_list(fluent_function_domain_sets);
+    auto rule_domains = to_list(rule_domain_sets);
 
     std::cout << "Static domains: " << "\n" << static_predicate_domains << std::endl;
     std::cout << "Fluent domains: " << "\n" << fluent_predicate_domains << std::endl;
     std::cout << "Rule domains: " << "\n" << rule_domains << std::endl;
 
-    return VariableDomains { std::move(static_predicate_domains), std::move(fluent_predicate_domains), std::move(rule_domains) };
+    return VariableDomains { std::move(static_predicate_domains),
+                             std::move(fluent_predicate_domains),
+                             std::move(static_function_domains),
+                             std::move(fluent_function_domains),
+                             std::move(rule_domains) };
 }
 }
 

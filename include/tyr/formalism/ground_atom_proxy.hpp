@@ -31,11 +31,13 @@ template<IsStaticOrFluentTag T, IsContext C>
 class GroundAtomProxy
 {
 private:
+    using IndexType = GroundAtomIndex<T>;
+
     const C* context;
-    GroundAtomIndex<T> index;
+    IndexType index;
 
 public:
-    GroundAtomProxy(GroundAtomIndex<T> index, const C& context) : context(&context), index(index) {}
+    GroundAtomProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<GroundAtom<T>>(index); }
 

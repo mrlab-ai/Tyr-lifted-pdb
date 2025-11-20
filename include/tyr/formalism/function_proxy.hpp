@@ -28,11 +28,13 @@ template<IsStaticOrFluentTag T, IsContext C>
 class FunctionProxy
 {
 private:
+    using IndexType = FunctionIndex<T>;
+
     const C* context;
-    FunctionIndex<T> index;
+    IndexType index;
 
 public:
-    FunctionProxy(FunctionIndex<T> index, const C& context) : context(&context), index(index) {}
+    FunctionProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<Function<T>>(index); }
 

@@ -33,11 +33,13 @@ template<IsContext C>
 class GroundRuleProxy
 {
 private:
+    using IndexType = GroundRuleIndex;
+
     const C* context;
-    GroundRuleIndex index;
+    IndexType index;
 
 public:
-    GroundRuleProxy(GroundRuleIndex index, const C& context) : context(&context), index(index) {}
+    GroundRuleProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
     const auto& get() const { return get_repository(*context).template operator[]<GroundRule>(index); }
 

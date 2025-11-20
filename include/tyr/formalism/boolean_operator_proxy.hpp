@@ -28,10 +28,12 @@ template<typename T, IsContext C>
 class BooleanOperatorProxy : public VariantProxy<typename BooleanOperator<T>::Variant, C>
 {
 private:
+    using IndexType = BooleanOperator<T>;
+
     using Base = VariantProxy<typename BooleanOperator<T>::Variant, C>;
 
 public:
-    BooleanOperatorProxy(const BooleanOperator<T>& op, const C& context) : Base(op.value, context) {}
+    BooleanOperatorProxy(IndexType op, const C& context) : Base(op.value, context) {}
 };
 }
 

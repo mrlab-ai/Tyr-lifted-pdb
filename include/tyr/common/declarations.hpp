@@ -42,8 +42,8 @@ concept HasIdentifyingMembers = requires(const T a) {
 template<typename T, typename C>
 concept HasProxyType = requires { typename T::template ProxyType<C>; };
 
-template<typename P, typename C, typename Elem>
-concept IsProxyFor = std::constructible_from<P, const C&, const Elem&>;
+template<typename T>
+concept HasIndexType = requires { typename T::IndexType; };
 
 template<typename T>
 concept IsHanaMap = std::same_as<typename boost::hana::tag_of<T>::type, boost::hana::map_tag>;
