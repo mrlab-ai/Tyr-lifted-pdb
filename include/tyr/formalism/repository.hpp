@@ -170,8 +170,35 @@ private:
 public:
     Repository() = default;
 
+    // nullptr signals that the object does not exist.
     template<IsMappedTypePerIndex T>
-    auto get_or_create(T& builder, cista::Buffer& buf)
+    const T* find(const T& builder) const
+    {
+        const auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+
+        const auto i = TypeProperties<T>::get_index(builder.index).get();
+
+        if (i >= list.size())
+            return nullptr;
+
+        const auto& indexed_hash_set = list[i];
+
+        return indexed_hash_set.find(builder);
+    }
+
+    // nullptr signals that the object does not exist.
+    template<IsMappedType T>
+    const T* find(const T& builder) const
+    {
+        const auto& indexed_hash_set = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+
+        return indexed_hash_set.find(builder);
+    }
+
+    // const T* always points to a valid instantiation of the class.
+    // We return const T* here to avoid bugs when using structured bindings.
+    template<IsMappedTypePerIndex T, bool AssignIndex = true>
+    std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
     {
         auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
@@ -180,39 +207,47 @@ public:
         if (i >= list.size())
             list.resize(i + 1);
 
-        auto& repository = list[i];
+        auto& indexed_hash_set = list[i];
 
-        return repository.insert(builder, buf);
+        if constexpr (AssignIndex)
+            builder.index.value = indexed_hash_set.size();
+
+        return indexed_hash_set.insert(builder, buf);
     }
 
-    template<IsMappedType T>
-    auto get_or_create(T& builder, cista::Buffer& buf)
+    // const T* always points to a valid instantiation of the class.
+    // We return const T* here to avoid bugs when using structured bindings.
+    template<IsMappedType T, bool AssignIndex = true>
+    std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
     {
-        auto& repository = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+        auto& indexed_hash_set = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
-        return repository.insert(builder, buf);
+        if constexpr (AssignIndex)
+            builder.index.value = indexed_hash_set.size();
+
+        return indexed_hash_set.insert(builder, buf);
     }
 
     template<IsMappedTypePerIndex T>
-    const auto& operator[](typename T::IndexType index) const
+    const T& operator[](typename T::IndexType index) const
     {
-        auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+        const auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
         const auto i = TypeProperties<T>::get_index(index).get();
 
         assert(i < list.size());
 
-        auto& repository = list[i];
+        const auto& repository = list[i];
 
-        return *repository[index];
+        return repository[index];
     }
 
     template<IsMappedType T>
-    const auto& operator[](typename T::IndexType index) const
+    const T& operator[](typename T::IndexType index) const
     {
-        auto& repository = boost::hana::at_key(m_repository, boost::hana::type<T> {});
+        const auto& repository = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
-        return *repository[index];
+        return repository[index];
     }
 };
 }

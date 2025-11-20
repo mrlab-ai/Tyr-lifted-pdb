@@ -46,8 +46,6 @@ TEST(TyrTests, TyrFormalismProxy)
     // Create object and variable
     object_builder.name = "a";
     auto [object, object_success] = repository.get_or_create(object_builder, buffer);
-    variable_builder.name = "A";
-    auto [variable, variable_success] = repository.get_or_create(variable_builder, buffer);
 
     // Create atom
     atom_builder.terms.clear();

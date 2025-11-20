@@ -80,29 +80,34 @@ public:
         m_vec.clear();
     }
 
+    const T* find(const T& element)
+    {
+        if (auto it = m_set.find(ObserverPtr<const T>(&element)); it != m_set.end())
+            return it->get();
+
+        return nullptr;
+    }
+
+    // const T* always points to a valid instantiation of the class.
+    // We return const T* here to avoid bugs when using structured bindings.
     template<::cista::mode Mode = ::cista::mode::NONE>
-    auto insert(T& element, ::cista::buf<std::vector<uint8_t>>& buf)
+    std::pair<const T*, bool> insert(const T& element, ::cista::buf<std::vector<uint8_t>>& buf)
     {
         // 1. Check if element already exists
         if (auto it = m_set.find(ObserverPtr<const T>(&element)); it != m_set.end())
-        {
             return std::make_pair(it->get(), false);
-        }
 
-        // 2. Assign next index
-        element.index.value = m_set.size();
-
-        // 3. Serialize
+        // 2. Serialize
         buf.reset();
         ::cista::serialize<Mode>(buf, element);
 
-        // 4. Write to storage
+        // 3. Write to storage
         auto begin = m_storage.write(buf.base(), buf.size(), alignof(T));
 
-        // 5. Insert to set
+        // 4. Insert to set
         auto [observer_ptr, success] = m_set.insert(::cista::deserialize<const T, Mode>(begin, begin + buf.size()));
 
-        // 6. Insert to vec
+        // 5. Insert to vec
         m_vec.push_back(observer_ptr->get());
 
         return std::make_pair(observer_ptr->get(), success);
@@ -112,10 +117,7 @@ public:
      * Lookup
      */
 
-    size_t count(const T& key) const { return m_set.count(&key); }
-    auto find(const T& key) const { return m_set.find(&key); }
-    bool contains(const T& key) const { return m_set.contains(&key); }
-    auto operator[](IndexType index) const { return m_vec[index.get()]; }
+    const T& operator[](IndexType index) const { return *m_vec[index.get()]; }
 };
 
 template<typename T, typename H = Hash<ObserverPtr<const T>>, typename E = EqualTo<ObserverPtr<const T>>>
