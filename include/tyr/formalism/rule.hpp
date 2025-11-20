@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_RULE_HPP_
 
 #include "tyr/formalism/atom_index.hpp"
+#include "tyr/formalism/boolean_operator.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_index.hpp"
 #include "tyr/formalism/rule_index.hpp"
@@ -32,6 +33,7 @@ struct Rule
     VariableIndexList variables;
     LiteralIndexList<StaticTag> static_body;
     LiteralIndexList<FluentTag> fluent_body;
+    BooleanOperatorList<FunctionExpression> numeric_body;
     AtomIndex<FluentTag> head;
 
     using IndexType = RuleIndex;
@@ -41,17 +43,19 @@ struct Rule
          VariableIndexList variables,
          LiteralIndexList<StaticTag> static_body,
          LiteralIndexList<FluentTag> fluent_body,
+         BooleanOperatorList<FunctionExpression> numeric_body,
          AtomIndex<FluentTag> head) :
         index(index),
         variables(std::move(variables)),
         static_body(std::move(static_body)),
         fluent_body(std::move(fluent_body)),
+        numeric_body(std::move(numeric_body)),
         head(head)
     {
     }
 
-    auto cista_members() const noexcept { return std::tie(index, variables, static_body, fluent_body, head); }
-    auto identifying_members() const noexcept { return std::tie(variables, static_body, fluent_body, head); }
+    auto cista_members() const noexcept { return std::tie(index, variables, static_body, fluent_body, numeric_body, head); }
+    auto identifying_members() const noexcept { return std::tie(variables, static_body, fluent_body, numeric_body, head); }
 };
 }
 

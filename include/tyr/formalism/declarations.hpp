@@ -121,6 +121,16 @@ struct MultiOperator;
 template<IsOp Op, typename T, IsContext C = Repository>
 class MultiOperatorProxy;
 
+template<typename T>
+struct ArithmeticOperator;
+template<typename T, IsContext C>
+class ArithmeticOperatorProxy;
+
+template<typename T>
+struct BooleanOperator;
+template<typename T, IsContext C>
+class BooleanOperatorProxy;
+
 struct VariableIndex;
 struct Variable;
 template<IsContext C = Repository>

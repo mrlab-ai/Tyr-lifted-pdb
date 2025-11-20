@@ -143,6 +143,30 @@ inline std::ostream& print(std::ostream& os, const formalism::MultiOperatorProxy
     return os;
 }
 
+template<typename T>
+inline std::ostream& print(std::ostream& os, const formalism::ArithmeticOperator<T>& el)
+{
+    return os;
+}
+
+template<typename T, formalism::IsContext C>
+inline std::ostream& print(std::ostream& os, const formalism::ArithmeticOperatorProxy<T, C>& el)
+{
+    return os;
+}
+
+template<typename T>
+inline std::ostream& print(std::ostream& os, const formalism::BooleanOperator<T>& el)
+{
+    return os;
+}
+
+template<typename T, formalism::IsContext C>
+inline std::ostream& print(std::ostream& os, const formalism::BooleanOperatorProxy<T, C>& el)
+{
+    return os;
+}
+
 inline std::ostream& print(std::ostream& os, const formalism::VariableIndex& el) { return os; }
 
 inline std::ostream& print(std::ostream& os, const formalism::Variable& el) { return os; }
@@ -439,6 +463,30 @@ template<IsOp Op, typename T, IsContext C>
 inline std::ostream& operator<<(std::ostream& os, const MultiOperatorProxy<Op, T, C>& el)
 {
     return tyr::print(os, el);
+}
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const ArithmeticOperator<T>& el)
+{
+    return os;
+}
+
+template<typename T, IsContext C>
+inline std::ostream& operator<<(std::ostream& os, const ArithmeticOperatorProxy<T, C>& el)
+{
+    return os;
+}
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const BooleanOperator<T>& el)
+{
+    return os;
+}
+
+template<typename T, IsContext C>
+inline std::ostream& operator<<(std::ostream& os, const BooleanOperatorProxy<T, C>& el)
+{
+    return os;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const VariableIndex& el) { return tyr::print(os, el); }

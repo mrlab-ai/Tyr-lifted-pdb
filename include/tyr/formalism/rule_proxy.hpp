@@ -20,6 +20,7 @@
 
 #include "tyr/common/span.hpp"
 #include "tyr/formalism/atom_proxy.hpp"
+#include "tyr/formalism/boolean_operator_proxy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_proxy.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -44,6 +45,7 @@ public:
     auto get_variables() const { return SpanProxy<VariableIndex, C>(get().variables, *context); }
     auto get_static_body() const { return SpanProxy<LiteralIndex<StaticTag>, C>(get().static_body, *context); }
     auto get_fluent_body() const { return SpanProxy<LiteralIndex<FluentTag>, C>(get().fluent_body, *context); }
+    auto get_numeric_body() const { return SpanProxy<BooleanOperator<FunctionExpression>, C>(get().numeric_body, *context); }
     auto get_head() const { return AtomProxy(get().head, *context); }
 };
 }
