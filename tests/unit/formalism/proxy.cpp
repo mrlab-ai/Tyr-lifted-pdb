@@ -63,7 +63,7 @@ TEST(TyrTests, TyrFormalismProxy)
 
     EXPECT_EQ(atom_relation_proxy.get_name(), "predicate");
     EXPECT_EQ(atom_relation_proxy.get_arity(), 2);
-    atom_terms_proxy[0].visit(
+    visit(
         [&](auto&& arg)
         {
             using ProxyType = std::decay_t<decltype(arg)>;
@@ -76,8 +76,9 @@ TEST(TyrTests, TyrFormalismProxy)
             {
                 FAIL() << "Expected ObjectProxy for first term, got a different proxy type";
             }
-        });
-    atom_terms_proxy[1].visit(
+        },
+        atom_terms_proxy[0]);
+    visit(
         [&](auto&& arg)
         {
             using ProxyType = std::decay_t<decltype(arg)>;
@@ -90,7 +91,8 @@ TEST(TyrTests, TyrFormalismProxy)
             {
                 FAIL() << "Expected VariableProxy for first term, got a different proxy type";
             }
-        });
+        },
+        atom_terms_proxy[1]);
 }
 
 }

@@ -65,7 +65,7 @@ public:
     }
 
     template<typename F>
-    decltype(auto) visit(F&& f) const
+    decltype(auto) apply(F&& f) const
     {
         return std::visit(
             [&](auto index) -> decltype(auto)
@@ -85,6 +85,18 @@ public:
             index_variant());
     }
 };
+
+template<typename Visitor, typename Variant, typename Context>
+constexpr auto visit(Visitor&& vis, tyr::VariantProxy<Variant, Context>&& v)
+{
+    return v.apply(std::forward<Visitor>(vis));
 }
 
+template<typename Visitor, typename Variant, typename Context>
+constexpr auto visit(Visitor&& vis, const tyr::VariantProxy<Variant, Context>& v)
+{
+    return v.apply(vis);
+}
+
+}
 #endif
