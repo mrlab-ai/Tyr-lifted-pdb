@@ -36,7 +36,7 @@ private:
 public:
     PredicateProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
-    const auto& get() const { return get_repository(*context).template operator[]<Predicate<T>>(index); }
+    const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
     const auto& get_name() const { return get().name; }

@@ -37,7 +37,7 @@ private:
 public:
     GroundFunctionTermValueProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
-    const auto& get() const { return get_repository(*context).template operator[]<GroundFunctionTermValue<T>>(index); }
+    const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
     auto get_term() const { return GroundFunctionTermProxy(get().term, *context); }

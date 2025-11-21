@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_SCOPED_REPOSITORY_HPP_
 #define TYR_FORMALISM_SCOPED_REPOSITORY_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr::formalism
@@ -30,7 +31,21 @@ private:
     Repository& local;
 
 public:
+    template<typename IndexType>
+        requires IsMappedTypePerIndex<typename IndexType::DataType>
+    const typename IndexType::DataType& operator[](IndexType index) const
+    {
+    }
+
+    template<typename IndexType>
+        requires IsMappedType<typename IndexType::DataType>
+    const typename IndexType::DataType& operator[](IndexType index) const
+    {
+    }
 };
+
+static_assert(IsRepository<ScopedRepository>);
+static_assert(IsContext<ScopedRepository>);
 
 }
 

@@ -36,7 +36,7 @@ private:
 public:
     BinaryOperatorProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
-    const auto& get() const { return get_repository(*context).template operator[]<BinaryOperator<Op, T>>(index); }
+    const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
     auto get_lhs() const

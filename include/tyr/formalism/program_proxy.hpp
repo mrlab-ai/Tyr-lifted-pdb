@@ -42,7 +42,7 @@ private:
 public:
     ProgramProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
-    const auto& get() const { return get_repository(*context).template operator[]<Program>(index); }
+    const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
     template<IsStaticOrFluentTag T>

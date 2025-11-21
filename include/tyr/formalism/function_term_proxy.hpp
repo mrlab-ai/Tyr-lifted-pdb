@@ -37,7 +37,7 @@ private:
 public:
     FunctionTermProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
-    const auto& get() const { return get_repository(*context).template operator[]<FunctionTerm<T>>(index); }
+    const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
     auto get_function() const { return FunctionProxy(index.function_index, *context); }

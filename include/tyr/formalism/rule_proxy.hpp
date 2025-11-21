@@ -41,7 +41,7 @@ private:
 public:
     RuleProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
-    const auto& get() const { return get_repository(*context).template operator[]<Rule>(index); }
+    const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
     auto get_variables() const { return SpanProxy<VariableIndex, C>(get().variables, *context); }

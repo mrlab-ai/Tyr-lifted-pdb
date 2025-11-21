@@ -26,6 +26,7 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct FunctionIndex
 {
+    using DataType = Function<T>;
     template<IsContext C>
     using ProxyType = FunctionProxy<T, C>;
 

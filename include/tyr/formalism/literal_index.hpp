@@ -27,6 +27,7 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct LiteralIndex
 {
+    using DataType = Literal<T>;
     template<IsContext C>
     using ProxyType = LiteralProxy<T, C>;
 

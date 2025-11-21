@@ -27,6 +27,7 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct AtomIndex
 {
+    using DataType = Atom<T>;
     template<IsContext C>
     using ProxyType = AtomProxy<T, C>;
 

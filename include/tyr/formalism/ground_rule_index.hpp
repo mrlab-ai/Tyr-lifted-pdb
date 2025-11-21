@@ -26,6 +26,7 @@ namespace tyr::formalism
 {
 struct GroundRuleIndex
 {
+    using DataType = GroundRule;
     template<IsContext C>
     using ProxyType = GroundRuleProxy<C>;
 

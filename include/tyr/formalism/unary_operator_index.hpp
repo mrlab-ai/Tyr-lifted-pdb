@@ -26,6 +26,7 @@ namespace tyr::formalism
 template<IsOp Op, typename T>
 struct UnaryOperatorIndex
 {
+    using DataType = UnaryOperator<Op, T>;
     template<IsContext C>
     using ProxyType = UnaryOperatorProxy<Op, T, C>;
 

@@ -27,6 +27,7 @@ namespace tyr::formalism
 template<IsStaticOrFluentTag T>
 struct GroundLiteralIndex
 {
+    using DataType = GroundLiteral<T>;
     template<IsContext C>
     using ProxyType = GroundLiteralProxy<T, C>;
 

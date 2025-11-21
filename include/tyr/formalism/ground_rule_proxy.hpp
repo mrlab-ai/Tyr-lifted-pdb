@@ -41,7 +41,7 @@ private:
 public:
     GroundRuleProxy(IndexType index, const C& context) : context(&context), index(index) {}
 
-    const auto& get() const { return get_repository(*context).template operator[]<GroundRule>(index); }
+    const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
     auto get_binding() const { return SpanProxy<ObjectIndex, C>(get().objects, *context); }

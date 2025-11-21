@@ -25,6 +25,7 @@ namespace tyr::formalism
 {
 struct VariableIndex
 {
+    using DataType = Variable;
     template<IsContext C>
     using ProxyType = VariableProxy<C>;
 

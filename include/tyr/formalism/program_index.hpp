@@ -25,6 +25,7 @@ namespace tyr::formalism
 {
 struct ProgramIndex
 {
+    using DataType = Program;
     template<IsContext C>
     using ProxyType = ProgramProxy<C>;
 

@@ -75,28 +75,11 @@ concept IsOp = std::same_as<T, OpEq> || std::same_as<T, OpLe> || std::same_as<T,
                || std::same_as<T, OpAdd> || std::same_as<T, OpMul> || std::same_as<T, OpDiv> || std::same_as<T, OpSub>;
 
 /**
- * Context
- */
-
-class Repository;
-
-/// @brief Make Repository a trivial context.
-/// @param context
-/// @return
-inline const Repository& get_repository(const Repository& context) noexcept { return context; }
-
-template<typename T>
-concept IsContext = requires(const T& a) {
-    { get_repository(a) } -> std::same_as<const Repository&>;
-};
-
-static_assert(IsContext<Repository>);
-
-/**
  * Forward declarations
  */
 
 class Repository;
+class ScopedRepository;
 
 struct Double;
 
@@ -104,40 +87,135 @@ template<IsOp Op, typename T>
 struct UnaryOperatorIndex;
 template<IsOp Op, typename T>
 struct UnaryOperator;
-template<IsOp Op, typename T, IsContext C = Repository>
-class UnaryOperatorProxy;
 
 template<IsOp Op, typename T>
 struct BinaryOperatorIndex;
 template<IsOp Op, typename T>
 struct BinaryOperator;
-template<IsOp Op, typename T, IsContext C = Repository>
-class BinaryOperatorProxy;
 
 template<IsOp Op, typename T>
 struct MultiOperatorIndex;
 template<IsOp Op, typename T>
 struct MultiOperator;
-template<IsOp Op, typename T, IsContext C = Repository>
-class MultiOperatorProxy;
 
 template<typename T>
 struct ArithmeticOperator;
-template<typename T, IsContext C = Repository>
-class ArithmeticOperatorProxy;
 
 template<typename T>
 struct BooleanOperator;
-template<typename T, IsContext C = Repository>
-class BooleanOperatorProxy;
 
 struct VariableIndex;
 struct Variable;
-template<IsContext C = Repository>
-class VariableProxy;
 
 struct ObjectIndex;
 struct Object;
+
+struct Term;
+
+template<IsStaticOrFluentTag T>
+struct PredicateIndex;
+template<IsStaticOrFluentTag T>
+struct Predicate;
+
+template<IsStaticOrFluentTag T>
+struct AtomIndex;
+template<IsStaticOrFluentTag T>
+struct Atom;
+
+template<IsStaticOrFluentTag T>
+struct LiteralIndex;
+template<IsStaticOrFluentTag T>
+struct Literal;
+
+template<IsStaticOrFluentTag T>
+struct GroundAtomIndex;
+template<IsStaticOrFluentTag T>
+struct GroundAtom;
+
+template<IsStaticOrFluentTag T>
+struct GroundLiteralIndex;
+template<IsStaticOrFluentTag T>
+struct GroundLiteral;
+
+template<IsStaticOrFluentTag T>
+struct FunctionIndex;
+template<IsStaticOrFluentTag T>
+struct Function;
+
+template<IsStaticOrFluentTag T>
+struct FunctionTermIndex;
+template<IsStaticOrFluentTag T>
+struct FunctionTerm;
+
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTermIndex;
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTerm;
+
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTermValueIndex;
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTermValue;
+
+struct FunctionExpression;
+
+struct GroundFunctionExpression;
+
+struct RuleIndex;
+struct Rule;
+
+struct GroundRuleIndex;
+struct GroundRule;
+
+struct ProgramIndex;
+struct Program;
+
+/**
+ * Context
+ */
+
+/// @brief Make Repository a trivial context.
+/// @param context
+/// @return
+inline const Repository& get_repository(const Repository& context) noexcept { return context; }
+
+/// @brief Make ScopedRepository a trivial context.
+/// @param context
+/// @return
+inline const ScopedRepository& get_repository(const ScopedRepository& context) noexcept { return context; }
+
+template<typename T>
+concept IsRepository = requires(const T& a, ObjectIndex i1) {
+    { a[i1] } -> std::same_as<const Object&>;
+};
+
+template<typename T>
+concept IsContext = requires(const T& a) {
+    { get_repository(a) } -> IsRepository;
+};
+
+/**
+ * Proxies
+ */
+
+template<IsOp Op, typename T, IsContext C = Repository>
+class UnaryOperatorProxy;
+
+template<IsOp Op, typename T, IsContext C = Repository>
+class BinaryOperatorProxy;
+
+template<IsOp Op, typename T, IsContext C = Repository>
+class MultiOperatorProxy;
+
+template<typename T, IsContext C = Repository>
+class ArithmeticOperatorProxy;
+
+template<typename T, IsContext C = Repository>
+class BooleanOperatorProxy;
+
+template<IsContext C = Repository>
+class VariableProxy;
+
 template<IsContext C = Repository>
 class ObjectProxy;
 
@@ -145,89 +223,45 @@ struct Term;
 template<IsContext C = Repository>
 class TermProxy;
 
-template<IsStaticOrFluentTag T>
-struct PredicateIndex;
-template<IsStaticOrFluentTag T>
-struct Predicate;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class PredicateProxy;
 
-template<IsStaticOrFluentTag T>
-struct AtomIndex;
-template<IsStaticOrFluentTag T>
-struct Atom;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class AtomProxy;
 
-template<IsStaticOrFluentTag T>
-struct LiteralIndex;
-template<IsStaticOrFluentTag T>
-struct Literal;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class LiteralProxy;
 
-template<IsStaticOrFluentTag T>
-struct GroundAtomIndex;
-template<IsStaticOrFluentTag T>
-struct GroundAtom;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class GroundAtomProxy;
 
-template<IsStaticOrFluentTag T>
-struct GroundLiteralIndex;
-template<IsStaticOrFluentTag T>
-struct GroundLiteral;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class GroundLiteralProxy;
 
-template<IsStaticOrFluentTag T>
-struct FunctionIndex;
-template<IsStaticOrFluentTag T>
-struct Function;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class FunctionProxy;
 
-template<IsStaticOrFluentTag T>
-struct FunctionTermIndex;
-template<IsStaticOrFluentTag T>
-struct FunctionTerm;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class FunctionTermProxy;
 
-template<IsStaticOrFluentTag T>
-struct GroundFunctionTermIndex;
-template<IsStaticOrFluentTag T>
-struct GroundFunctionTerm;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class GroundFunctionTermProxy;
 
-template<IsStaticOrFluentTag T>
-struct GroundFunctionTermValueIndex;
-template<IsStaticOrFluentTag T>
-struct GroundFunctionTermValue;
 template<IsStaticOrFluentTag T, IsContext C = Repository>
 class GroundFunctionTermValueProxy;
 
-struct FunctionExpression;
 template<IsContext C = Repository>
 class FunctionExpressionProxy;
 
-struct GroundFunctionExpression;
 template<IsContext C = Repository>
 class GroundFunctionExpressionProxy;
 
-struct RuleIndex;
-struct Rule;
 template<IsContext C = Repository>
 class RuleProxy;
 
-struct GroundRuleIndex;
-struct GroundRule;
 template<IsContext C = Repository>
 class GroundRuleProxy;
 
-struct ProgramIndex;
-struct Program;
 template<IsContext C = Repository>
 class ProgramProxy;
 

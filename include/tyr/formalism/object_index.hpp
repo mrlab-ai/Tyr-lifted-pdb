@@ -25,6 +25,7 @@ namespace tyr::formalism
 {
 struct ObjectIndex
 {
+    using DataType = Object;
     template<IsContext C>
     using ProxyType = ObjectProxy<C>;
 
