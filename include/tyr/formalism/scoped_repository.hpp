@@ -32,10 +32,38 @@ namespace tyr::formalism
 class ScopedRepository
 {
 private:
-    const Repository& parent;
+    const Repository& global;
     Repository& local;
 
 public:
+    ScopedRepository(const Repository& global, Repository& local) : global(global), local(local) {}
+
+    // nullptr signals that the object does not exist.
+    template<IsMappedTypePerIndex T>
+    const T* find(const T& builder) const
+    {
+    }
+
+    // nullptr signals that the object does not exist.
+    template<IsMappedType T>
+    const T* find(const T& builder) const
+    {
+    }
+
+    // const T* always points to a valid instantiation of the class.
+    // We return const T* here to avoid bugs when using structured bindings.
+    template<IsMappedTypePerIndex T, bool AssignIndex = true>
+    std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
+    {
+    }
+
+    // const T* always points to a valid instantiation of the class.
+    // We return const T* here to avoid bugs when using structured bindings.
+    template<IsMappedType T, bool AssignIndex = true>
+    std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
+    {
+    }
+
     template<IsIndexType T>
         requires IsMappedTypePerIndex<typename IndexTraits<T>::DataType>
     const typename IndexTraits<T>::DataType& operator[](T index) const
