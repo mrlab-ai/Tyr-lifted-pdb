@@ -31,6 +31,10 @@ struct UnaryOperator
 
     UnaryOperator() = default;
     UnaryOperator(UnaryOperatorIndex<Op, T> index, T lhs, T rhs) : index(index), arg(arg) {}
+    UnaryOperator(const UnaryOperator& other) = delete;
+    UnaryOperator& operator=(const UnaryOperator& other) = delete;
+    UnaryOperator(UnaryOperator&& other) = default;
+    UnaryOperator& operator=(UnaryOperator&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, arg); }
     auto identifying_members() const noexcept { return std::tie(arg); }

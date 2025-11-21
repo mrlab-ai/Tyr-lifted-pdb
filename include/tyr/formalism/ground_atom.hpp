@@ -32,6 +32,10 @@ struct GroundAtom
 
     GroundAtom() = default;
     GroundAtom(GroundAtomIndex<T> index, ObjectIndexList terms) : index(index), terms(std::move(terms)) {}
+    GroundAtom(const GroundAtom& other) = delete;
+    GroundAtom& operator=(const GroundAtom& other) = delete;
+    GroundAtom(GroundAtom&& other) = default;
+    GroundAtom& operator=(GroundAtom&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, terms); }
     auto identifying_members() const noexcept { return std::tie(index.predicate_index, terms); }

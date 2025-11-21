@@ -30,6 +30,10 @@ struct Object
 
     Object() = default;
     Object(ObjectIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
+    Object(const Object& other) = delete;
+    Object& operator=(const Object& other) = delete;
+    Object(Object&& other) = default;
+    Object& operator=(Object&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, name); }
     auto identifying_members() const noexcept { return std::tie(name); }

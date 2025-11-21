@@ -35,6 +35,10 @@ struct GroundFunctionTermValue
 
     GroundFunctionTermValue() = default;
     GroundFunctionTermValue(GroundFunctionTermValueIndex<T> index, GroundFunctionTermIndex<T> term, Double value) : index(index), term(term), value(value) {}
+    GroundFunctionTermValue(const GroundFunctionTermValue& other) = delete;
+    GroundFunctionTermValue& operator=(const GroundFunctionTermValue& other) = delete;
+    GroundFunctionTermValue(GroundFunctionTermValue&& other) = default;
+    GroundFunctionTermValue& operator=(GroundFunctionTermValue&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, term, value); }
     auto identifying_members() const noexcept { return std::tie(index.function_index, term, value); }

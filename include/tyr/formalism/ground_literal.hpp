@@ -34,6 +34,10 @@ struct GroundLiteral
 
     GroundLiteral() = default;
     GroundLiteral(GroundLiteralIndex<T> index, GroundAtomIndex<T> atom_index, bool polarity) : index(index), atom_index(atom_index), polarity(polarity) {}
+    GroundLiteral(const GroundLiteral& other) = delete;
+    GroundLiteral& operator=(const GroundLiteral& other) = delete;
+    GroundLiteral(GroundLiteral&& other) = default;
+    GroundLiteral& operator=(GroundLiteral&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, atom_index, polarity); }
     auto identifying_members() const noexcept { return std::tie(index.predicate_index, atom_index, polarity); }

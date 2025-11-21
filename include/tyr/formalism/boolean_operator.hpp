@@ -36,6 +36,10 @@ struct BooleanOperator
 
     BooleanOperator() = default;
     BooleanOperator(Variant value) : value(value) {}
+    BooleanOperator(const BooleanOperator& other) = delete;
+    BooleanOperator& operator=(const BooleanOperator& other) = delete;
+    BooleanOperator(BooleanOperator&& other) = default;
+    BooleanOperator& operator=(BooleanOperator&& other) = default;
 
     friend bool operator==(const BooleanOperator& lhs, const BooleanOperator& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
 

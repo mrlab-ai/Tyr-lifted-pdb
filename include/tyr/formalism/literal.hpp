@@ -33,6 +33,10 @@ struct Literal
 
     Literal() = default;
     Literal(LiteralIndex<T> index, AtomIndex<T> atom_index, bool polarity) : index(index), atom_index(atom_index), polarity(polarity) {}
+    Literal(const Literal& other) = delete;
+    Literal& operator=(const Literal& other) = delete;
+    Literal(Literal&& other) = default;
+    Literal& operator=(Literal&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, atom_index, polarity); }
     auto identifying_members() const noexcept { return std::tie(index.predicate_index, atom_index, polarity); }

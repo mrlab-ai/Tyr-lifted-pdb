@@ -33,6 +33,10 @@ struct GroundFunctionTerm
 
     GroundFunctionTerm() = default;
     GroundFunctionTerm(GroundFunctionTermIndex<T> index, ObjectIndexList terms) : index(index), terms(std::move(terms)) {}
+    GroundFunctionTerm(const GroundFunctionTerm& other) = delete;
+    GroundFunctionTerm& operator=(const GroundFunctionTerm& other) = delete;
+    GroundFunctionTerm(GroundFunctionTerm&& other) = default;
+    GroundFunctionTerm& operator=(GroundFunctionTerm&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, terms); }
     auto identifying_members() const noexcept { return std::tie(index.function_index, terms); }

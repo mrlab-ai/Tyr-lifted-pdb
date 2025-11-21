@@ -42,12 +42,20 @@ public:
     template<IsMappedTypePerIndex T>
     const T* find(const T& builder) const
     {
+        if (auto ptr = global.find(builder))
+            return ptr;
+
+        return local.find(builder);
     }
 
     // nullptr signals that the object does not exist.
     template<IsMappedType T>
     const T* find(const T& builder) const
     {
+        if (auto ptr = global.find(builder))
+            return ptr;
+
+        return local.find(builder);
     }
 
     // const T* always points to a valid instantiation of the class.
@@ -55,6 +63,10 @@ public:
     template<IsMappedTypePerIndex T, bool AssignIndex = true>
     std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
     {
+        if (auto ptr = global.find(builder))
+            return std::make_pair(ptr, false);
+
+        return local.get_or_create(builder, buf);
     }
 
     // const T* always points to a valid instantiation of the class.
@@ -62,18 +74,30 @@ public:
     template<IsMappedType T, bool AssignIndex = true>
     std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
     {
+        if (auto ptr = global.find(builder))
+            return std::make_pair(ptr, false);
+
+        return local.get_or_create(builder, buf);
     }
 
     template<IsIndexType T>
         requires IsMappedTypePerIndex<typename IndexTraits<T>::DataType>
     const typename IndexTraits<T>::DataType& operator[](T index) const
     {
+        if (index.value < global.size(index))
+            return global[index];
+
+        return local[index];
     }
 
     template<IsIndexType T>
         requires IsMappedType<typename IndexTraits<T>::DataType>
     const typename IndexTraits<T>::DataType& operator[](T index) const
     {
+        if (index.value < global.size())
+            return global[index];
+
+        return local[index];
     }
 };
 

@@ -51,6 +51,10 @@ struct Rule
         head(head)
     {
     }
+    Rule(const Rule& other) = delete;
+    Rule& operator=(const Rule& other) = delete;
+    Rule(Rule&& other) = default;
+    Rule& operator=(Rule&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, variables, static_body, fluent_body, numeric_body, head); }
     auto identifying_members() const noexcept { return std::tie(variables, static_body, fluent_body, numeric_body, head); }

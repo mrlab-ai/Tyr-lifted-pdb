@@ -30,6 +30,10 @@ struct Variable
 
     Variable() = default;
     Variable(VariableIndex index, ::cista::offset::string name) : index(index), name(std::move(name)) {}
+    Variable(const Variable& other) = delete;
+    Variable& operator=(const Variable& other) = delete;
+    Variable(Variable&& other) = default;
+    Variable& operator=(Variable&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, name); }
     auto identifying_members() const noexcept { return std::tie(name); }

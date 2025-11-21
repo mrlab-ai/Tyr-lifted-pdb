@@ -68,6 +68,10 @@ struct Program
         rules(std::move(rules))
     {
     }
+    Program(const Program& other) = delete;
+    Program& operator=(const Program& other) = delete;
+    Program(Program&& other) = default;
+    Program& operator=(Program&& other) = default;
 
     template<IsStaticOrFluentTag T>
     const auto& get_predicates() const

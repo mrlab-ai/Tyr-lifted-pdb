@@ -33,6 +33,10 @@ struct Predicate
 
     Predicate() = default;
     Predicate(PredicateIndex<T> index, ::cista::offset::string name, uint_t arity) : index(index), name(std::move(name)), arity(arity) {}
+    Predicate(const Predicate& other) = delete;
+    Predicate& operator=(const Predicate& other) = delete;
+    Predicate(Predicate&& other) = default;
+    Predicate& operator=(Predicate&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, name, arity); }
     auto identifying_members() const noexcept { return std::tie(name, arity); }

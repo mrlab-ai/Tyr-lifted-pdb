@@ -33,6 +33,10 @@ struct Function
 
     Function() = default;
     Function(FunctionIndex<T> index, ::cista::offset::string name, uint_t arity) : index(index), name(std::move(name)), arity(arity) {}
+    Function(const Function& other) = delete;
+    Function& operator=(const Function& other) = delete;
+    Function(Function&& other) = default;
+    Function& operator=(Function&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, name, arity); }
     auto identifying_members() const noexcept { return std::tie(name, arity); }

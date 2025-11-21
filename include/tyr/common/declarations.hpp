@@ -80,6 +80,15 @@ template<typename T>
 struct dependent_false : std::false_type
 {
 };
+
+template<typename T>
+struct Hash;
+
+template<typename T>
+struct EqualTo;
+
+template<typename T>
+class ObserverPtr;
 }
 
 #endif

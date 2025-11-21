@@ -32,6 +32,10 @@ struct BinaryOperator
 
     BinaryOperator() = default;
     BinaryOperator(BinaryOperatorIndex<Op, T> index, T lhs, T rhs) : index(index), lhs(lhs), rhs(rhs) {}
+    BinaryOperator(const BinaryOperator& other) = delete;
+    BinaryOperator& operator=(const BinaryOperator& other) = delete;
+    BinaryOperator(BinaryOperator&& other) = default;
+    BinaryOperator& operator=(BinaryOperator&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, lhs, rhs); }
     auto identifying_members() const noexcept { return std::tie(lhs, rhs); }

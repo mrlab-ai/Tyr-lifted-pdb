@@ -22,6 +22,7 @@
 #include "tyr/formalism/data_traits.hpp"
 #include "tyr/formalism/index_traits.hpp"
 #include "tyr/formalism/proxy_traits.hpp"
+#include "tyr/formalism/repository_traits.hpp"
 //
 #include "tyr/cista/declarations.hpp"
 #include "tyr/cista/indexed_hash_set.hpp"
@@ -51,137 +52,107 @@
 
 namespace tyr::formalism
 {
-
-template<typename T>
-using MappedType = boost::hana::pair<boost::hana::type<T>, cista::IndexedHashSet<T>>;
-
-template<typename T>
-using MappedTypePerIndex = boost::hana::pair<boost::hana::type<T>, cista::IndexedHashSetList<T>>;
-
-template<typename T>
-struct TypeProperties
-{
-    using PairType = MappedType<T>;
-};
-
-template<IsStaticOrFluentTag T>
-struct TypeProperties<Atom<T>>
-{
-    using PairType = MappedTypePerIndex<Atom<T>>;
-    static auto get_index(AtomIndex<T>& self) noexcept { return self.predicate_index; }
-};
-
-template<IsStaticOrFluentTag T>
-struct TypeProperties<GroundAtom<T>>
-{
-    using PairType = MappedTypePerIndex<GroundAtom<T>>;
-    static auto get_index(GroundAtomIndex<T> self) noexcept { return self.predicate_index; }
-};
-
-template<IsStaticOrFluentTag T>
-struct TypeProperties<Literal<T>>
-{
-    using PairType = MappedTypePerIndex<Literal<T>>;
-    static auto get_index(LiteralIndex<T> self) noexcept { return self.predicate_index; }
-};
-
-template<IsStaticOrFluentTag T>
-struct TypeProperties<FunctionTerm<T>>
-{
-    using PairType = MappedTypePerIndex<FunctionTerm<T>>;
-    static auto get_index(FunctionTermIndex<T> self) noexcept { return self.function_index; }
-};
-
-template<IsStaticOrFluentTag T>
-struct TypeProperties<GroundFunctionTerm<T>>
-{
-    using PairType = MappedTypePerIndex<GroundFunctionTerm<T>>;
-    static auto get_index(GroundFunctionTermIndex<T>& self) noexcept { return self.function_index; }
-};
-
-template<IsStaticOrFluentTag T>
-struct TypeProperties<GroundFunctionTermValue<T>>
-{
-    using PairType = MappedTypePerIndex<GroundFunctionTermValue<T>>;
-    static auto get_index(GroundFunctionTermValueIndex<T>& self) noexcept { return self.function_index; }
-};
-
-template<>
-struct TypeProperties<GroundRule>
-{
-    using PairType = MappedTypePerIndex<GroundRule>;
-    static auto get_index(GroundRuleIndex self) noexcept { return self.rule_index; }
-};
-
-template<typename T>
-concept IsMappedType = std::same_as<typename TypeProperties<T>::PairType, MappedType<T>>;
-
-template<typename T>
-concept IsMappedTypePerIndex = std::same_as<typename TypeProperties<T>::PairType, MappedTypePerIndex<T>>;
-
 class Repository
 {
 private:
-    using HanaRepository = boost::hana::map<TypeProperties<Variable>::PairType,
-                                            TypeProperties<Object>::PairType,
-                                            TypeProperties<Predicate<StaticTag>>::PairType,
-                                            TypeProperties<Predicate<FluentTag>>::PairType,
-                                            TypeProperties<Atom<StaticTag>>::PairType,
-                                            TypeProperties<Atom<FluentTag>>::PairType,
-                                            TypeProperties<GroundAtom<StaticTag>>::PairType,
-                                            TypeProperties<GroundAtom<FluentTag>>::PairType,
-                                            TypeProperties<Literal<StaticTag>>::PairType,
-                                            TypeProperties<Literal<FluentTag>>::PairType,
-                                            TypeProperties<GroundLiteral<StaticTag>>::PairType,
-                                            TypeProperties<GroundLiteral<FluentTag>>::PairType,
-                                            TypeProperties<Function<StaticTag>>::PairType,
-                                            TypeProperties<Function<FluentTag>>::PairType,
-                                            TypeProperties<FunctionTerm<StaticTag>>::PairType,
-                                            TypeProperties<FunctionTerm<FluentTag>>::PairType,
-                                            TypeProperties<GroundFunctionTerm<StaticTag>>::PairType,
-                                            TypeProperties<GroundFunctionTerm<FluentTag>>::PairType,
-                                            TypeProperties<GroundFunctionTermValue<StaticTag>>::PairType,
-                                            TypeProperties<GroundFunctionTermValue<FluentTag>>::PairType,
-                                            TypeProperties<UnaryOperator<OpSub, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpAdd, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpSub, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpMul, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpDiv, FunctionExpression>>::PairType,
-                                            TypeProperties<MultiOperator<OpAdd, FunctionExpression>>::PairType,
-                                            TypeProperties<MultiOperator<OpMul, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpEq, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpLe, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpLt, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpGe, FunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpGt, FunctionExpression>>::PairType,
-                                            TypeProperties<UnaryOperator<OpSub, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpAdd, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpSub, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpMul, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpDiv, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<MultiOperator<OpAdd, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<MultiOperator<OpMul, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpEq, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpLe, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpLt, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpGe, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<BinaryOperator<OpGt, GroundFunctionExpression>>::PairType,
-                                            TypeProperties<Rule>::PairType,
-                                            TypeProperties<GroundRule>::PairType,
-                                            TypeProperties<Program>::PairType>;
+    using HanaRepository = boost::hana::map<RepositoryTraits<Variable>::EntryType,
+                                            RepositoryTraits<Object>::EntryType,
+                                            RepositoryTraits<Predicate<StaticTag>>::EntryType,
+                                            RepositoryTraits<Predicate<FluentTag>>::EntryType,
+                                            RepositoryTraits<Atom<StaticTag>>::EntryType,
+                                            RepositoryTraits<Atom<FluentTag>>::EntryType,
+                                            RepositoryTraits<GroundAtom<StaticTag>>::EntryType,
+                                            RepositoryTraits<GroundAtom<FluentTag>>::EntryType,
+                                            RepositoryTraits<Literal<StaticTag>>::EntryType,
+                                            RepositoryTraits<Literal<FluentTag>>::EntryType,
+                                            RepositoryTraits<GroundLiteral<StaticTag>>::EntryType,
+                                            RepositoryTraits<GroundLiteral<FluentTag>>::EntryType,
+                                            RepositoryTraits<Function<StaticTag>>::EntryType,
+                                            RepositoryTraits<Function<FluentTag>>::EntryType,
+                                            RepositoryTraits<FunctionTerm<StaticTag>>::EntryType,
+                                            RepositoryTraits<FunctionTerm<FluentTag>>::EntryType,
+                                            RepositoryTraits<GroundFunctionTerm<StaticTag>>::EntryType,
+                                            RepositoryTraits<GroundFunctionTerm<FluentTag>>::EntryType,
+                                            RepositoryTraits<GroundFunctionTermValue<StaticTag>>::EntryType,
+                                            RepositoryTraits<GroundFunctionTermValue<FluentTag>>::EntryType,
+                                            RepositoryTraits<UnaryOperator<OpSub, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpAdd, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpSub, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpMul, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpDiv, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<MultiOperator<OpAdd, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<MultiOperator<OpMul, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpEq, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpLe, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpLt, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpGe, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpGt, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<UnaryOperator<OpSub, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpAdd, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpSub, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpMul, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpDiv, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<MultiOperator<OpAdd, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<MultiOperator<OpMul, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpEq, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpLe, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpLt, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpGe, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpGt, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<Rule>::EntryType,
+                                            RepositoryTraits<GroundRule>::EntryType,
+                                            RepositoryTraits<Program>::EntryType>;
 
     HanaRepository m_repository;
+
+    template<IsStaticOrFluentTag T>
+    static auto get_index(AtomIndex<T>& self) noexcept
+    {
+        return self.predicate_index;
+    }
+
+    template<IsStaticOrFluentTag T>
+    static auto get_index(GroundAtomIndex<T> self) noexcept
+    {
+        return self.predicate_index;
+    }
+
+    template<IsStaticOrFluentTag T>
+    static auto get_index(LiteralIndex<T> self) noexcept
+    {
+        return self.predicate_index;
+    }
+
+    template<IsStaticOrFluentTag T>
+    static auto get_index(FunctionTermIndex<T> self) noexcept
+    {
+        return self.function_index;
+    }
+
+    template<IsStaticOrFluentTag T>
+    static auto get_index(GroundFunctionTermIndex<T>& self) noexcept
+    {
+        return self.function_index;
+    }
+
+    template<IsStaticOrFluentTag T>
+    static auto get_index(GroundFunctionTermValueIndex<T>& self) noexcept
+    {
+        return self.function_index;
+    }
+
+    static auto get_index(GroundRuleIndex self) noexcept { return self.rule_index; }
 
 public:
     Repository() = default;
 
     // nullptr signals that the object does not exist.
-    template<IsMappedTypePerIndex T>
+    template<IsIndexedRepository T>
     const T* find(const T& builder) const
     {
         const auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
-        const auto i = TypeProperties<T>::get_index(builder.index).get();
+        const auto i = get_index(builder.index).get();
 
         if (i >= list.size())
             return nullptr;
@@ -192,7 +163,7 @@ public:
     }
 
     // nullptr signals that the object does not exist.
-    template<IsMappedType T>
+    template<IsFlatRepository T>
     const T* find(const T& builder) const
     {
         const auto& indexed_hash_set = boost::hana::at_key(m_repository, boost::hana::type<T> {});
@@ -202,12 +173,12 @@ public:
 
     // const T* always points to a valid instantiation of the class.
     // We return const T* here to avoid bugs when using structured bindings.
-    template<IsMappedTypePerIndex T, bool AssignIndex = true>
+    template<IsIndexedRepository T, bool AssignIndex = true>
     std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
     {
         auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
-        const auto i = TypeProperties<T>::get_index(builder.index).get();
+        const auto i = get_index(builder.index).get();
 
         if (i >= list.size())
             list.resize(i + 1);
@@ -222,7 +193,7 @@ public:
 
     // const T* always points to a valid instantiation of the class.
     // We return const T* here to avoid bugs when using structured bindings.
-    template<IsMappedType T, bool AssignIndex = true>
+    template<IsFlatRepository T, bool AssignIndex = true>
     std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
     {
         auto& indexed_hash_set = boost::hana::at_key(m_repository, boost::hana::type<T> {});
@@ -233,15 +204,16 @@ public:
         return indexed_hash_set.insert(builder, buf);
     }
 
+    /// @brief Access the element with the given index.
     template<IsIndexType T>
-        requires IsMappedTypePerIndex<typename IndexTraits<T>::DataType>
+        requires IsIndexedRepository<typename IndexTraits<T>::DataType>
     const auto& operator[](T index) const
     {
         using DataType = typename IndexTraits<T>::DataType;
 
         const auto& list = boost::hana::at_key(m_repository, boost::hana::type<DataType> {});
 
-        const auto i = TypeProperties<DataType>::get_index(index).get();
+        const auto i = get_index(index).get();
 
         assert(i < list.size());
 
@@ -250,8 +222,9 @@ public:
         return repository[index];
     }
 
+    /// @brief Access the element with the given index.
     template<IsIndexType T>
-        requires IsMappedType<typename IndexTraits<T>::DataType>
+        requires IsFlatRepository<typename IndexTraits<T>::DataType>
     const auto& operator[](T index) const
     {
         using DataType = typename IndexTraits<T>::DataType;
@@ -259,6 +232,36 @@ public:
         const auto& repository = boost::hana::at_key(m_repository, boost::hana::type<DataType> {});
 
         return repository[index];
+    }
+
+    /// @brief Get the number of stored elements.
+    template<IsIndexType T>
+        requires IsIndexedRepository<typename IndexTraits<T>::DataType>
+    size_t size(T index) const
+    {
+        using DataType = typename IndexTraits<T>::DataType;
+
+        const auto& list = boost::hana::at_key(m_repository, boost::hana::type<DataType> {});
+
+        const auto i = get_index(index).get();
+
+        assert(i < list.size());
+
+        const auto& repository = list[i];
+
+        return repository.size();
+    }
+
+    /// @brief Get the number of stored elements.
+    template<IsIndexType T>
+        requires IsFlatRepository<typename IndexTraits<T>::DataType>
+    size_t size() const
+    {
+        using DataType = typename IndexTraits<T>::DataType;
+
+        const auto& repository = boost::hana::at_key(m_repository, boost::hana::type<DataType> {});
+
+        return repository.size();
     }
 };
 

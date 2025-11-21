@@ -32,6 +32,10 @@ struct Atom
 
     Atom() = default;
     Atom(AtomIndex<T> index, TermList terms) : index(index), terms(std::move(terms)) {}
+    Atom(const Atom& other) = delete;
+    Atom& operator=(const Atom& other) = delete;
+    Atom(Atom&& other) = default;
+    Atom& operator=(Atom&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, terms); }
     auto identifying_members() const noexcept { return std::tie(index.predicate_index, terms); }

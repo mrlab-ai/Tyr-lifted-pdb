@@ -31,6 +31,10 @@ struct MultiOperator
 
     MultiOperator() = default;
     MultiOperator(MultiOperatorIndex<Op, T> index, ::cista::offset::vector<T> args) : index(index), args(std::move(args)) {}
+    MultiOperator(const MultiOperator& other) = delete;
+    MultiOperator& operator=(const MultiOperator& other) = delete;
+    MultiOperator(MultiOperator&& other) = default;
+    MultiOperator& operator=(MultiOperator&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, args); }
     auto identifying_members() const noexcept { return std::tie(args); }

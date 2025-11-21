@@ -209,10 +209,34 @@ inline const Repository& get_repository(const Repository& context) noexcept { re
 /// @return
 inline const ScopedRepository& get_repository(const ScopedRepository& context) noexcept { return context; }
 
-template<typename T>
-concept IsRepository = requires(const T& a, ObjectIndex i1) {
-    { a[i1] } -> std::same_as<const Object&>;
+template<typename Repo, typename Data>
+concept HasRepositoryAccessFor = requires(const Repo& r, typename DataTraits<Data>::IndexType idx) {
+    { r[idx] } -> std::same_as<const Data&>;
 };
+
+template<typename T>
+concept IsRepository =
+    HasRepositoryAccessFor<T, Variable> && HasRepositoryAccessFor<T, Object> && HasRepositoryAccessFor<T, Predicate<StaticTag>>
+    && HasRepositoryAccessFor<T, Predicate<FluentTag>> && HasRepositoryAccessFor<T, Atom<StaticTag>> && HasRepositoryAccessFor<T, Atom<FluentTag>>
+    && HasRepositoryAccessFor<T, GroundAtom<StaticTag>> && HasRepositoryAccessFor<T, GroundAtom<FluentTag>> && HasRepositoryAccessFor<T, Literal<StaticTag>>
+    && HasRepositoryAccessFor<T, Literal<FluentTag>> && HasRepositoryAccessFor<T, GroundLiteral<StaticTag>>
+    && HasRepositoryAccessFor<T, GroundLiteral<FluentTag>> && HasRepositoryAccessFor<T, Function<StaticTag>> && HasRepositoryAccessFor<T, Function<FluentTag>>
+    && HasRepositoryAccessFor<T, FunctionTerm<StaticTag>> && HasRepositoryAccessFor<T, FunctionTerm<FluentTag>>
+    && HasRepositoryAccessFor<T, GroundFunctionTerm<StaticTag>> && HasRepositoryAccessFor<T, GroundFunctionTerm<FluentTag>>
+    && HasRepositoryAccessFor<T, GroundFunctionTermValue<StaticTag>> && HasRepositoryAccessFor<T, GroundFunctionTermValue<FluentTag>>
+    && HasRepositoryAccessFor<T, UnaryOperator<OpSub, FunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpAdd, FunctionExpression>>
+    && HasRepositoryAccessFor<T, BinaryOperator<OpSub, FunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpMul, FunctionExpression>>
+    && HasRepositoryAccessFor<T, BinaryOperator<OpDiv, FunctionExpression>> && HasRepositoryAccessFor<T, MultiOperator<OpAdd, FunctionExpression>>
+    && HasRepositoryAccessFor<T, MultiOperator<OpMul, FunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpEq, FunctionExpression>>
+    && HasRepositoryAccessFor<T, BinaryOperator<OpLe, FunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpLt, FunctionExpression>>
+    && HasRepositoryAccessFor<T, BinaryOperator<OpGe, FunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpGt, FunctionExpression>>
+    && HasRepositoryAccessFor<T, UnaryOperator<OpSub, GroundFunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpAdd, GroundFunctionExpression>>
+    && HasRepositoryAccessFor<T, BinaryOperator<OpSub, GroundFunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpMul, GroundFunctionExpression>>
+    && HasRepositoryAccessFor<T, BinaryOperator<OpDiv, GroundFunctionExpression>> && HasRepositoryAccessFor<T, MultiOperator<OpAdd, GroundFunctionExpression>>
+    && HasRepositoryAccessFor<T, MultiOperator<OpMul, GroundFunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpEq, GroundFunctionExpression>>
+    && HasRepositoryAccessFor<T, BinaryOperator<OpLe, GroundFunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpLt, GroundFunctionExpression>>
+    && HasRepositoryAccessFor<T, BinaryOperator<OpGe, GroundFunctionExpression>> && HasRepositoryAccessFor<T, BinaryOperator<OpGt, GroundFunctionExpression>>
+    && HasRepositoryAccessFor<T, Rule> && HasRepositoryAccessFor<T, GroundRule> && HasRepositoryAccessFor<T, Program>;
 
 template<typename T>
 concept IsContext = requires(const T& a) {

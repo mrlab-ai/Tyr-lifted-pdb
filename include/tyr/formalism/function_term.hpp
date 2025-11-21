@@ -33,6 +33,10 @@ struct FunctionTerm
 
     FunctionTerm() = default;
     FunctionTerm(FunctionTermIndex<T> index, TermList terms) : index(index), terms(std::move(terms)) {}
+    FunctionTerm(const FunctionTerm& other) = delete;
+    FunctionTerm& operator=(const FunctionTerm& other) = delete;
+    FunctionTerm(FunctionTerm&& other) = default;
+    FunctionTerm& operator=(FunctionTerm&& other) = default;
 
     auto cista_members() const noexcept { return std::tie(index, terms); }
     auto identifying_members() const noexcept { return std::tie(index.function_index, terms); }

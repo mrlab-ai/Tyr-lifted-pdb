@@ -18,13 +18,25 @@
 #ifndef TYR_CISTA_DECLARATIONS_HPP_
 #define TYR_CISTA_DECLARATIONS_HPP_
 
-#include "cista/serialization.h"
+#include "tyr/common/declarations.hpp"
 
 #include <iostream>
+
+namespace cista
+{
+template<typename Buf>
+struct buf;
+}
 
 namespace tyr::cista
 {
 using Buffer = ::cista::buf<std::vector<uint8_t>>;
+
+template<typename T, typename H = Hash<ObserverPtr<const T>>, typename E = EqualTo<ObserverPtr<const T>>>
+class IndexedHashSet;
+
+template<typename T, typename H = Hash<ObserverPtr<const T>>, typename E = EqualTo<ObserverPtr<const T>>>
+using IndexedHashSetList = std::vector<IndexedHashSet<T, H, E>>;
 }
 
 #endif
