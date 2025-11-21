@@ -228,13 +228,15 @@ public:
         return indexed_hash_set.insert(builder, buf);
     }
 
-    template<typename IndexType>
-        requires IsMappedTypePerIndex<typename IndexType::DataType>
-    const auto& operator[](IndexType index) const
+    template<IsIndexType I>
+        requires IsMappedTypePerIndex<typename I::DataType>
+    const auto& operator[](I index) const
     {
-        const auto& list = boost::hana::at_key(m_repository, boost::hana::type<typename IndexType::DataType> {});
+        using DataType = typename I::DataType;
 
-        const auto i = TypeProperties<typename IndexType::DataType>::get_index(index).get();
+        const auto& list = boost::hana::at_key(m_repository, boost::hana::type<DataType> {});
+
+        const auto i = TypeProperties<DataType>::get_index(index).get();
 
         assert(i < list.size());
 
@@ -243,11 +245,13 @@ public:
         return repository[index];
     }
 
-    template<typename IndexType>
-        requires IsMappedType<typename IndexType::DataType>
-    const auto& operator[](IndexType index) const
+    template<IsIndexType I>
+        requires IsMappedType<typename I::DataType>
+    const auto& operator[](I index) const
     {
-        const auto& repository = boost::hana::at_key(m_repository, boost::hana::type<typename IndexType::DataType> {});
+        using DataType = typename I::DataType;
+
+        const auto& repository = boost::hana::at_key(m_repository, boost::hana::type<DataType> {});
 
         return repository[index];
     }

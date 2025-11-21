@@ -29,6 +29,7 @@ struct Term
 {
     using Variant = ::cista::offset::variant<ObjectIndex, ParameterIndex>;
 
+    using DataType = Term;
     template<IsContext C>
     using ProxyType = TermProxy<C>;
 

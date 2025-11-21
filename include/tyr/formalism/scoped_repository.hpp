@@ -31,15 +31,15 @@ private:
     Repository& local;
 
 public:
-    template<typename IndexType>
-        requires IsMappedTypePerIndex<typename IndexType::DataType>
-    const typename IndexType::DataType& operator[](IndexType index) const
+    template<IsIndexType I>
+        requires IsMappedTypePerIndex<typename I::DataType>
+    const typename IndexType::DataType& operator[](I index) const
     {
     }
 
-    template<typename IndexType>
-        requires IsMappedType<typename IndexType::DataType>
-    const typename IndexType::DataType& operator[](IndexType index) const
+    template<IsIndexType I>
+        requires IsMappedType<typename I::DataType>
+    const typename IndexType::DataType& operator[](I index) const
     {
     }
 };

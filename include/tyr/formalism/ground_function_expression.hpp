@@ -40,6 +40,7 @@ struct GroundFunctionExpression
                                              GroundFunctionTermIndex<StaticTag>,
                                              GroundFunctionTermIndex<FluentTag>>;
 
+    using DataType = GroundFunctionExpression;
     template<IsContext C>
     using ProxyType = GroundFunctionExpressionProxy<C>;
 

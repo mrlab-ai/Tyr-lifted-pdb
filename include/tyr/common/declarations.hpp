@@ -18,6 +18,8 @@
 #ifndef TYR_COMMON_CONCEPTS_HPP_
 #define TYR_COMMON_CONCEPTS_HPP_
 
+#include "tyr/common/config.hpp"
+
 #include <boost/hana.hpp>
 #include <cista/containers/string.h>
 #include <cista/containers/variant.h>
@@ -34,16 +36,22 @@ namespace tyr
 template<typename T>
 concept IsFloatingPoint = std::is_floating_point_v<T>;
 
+/// @brief Check whether T has a function that returns members that aims to identify the class.
 template<typename T>
 concept HasIdentifyingMembers = requires(const T a) {
     { a.identifying_members() };
 };
 
+/// @brief Check whether T can be wrapped into a ProxyType.
 template<typename T, typename C>
 concept HasProxyType = requires { typename T::template ProxyType<C>; };
 
+/// @brief Check whether T is an index type for a corresponding data type.
 template<typename T>
-concept HasIndexType = requires { typename T::IndexType; };
+concept IsIndexType = requires(const T& a) {
+    typename T::DataType;
+    { a.get() } -> std::same_as<uint_t>;
+};
 
 template<typename T>
 concept IsHanaMap = std::same_as<typename boost::hana::tag_of<T>::type, boost::hana::map_tag>;
@@ -52,7 +60,6 @@ template<typename T>
 struct dependent_false : std::false_type
 {
 };
-
 }
 
 #endif

@@ -40,6 +40,7 @@ struct FunctionExpression
                                              FunctionTermIndex<StaticTag>,
                                              FunctionTermIndex<FluentTag>>;
 
+    using DataType = FunctionExpression;
     template<IsContext C>
     using ProxyType = FunctionExpressionProxy<C>;
 
