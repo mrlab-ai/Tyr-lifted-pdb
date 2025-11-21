@@ -39,7 +39,7 @@ public:
     ScopedRepository(const Repository& global, Repository& local) : global(global), local(local) {}
 
     // nullptr signals that the object does not exist.
-    template<IsMappedTypePerIndex T>
+    template<IsIndexedRepository T>
     const T* find(const T& builder) const
     {
         if (auto ptr = global.find(builder))
@@ -49,7 +49,7 @@ public:
     }
 
     // nullptr signals that the object does not exist.
-    template<IsMappedType T>
+    template<IsFlatRepository T>
     const T* find(const T& builder) const
     {
         if (auto ptr = global.find(builder))
@@ -60,28 +60,34 @@ public:
 
     // const T* always points to a valid instantiation of the class.
     // We return const T* here to avoid bugs when using structured bindings.
-    template<IsMappedTypePerIndex T, bool AssignIndex = true>
+    template<IsIndexedRepository T, bool AssignIndex = true>
     std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
     {
         if (auto ptr = global.find(builder))
             return std::make_pair(ptr, false);
 
-        return local.get_or_create(builder, buf);
+        // Manually assign index to continue indexing.
+        builder.index.value = global.size(builder.index) + local.size(builder.index);
+
+        return local.get_or_create<T, false>(builder, buf);
     }
 
     // const T* always points to a valid instantiation of the class.
     // We return const T* here to avoid bugs when using structured bindings.
-    template<IsMappedType T, bool AssignIndex = true>
+    template<IsFlatRepository T, bool AssignIndex = true>
     std::pair<const T*, bool> get_or_create(T& builder, cista::Buffer& buf)
     {
         if (auto ptr = global.find(builder))
             return std::make_pair(ptr, false);
 
-        return local.get_or_create(builder, buf);
+        // Manually assign index to continue indexing.
+        builder.index.value = global.size() + local.size();
+
+        return local.get_or_create<T, false>(builder, buf);
     }
 
     template<IsIndexType T>
-        requires IsMappedTypePerIndex<typename IndexTraits<T>::DataType>
+        requires IsIndexedRepository<typename IndexTraits<T>::DataType>
     const typename IndexTraits<T>::DataType& operator[](T index) const
     {
         if (index.value < global.size(index))
@@ -91,7 +97,7 @@ public:
     }
 
     template<IsIndexType T>
-        requires IsMappedType<typename IndexTraits<T>::DataType>
+        requires IsFlatRepository<typename IndexTraits<T>::DataType>
     const typename IndexTraits<T>::DataType& operator[](T index) const
     {
         if (index.value < global.size())
