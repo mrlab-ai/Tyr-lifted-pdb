@@ -33,18 +33,19 @@
 namespace tyr
 {
 
+/// @brief Checks whether T is a floating point
 template<typename T>
 concept IsFloatingPoint = std::is_floating_point_v<T>;
+
+/// @brief Checks whether T is a hana map
+template<typename T>
+concept IsHanaMap = std::same_as<typename boost::hana::tag_of<T>::type, boost::hana::map_tag>;
 
 /// @brief Check whether T has a function that returns members that aims to identify the class.
 template<typename T>
 concept HasIdentifyingMembers = requires(const T a) {
     { a.identifying_members() };
 };
-
-/// @brief Check whether T can be wrapped into a ProxyType.
-template<typename T, typename C>
-concept HasProxyType = requires { typename T::template ProxyType<C>; };
 
 /// @brief Check whether T is an index type for a corresponding data type.
 template<typename T>
@@ -53,8 +54,9 @@ concept IsIndexType = requires(const T& a) {
     { a.get() } -> std::same_as<uint_t>;
 };
 
-template<typename T>
-concept IsHanaMap = std::same_as<typename boost::hana::tag_of<T>::type, boost::hana::map_tag>;
+/// @brief Check whether T can be wrapped into a ProxyType.
+template<typename T, typename C>
+concept HasProxyType = requires { typename T::template ProxyType<C>; };
 
 template<typename T>
 struct dependent_false : std::false_type

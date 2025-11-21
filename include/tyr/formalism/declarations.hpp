@@ -81,22 +81,18 @@ concept IsOp = std::same_as<T, OpEq> || std::same_as<T, OpLe> || std::same_as<T,
 class Repository;
 class ScopedRepository;
 
-struct Double;
+/**
+ * Index types
+ */
 
 template<IsOp Op, typename T>
 struct UnaryOperatorIndex;
-template<IsOp Op, typename T>
-struct UnaryOperator;
 
 template<IsOp Op, typename T>
 struct BinaryOperatorIndex;
-template<IsOp Op, typename T>
-struct BinaryOperator;
 
 template<IsOp Op, typename T>
 struct MultiOperatorIndex;
-template<IsOp Op, typename T>
-struct MultiOperator;
 
 template<typename T>
 struct ArithmeticOperator;
@@ -105,69 +101,98 @@ template<typename T>
 struct BooleanOperator;
 
 struct VariableIndex;
-struct Variable;
 
 struct ObjectIndex;
-struct Object;
 
 struct Term;
 
 template<IsStaticOrFluentTag T>
 struct PredicateIndex;
-template<IsStaticOrFluentTag T>
-struct Predicate;
 
 template<IsStaticOrFluentTag T>
 struct AtomIndex;
-template<IsStaticOrFluentTag T>
-struct Atom;
 
 template<IsStaticOrFluentTag T>
 struct LiteralIndex;
-template<IsStaticOrFluentTag T>
-struct Literal;
 
 template<IsStaticOrFluentTag T>
 struct GroundAtomIndex;
-template<IsStaticOrFluentTag T>
-struct GroundAtom;
 
 template<IsStaticOrFluentTag T>
 struct GroundLiteralIndex;
-template<IsStaticOrFluentTag T>
-struct GroundLiteral;
 
 template<IsStaticOrFluentTag T>
 struct FunctionIndex;
-template<IsStaticOrFluentTag T>
-struct Function;
 
 template<IsStaticOrFluentTag T>
 struct FunctionTermIndex;
-template<IsStaticOrFluentTag T>
-struct FunctionTerm;
 
 template<IsStaticOrFluentTag T>
 struct GroundFunctionTermIndex;
-template<IsStaticOrFluentTag T>
-struct GroundFunctionTerm;
 
 template<IsStaticOrFluentTag T>
 struct GroundFunctionTermValueIndex;
-template<IsStaticOrFluentTag T>
-struct GroundFunctionTermValue;
 
 struct FunctionExpression;
 
 struct GroundFunctionExpression;
 
 struct RuleIndex;
-struct Rule;
 
 struct GroundRuleIndex;
-struct GroundRule;
 
 struct ProgramIndex;
+
+/**
+ * Data types
+ */
+
+struct Double;
+
+template<IsOp Op, typename T>
+struct UnaryOperator;
+
+template<IsOp Op, typename T>
+struct BinaryOperator;
+
+template<IsOp Op, typename T>
+struct MultiOperator;
+
+struct Variable;
+
+struct Object;
+
+template<IsStaticOrFluentTag T>
+struct Predicate;
+
+template<IsStaticOrFluentTag T>
+struct Atom;
+
+template<IsStaticOrFluentTag T>
+struct Literal;
+
+template<IsStaticOrFluentTag T>
+struct GroundAtom;
+
+template<IsStaticOrFluentTag T>
+struct GroundLiteral;
+
+template<IsStaticOrFluentTag T>
+struct Function;
+
+template<IsStaticOrFluentTag T>
+struct FunctionTerm;
+
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTerm;
+
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTermValue;
+
+struct Rule;
+
+struct GroundRule;
+
 struct Program;
 
 /**
