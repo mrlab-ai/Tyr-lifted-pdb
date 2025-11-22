@@ -19,7 +19,6 @@
 #define TYR_COMMON_CONCEPTS_HPP_
 
 #include "tyr/common/config.hpp"
-#include "tyr/common/type_traits.hpp"
 #include "tyr/common/types.hpp"
 
 #include <boost/hana.hpp>
