@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_ANALYSIS_VARIABLE_DOMAINS_HPP_
-#define TYR_ANALYSIS_VARIABLE_DOMAINS_HPP_
+#ifndef TYR_ANALYSIS_DOMAINS_HPP_
+#define TYR_ANALYSIS_DOMAINS_HPP_
 
 #include "tyr/common/formatter.hpp"
 #include "tyr/common/unordered_set.hpp"

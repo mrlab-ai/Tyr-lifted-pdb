@@ -82,6 +82,7 @@ public:
             }
         }
 
+        // ++
         const_iterator& operator++()
         {
             ++ptr;
@@ -94,8 +95,74 @@ public:
             return tmp;
         }
 
+        // --
+        const_iterator& operator--()
+        {
+            --ptr;
+            return *this;
+        }
+        const_iterator operator--(int)
+        {
+            auto tmp = *this;
+            --(*this);
+            return tmp;
+        }
+
+        // += / -=
+        const_iterator& operator+=(difference_type n)
+        {
+            ptr += n;
+            return *this;
+        }
+        const_iterator& operator-=(difference_type n)
+        {
+            ptr -= n;
+            return *this;
+        }
+
+        // + / -
+        friend const_iterator operator+(const_iterator it, difference_type n)
+        {
+            it += n;
+            return it;
+        }
+
+        friend const_iterator operator+(difference_type n, const_iterator it)
+        {
+            it += n;
+            return it;
+        }
+
+        friend const_iterator operator-(const_iterator it, difference_type n)
+        {
+            it -= n;
+            return it;
+        }
+
+        // iterator - iterator
+        friend difference_type operator-(const_iterator lhs, const_iterator rhs) { return lhs.ptr - rhs.ptr; }
+
+        // []
+        ProxyType operator[](difference_type n) const
+        {
+            if constexpr (IndexTypeHasProxy<T, Context>)
+                return ProxyType(*(ptr + n), *ctx);
+            else
+                return *(ptr + n);
+        }
+
+        // comparisons
         friend bool operator==(const const_iterator& lhs, const const_iterator& rhs) noexcept { return lhs.ptr == rhs.ptr; }
+
         friend bool operator!=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(lhs == rhs); }
+
+        friend bool operator<(const const_iterator& lhs, const const_iterator& rhs) noexcept { return lhs.ptr < rhs.ptr; }
+
+        friend bool operator>(const const_iterator& lhs, const const_iterator& rhs) noexcept { return rhs < lhs; }
+
+        friend bool operator<=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(rhs < lhs); }
+
+        friend bool operator>=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(lhs < rhs); }
     };
 
     const_iterator begin() const { return const_iterator { m_span.data(), *m_context }; }

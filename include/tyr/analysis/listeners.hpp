@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,22 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../utils.hpp"
+#ifndef TYR_ANALYSIS_LISTENERS_HPP_
+#define TYR_ANALYSIS_LISTENERS_HPP_
 
-#include <gtest/gtest.h>
-#include <tyr/analysis/domains.hpp>
+#include "tyr/analysis/declarations.hpp"
+#include "tyr/formalism/formalism.hpp"
 
-using namespace tyr::cista;
-using namespace tyr::formalism;
-
-namespace tyr::tests
+namespace tyr::analysis
 {
 
-TEST(TyrTests, TyrFormalismProxy)
+struct Listeners
 {
-    auto [program_index, repository] = create_example_problem();
-    auto program = ProgramProxy<>(program_index, repository);
+    std::unordered_map<formalism::PredicateIndex<formalism::FluentTag>, formalism::RuleIndexList> positive_listeners;
+};
 
-    analysis::compute_variable_list_per_predicate(program);
+Listeners compute_listeners_per_rule(const RuleStrata& strata) {}
 }
-}
+
+#endif

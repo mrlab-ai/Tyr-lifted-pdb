@@ -19,8 +19,7 @@
 #define TYR_TYR_HPP_
 
 // Analysis
-#include "tyr/analysis/stratification.hpp"
-#include "tyr/analysis/variable_domains.hpp"
+#include "tyr/analysis/analysis.hpp"
 
 // Cista
 #include "tyr/cista/byte_buffer_segmented.hpp"

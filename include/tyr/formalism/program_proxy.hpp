@@ -40,6 +40,7 @@ private:
 public:
     ProgramProxy(ProgramIndex index, const C& context) : context(&context), index(index) {}
 
+    const C& get_context() const { return *context; }
     const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }

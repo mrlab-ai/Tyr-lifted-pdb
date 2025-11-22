@@ -29,6 +29,8 @@
 #include <functional>
 #include <tuple>
 #include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace tyr
@@ -89,6 +91,12 @@ struct EqualTo;
 
 template<typename T>
 class ObserverPtr;
+
+template<typename T>
+using UnorderedSet = std::unordered_set<T, Hash<T>, EqualTo<T>>;
+
+template<typename T, typename V>
+using UnorderedMap = std::unordered_map<T, V, Hash<T>, EqualTo<T>>;
 }
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,22 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../utils.hpp"
+#ifndef TYR_ANALYSIS_DECLARATIONS_HPP_
+#define TYR_ANALYSIS_DECLARATIONS_HPP_
 
-#include <gtest/gtest.h>
-#include <tyr/analysis/domains.hpp>
-
-using namespace tyr::cista;
-using namespace tyr::formalism;
-
-namespace tyr::tests
+namespace tyr::analysis
 {
-
-TEST(TyrTests, TyrFormalismProxy)
-{
-    auto [program_index, repository] = create_example_problem();
-    auto program = ProgramProxy<>(program_index, repository);
-
-    analysis::compute_variable_list_per_predicate(program);
+struct RuleStrata;
 }
-}
+
+#endif
