@@ -21,36 +21,41 @@
 // Include specialization headers first
 #include "tyr/formalism2/atom_data.hpp"
 #include "tyr/formalism2/atom_index.hpp"
+#include "tyr/formalism2/binary_operator_data.hpp"
+#include "tyr/formalism2/binary_operator_index.hpp"
+#include "tyr/formalism2/function_data.hpp"
+#include "tyr/formalism2/function_index.hpp"
+#include "tyr/formalism2/function_term_data.hpp"
+#include "tyr/formalism2/function_term_index.hpp"
+#include "tyr/formalism2/ground_atom_data.hpp"
+#include "tyr/formalism2/ground_atom_index.hpp"
+#include "tyr/formalism2/ground_function_term_data.hpp"
+#include "tyr/formalism2/ground_function_term_index.hpp"
+#include "tyr/formalism2/ground_function_term_value_data.hpp"
+#include "tyr/formalism2/ground_function_term_value_index.hpp"
+#include "tyr/formalism2/ground_literal_data.hpp"
+#include "tyr/formalism2/ground_literal_index.hpp"
+#include "tyr/formalism2/ground_rule_data.hpp"
+#include "tyr/formalism2/ground_rule_index.hpp"
+#include "tyr/formalism2/literal_data.hpp"
+#include "tyr/formalism2/literal_index.hpp"
+#include "tyr/formalism2/multi_operator_data.hpp"
+#include "tyr/formalism2/multi_operator_index.hpp"
 #include "tyr/formalism2/object_data.hpp"
 #include "tyr/formalism2/object_index.hpp"
 #include "tyr/formalism2/predicate_data.hpp"
 #include "tyr/formalism2/predicate_index.hpp"
+#include "tyr/formalism2/program_data.hpp"
+#include "tyr/formalism2/program_index.hpp"
+#include "tyr/formalism2/rule_data.hpp"
+#include "tyr/formalism2/rule_index.hpp"
+#include "tyr/formalism2/unary_operator_data.hpp"
+#include "tyr/formalism2/unary_operator_index.hpp"
 #include "tyr/formalism2/variable_data.hpp"
 #include "tyr/formalism2/variable_index.hpp"
 //
 #include "tyr/cista/declarations.hpp"
 #include "tyr/cista/indexed_hash_set.hpp"
-
-// #include "tyr/formalism/atom.hpp"
-// #include "tyr/formalism/binary_operator.hpp"
-// #include "tyr/formalism/declarations.hpp"
-// #include "tyr/formalism/function.hpp"
-// #include "tyr/formalism/function_expression.hpp"
-// #include "tyr/formalism/function_term.hpp"
-// #include "tyr/formalism/ground_atom.hpp"
-// #include "tyr/formalism/ground_function_expression.hpp"
-// #include "tyr/formalism/ground_function_term.hpp"
-// #include "tyr/formalism/ground_function_term_value.hpp"
-// #include "tyr/formalism/ground_literal.hpp"
-// #include "tyr/formalism/ground_rule.hpp"
-// #include "tyr/formalism/literal.hpp"
-// #include "tyr/formalism/multi_operator.hpp"
-// #include "tyr/formalism/object.hpp"
-// #include "tyr/formalism/predicate.hpp"
-// #include "tyr/formalism/program.hpp"
-// #include "tyr/formalism/rule.hpp"
-// #include "tyr/formalism/term.hpp"
-// #include "tyr/formalism/unary_operator.hpp"
 #include "tyr/formalism2/declarations.hpp"
 
 #include <boost/hana.hpp>
@@ -80,7 +85,48 @@ private:
                                             RepositoryTraits<Predicate<StaticTag>>::EntryType,
                                             RepositoryTraits<Predicate<FluentTag>>::EntryType,
                                             RepositoryTraits<Atom<StaticTag>>::EntryType,
-                                            RepositoryTraits<Atom<FluentTag>>::EntryType>;
+                                            RepositoryTraits<Atom<FluentTag>>::EntryType,
+                                            RepositoryTraits<GroundAtom<StaticTag>>::EntryType,
+                                            RepositoryTraits<GroundAtom<FluentTag>>::EntryType,
+                                            RepositoryTraits<Literal<StaticTag>>::EntryType,
+                                            RepositoryTraits<Literal<FluentTag>>::EntryType,
+                                            RepositoryTraits<GroundLiteral<StaticTag>>::EntryType,
+                                            RepositoryTraits<GroundLiteral<FluentTag>>::EntryType,
+                                            RepositoryTraits<Function<StaticTag>>::EntryType,
+                                            RepositoryTraits<Function<FluentTag>>::EntryType,
+                                            RepositoryTraits<FunctionTerm<StaticTag>>::EntryType,
+                                            RepositoryTraits<FunctionTerm<FluentTag>>::EntryType,
+                                            RepositoryTraits<GroundFunctionTerm<StaticTag>>::EntryType,
+                                            RepositoryTraits<GroundFunctionTerm<FluentTag>>::EntryType,
+                                            RepositoryTraits<GroundFunctionTermValue<StaticTag>>::EntryType,
+                                            RepositoryTraits<GroundFunctionTermValue<FluentTag>>::EntryType,
+                                            RepositoryTraits<UnaryOperator<OpSub, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpAdd, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpSub, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpMul, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpDiv, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<MultiOperator<OpAdd, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<MultiOperator<OpMul, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpEq, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpLe, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpLt, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpGe, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpGt, FunctionExpression>>::EntryType,
+                                            RepositoryTraits<UnaryOperator<OpSub, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpAdd, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpSub, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpMul, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpDiv, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<MultiOperator<OpAdd, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<MultiOperator<OpMul, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpEq, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpLe, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpLt, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpGe, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<BinaryOperator<OpGt, GroundFunctionExpression>>::EntryType,
+                                            RepositoryTraits<Rule>::EntryType,
+                                            RepositoryTraits<GroundRule>::EntryType,
+                                            RepositoryTraits<Program>::EntryType>;
 
     HanaRepository m_repository;
 

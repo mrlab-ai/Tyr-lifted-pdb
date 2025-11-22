@@ -86,41 +86,104 @@ class ScopedRepository;
  * Formalism tag
  */
 
-struct Variable
-{
-};
-struct Object
-{
-};
-struct Term
-{
-};
-template<IsStaticOrFluentTag T>
-struct Predicate
-{
-};
-template<IsStaticOrFluentTag T>
-struct Atom
-{
-};
 template<IsOp Op, typename T>
-class UnaryOperator
+struct UnaryOperator
 {
 };
+
 template<IsOp Op, typename T>
-class BinaryOperator
+struct BinaryOperator
 {
 };
+
 template<IsOp Op, typename T>
-class MultiOperator
+struct MultiOperator
 {
 };
+
 template<typename T>
 class BooleanOperator
 {
 };
 template<typename T>
 class ArithmeticOperator
+{
+};
+
+struct Variable
+{
+};
+
+struct Object
+{
+};
+
+struct Term
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct Predicate
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct Atom
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct Literal
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct GroundAtom
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct GroundLiteral
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct Function
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct FunctionTerm
+{
+};
+
+struct FunctionExpression
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTerm
+{
+};
+
+struct GroundFunctionExpression
+{
+};
+
+template<IsStaticOrFluentTag T>
+struct GroundFunctionTermValue
+{
+};
+
+struct Rule
+{
+};
+
+struct GroundRule
+{
+};
+
+struct Program
 {
 };
 
