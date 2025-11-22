@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -10,20 +10,23 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *<
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_TYPE_TRAITS_HPP_
-#define TYR_COMMON_TYPE_TRAITS_HPP_
+#ifndef TYR_FORMALISM2_PARAMETER_INDEX_HPP_
+#define TYR_FORMALISM2_PARAMETER_INDEX_HPP_
 
-namespace tyr
+#include "tyr/formalism2/declarations.hpp"
+
+namespace tyr::formalism
 {
-template<typename T>
-struct TagTraits
+enum class ParameterIndex : uint_t
 {
 };
+
+inline uint_t to_uint_t(ParameterIndex index) noexcept { return static_cast<uint_t>(index); }
 }
 
 #endif

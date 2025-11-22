@@ -15,15 +15,35 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_TYPE_TRAITS_HPP_
-#define TYR_COMMON_TYPE_TRAITS_HPP_
+#ifndef TYR_COMMON_TYPES_HPP_
+#define TYR_COMMON_TYPES_HPP_
+
+#include <cista/containers/vector.h>
 
 namespace tyr
 {
 template<typename T>
-struct TagTraits
+struct Data
 {
 };
+
+template<typename T>
+struct Index
+{
+};
+
+template<typename T, typename Context>
+struct Proxy
+{
+};
+
+template<typename T>
+using DataList = ::cista::offset::vector<Data<T>>;
+template<typename T>
+using IndexList = ::cista::offset::vector<Index<T>>;
+template<typename T, typename C>
+using ProxyList = ::cista::offset::vector<Proxy<T, C>>;
+
 }
 
 #endif

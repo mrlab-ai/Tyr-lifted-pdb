@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -10,35 +10,32 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *<
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_CISTA_DECLARATIONS_HPP_
-#define TYR_CISTA_DECLARATIONS_HPP_
+#ifndef TYR_FORMALISM2_ARITHMETIC_OPERATOR_PROXY_HPP_
+#define TYR_FORMALISM2_ARITHMETIC_OPERATOR_PROXY_HPP_
 
-#include "tyr/common/declarations.hpp"
 #include "tyr/common/types.hpp"
+#include "tyr/common/variant.hpp"
+#include "tyr/formalism2/arithmetic_operator_data.hpp"
+#include "tyr/formalism2/repository.hpp"
 
-#include <iostream>
-
-namespace cista
+namespace tyr
 {
-template<typename Buf>
-struct buf;
-}
-
-namespace tyr::cista
+template<typename T, formalism::IsContext C>
+class Proxy<formalism::ArithmeticOperator<T>, C> : public VariantProxy<typename Data<ArithmeticOperator<T>>::Variant, C>
 {
-using Buffer = ::cista::buf<std::vector<uint8_t>>;
+private:
+    using Base = VariantProxy<typename Data<ArithmeticOperator<T>>::Variant, C>;
 
-template<typename Tag, typename H = Hash<ObserverPtr<const Data<Tag>>>, typename E = EqualTo<ObserverPtr<const Data<Tag>>>>
-class IndexedHashSet;
+public:
+    using Tag = formalism::ArithmeticOperator<T>;
 
-template<typename Tag, typename H = Hash<ObserverPtr<const Data<Tag>>>, typename E = EqualTo<ObserverPtr<const Data<Tag>>>>
-
-using IndexedHashSetList = std::vector<IndexedHashSet<Tag, H, E>>;
+    Proxy(Data<ArithmeticOperator<T>> op, const C& context) : Base(op.value, context) {}
+};
 }
 
 #endif

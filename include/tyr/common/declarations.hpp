@@ -20,6 +20,7 @@
 
 #include "tyr/common/config.hpp"
 #include "tyr/common/type_traits.hpp"
+#include "tyr/common/types.hpp"
 
 #include <boost/hana.hpp>
 #include <cista/containers/string.h>
@@ -59,88 +60,31 @@ struct dependent_false : std::false_type
 {
 };
 
-/**
- * Index type concepts
- */
-
-/// @brief Check whether T is any index type.
 template<typename T>
-concept IsIndexType = requires(const T& a) {
-    // Required traits
-    typename IndexTraits<T>::DataType;
-    // Required functions
+concept HasValue = requires(const T& a) {
     { a.get_value() } -> std::same_as<uint_t>;
 };
 
-/// @brief Check whether T is a group index type.
 template<typename T>
-concept IsGroupIndexType = requires(const T& a) {
-    // Required traits
-    typename IndexTraits<T>::DataType;
-    // Required functions
-    { a.get_group() } -> IsIndexType;
-    { a.get_value() } -> std::same_as<uint_t>;
+concept HasGroup = requires(const T& a) {
+    { a.get_group() } -> HasValue;
 };
 
-/// @brief Check whether T is a flat index type.
 template<typename T>
-concept IsFlatIndexType = IsIndexType<T> && !IsGroupIndexType<T>;
+concept HasTag = requires { typename T::Tag; };
 
-/// @brief Check whether T defines a proxy type.
-template<typename T, typename C>
-concept HasProxyType = requires { typename IndexTraits<T>::template ProxyType<C>; };
+/// @brief Check whether T is a flat type.
+template<typename Tag>
+concept IsFlatType = HasValue<Index<Tag>> && !HasGroup<Index<Tag>>;
 
-/**
- * Data type concepts
- */
+/// @brief Check whether T is a group type.
+template<typename Tag>
+concept IsGroupType = HasValue<Index<Tag>> && HasGroup<Index<Tag>>;
 
-/// @brief Check whether T is a data type for an arbitrary context C.
-template<typename T, typename C>
-concept IsDataType = requires {
-    // Required traits
-    typename DataTraits<T>::IndexType;
-    typename DataTraits<T>::template ProxyType<C>;
-};
-
-/// @brief Check whether T is a flat data type.
-template<typename T>
-concept IsFlatDataType = requires {
-    typename DataTraits<T>::IndexType;
-    requires IsFlatIndexType<typename DataTraits<T>::IndexType>;
-};
-
-/// @brief Check whether T is a group data type.
-template<typename T>
-concept IsGroupDataType = requires {
-    typename DataTraits<T>::IndexType;
-    requires IsGroupIndexType<typename DataTraits<T>::IndexType>;
-};
-
-/**
- * Proxy type concepts
- */
-
-/// @brief Check whether T is a proxy type.
-template<typename T>
-concept IsProxyType = requires {
-    // Required traits
-    typename ProxyTraits<T>::IndexType;
-    typename ProxyTraits<T>::DataType;
-};
-
-/// @brief Check whether T is a flat proxy type.
-template<typename T>
-concept IsFlatProxyType = requires {
-    typename ProxyTraits<T>::IndexType;
-    requires IsFlatIndexType<typename ProxyTraits<T>::IndexType>;
-};
-
-/// @brief Check whether T is a group proxy type.
-template<typename T>
-concept IsGroupProxyType = requires {
-    typename ProxyTraits<T>::IndexType;
-    requires IsGroupIndexType<typename ProxyTraits<T>::IndexType>;
-};
+/// @brief Check whether T is proxyable.
+template<typename Tag, typename C>
+concept IsProxyable = requires(Index<Tag> index, const C& context) { Proxy<Tag, C>(index, context); }
+                      || requires(const Data<Tag>& data, const C& context) { Proxy<Tag, C>(data, context); };
 
 /**
  * Forward declarations and type defs

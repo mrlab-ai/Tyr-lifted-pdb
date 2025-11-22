@@ -44,7 +44,7 @@ struct FlatIndexMixin
     auto identifying_members() const noexcept { return std::tie(value); }
 };
 
-template<typename Derived, IsIndexType Group>
+template<typename Derived, HasValue Group>
 struct GroupIndexMixin
 {
     Group group {};

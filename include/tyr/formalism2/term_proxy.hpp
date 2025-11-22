@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -10,20 +10,32 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *<
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_TYPE_TRAITS_HPP_
-#define TYR_COMMON_TYPE_TRAITS_HPP_
+#ifndef TYR_FORMALISM2_TERM_PROXY_HPP_
+#define TYR_FORMALISM2_TERM_PROXY_HPP_
+
+#include "tyr/common/types.hpp"
+#include "tyr/common/variant.hpp"
+#include "tyr/formalism2/repository.hpp"
+#include "tyr/formalism2/term_data.hpp"
 
 namespace tyr
 {
-template<typename T>
-struct TagTraits
+template<formalism::IsContext C>
+class Proxy<formalism::Term, C> : public VariantProxy<typename Data<formalism::Term>::Variant, C>
 {
+private:
+    using Base = VariantProxy<typename Data<formalism::Term>::Variant, C>;
+
+public:
+    Proxy(Data<formalism::Term> term, const C& context) : Base(term.value, context) {}
 };
+
+static_assert(IsProxyable<formalism::Term, formalism::Repository>);
 }
 
 #endif

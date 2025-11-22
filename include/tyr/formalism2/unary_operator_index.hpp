@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -10,19 +10,29 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *<
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_TYPE_TRAITS_HPP_
-#define TYR_COMMON_TYPE_TRAITS_HPP_
+#ifndef TYR_FORMALISM2_UNARY_OPERATOR_INDEX_HPP_
+#define TYR_FORMALISM2_UNARY_OPERATOR_INDEX_HPP_
+
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/index_mixins.hpp"
+#include "tyr/common/types.hpp"
+#include "tyr/formalism2/declarations.hpp"
 
 namespace tyr
 {
-template<typename T>
-struct TagTraits
+template<formalism::IsOp Op, typename T>
+struct Index<formalism::UnaryOperator<Op, T>> : FlatIndexMixin<Index<formalism::UnaryOperator<Op, T>>>
 {
+    using Tag = formalism::UnaryOperator<Op, T>;
+
+    // Inherit constructors
+    using Base = FlatIndexMixin<Index<formalism::UnaryOperator<Op, T>>>;
+    using Base::Base;
 };
 }
 

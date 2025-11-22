@@ -34,14 +34,12 @@ class VariantProxy
 {
 private:
     const Context* m_context;
-    const Variant* m_value;
+    Variant m_value;
 
 public:
-    using VariantType = Variant;
+    VariantProxy(Variant value, const Context& context) : m_context(&context), m_value(value) {}
 
-    VariantProxy(const Variant& value, const Context& context) : m_context(&context), m_value(&value) {}
-
-    const Variant& index_variant() const noexcept { return *m_value; }
+    const Variant& index_variant() const noexcept { return m_value; }
     const Context& context() const noexcept { return *m_context; }
 
     template<typename T>
@@ -53,14 +51,13 @@ public:
     template<typename T>
     auto get() const
     {
-        if constexpr (HasProxyType<T, Context>)
+        if constexpr (!HasTag<T>)
         {
-            using ProxyType = typename IndexTraits<T>::template ProxyType<Context>;
-            return ProxyType(std::get<T>(index_variant()), context());
+            return std::get<T>(index_variant());
         }
         else
         {
-            return std::get<T>(index_variant());
+            return Proxy<typename T::Tag, Context>(std::get<T>(index_variant()), context());
         }
     }
 
@@ -68,18 +65,17 @@ public:
     decltype(auto) apply(F&& f) const
     {
         return std::visit(
-            [&](auto index) -> decltype(auto)
+            [&](auto arg) -> decltype(auto)
             {
-                using Index = std::decay_t<decltype(index)>;
+                using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (HasProxyType<Index, Context>)
+                if constexpr (!HasTag<T>)
                 {
-                    using ProxyType = typename IndexTraits<Index>::template ProxyType<Context>;
-                    return std::forward<F>(f)(ProxyType(index, context()));
+                    return std::forward<F>(f)(arg);
                 }
                 else
                 {
-                    return std::forward<F>(f)(index);
+                    return std::forward<F>(f)(Proxy<typename T::Tag, Context>(arg, context()));
                 }
             },
             index_variant());

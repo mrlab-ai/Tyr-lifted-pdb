@@ -25,6 +25,7 @@
 #include "tyr/common/hash.hpp"
 #include "tyr/common/observer_ptr.hpp"
 #include "tyr/common/segmented_vector.hpp"
+#include "tyr/common/types.hpp"
 
 #include <functional>
 #include <gtl/phmap.hpp>
@@ -33,20 +34,18 @@
 
 namespace tyr::cista
 {
-template<typename T, typename H, typename E>
+template<typename Tag, typename H, typename E>
 class IndexedHashSet
 {
 private:
-    using IndexType = typename DataTraits<T>::IndexType;
-
     // Persistent storage
     ByteBufferSegmented m_storage;
 
     // Deduplication
-    gtl::flat_hash_set<ObserverPtr<const T>, H, E> m_set;
+    gtl::flat_hash_set<ObserverPtr<const Data<Tag>>, H, E> m_set;
 
     // Randomized access
-    SegmentedVector<const T*> m_vec;
+    SegmentedVector<const Data<Tag>*> m_vec;
 
 public:
     explicit IndexedHashSet(size_t seg_size = 1024) : m_storage(seg_size), m_set(), m_vec() {}
@@ -80,9 +79,9 @@ public:
         m_vec.clear();
     }
 
-    const T* find(const T& element)
+    const Data<Tag>* find(const Data<Tag>& element) const
     {
-        if (auto it = m_set.find(ObserverPtr<const T>(&element)); it != m_set.end())
+        if (auto it = m_set.find(ObserverPtr<const Data<Tag>>(&element)); it != m_set.end())
             return it->get();
 
         return nullptr;
@@ -91,10 +90,10 @@ public:
     // const T* always points to a valid instantiation of the class.
     // We return const T* here to avoid bugs when using structured bindings.
     template<::cista::mode Mode = ::cista::mode::NONE>
-    std::pair<const T*, bool> insert(const T& element, ::cista::buf<std::vector<uint8_t>>& buf)
+    std::pair<const Data<Tag>*, bool> insert(const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf)
     {
         // 1. Check if element already exists
-        if (auto it = m_set.find(ObserverPtr<const T>(&element)); it != m_set.end())
+        if (auto it = m_set.find(ObserverPtr<const Data<Tag>>(&element)); it != m_set.end())
             return std::make_pair(it->get(), false);
 
         // 2. Serialize
@@ -102,10 +101,10 @@ public:
         ::cista::serialize<Mode>(buf, element);
 
         // 3. Write to storage
-        auto begin = m_storage.write(buf.base(), buf.size(), alignof(T));
+        auto begin = m_storage.write(buf.base(), buf.size(), alignof(Data<Tag>));
 
         // 4. Insert to set
-        auto [observer_ptr, success] = m_set.insert(::cista::deserialize<const T, Mode>(begin, begin + buf.size()));
+        auto [observer_ptr, success] = m_set.insert(::cista::deserialize<const Data<Tag>, Mode>(begin, begin + buf.size()));
 
         // 5. Insert to vec
         m_vec.push_back(observer_ptr->get());
@@ -117,7 +116,7 @@ public:
      * Lookup
      */
 
-    const T& operator[](IndexType index) const { return *m_vec[index.get_value()]; }
+    const Data<Tag>& operator[](Index<Tag> index) const { return *m_vec[index.get_value()]; }
 };
 
 }

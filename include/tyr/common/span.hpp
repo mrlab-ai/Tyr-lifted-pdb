@@ -26,17 +26,20 @@
 
 namespace tyr
 {
-template<typename T, typename Context>
+// T is either Data<Tag> or Index<Tag>
+template<typename Tag, typename Context>
 class SpanProxy
 {
+public:
+    using StorageType = std::conditional_t<HasTag<Index<Tag>>, Index<Tag>, Data<Tag>>;
+
+    using ProxyType = std::conditional_t<IsProxyable<Tag, Context>, Proxy<Tag, Context>, StorageType>;
+
 private:
     const Context* m_context;
-    std::span<const T> m_span;
+    std::span<const StorageType> m_span;
 
 public:
-    // If T has a ProxyType, use it; otherwise the "proxy" is just T itself.
-    using ProxyType = std::conditional_t<HasProxyType<T, Context>, typename IndexTraits<T>::template ProxyType<Context>, T>;
-
     template<class Container>
     explicit SpanProxy(const Container& container, const Context& context) : m_context(&context), m_span(std::data(container), std::size(container))
     {
@@ -47,7 +50,7 @@ public:
 
     ProxyType operator[](size_t i) const
     {
-        if constexpr (HasProxyType<T, Context>)
+        if constexpr (IsProxyable<Tag, Context>)
         {
             return ProxyType(m_span[i], *m_context);
         }
@@ -60,7 +63,7 @@ public:
     struct const_iterator
     {
         const Context* ctx;
-        const T* ptr;
+        const StorageType* ptr;
 
         using difference_type = std::ptrdiff_t;
         using value_type = ProxyType;
@@ -68,11 +71,11 @@ public:
         using iterator_concept = std::random_access_iterator_tag;
 
         const_iterator() : ctx(nullptr), ptr(nullptr) {}
-        const_iterator(const T* ptr, const Context& ctx) : ctx(&ctx), ptr(ptr) {}
+        const_iterator(const StorageType* ptr, const Context& ctx) : ctx(&ctx), ptr(ptr) {}
 
         ProxyType operator*() const
         {
-            if constexpr (HasProxyType<T, Context>)
+            if constexpr (IsProxyable<Tag, Context>)
             {
                 return ProxyType(*ptr, *ctx);
             }
@@ -145,7 +148,7 @@ public:
         // []
         ProxyType operator[](difference_type n) const
         {
-            if constexpr (HasProxyType<T, Context>)
+            if constexpr (IsProxyable<Tag, Context>)
                 return ProxyType(*(ptr + n), *ctx);
             else
                 return *(ptr + n);
