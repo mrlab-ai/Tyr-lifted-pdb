@@ -19,8 +19,10 @@
 #define TYR_GROUNDER_KPKC_HPP_
 
 #include <boost/dynamic_bitset.hpp>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <tyr/common/config.hpp>
 #include <vector>
@@ -80,6 +82,9 @@ void create_k_clique_in_k_partite_graph_generator_recursively(const DenseConsist
         }
     }
 
+    if (best_partition == std::numeric_limits<uint_t>::max())
+        return;  // dead branch: no unused partition has candidates
+
     // Iterate through compatible vertices in the best partition
     auto& best_partition_compatible_vertices = compatible_vertices[best_partition];
     uint_t adjacent_index = best_partition_compatible_vertices.find_first();
@@ -96,10 +101,10 @@ void create_k_clique_in_k_partite_graph_generator_recursively(const DenseConsist
         }
         else
         {
-            assert(worspace.partial_solution.size() - 1 == depth);
+            assert(workspace.partial_solution.size() - 1 == depth);
 
             // Update compatible vertices for the next recursion
-            auto& compatible_vertices_next = compatible_vertices[depth + 1];
+            auto& compatible_vertices_next = workspace.compatible_vertices[depth + 1];
             for (uint_t partition = 0; partition < k; ++partition)
             {
                 auto& partition_compatible_vertices_next = compatible_vertices_next[partition];
@@ -136,7 +141,7 @@ void create_k_clique_in_k_partite_graph_generator_recursively(const DenseConsist
 
             if ((partial_solution.size() + possible_additions) == k)
             {
-                find_all_k_cliques_in_k_partite_graph_helper(graph, workspace, callback, depth + 1);
+                create_k_clique_in_k_partite_graph_generator_recursively(graph, workspace, callback, depth + 1);
             }
 
             partition_bits[best_partition] = 0;
