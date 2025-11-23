@@ -91,7 +91,11 @@
 
 namespace tyr
 {
-inline std::ostream& print(std::ostream& os, const formalism::Double& el) { return os; }
+inline std::ostream& print(std::ostream& os, const formalism::Double& el)
+{
+    fmt::print(os, "{}", el.value);
+    return os;
+}
 
 inline std::ostream& print(std::ostream& os, const formalism::ParameterIndex& el)
 {
@@ -99,154 +103,171 @@ inline std::ostream& print(std::ostream& os, const formalism::ParameterIndex& el
     return os;
 }
 
-template<formalism::IsOp Op, typename T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::UnaryOperator<Op, T>>& el)
+inline std::ostream& print(std::ostream& os, formalism::OpEq el)
 {
+    fmt::print(os, "=");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, formalism::OpLe el)
+{
+    fmt::print(os, "<=");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, formalism::OpLt el)
+{
+    fmt::print(os, "<");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, formalism::OpGe el)
+{
+    fmt::print(os, ">=");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, formalism::OpGt el)
+{
+    fmt::print(os, ">");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, formalism::OpAdd el)
+{
+    fmt::print(os, "+");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, formalism::OpSub el)
+{
+    fmt::print(os, "-");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, formalism::OpMul el)
+{
+    fmt::print(os, "*");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, formalism::OpDiv el)
+{
+    fmt::print(os, "/");
     return os;
 }
 
 template<formalism::IsOp Op, typename T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::UnaryOperator<Op, T>>& el)
 {
+    fmt::print(os, "({} {})", to_string(Op {}), to_string(el.arg));
     return os;
 }
 
 template<formalism::IsOp Op, typename T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::UnaryOperator<Op, T>, C>& el)
 {
-    return os;
-}
-
-template<formalism::IsOp Op, typename T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::BinaryOperator<Op, T>>& el)
-{
+    fmt::print(os, "({} {})", to_string(Op {}), to_string(el.get_arg()));
     return os;
 }
 
 template<formalism::IsOp Op, typename T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::BinaryOperator<Op, T>>& el)
 {
+    fmt::print(os, "({} {} {})", to_string(Op {}), to_string(el.lhs), to_string(el.rhs));
     return os;
 }
 
 template<formalism::IsOp Op, typename T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::BinaryOperator<Op, T>, C>& el)
 {
-    return os;
-}
-
-template<formalism::IsOp Op, typename T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::MultiOperator<Op, T>>& el)
-{
+    fmt::print(os, "({} {} {})", to_string(Op {}), to_string(el.get_lhs()), to_string(el.get_rhs()));
     return os;
 }
 
 template<formalism::IsOp Op, typename T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::MultiOperator<Op, T>>& el)
 {
+    fmt::print(os, "({} {})", to_string(Op {}), to_strings(el.args));
     return os;
 }
 
 template<formalism::IsOp Op, typename T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::MultiOperator<Op, T>, C>& el)
 {
+    fmt::print(os, "({} {})", to_string(Op {}), to_strings(el.get_args()));
     return os;
 }
 
 template<typename T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::ArithmeticOperator<T>>& el)
 {
-    return os;
-}
-
-template<typename T, formalism::IsContext C>
-inline std::ostream& print(std::ostream& os, const Proxy<formalism::ArithmeticOperator<T>, C>& el)
-{
+    // fmt::print(os, "{}", to_string(el.value));
     return os;
 }
 
 template<typename T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::BooleanOperator<T>>& el)
 {
+    // fmt::print(os, "{}", to_string(el.value));
     return os;
 }
 
-template<typename T, formalism::IsContext C>
-inline std::ostream& print(std::ostream& os, const Proxy<formalism::BooleanOperator<T>, C>& el)
+inline std::ostream& print(std::ostream& os, const Data<formalism::Variable>& el)
 {
+    fmt::print(os, "{}", to_string(el.name));
     return os;
 }
-
-inline std::ostream& print(std::ostream& os, const Index<formalism::Variable>& el) { return os; }
-
-inline std::ostream& print(std::ostream& os, const Data<formalism::Variable>& el) { return os; }
 
 template<formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::Variable, C>& el)
 {
+    fmt::print(os, "{}", to_string(el.get_name()));
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Index<formalism::Object>& el)
+inline std::ostream& print(std::ostream& os, const Data<formalism::Object>& el)
 {
-    fmt::print(os, "{}", el.value);
+    fmt::print(os, "{}", to_string(el.name));
     return os;
 }
-
-inline std::ostream& print(std::ostream& os, const Data<formalism::Object>& el) { return os; }
 
 template<formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::Object, C>& el)
 {
+    fmt::print(os, "{}", to_string(el.get_name()));
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::Term>& el) { return os; }
-
-template<formalism::IsContext C>
-inline std::ostream& print(std::ostream& os, const Proxy<formalism::Term, C>& el)
+inline std::ostream& print(std::ostream& os, const Data<formalism::Term>& el)
 {
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::Predicate<T>>& el)
-{
+    // fmt::print(os, "{}", to_string(el.value));
     return os;
 }
 
 template<formalism::IsStaticOrFluentTag T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::Predicate<T>>& el)
 {
+    fmt::print(os, "{}/{}", to_string(el.name), to_string(el.arity));
     return os;
 }
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::Predicate<T>, C>& el)
 {
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::Atom<T>>& el)
-{
+    fmt::print(os, "{}/{}", to_string(el.get_name()), to_string(el.get_arity()));
     return os;
 }
 
 template<formalism::IsStaticOrFluentTag T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::Atom<T>>& el)
 {
+    fmt::print(os, "({} {})", to_string(el.index.group), to_strings(el.terms));
     return os;
 }
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::Atom<T>, C>& el)
-{
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::Literal<T>>& el)
 {
     return os;
 }
@@ -264,12 +285,6 @@ inline std::ostream& print(std::ostream& os, const Proxy<formalism::Literal<T>, 
 }
 
 template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::GroundAtom<T>>& el)
-{
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAtom<T>>& el)
 {
     return os;
@@ -277,12 +292,6 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAtom<T>
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::GroundAtom<T>, C>& el)
-{
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::GroundLiteral<T>>& el)
 {
     return os;
 }
@@ -300,12 +309,6 @@ inline std::ostream& print(std::ostream& os, const Proxy<formalism::GroundLitera
 }
 
 template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::Function<T>>& el)
-{
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::Function<T>>& el)
 {
     return os;
@@ -313,12 +316,6 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Function<T>>&
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::Function<T>, C>& el)
-{
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::FunctionTerm<T>>& el)
 {
     return os;
 }
@@ -336,12 +333,6 @@ inline std::ostream& print(std::ostream& os, const Proxy<formalism::FunctionTerm
 }
 
 template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::GroundFunctionTerm<T>>& el)
-{
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundFunctionTerm<T>>& el)
 {
     return os;
@@ -349,12 +340,6 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundFunctio
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const Proxy<formalism::GroundFunctionTerm<T>, C>& el)
-{
-    return os;
-}
-
-template<formalism::IsStaticOrFluentTag T>
-inline std::ostream& print(std::ostream& os, const Index<formalism::GroundFunctionTermValue<T>>& el)
 {
     return os;
 }
@@ -371,23 +356,17 @@ inline std::ostream& print(std::ostream& os, const Proxy<formalism::GroundFuncti
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::FunctionExpression>& el) { return os; }
-
-template<formalism::IsContext C>
-inline std::ostream& print(std::ostream& os, const Proxy<formalism::FunctionExpression, C>& el)
+inline std::ostream& print(std::ostream& os, const Data<formalism::FunctionExpression>& el)
 {
+    // fmt::print(os, "{}", to_string(el.value));
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::GroundFunctionExpression>& el) { return os; }
-
-template<formalism::IsContext C>
-inline std::ostream& print(std::ostream& os, const Proxy<formalism::GroundFunctionExpression, C>& el)
+inline std::ostream& print(std::ostream& os, const Data<formalism::GroundFunctionExpression>& el)
 {
+    // fmt::print(os, "{}", to_string(el.value));
     return os;
 }
-
-inline std::ostream& print(std::ostream& os, const Index<formalism::Rule>& el) { return os; }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Rule>& el) { return os; }
 
@@ -397,8 +376,6 @@ inline std::ostream& print(std::ostream& os, const Proxy<formalism::Rule, C>& el
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Index<formalism::GroundRule>& el) { return os; }
-
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundRule>& el) { return os; }
 
 template<formalism::IsContext C>
@@ -406,8 +383,6 @@ inline std::ostream& print(std::ostream& os, const Proxy<formalism::GroundRule, 
 {
     return os;
 }
-
-inline std::ostream& print(std::ostream& os, const Index<formalism::Program>& el) { return os; }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Program>& el) { return os; }
 
@@ -424,12 +399,6 @@ inline std::ostream& operator<<(std::ostream& os, const Double& el) { return tyr
 inline std::ostream& operator<<(std::ostream& os, const ParameterIndex& el) { return tyr::print(os, el); }
 
 template<IsOp Op, typename T>
-inline std::ostream& operator<<(std::ostream& os, const Index<UnaryOperator<Op, T>>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsOp Op, typename T>
 inline std::ostream& operator<<(std::ostream& os, const Data<UnaryOperator<Op, T>>& el)
 {
     return tyr::print(os, el);
@@ -442,12 +411,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<UnaryOperator<Op, 
 }
 
 template<IsOp Op, typename T>
-inline std::ostream& operator<<(std::ostream& os, const Index<BinaryOperator<Op, T>>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsOp Op, typename T>
 inline std::ostream& operator<<(std::ostream& os, const Data<BinaryOperator<Op, T>>& el)
 {
     return tyr::print(os, el);
@@ -455,12 +418,6 @@ inline std::ostream& operator<<(std::ostream& os, const Data<BinaryOperator<Op, 
 
 template<IsOp Op, typename T, IsContext C>
 inline std::ostream& operator<<(std::ostream& os, const Proxy<BinaryOperator<Op, T>, C>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsOp Op, typename T>
-inline std::ostream& operator<<(std::ostream& os, const Index<MultiOperator<Op, T>>& el)
 {
     return tyr::print(os, el);
 }
@@ -501,8 +458,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<BooleanOperator<T>
     return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Index<Variable>& el) { return tyr::print(os, el); }
-
 inline std::ostream& operator<<(std::ostream& os, const Data<Variable>& el) { return tyr::print(os, el); }
 
 template<IsContext C>
@@ -510,8 +465,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<Variable, C>& el)
 {
     return tyr::print(os, el);
 }
-
-inline std::ostream& operator<<(std::ostream& os, const Index<Object>& el) { return tyr::print(os, el); }
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Object>& el) { return tyr::print(os, el); }
 
@@ -530,12 +483,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<Term, C>& el)
 }
 
 template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<Predicate<T>>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
 inline std::ostream& operator<<(std::ostream& os, const Data<Predicate<T>>& el)
 {
     return tyr::print(os, el);
@@ -543,12 +490,6 @@ inline std::ostream& operator<<(std::ostream& os, const Data<Predicate<T>>& el)
 
 template<IsStaticOrFluentTag T, IsContext C>
 inline std::ostream& operator<<(std::ostream& os, const Proxy<Predicate<T>, C>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<Atom<T>>& el)
 {
     return tyr::print(os, el);
 }
@@ -566,12 +507,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<Atom<T>, C>& el)
 }
 
 template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<Literal<T>>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
 inline std::ostream& operator<<(std::ostream& os, const Data<Literal<T>>& el)
 {
     return tyr::print(os, el);
@@ -579,12 +514,6 @@ inline std::ostream& operator<<(std::ostream& os, const Data<Literal<T>>& el)
 
 template<IsStaticOrFluentTag T, IsContext C>
 inline std::ostream& operator<<(std::ostream& os, const Proxy<Literal<T>, C>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<GroundAtom<T>>& el)
 {
     return tyr::print(os, el);
 }
@@ -602,12 +531,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<GroundAtom<T>, C>&
 }
 
 template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<GroundLiteral<T>>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
 inline std::ostream& operator<<(std::ostream& os, const Data<GroundLiteral<T>>& el)
 {
     return tyr::print(os, el);
@@ -615,12 +538,6 @@ inline std::ostream& operator<<(std::ostream& os, const Data<GroundLiteral<T>>& 
 
 template<IsStaticOrFluentTag T, IsContext C>
 inline std::ostream& operator<<(std::ostream& os, const Proxy<GroundLiteral<T>, C>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<Function<T>>& el)
 {
     return tyr::print(os, el);
 }
@@ -638,12 +555,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<Function<T>, C>& e
 }
 
 template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<FunctionTerm<T>>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
 inline std::ostream& operator<<(std::ostream& os, const Data<FunctionTerm<T>>& el)
 {
     return tyr::print(os, el);
@@ -656,12 +567,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<FunctionTerm<T>, C
 }
 
 template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<GroundFunctionTerm<T>>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
 inline std::ostream& operator<<(std::ostream& os, const Data<GroundFunctionTerm<T>>& el)
 {
     return tyr::print(os, el);
@@ -669,12 +574,6 @@ inline std::ostream& operator<<(std::ostream& os, const Data<GroundFunctionTerm<
 
 template<IsStaticOrFluentTag T, IsContext C>
 inline std::ostream& operator<<(std::ostream& os, const Proxy<GroundFunctionTerm<T>, C>& el)
-{
-    return tyr::print(os, el);
-}
-
-template<IsStaticOrFluentTag T>
-inline std::ostream& operator<<(std::ostream& os, const Index<GroundFunctionTermValue<T>>& el)
 {
     return tyr::print(os, el);
 }
@@ -707,8 +606,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<GroundFunctionExpr
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Index<Rule>& el) { return tyr::print(os, el); }
-
 inline std::ostream& operator<<(std::ostream& os, const Data<Rule>& el) { return tyr::print(os, el); }
 
 template<IsContext C>
@@ -717,8 +614,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<Rule, C>& el)
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Index<GroundRule>& el) { return tyr::print(os, el); }
-
 inline std::ostream& operator<<(std::ostream& os, const Data<GroundRule>& el) { return tyr::print(os, el); }
 
 template<IsContext C>
@@ -726,8 +621,6 @@ inline std::ostream& operator<<(std::ostream& os, const Proxy<GroundRule, C>& el
 {
     return tyr::print(os, el);
 }
-
-inline std::ostream& operator<<(std::ostream& os, const Index<Program>& el) { return tyr::print(os, el); }
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Program>& el) { return tyr::print(os, el); }
 

@@ -61,13 +61,13 @@ struct OpGt
 struct OpAdd
 {
 };
+struct OpSub
+{
+};
 struct OpMul
 {
 };
 struct OpDiv
-{
-};
-struct OpSub
 {
 };
 

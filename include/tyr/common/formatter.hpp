@@ -19,6 +19,7 @@
 #define TYR_COMMON_FORMATTER_HPP_
 
 #include "tyr/common/declarations.hpp"
+#include "tyr/common/index_mixins.hpp"
 
 #include <array>
 #include <fmt/core.h>
@@ -78,6 +79,15 @@ std::ostream& operator<<(std::ostream& os, const std::variant<T1, T2, T3>& varia
 template<IsHanaMap Map>
 std::ostream& operator<<(std::ostream& os, const Map& map);
 
+template<typename Derived>
+std::ostream& operator<<(std::ostream& os, const FlatIndexMixin<Derived>& mixin);
+
+template<typename Derived, HasValue Group>
+std::ostream& operator<<(std::ostream& os, const GroupIndexMixin<Derived, Group>& mixin);
+
+template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec);
+
 /**
  * ADL-enabled stream helper: finds operator<< in the type's namespace
  */
@@ -100,13 +110,13 @@ std::string to_string(const T& element)
     if constexpr (requires { *element; })
     {
         if (element)
-            ss << *element;
+            print(ss, *element);
         else
             ss << "<nullptr>";
     }
     else
     {
-        ss << element;
+        print(ss, element);
     }
 
     return ss.str();
@@ -225,6 +235,27 @@ std::ostream& operator<<(std::ostream& os, const Map& map)
                               os << "{ " << KeyType::name << " : " << to_string(value) << " }, ";
                           });
     os << " }";
+    return os;
+}
+
+template<typename Derived>
+std::ostream& operator<<(std::ostream& os, const FlatIndexMixin<Derived>& mixin)
+{
+    os << to_string(mixin.value);
+    return os;
+}
+
+template<typename Derived, HasValue Group>
+std::ostream& operator<<(std::ostream& os, const GroupIndexMixin<Derived, Group>& mixin)
+{
+    os << to_string(mixin.group.value) << ":" << to_string(mixin.value);
+    return os;
+}
+
+template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec)
+{
+    fmt::print(os, "[{}]", fmt::join(to_strings(vec), ", "));
     return os;
 }
 

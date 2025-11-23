@@ -210,6 +210,12 @@ struct EqualTo;
 template<typename T>
 class ObserverPtr;
 
+template<typename Derived>
+struct FlatIndexMixin;
+
+template<typename Derived, HasValue Group>
+struct GroupIndexMixin;
+
 template<typename T>
 using UnorderedSet = std::unordered_set<T, Hash<T>, EqualTo<T>>;
 

@@ -449,12 +449,6 @@ VariableDomains compute_variable_list_per_predicate(Proxy<formalism::Program, fo
     auto fluent_function_domains = to_list(fluent_function_domain_sets);
     auto rule_domains = to_list(rule_domain_sets);
 
-    std::cout << "Static predicate domains: " << "\n" << static_predicate_domains << std::endl;
-    std::cout << "Fluent predicate domains: " << "\n" << fluent_predicate_domains << std::endl;
-    std::cout << "Static function domains: " << "\n" << static_function_domains << std::endl;
-    std::cout << "Fluent function domains: " << "\n" << fluent_function_domains << std::endl;
-    std::cout << "Rule domains: " << "\n" << rule_domains << std::endl;
-
     return VariableDomains { std::move(static_predicate_domains),
                              std::move(fluent_predicate_domains),
                              std::move(static_function_domains),

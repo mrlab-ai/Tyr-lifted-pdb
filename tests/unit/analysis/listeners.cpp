@@ -26,17 +26,17 @@ using namespace tyr::formalism;
 namespace tyr::tests
 {
 
-TEST(TyrTests, TyrAnalysisDomains)
+TEST(TyrTests, TyrAnalysisListeners)
 {
     auto [program_index, repository] = create_example_problem();
     auto program = Proxy<Program, Repository>(program_index, repository);
 
-    auto domains = analysis::compute_variable_list_per_predicate(program);
+    auto rule_strata = analysis::compute_rule_stratification(program);
+    auto listeners = analysis::compute_listeners(rule_strata, repository);
 
-    std::cout << "Static predicate domains: " << "\n" << to_string(domains.static_predicate_domains) << std::endl;
-    std::cout << "Fluent predicate domains: " << "\n" << to_string(domains.fluent_predicate_domains) << std::endl;
-    std::cout << "Static function domains: " << "\n" << to_string(domains.static_function_domains) << std::endl;
-    std::cout << "Fluent function domains: " << "\n" << to_string(domains.fluent_function_domains) << std::endl;
-    std::cout << "Rule domains: " << "\n" << to_string(domains.rule_domains) << std::endl;
+    for (const auto& listeners_in_stratum : listeners.positive_listeners_per_stratum)
+    {
+        std::cout << to_string(listeners_in_stratum) << std::endl;
+    }
 }
 }

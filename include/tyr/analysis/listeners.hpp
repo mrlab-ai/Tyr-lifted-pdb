@@ -19,17 +19,43 @@
 #define TYR_ANALYSIS_LISTENERS_HPP_
 
 #include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/stratification.hpp"
+#include "tyr/common/formatter.hpp"
 #include "tyr/formalism/formalism.hpp"
 
 namespace tyr::analysis
 {
 
+using ListenersPerStratum = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, IndexList<formalism::Rule>>;
+
 struct Listeners
 {
-    UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, IndexList<formalism::Rule>> positive_listeners;
+    std::vector<ListenersPerStratum> positive_listeners_per_stratum;
 };
 
-Listeners compute_listeners_per_rule(const RuleStrata& strata) {}
+Listeners compute_listeners(const RuleStrata& strata, const formalism::Repository& repository)
+{
+    auto listeners = Listeners();
+
+    for (const auto& stratum : strata.strata)
+    {
+        auto listeners_in_stratum = ListenersPerStratum {};
+
+        for (const auto rule_index : stratum)
+        {
+            const auto rule = Proxy<formalism::Rule, formalism::Repository>(rule_index, repository);
+
+            for (const auto literal : rule.get_fluent_body())
+            {
+                listeners_in_stratum[literal.get_predicate().get_index()].push_back(rule_index);
+            }
+        }
+
+        listeners.positive_listeners_per_stratum.push_back(std::move(listeners_in_stratum));
+    }
+
+    return listeners;
+}
 }
 
 #endif
