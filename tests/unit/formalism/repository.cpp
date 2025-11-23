@@ -37,6 +37,7 @@ TEST(TyrTests, TyrFormalismRepository)
     predicate_builder.name = "predicate_0";
     predicate_builder.arity = 2;
 
+    canonicalize(predicate_builder);
     auto [predicate_0, predicate_success_0] = repository.get_or_create(predicate_builder, buffer);
 
     EXPECT_TRUE(predicate_success_0);
@@ -48,6 +49,7 @@ TEST(TyrTests, TyrFormalismRepository)
     predicate_builder.name = "predicate_1";
     predicate_builder.arity = 3;
 
+    canonicalize(predicate_builder);
     auto [predicate_1, predicate_success_1] = repository.get_or_create(predicate_builder, buffer);
 
     EXPECT_TRUE(predicate_success_1);
@@ -59,6 +61,7 @@ TEST(TyrTests, TyrFormalismRepository)
     predicate_builder.name = "predicate_1";
     predicate_builder.arity = 3;
 
+    canonicalize(predicate_builder);
     auto [predicate_2, predicate_success_2] = repository.get_or_create(predicate_builder, buffer);
 
     EXPECT_FALSE(predicate_success_2);
@@ -68,16 +71,19 @@ TEST(TyrTests, TyrFormalismRepository)
 
     // Create objects
     object_builder.name = "a";
+    canonicalize(object_builder);
     auto [object_0, object_success_0] = repository.get_or_create(object_builder, buffer);
     EXPECT_TRUE(object_success_0);
     EXPECT_EQ(object_0->name, object_builder.name);
 
     object_builder.name = "b";
+    canonicalize(object_builder);
     auto [object_1, object_success_1] = repository.get_or_create(object_builder, buffer);
     EXPECT_TRUE(object_success_1);
     EXPECT_EQ(object_1->name, object_builder.name);
 
     object_builder.name = "c";
+    canonicalize(object_builder);
     auto [object_2, object_success_2] = repository.get_or_create(object_builder, buffer);
     EXPECT_TRUE(object_success_2);
     EXPECT_EQ(object_2->name, object_builder.name);
@@ -87,12 +93,14 @@ TEST(TyrTests, TyrFormalismRepository)
     atom_builder.index.group = predicate_0->index;
     atom_builder.terms.push_back(Data<Term>(object_0->index));
     atom_builder.terms.push_back(Data<Term>(object_1->index));
+    canonicalize(atom_builder);
     auto [atom_0, atom_success_0] = repository.get_or_create(atom_builder, buffer);
 
     EXPECT_TRUE(atom_success_0);
     EXPECT_EQ(atom_0->terms, atom_builder.terms);
 
     // Create same atom again
+    canonicalize(atom_builder);
     auto [atom_1, atom_success_1] = repository.get_or_create(atom_builder, buffer);
     EXPECT_FALSE(atom_success_1);
 }
@@ -108,12 +116,15 @@ TEST(TyrTests, TyrFormalismProxy)
     // Create a unique predicate
     predicate_builder.name = "predicate_0";
     predicate_builder.arity = 2;
+    canonicalize(predicate_builder);
     auto [predicate_0, predicate_success_0] = repository.get_or_create(predicate_builder, buffer);
 
     // Create objects
     object_builder.name = "a";
+    canonicalize(object_builder);
     auto [object_0, object_success_0] = repository.get_or_create(object_builder, buffer);
     object_builder.name = "b";
+    canonicalize(object_builder);
     auto [object_1, object_success_1] = repository.get_or_create(object_builder, buffer);
 
     // Create atom
@@ -121,6 +132,7 @@ TEST(TyrTests, TyrFormalismProxy)
     atom_builder.index.group = predicate_0->index;
     atom_builder.terms.push_back(Data<Term>(object_0->index));
     atom_builder.terms.push_back(Data<Term>(object_1->index));
+    canonicalize(atom_builder);
     auto [atom_0, atom_success_0] = repository.get_or_create(atom_builder, buffer);
 }
 

@@ -121,6 +121,7 @@ inline IndexList<formalism::Predicate<formalism::StaticTag>> add_static_predicat
     {
         predicate_builder.name = name;
         predicate_builder.arity = arity;
+        canonicalize(predicate_builder);
         result.push_back(repository.get_or_create(predicate_builder, buffer).first->index);
     }
 
@@ -167,6 +168,7 @@ inline IndexList<formalism::Predicate<formalism::FluentTag>> add_fluent_predicat
     {
         predicate_builder.name = name;
         predicate_builder.arity = arity;
+        canonicalize(predicate_builder);
         result.push_back(repository.get_or_create(predicate_builder, buffer).first->index);
     }
 
@@ -207,6 +209,7 @@ inline IndexList<formalism::Object> add_objects(formalism::Repository& repositor
     for (const auto& name : std::vector<std::string> { "rooma", "roomb", "left", "right", "ball1", "ball2" })
     {
         object_builder.name = name;
+        canonicalize(object_builder);
         result.push_back(repository.get_or_create(object_builder, buffer).first->index);
     }
 
@@ -266,6 +269,7 @@ inline IndexList<formalism::GroundAtom<formalism::StaticTag>> add_static_ground_
             {
                 ground_atom_builder.terms.push_back(convert(term));
             }
+            canonicalize(ground_atom_builder);
             result.push_back(repository.get_or_create(ground_atom_builder, buffer).first->index);
         }
     }
@@ -300,6 +304,7 @@ inline IndexList<formalism::GroundAtom<formalism::FluentTag>> add_fluent_ground_
             {
                 ground_atom_builder.terms.push_back(convert(term));
             }
+            canonicalize(ground_atom_builder);
             result.push_back(repository.get_or_create(ground_atom_builder, buffer).first->index);
         }
     }
@@ -329,6 +334,7 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
     for (const auto& name : std::vector<std::string> { "?from_0", "?to_0" })
     {
         variable_builder.name = name;
+        canonicalize(variable_builder);
         const auto variable = repository.get_or_create(variable_builder, buffer).first;
         rule_builder.variables.push_back(variable->index);
     }
@@ -348,9 +354,11 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
             {
                 static_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(param)));
             }
+            canonicalize(static_atom_builder);
             const auto atom_i = repository.get_or_create(static_atom_builder, buffer).first;
             static_literal_builder.atom_index = atom_i->index;
             static_literal_builder.polarity = polarity;
+            canonicalize(static_literal_builder);
             const auto literal_i = repository.get_or_create(static_literal_builder, buffer).first;
             rule_builder.static_body.push_back(literal_i->index);
         }
@@ -370,9 +378,11 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
             {
                 fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(param)));
             }
+            canonicalize(fluent_atom_builder);
             const auto atom_i = repository.get_or_create(fluent_atom_builder, buffer).first;
             fluent_literal_builder.atom_index = atom_i->index;
             fluent_literal_builder.polarity = polarity;
+            canonicalize(fluent_literal_builder);
             const auto literal_i = repository.get_or_create(fluent_literal_builder, buffer).first;
             rule_builder.fluent_body.push_back(literal_i->index);
         }
@@ -382,9 +392,11 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
     fluent_atom_builder.terms.clear();
     fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(0)));
     fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(1)));
+    canonicalize(fluent_atom_builder);
     const auto head = repository.get_or_create(fluent_atom_builder, buffer).first;
     rule_builder.head = head->index;
 
+    canonicalize(rule_builder);
     return repository.get_or_create(rule_builder, buffer).first->index;
 }
 
@@ -412,6 +424,7 @@ inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
     for (const auto& name : std::vector<std::string> { "?obj_0", "?room_0", "?gripper_0" })
     {
         variable_builder.name = name;
+        canonicalize(variable_builder);
         const auto variable = repository.get_or_create(variable_builder, buffer).first;
         rule_builder.variables.push_back(variable->index);
     }
@@ -433,9 +446,11 @@ inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
             {
                 static_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(param)));
             }
+            canonicalize(static_atom_builder);
             const auto atom_i = repository.get_or_create(static_atom_builder, buffer).first;
             static_literal_builder.atom_index = atom_i->index;
             static_literal_builder.polarity = polarity;
+            canonicalize(static_literal_builder);
             const auto literal_i = repository.get_or_create(static_literal_builder, buffer).first;
             rule_builder.static_body.push_back(literal_i->index);
         }
@@ -457,9 +472,11 @@ inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
             {
                 fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(param)));
             }
+            canonicalize(fluent_atom_builder);
             const auto atom_i = repository.get_or_create(fluent_atom_builder, buffer).first;
             fluent_literal_builder.atom_index = atom_i->index;
             fluent_literal_builder.polarity = polarity;
+            canonicalize(fluent_literal_builder);
             const auto literal_i = repository.get_or_create(fluent_literal_builder, buffer).first;
             rule_builder.fluent_body.push_back(literal_i->index);
         }
@@ -470,9 +487,11 @@ inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
     fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(0)));
     fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(1)));
     fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(2)));
+    canonicalize(fluent_atom_builder);
     const auto head = repository.get_or_create(fluent_atom_builder, buffer).first;
     rule_builder.head = head->index;
 
+    canonicalize(rule_builder);
     return repository.get_or_create(rule_builder, buffer).first->index;
 }
 
@@ -500,6 +519,7 @@ inline Index<formalism::Rule> add_rule_drop(formalism::Repository& repository)
     for (const auto& name : std::vector<std::string> { "?obj_0", "?room_0", "?gripper_0" })
     {
         variable_builder.name = name;
+        canonicalize(variable_builder);
         const auto variable = repository.get_or_create(variable_builder, buffer).first;
         rule_builder.variables.push_back(variable->index);
     }
@@ -521,9 +541,11 @@ inline Index<formalism::Rule> add_rule_drop(formalism::Repository& repository)
             {
                 static_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(param)));
             }
+            canonicalize(static_atom_builder);
             const auto atom_i = repository.get_or_create(static_atom_builder, buffer).first;
             static_literal_builder.atom_index = atom_i->index;
             static_literal_builder.polarity = polarity;
+            canonicalize(static_literal_builder);
             const auto literal_i = repository.get_or_create(static_literal_builder, buffer).first;
             rule_builder.static_body.push_back(literal_i->index);
         }
@@ -544,9 +566,11 @@ inline Index<formalism::Rule> add_rule_drop(formalism::Repository& repository)
             {
                 fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(param)));
             }
+            canonicalize(fluent_atom_builder);
             const auto atom_i = repository.get_or_create(fluent_atom_builder, buffer).first;
             fluent_literal_builder.atom_index = atom_i->index;
             fluent_literal_builder.polarity = polarity;
+            canonicalize(fluent_literal_builder);
             const auto literal_i = repository.get_or_create(fluent_literal_builder, buffer).first;
             rule_builder.fluent_body.push_back(literal_i->index);
         }
@@ -557,9 +581,11 @@ inline Index<formalism::Rule> add_rule_drop(formalism::Repository& repository)
     fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(0)));
     fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(1)));
     fluent_atom_builder.terms.push_back(Data<formalism::Term>(formalism::ParameterIndex(2)));
+    canonicalize(fluent_atom_builder);
     const auto head = repository.get_or_create(fluent_atom_builder, buffer).first;
     rule_builder.head = head->index;
 
+    canonicalize(rule_builder);
     return repository.get_or_create(rule_builder, buffer).first->index;
 }
 
@@ -587,6 +613,7 @@ inline std::pair<Index<formalism::Program>, formalism::Repository> create_exampl
     program_builder.rules.push_back(add_rule_pick(repository));
     program_builder.rules.push_back(add_rule_drop(repository));
 
+    canonicalize(program_builder);
     auto program_index = repository.get_or_create(program_builder, buffer).first->index;
 
     return { program_index, std::move(repository) };

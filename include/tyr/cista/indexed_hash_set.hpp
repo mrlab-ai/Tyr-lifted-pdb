@@ -81,6 +81,8 @@ public:
 
     const Data<Tag>* find(const Data<Tag>& element) const
     {
+        assert(is_canonical(element));
+
         if (auto it = m_set.find(ObserverPtr<const Data<Tag>>(&element)); it != m_set.end())
             return it->get();
 
@@ -92,6 +94,8 @@ public:
     template<::cista::mode Mode = ::cista::mode::NONE>
     std::pair<const Data<Tag>*, bool> insert(const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf)
     {
+        assert(is_canonical(element));
+
         // 1. Check if element already exists
         if (auto it = m_set.find(ObserverPtr<const Data<Tag>>(&element)); it != m_set.end())
             return std::make_pair(it->get(), false);

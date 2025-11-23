@@ -37,10 +37,12 @@ TEST(TyrTests, TyrFormalismProxy)
     // Create a unique predicate
     predicate_builder.name = "predicate";
     predicate_builder.arity = 2;
+    canonicalize(predicate_builder);
     auto [predicate, predicate_success] = repository.get_or_create(predicate_builder, buffer);
 
     // Create object and variable
     object_builder.name = "a";
+    canonicalize(object_builder);
     auto [object, object_success] = repository.get_or_create(object_builder, buffer);
 
     // Create atom
@@ -48,6 +50,7 @@ TEST(TyrTests, TyrFormalismProxy)
     atom_builder.index.group = predicate->index;
     atom_builder.terms.push_back(Data<Term>(object->index));
     atom_builder.terms.push_back(Data<Term>(ParameterIndex(0)));
+    canonicalize(atom_builder);
     auto [atom, atom_success] = repository.get_or_create(atom_builder, buffer);
 
     // Recurse through proxy

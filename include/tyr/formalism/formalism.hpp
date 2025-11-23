@@ -28,6 +28,7 @@
 #include "tyr/formalism/binary_operator_proxy.hpp"
 #include "tyr/formalism/boolean_operator_data.hpp"
 #include "tyr/formalism/boolean_operator_proxy.hpp"
+#include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/double.hpp"
 #include "tyr/formalism/formatter.hpp"

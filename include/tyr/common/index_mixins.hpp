@@ -37,8 +37,8 @@ struct FlatIndexMixin
 
     uint_t get_value() const noexcept { return value; }
 
-    friend bool operator==(const Derived& lhs, const Derived& rhs) noexcept { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
-    friend bool operator<(const Derived& lhs, const Derived& rhs) noexcept { return lhs.value < rhs.value; }
+    friend bool operator==(const FlatIndexMixin& lhs, const FlatIndexMixin& rhs) noexcept { return EqualTo<uint_t> {}(lhs.value, rhs.value); }
+    friend bool operator<(const FlatIndexMixin& lhs, const FlatIndexMixin& rhs) noexcept { return lhs.value < rhs.value; }
 
     auto cista_members() const noexcept { return std::tie(value); }
     auto identifying_members() const noexcept { return std::tie(value); }
@@ -56,11 +56,11 @@ struct GroupIndexMixin
     uint_t get_value() const noexcept { return value; }
     Group get_group() const noexcept { return group; }
 
-    friend bool operator==(const Derived& lhs, const Derived& rhs) noexcept
+    friend bool operator==(const GroupIndexMixin& lhs, const GroupIndexMixin& rhs) noexcept
     {
         return EqualTo<Group> {}(lhs.group, rhs.group) && EqualTo<uint_t> {}(lhs.value, rhs.value);
     }
-    friend bool operator<(const Derived& lhs, const Derived& rhs) noexcept
+    friend bool operator<(const GroupIndexMixin& lhs, const GroupIndexMixin& rhs) noexcept
     {
         if (lhs.group == rhs.group)
         {

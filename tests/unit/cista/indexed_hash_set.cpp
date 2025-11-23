@@ -32,9 +32,11 @@ TEST(TyrTests, TyrCistaIndexedHashSet)
     auto builder = Data<Predicate<FluentTag>>();
 
     // Create a unique predicate
+    builder.index.value = 0;
     builder.name = "predicate_0";
     builder.arity = 2;
 
+    canonicalize(builder);
     auto [predicate_0, success_0] = repository.insert(builder, buffer);
 
     EXPECT_EQ(predicate_0->index.value, 0);
@@ -42,9 +44,11 @@ TEST(TyrTests, TyrCistaIndexedHashSet)
     EXPECT_EQ(predicate_0->arity, builder.arity);
 
     // Create a unique predicate
+    builder.index.value = 1;
     builder.name = "predicate_1";
     builder.arity = 3;
 
+    canonicalize(builder);
     auto [predicate_1, success_1] = repository.insert(builder, buffer);
 
     EXPECT_EQ(predicate_1->index.value, 1);
@@ -52,9 +56,11 @@ TEST(TyrTests, TyrCistaIndexedHashSet)
     EXPECT_EQ(predicate_1->arity, builder.arity);
 
     // Create an existing predicate
+    builder.index.value = 1;
     builder.name = "predicate_1";
     builder.arity = 3;
 
+    canonicalize(builder);
     auto [predicate_2, success_2] = repository.insert(builder, buffer);
 
     EXPECT_EQ(predicate_2->index.value, 1);
