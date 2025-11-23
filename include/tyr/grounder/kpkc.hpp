@@ -93,7 +93,7 @@ void create_k_clique_in_k_partite_graph_generator_recursively(const DenseConsist
     uint_t adjacent_index = best_partition_compatible_vertices.find_first();
     while (adjacent_index < best_partition_compatible_vertices.size())
     {
-        uint_t vertex = partitions[best_partition][adjacent_index];
+        uint_t vertex = graph.partitions[best_partition][adjacent_index];
         best_partition_compatible_vertices[adjacent_index] = 0;
 
         partial_solution.push_back(vertex);
