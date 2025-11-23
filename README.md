@@ -9,3 +9,17 @@ Tyr aims to become a weighted, annotated, and parallelizable datalog solver base
 - **Parallelized Architecture**: rule parallelization, zero-copy serialization
 - **Program Analysis**: variable domain analysis, stratification, listeners
 - **Grounder Technology**: k-clique enumeration in k-partite graph (KPKC)
+
+# Getting Started
+
+## 1. Installation
+
+TODO
+
+## 2. Integration
+
+TODO
+
+## 3. Example
+
+See [here](https://github.com/drexlerd/Tyr/blob/main/tests/unit/utils.hpp) on how to programmatically instantiate a program to generate the applicable actions in the initial state of a planning task over the Gripper domain with two balls.
