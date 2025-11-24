@@ -20,6 +20,7 @@
 
 #include "tyr/grounder/assignment.hpp"
 #include "tyr/grounder/assignment_set.hpp"
+#include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/fact_set.hpp"
 #include "tyr/grounder/generator.hpp"
