@@ -31,429 +31,437 @@
 
 namespace tyr::grounder
 {
+namespace details
+{
+class Vertex;
+class Edge;
+
+/**
+ * VertexIndexIterator
+ */
+
+template<formalism::IsContext C>
+class VertexAssignmentIterator
+{
+private:
+    SpanProxy<formalism::Term, C> m_terms;
+    const Vertex* m_vertex;
+    uint_t m_pos;
+
+    VertexAssignment m_assignment;
+
+    const SpanProxy<formalism::Term, C>& get_terms() const noexcept { return m_terms; }
+    const Vertex& get_vertex() const noexcept { return *m_vertex; }
+
+    void advance() noexcept
+    {
+        ++m_pos;
+
+        /* Try to advance index. */
+        for (auto index = m_assignment.index + 1; index < formalism::ParameterIndex(get_terms().size()); ++index)
+        {
+            auto object = get_vertex().get_object_if_overlap(get_terms()[uint_t(index)]);
+
+            if (object != Index<formalism::Object>::max())
+            {
+                m_assignment.index = index;
+                m_assignment.object = object;
+                return;  ///< successfully generated vertex
+            }
+        }
+
+        /* Failed to generate valid vertex assignment. */
+        m_pos = std::numeric_limits<uint_t>::max();  ///< mark end of iteration
+    }
+
+public:
+    using difference_type = std::ptrdiff_t;
+    using value_type = VertexAssignment;
+    using pointer = value_type*;
+    using reference = const value_type&;
+    using iterator_category = std::forward_iterator_tag;
+
+    VertexAssignmentIterator() noexcept : m_terms(nullptr), m_vertex(nullptr), m_pos(std::numeric_limits<uint_t>::max()) {}
+    VertexAssignmentIterator(SpanProxy<formalism::Term, C> terms, const Vertex& vertex, bool begin) noexcept :
+        m_terms(terms),
+        m_vertex(&vertex),
+        m_pos(begin ? 0 : std::numeric_limits<uint_t>::max())
+    {
+        if (begin)
+        {
+            advance();  // first advance might result in end immediately, e.g., if terms is empty.
+        }
+    }
+    reference operator*() const noexcept { return m_assignment; }
+    VertexAssignmentIterator& operator++() noexcept
+    {
+        advance();
+        return *this;
+    }
+    VertexAssignmentIterator operator++(int) noexcept
+    {
+        VertexAssignmentIterator tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+    bool operator==(const VertexAssignmentIterator& other) const noexcept { return m_pos == other.m_pos; }
+    bool operator!=(const VertexAssignmentIterator& other) const noexcept { return !(*this == other); }
+};
+
+template<formalism::IsContext C>
+class VertexAssignmentRange
+{
+private:
+    SpanProxy<formalism::Term, C> m_terms;
+    const Vertex& m_vertex;
+
+public:
+    VertexAssignmentRange(SpanProxy<formalism::Term, C> terms, const Vertex& vertex) noexcept : m_terms(terms), m_vertex(vertex) {}
+
+    auto begin() const noexcept { return VertexAssignmentIterator<C>(m_terms, m_vertex, true); }
+
+    auto end() const noexcept { return VertexAssignmentIterator<C>(m_terms, m_vertex, false); }
+};
+
+/// @brief `EdgeAssignmentIterator` is used to generate vertices and edges in the consistency graph.
+/// It is used in literals
+///
+/// It simultaneously iterates over vertices [x/o] and edges [x/o],[y/o'] with o < o'
+/// to avoid having iterating over literals or numeric constraints twice.
+template<formalism::IsContext C>
+class EdgeAssignmentIterator
+{
+private:
+    SpanProxy<formalism::Term, C> m_terms;
+    const Edge* m_edge;
+    uint_t m_pos;
+
+    EdgeAssignment m_assignment;
+
+    const SpanProxy<formalism::Term, C>& get_terms() const noexcept { return m_terms; }
+    const Edge& get_edge() const noexcept { return *m_edge; }
+
+    void advance() noexcept
+    {
+        ++m_pos;
+
+        if (m_assignment.second_index == formalism::ParameterIndex::max())
+        {
+            /* Try to advance first_index. */
+
+            // Reduced branching by setting iterator index and unsetting first index.
+            // Note: unsetting first object is unnecessary because it will either be set or the iterator reaches its end.
+            auto first_index = m_assignment.first_index + 1;
+            m_assignment.first_index = formalism::ParameterIndex::max();
+
+            for (; first_index < formalism::ParameterIndex(get_terms().size()); ++first_index)
+            {
+                auto first_object = get_edge().get_object_if_overlap(get_terms()[uint_t(first_index)]);
+
+                if (first_object != Index<formalism::Object>::max())
+                {
+                    m_assignment.first_index = first_index;
+                    m_assignment.first_object = first_object;
+                    m_assignment.second_index = first_index;
+                    break;  ///< successfully generated left vertex
+                }
+            }
+        }
+
+        if (m_assignment.first_index != formalism::ParameterIndex::max())
+        {
+            /* Try to advance second_index. */
+
+            // Reduced branching by setting iterator index and unsetting second index and object
+            auto second_index = m_assignment.second_index + 1;
+            m_assignment.second_index = formalism::ParameterIndex::max();
+            m_assignment.second_object = Index<formalism::Object>::max();
+
+            for (; second_index < formalism::ParameterIndex(get_terms().size()); ++second_index)
+            {
+                auto second_object = get_edge().get_object_if_overlap(get_terms()[uint_t(second_index)]);
+
+                if (second_object != Index<formalism::Object>::max())
+                {
+                    m_assignment.second_index = second_index;
+                    m_assignment.second_object = second_object;
+                    return;  ///< successfully generated right vertex => successfully generated edge
+                }
+            }
+        }
+
+        if (m_assignment.second_object == Index<formalism::Object>::max())
+        {
+            /* Failed to generate valid edge assignment */
+
+            m_pos = std::numeric_limits<uint_t>::max();  ///< mark end of iteration
+        }
+    }
+
+public:
+    using difference_type = std::ptrdiff_t;
+    using value_type = EdgeAssignment;
+    using pointer = value_type*;
+    using reference = const value_type&;
+    using iterator_category = std::forward_iterator_tag;
+
+    EdgeAssignmentIterator() noexcept : m_terms(nullptr), m_edge(nullptr), m_pos(std::numeric_limits<uint_t>::max()), m_assignment() {}
+    EdgeAssignmentIterator(SpanProxy<formalism::Term, C> terms, const Edge& edge, bool begin) noexcept :
+        m_terms(terms),
+        m_edge(&edge),
+        m_pos(begin ? 0 : std::numeric_limits<uint_t>::max()),
+        m_assignment()
+    {
+        if (begin)
+        {
+            advance();  // first advance might result in end immediately, e.g., if terms is empty.
+        }
+    }
+    reference operator*() const noexcept { return m_assignment; }
+    EdgeAssignmentIterator& operator++() noexcept
+    {
+        advance();
+        return *this;
+    }
+    EdgeAssignmentIterator operator++(int) noexcept
+    {
+        EdgeAssignmentIterator tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+    bool operator==(const EdgeAssignmentIterator& other) const noexcept { return m_pos == other.m_pos; }
+    bool operator!=(const EdgeAssignmentIterator& other) const noexcept { return !(*this == other); }
+};
+
+template<formalism::IsContext C>
+class EdgeAssignmentRange
+{
+private:
+    SpanProxy<formalism::Term, C> m_terms;
+    const Edge& m_edge;
+
+public:
+    EdgeAssignmentRange(SpanProxy<formalism::Term, C> terms, const Edge& edge) noexcept : m_terms(terms), m_edge(edge) {}
+
+    auto begin() const noexcept { return EdgeAssignmentIterator<C>(m_terms, m_edge, true); }
+
+    auto end() const noexcept { return EdgeAssignmentIterator<C>(m_terms, m_edge, false); }
+};
+
+/**
+ * Vertex
+ */
+
+/// @brief A vertex [parameter_index/object_index] in the consistency graph.
+class Vertex
+{
+private:
+    uint_t m_index;
+    formalism::ParameterIndex m_parameter_index;
+    Index<formalism::Object> m_object_index;
+
+public:
+    Vertex(uint_t index, formalism::ParameterIndex parameter_index, Index<formalism::Object> object_index) noexcept :
+        m_index(index),
+        m_parameter_index(parameter_index),
+        m_object_index(object_index)
+    {
+    }
+
+    template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
+    bool consistent_literals(SpanProxy<formalism::Literal<T>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
+    {
+        for (const auto& literal : literals)
+        {
+            const auto atom = literal.get_atom();
+            const auto predicate = atom.get_predicate();
+            const auto arity = predicate.get_arity();
+
+            if (arity < 1)
+            {
+                continue;  ///< We test nullary literals separately
+            }
+
+            const auto negated = !literal.get_polarity();
+
+            if (negated && arity != 1)
+            {
+                continue;  ///< Can only handly unary negated literals due to overapproximation
+            }
+
+            const auto& predicate_assignment_set = predicate_assignment_sets.get_set(predicate.get_index());
+            const auto terms = atom.get_terms();
+
+            for (const auto& assignment : VertexAssignmentRange(terms, *this))
+            {
+                assert(assignment.is_valid());
+
+                const auto true_assignment = predicate_assignment_set[assignment];
+
+                if (!negated && !true_assignment)
+                {
+                    return false;
+                }
+
+                if (negated && true_assignment && (1 == arity))  ///< Due to overapproximation can only test valid assigned unary literals.
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    template<typename T, formalism::IsContext C>
+    bool consistent_literals(SpanProxy<formalism::BooleanOperator<T>, C> numeric_constraints,
+                             const FunctionAssignmentSet<formalism::StaticTag>& static_function_assignment_sets,
+                             const FunctionAssignmentSet<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept;
+
+    template<formalism::IsContext C>
+    Index<formalism::Object> get_object_if_overlap(Proxy<formalism::Term, C> term) const noexcept
+    {
+        return std::visit(
+            [&](auto&& arg)
+            {
+                using Type = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Type, formalism::ParameterIndex>)
+                {
+                    if (m_parameter_index == arg)
+                        return m_object_index;
+                    else
+                        return Index<formalism::Object>::max();
+                }
+                else if constexpr (std::is_same_v<Type, Index<formalism::Object>>)
+                {
+                    return arg;
+                }
+                else
+                {
+                    static_assert(dependent_false<Type>::value, "Missing case");
+                }
+            },
+            term.index_variant());
+    }
+
+    uint_t get_index() const noexcept { return m_index; }
+    formalism::ParameterIndex get_parameter_index() const noexcept { return m_parameter_index; }
+    Index<formalism::Object> get_object_index() const noexcept { return m_object_index; }
+};
+
+/**
+ * Edge
+ */
+
+/// @brief An undirected edge {src,dst} in the consistency graph.
+class Edge
+{
+private:
+    Vertex m_src;
+    Vertex m_dst;
+
+public:
+    Edge(Vertex src, Vertex dst) noexcept : m_src(std::move(src)), m_dst(std::move(dst)) {}
+
+    template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
+    bool consistent_literals(SpanProxy<formalism::Literal<T>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
+    {
+        for (const auto& literal : literals)
+        {
+            const auto atom = literal.get_atom();
+            const auto predicate = atom.get_predicate();
+            const auto arity = predicate.get_arity();
+
+            if (arity < 2)
+            {
+                continue;  ///< We test nullary and unary literals separately.
+            }
+
+            const auto negated = !literal.get_polarity();
+
+            if (negated && arity != 2)
+            {
+                continue;  ///< Can only handly binary negated literals due to overapproximation
+            }
+
+            const auto& predicate_assignment_set = predicate_assignment_sets.get_set(predicate.get_index());
+            const auto terms = atom.get_terms();
+
+            /* Iterate edges. */
+
+            for (const auto& assignment : EdgeAssignmentRange(terms, *this))
+            {
+                assert(assignment.is_valid());
+
+                const auto true_assignment = predicate_assignment_set[assignment];
+
+                if (!negated && !true_assignment)
+                {
+                    return false;
+                }
+
+                if (negated && true_assignment && (2 == arity))  ///< Due to overapproximation can only test valid assigned binary literals.
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    template<typename T, formalism::IsContext C>
+    bool consistent_literals(SpanProxy<formalism::BooleanOperator<T>, C> numeric_constraints,
+                             const FunctionAssignmentSet<formalism::StaticTag>& static_function_assignment_sets,
+                             const FunctionAssignmentSet<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept;
+
+    template<formalism::IsContext C>
+    Index<formalism::Object> get_object_if_overlap(Proxy<formalism::Term, C> term) const noexcept
+    {
+        return std::visit(
+            [&](auto&& arg)
+            {
+                using Type = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Type, formalism::ParameterIndex>)
+                {
+                    if (m_src.get_parameter_index() == arg)
+                        return m_src.get_object_index();
+                    else if (m_dst.get_parameter_index() == arg)
+                        return m_dst.get_object_index();
+                    else
+                        return Index<formalism::Object>::max();
+                }
+                else if constexpr (std::is_same_v<Type, Index<formalism::Object>>)
+                {
+                    return arg;
+                }
+                else
+                {
+                    static_assert(dependent_false<Type>::value, "Missing case");
+                }
+            },
+            term.index_variant());
+    }
+
+    const Vertex& get_src() const noexcept { return m_src; }
+    const Vertex& get_dst() const noexcept { return m_dst; }
+};
+
+using Vertices = std::vector<Vertex>;
+}
 
 template<formalism::IsContext C>
 class StaticConsistencyGraph
 {
-public:
-    class Vertex;
-    class Edge;
-
-    /**
-     * VertexIndexIterator
-     */
-
-    class VertexAssignmentIterator
-    {
-    private:
-        SpanProxy<formalism::Term, C> m_terms;
-        const Vertex* m_vertex;
-        uint_t m_pos;
-
-        VertexAssignment m_assignment;
-
-        const SpanProxy<formalism::Term, C>& get_terms() const noexcept { return m_terms; }
-        const Vertex& get_vertex() const noexcept { return *m_vertex; }
-
-        void advance() noexcept
-        {
-            /* Try to advance index. */
-            for (uint_t index = m_assignment.index + 1; index < get_terms().size(); ++index)
-            {
-                auto object = get_vertex().get_object_if_overlap(get_terms()[index]);
-
-                if (object != std::numeric_limits<uint_t>::max())
-                {
-                    m_assignment.index = index;
-                    m_assignment.object = object;
-                    return;  ///< successfully generated vertex
-                }
-            }
-
-            /* Failed to generate valid vertex assignment. */
-            m_pos = std::numeric_limits<uint_t>::max();  ///< mark end of iteration
-        }
-
-    public:
-        using difference_type = std::ptrdiff_t;
-        using value_type = VertexAssignment;
-        using pointer = value_type*;
-        using reference = const value_type&;
-        using iterator_category = std::forward_iterator_tag;
-
-        VertexAssignmentIterator() noexcept : m_terms(nullptr), m_vertex(nullptr), m_pos(std::numeric_limits<uint_t>::max()) {}
-        VertexAssignmentIterator(SpanProxy<formalism::Term, C> terms, const Vertex& vertex, bool begin) noexcept :
-            m_terms(terms),
-            m_vertex(&vertex),
-            m_pos(begin ? 0 : std::numeric_limits<uint_t>::max())
-        {
-            if (begin)
-            {
-                advance();  // first advance might result in end immediately, e.g., if terms is empty.
-            }
-        }
-        reference operator*() const noexcept { return m_assignment; }
-        VertexAssignmentIterator& operator++() noexcept
-        {
-            advance();
-            return *this;
-        }
-        VertexAssignmentIterator operator++(int) noexcept
-        {
-            VertexAssignmentIterator tmp = *this;
-            ++(*this);
-            return tmp;
-        }
-        bool operator==(const VertexAssignmentIterator& other) const noexcept { return m_pos == other.m_pos; }
-        bool operator!=(const VertexAssignmentIterator& other) const noexcept { return !(*this == other); }
-    };
-
-    class VertexAssignmentRange
-    {
-    private:
-        SpanProxy<formalism::Term, C> m_terms;
-        const Vertex& m_vertex;
-
-    public:
-        VertexAssignmentRange(SpanProxy<formalism::Term, C> terms, const Vertex& vertex) noexcept : m_terms(terms), m_vertex(vertex) {}
-
-        VertexAssignmentIterator begin() const noexcept { return VertexAssignmentIterator(m_terms, m_vertex, true); }
-
-        VertexAssignmentIterator end() const noexcept { return VertexAssignmentIterator(m_terms, m_vertex, false); }
-    };
-
-    /// @brief `EdgeAssignmentIterator` is used to generate vertices and edges in the consistency graph.
-    /// It is used in literals
-    ///
-    /// It simultaneously iterates over vertices [x/o] and edges [x/o],[y/o'] with o < o'
-    /// to avoid having iterating over literals or numeric constraints twice.
-    class EdgeAssignmentIterator
-    {
-    private:
-        SpanProxy<formalism::Term, C> m_terms;
-        const Edge* m_edge;
-        uint_t m_pos;
-
-        EdgeAssignment m_assignment;
-
-        const SpanProxy<formalism::Term, C>& get_terms() const noexcept { return m_terms; }
-        const Edge& get_edge() const noexcept { return *m_edge; }
-
-        void advance() noexcept
-        {
-            if (m_assignment.second_index == std::numeric_limits<uint_t>::max())
-            {
-                /* Try to advance first_index. */
-
-                // Reduced branching by setting iterator index and unsetting first index.
-                // Note: unsetting first object is unnecessary because it will either be set or the iterator reaches its end.
-                uint_t first_index = m_assignment.first_index + 1;
-                m_assignment.first_index = std::numeric_limits<uint_t>::max();
-
-                for (; first_index < get_terms().size(); ++first_index)
-                {
-                    auto first_object = get_edge().get_object_if_overlap(get_terms()[first_index]);
-
-                    if (first_object != std::numeric_limits<uint_t>::max())
-                    {
-                        m_assignment.first_index = first_index;
-                        m_assignment.first_object = first_object;
-                        m_assignment.second_index = first_index;
-                        break;  ///< successfully generated left vertex
-                    }
-                }
-            }
-
-            if (m_assignment.first_index != std::numeric_limits<uint_t>::max())
-            {
-                /* Try to advance second_index. */
-
-                // Reduced branching by setting iterator index and unsetting second index and object
-                uint_t second_index = m_assignment.second_index + 1;
-                m_assignment.second_index = std::numeric_limits<uint_t>::max();
-                m_assignment.second_object = std::numeric_limits<uint_t>::max();
-
-                for (; second_index < get_terms().size(); ++second_index)
-                {
-                    auto second_object = get_edge().get_object_if_overlap(get_terms()[second_index]);
-
-                    if (second_object != std::numeric_limits<uint_t>::max())
-                    {
-                        m_assignment.second_index = second_index;
-                        m_assignment.second_object = second_object;
-                        return;  ///< successfully generated right vertex => successfully generated edge
-                    }
-                }
-            }
-
-            if (m_assignment.second_object == std::numeric_limits<uint_t>::max())
-            {
-                /* Failed to generate valid edge assignment */
-
-                m_pos = std::numeric_limits<uint_t>::max();  ///< mark end of iteration
-            }
-        }
-
-    public:
-        using difference_type = std::ptrdiff_t;
-        using value_type = EdgeAssignment;
-        using pointer = value_type*;
-        using reference = const value_type&;
-        using iterator_category = std::forward_iterator_tag;
-
-        EdgeAssignmentIterator() noexcept : m_terms(nullptr), m_edge(nullptr), m_pos(std::numeric_limits<uint_t>::max()), m_assignment() {}
-        EdgeAssignmentIterator(SpanProxy<formalism::Term, C> terms, const Edge& edge, bool begin) noexcept :
-            m_terms(terms),
-            m_edge(&edge),
-            m_pos(begin ? 0 : std::numeric_limits<uint_t>::max()),
-            m_assignment()
-        {
-            if (begin)
-            {
-                advance();  // first advance might result in end immediately, e.g., if terms is empty.
-            }
-        }
-        reference operator*() const noexcept { return m_assignment; }
-        EdgeAssignmentIterator& operator++() noexcept
-        {
-            advance();
-            return *this;
-        }
-        EdgeAssignmentIterator operator++(int) noexcept
-        {
-            EdgeAssignmentIterator tmp = *this;
-            ++(*this);
-            return tmp;
-        }
-        bool operator==(const EdgeAssignmentIterator& other) const noexcept { return m_pos == other.m_pos; }
-        bool operator!=(const EdgeAssignmentIterator& other) const noexcept { return !(*this == other); }
-    };
-
-    class EdgeAssignmentRange
-    {
-    private:
-        SpanProxy<formalism::Term, C> m_terms;
-        const Edge& m_edge;
-
-    public:
-        EdgeAssignmentRange(SpanProxy<formalism::Term, C> terms, const Edge& edge) noexcept : m_terms(terms), m_edge(edge) {}
-
-        EdgeAssignmentIterator begin() const noexcept { return EdgeAssignmentIterator(m_terms, m_edge, true); }
-
-        EdgeAssignmentIterator end() const noexcept { return EdgeAssignmentIterator(m_terms, m_edge, false); }
-    };
-
-    /**
-     * Vertex
-     */
-
-    /// @brief A vertex [parameter_index/object_index] in the consistency graph.
-    class Vertex
-    {
-    private:
-        uint_t m_index;
-        uint_t m_parameter_index;
-        uint_t m_object_index;
-
-    public:
-        Vertex(uint_t index, uint_t parameter_index, uint_t object_index) noexcept :
-            m_index(index),
-            m_parameter_index(parameter_index),
-            m_object_index(object_index)
-        {
-        }
-
-        template<formalism::IsStaticOrFluentTag T>
-        bool consistent_literals(SpanProxy<formalism::Literal<T>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
-        {
-            for (const auto& literal : literals)
-            {
-                const auto atom = literal.get_atom();
-                const auto predicate = atom.get_predicate();
-                const auto arity = predicate.get_arity();
-
-                if (arity < 1)
-                {
-                    continue;  ///< We test nullary literals separately
-                }
-
-                const auto negated = !literal.get_polarity();
-
-                if (negated && arity != 1)
-                {
-                    continue;  ///< Can only handly unary negated literals due to overapproximation
-                }
-
-                const auto& predicate_assignment_set = predicate_assignment_sets.get_set(predicate.get_index());
-                const auto terms = atom.get_terms();
-
-                for (const auto& assignment : VertexAssignmentRange(terms, *this))
-                {
-                    assert(assignment.is_valid());
-
-                    const auto true_assignment = predicate_assignment_set[assignment];
-
-                    if (!negated && !true_assignment)
-                    {
-                        return false;
-                    }
-
-                    if (negated && true_assignment && (1 == arity))  ///< Due to overapproximation can only test valid assigned unary literals.
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        template<typename T>
-        bool consistent_literals(SpanProxy<formalism::BooleanOperator<T>, C> numeric_constraints,
-                                 const FunctionAssignmentSet<formalism::StaticTag>& static_function_assignment_sets,
-                                 const FunctionAssignmentSet<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept;
-
-        uint_t get_object_if_overlap(Proxy<formalism::Term, C> term) const noexcept
-        {
-            return std::visit(
-                [&](auto&& arg)
-                {
-                    using Type = std::decay_t<decltype(arg)>;
-
-                    if constexpr (std::is_same_v<Type, formalism::ParameterIndex>)
-                    {
-                        if (m_parameter_index == to_uint_t(arg))
-                            return m_object_index;
-                        else
-                            return std::numeric_limits<uint_t>::max();
-                    }
-                    else if constexpr (std::is_same_v<Type, Index<formalism::Object>>)
-                    {
-                        return arg.get_value();
-                    }
-                    else
-                    {
-                        static_assert(dependent_false<Type>::value, "Missing case");
-                    }
-                },
-                term.index_variant());
-        }
-
-        uint_t get_index() const noexcept { return m_index; }
-        uint_t get_parameter_index() const noexcept { return m_parameter_index; }
-        uint_t get_object_index() const noexcept { return m_object_index; }
-    };
-
-    /**
-     * Edge
-     */
-
-    /// @brief An undirected edge {src,dst} in the consistency graph.
-    class Edge
-    {
-    private:
-        Vertex m_src;
-        Vertex m_dst;
-
-    public:
-        Edge(Vertex src, Vertex dst) noexcept : m_src(std::move(src)), m_dst(std::move(dst)) {}
-
-        template<formalism::IsStaticOrFluentTag T>
-        bool consistent_literals(SpanProxy<formalism::Literal<T>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
-        {
-            for (const auto& literal : literals)
-            {
-                const auto atom = literal.get_atom();
-                const auto predicate = atom.get_predicate();
-                const auto arity = predicate.get_arity();
-
-                if (arity < 2)
-                {
-                    continue;  ///< We test nullary and unary literals separately.
-                }
-
-                const auto negated = !literal.get_polarity();
-
-                if (negated && arity != 2)
-                {
-                    continue;  ///< Can only handly binary negated literals due to overapproximation
-                }
-
-                const auto& predicate_assignment_set = predicate_assignment_sets.get_set(predicate.get_index());
-                const auto terms = atom.get_terms();
-
-                /* Iterate edges. */
-
-                for (const auto& assignment : EdgeAssignmentRange(terms, *this))
-                {
-                    assert(assignment.is_valid());
-
-                    const auto true_assignment = predicate_assignment_set[assignment];
-
-                    if (!negated && !true_assignment)
-                    {
-                        return false;
-                    }
-
-                    if (negated && true_assignment && (2 == arity))  ///< Due to overapproximation can only test valid assigned binary literals.
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        template<typename T>
-        bool consistent_literals(SpanProxy<formalism::BooleanOperator<T>, C> numeric_constraints,
-                                 const FunctionAssignmentSet<formalism::StaticTag>& static_function_assignment_sets,
-                                 const FunctionAssignmentSet<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept;
-
-        uint_t get_object_if_overlap(Proxy<formalism::Term, C> term) const noexcept
-        {
-            return std::visit(
-                [&](auto&& arg)
-                {
-                    using Type = std::decay_t<decltype(arg)>;
-
-                    if constexpr (std::is_same_v<Type, formalism::ParameterIndex>)
-                    {
-                        if (m_src.get_parameter_index() == to_uint_t(arg))
-                            return m_src.get_object_index();
-                        else if (m_dst.get_parameter_index() == to_uint_t(arg))
-                            return m_dst.get_object_index();
-                        else
-                            return std::numeric_limits<uint_t>::max();
-                    }
-                    else if constexpr (std::is_same_v<Type, Index<formalism::Object>>)
-                    {
-                        return arg.get_value();
-                    }
-                    else
-                    {
-                        static_assert(dependent_false<Type>::value, "Missing case");
-                    }
-                },
-                term.index_variant());
-        }
-
-        const Vertex& get_src() const noexcept { return m_src; }
-        const Vertex& get_dst() const noexcept { return m_dst; }
-    };
-
-    using Vertices = std::vector<Vertex>;
-
-    auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
-
-    auto get_edges() const noexcept { return std::ranges::subrange(EdgeIterator(*this, true), EdgeIterator(*this, false)); }
-
+private:
     /// @brief Helper to initialize vertices.
-    Vertices compute_vertices(Proxy<formalism::ConjunctiveCondition, C> condition,
-                              const analysis::DomainListList& parameter_domains,
-                              const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets)
+    details::Vertices compute_vertices(Proxy<formalism::ConjunctiveCondition, C> condition,
+                                       const analysis::DomainListList& parameter_domains,
+                                       const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets)
     {
-        auto vertices = Vertices {};
+        auto vertices = details::Vertices {};
 
         for (uint_t parameter_index = 0; parameter_index < condition.get_arity(); ++parameter_index)
         {
@@ -463,7 +471,7 @@ public:
             {
                 const auto vertex_index = static_cast<uint_t>(vertices.size());
 
-                auto vertex = Vertex(vertex_index, parameter_index, object_index.get_value());
+                auto vertex = details::Vertex(vertex_index, formalism::ParameterIndex(parameter_index), object_index);
 
                 assert(vertex.get_index() == vertex_index);
 
@@ -480,7 +488,7 @@ public:
     compute_edges(Proxy<formalism::ConjunctiveCondition, C> condition,
                   const analysis::DomainListList& parameter_domains,
                   const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
-                  const Vertices& vertices)
+                  const details::Vertices& vertices)
     {
         auto sources = std::vector<uint_t> {};
 
@@ -500,7 +508,7 @@ public:
                 assert(first_vertex.get_index() == first_vertex_index);
                 assert(second_vertex.get_index() == second_vertex_index);
 
-                auto edge = Edge(first_vertex, second_vertex);
+                auto edge = details::Edge(first_vertex, second_vertex);
 
                 // Part 1 of definition of substitution consistency graph (Stahlberg-ecai2023): exclude I^\neq
                 if (first_vertex.get_parameter_index() != second_vertex.get_parameter_index()
@@ -568,6 +576,10 @@ public:
                    });
     }
 
+    auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
+
+    auto get_edges() const noexcept { return std::ranges::subrange(EdgeIterator(*this, true), EdgeIterator(*this, false)); }
+
     size_t get_num_vertices() const noexcept { return m_vertices.size(); }
     size_t get_num_edges() const noexcept { return m_targets.size(); }
 
@@ -593,7 +605,7 @@ private:
 
     public:
         using difference_type = std::ptrdiff_t;
-        using value_type = Edge;
+        using value_type = details::Edge;
         using pointer = value_type*;
         using reference = const value_type&;
         using iterator_category = std::forward_iterator_tag;
@@ -609,7 +621,7 @@ private:
         {
             assert(m_sources_pos < get_graph().m_sources.size());
             assert(m_targets_pos < get_graph().m_targets.size());
-            return Edge(get_graph().m_vertices[get_graph().m_sources[m_sources_pos]], get_graph().m_vertices[get_graph().m_targets[m_targets_pos]]);
+            return details::Edge(get_graph().m_vertices[get_graph().m_sources[m_sources_pos]], get_graph().m_vertices[get_graph().m_targets[m_targets_pos]]);
         }
         EdgeIterator& operator++() noexcept
         {
@@ -632,7 +644,7 @@ private:
     Proxy<formalism::ConjunctiveCondition, C> m_condition;
 
     /* The data member of the consistency graph. */
-    Vertices m_vertices;
+    details::Vertices m_vertices;
 
     // Adjacency list of edges.
     std::vector<uint_t> m_sources;  ///< sources with non-zero out-degree

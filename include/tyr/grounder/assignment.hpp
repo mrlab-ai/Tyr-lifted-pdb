@@ -41,14 +41,14 @@ struct EmptyAssignment
 
 struct VertexAssignment
 {
-    uint_t index;
-    uint_t object;
+    formalism::ParameterIndex index;
+    Index<formalism::Object> object;
 
-    VertexAssignment() : index(std::numeric_limits<uint_t>::max()), object(std::numeric_limits<uint_t>::max()) {}
+    VertexAssignment() : index(), object() {}
 
-    VertexAssignment(uint_t index, uint_t object) : index(index), object(object) {}
+    VertexAssignment(formalism::ParameterIndex index, Index<formalism::Object> object) : index(index), object(object) {}
 
-    inline bool is_valid() const noexcept { return index != std::numeric_limits<uint_t>::max() && object != std::numeric_limits<uint_t>::max(); }
+    inline bool is_valid() const noexcept { return index != formalism::ParameterIndex::max() && object != Index<formalism::Object>::max(); }
 };
 
 /**
@@ -58,20 +58,17 @@ struct VertexAssignment
 /// @brief Encapsulate assignment of objects to variables of atoms.
 struct EdgeAssignment
 {
-    uint_t first_index;
-    uint_t first_object;
-    uint_t second_index;
-    uint_t second_object;
+    formalism::ParameterIndex first_index;
+    Index<formalism::Object> first_object;
+    formalism::ParameterIndex second_index;
+    Index<formalism::Object> second_object;
 
-    EdgeAssignment() :
-        first_index(std::numeric_limits<uint_t>::max()),
-        first_object(std::numeric_limits<uint_t>::max()),
-        second_index(std::numeric_limits<uint_t>::max()),
-        second_object(std::numeric_limits<uint_t>::max())
-    {
-    }
+    EdgeAssignment() : first_index(), first_object(), second_index(), second_object() {}
 
-    EdgeAssignment(uint_t first_index, uint_t first_object, uint_t second_index, uint_t second_object) :
+    EdgeAssignment(formalism::ParameterIndex first_index,
+                   Index<formalism::Object> first_object,
+                   formalism::ParameterIndex second_index,
+                   Index<formalism::Object> second_object) :
         first_index(first_index),
         first_object(first_object),
         second_index(second_index),
@@ -81,22 +78,10 @@ struct EdgeAssignment
 
     inline bool is_valid() const noexcept
     {
-        return (first_index < second_index) && (first_index != std::numeric_limits<uint_t>::max()) && (second_index != std::numeric_limits<uint_t>::max())
-               && (first_object != std::numeric_limits<uint_t>::max()) && (second_object != std::numeric_limits<uint_t>::max());
+        return (first_index < second_index) && (first_index != formalism::ParameterIndex::max()) && (second_index != formalism::ParameterIndex::max())
+               && (first_object != Index<formalism::Object>::max()) && (second_object != Index<formalism::Object>::max());
     }
 };
-
-inline std::ostream& operator<<(std::ostream& os, const VertexAssignment& assignment)
-{
-    os << "[" << assignment.index << "/" << assignment.object << "]";
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const EdgeAssignment& assignment)
-{
-    os << "[" << assignment.first_index << "/" << assignment.first_object << ", " << assignment.second_index << "/" << assignment.second_object << "]";
-    return os;
-}
 }
 
 #endif

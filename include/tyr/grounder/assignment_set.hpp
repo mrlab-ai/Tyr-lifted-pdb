@@ -60,7 +60,7 @@ struct PerfectAssignmentHash
             auto new_index = uint_t { 0 };
             for (const auto object_index : parameter_domain)
             {
-                m_remapping[i + 1][object_index.get_value() + 1] = ++new_index;
+                m_remapping[i + 1][uint_t(object_index) + 1] = ++new_index;
                 ++m_num_assignments;
             }
         }
@@ -70,9 +70,9 @@ struct PerfectAssignmentHash
     {
         assert(assignment.is_valid());
 
-        const auto o = m_remapping[assignment.index + 1][assignment.object + 1];
+        const auto o = m_remapping[uint_t(assignment.index) + 1][uint_t(assignment.object) + 1];
 
-        const auto result = m_offsets[assignment.index + 1] + o;
+        const auto result = m_offsets[uint_t(assignment.index) + 1] + o;
 
         assert(result < m_num_assignments);
 
@@ -83,11 +83,11 @@ struct PerfectAssignmentHash
     {
         assert(assignment.is_valid());
 
-        const auto o1 = m_remapping[assignment.first_index + 1][assignment.first_object + 1];
-        const auto o2 = m_remapping[assignment.second_index + 1][assignment.second_object + 1];
+        const auto o1 = m_remapping[uint_t(assignment.first_index) + 1][uint_t(assignment.first_object) + 1];
+        const auto o2 = m_remapping[uint_t(assignment.second_index) + 1][uint_t(assignment.second_object) + 1];
 
-        const auto j1 = m_offsets[assignment.first_index + 1] + o1;
-        const auto j2 = m_offsets[assignment.second_index + 1] + o2;
+        const auto j1 = m_offsets[uint_t(assignment.first_index) + 1] + o1;
+        const auto j2 = m_offsets[uint_t(assignment.second_index) + 1] + o2;
 
         const auto result = j1 * m_num_assignments + j2;
 
@@ -127,20 +127,22 @@ public:
 
         assert(ground_atom.get_index().get_group() == m_predicate);
 
-        for (size_t first_index = 0; first_index < arity; ++first_index)
+        for (uint_t first_index = 0; first_index < arity; ++first_index)
         {
             const auto first_object = objects[first_index];
 
             // Complete vertex.
-            m_set.set(m_hash.get_assignment_rank(VertexAssignment(first_index, first_object.get_index().get_value())));
+            m_set.set(m_hash.get_assignment_rank(VertexAssignment(formalism::ParameterIndex(first_index), first_object.get_index())));
 
-            for (size_t second_index = first_index + 1; second_index < arity; ++second_index)
+            for (uint_t second_index = first_index + 1; second_index < arity; ++second_index)
             {
                 const auto second_object = objects[second_index];
 
                 // Ordered complete edge.
-                m_set.set(m_hash.get_assignment_rank(
-                    EdgeAssignment(first_index, first_object.get_index().get_value(), second_index, second_object.get_index().get_value())));
+                m_set.set(m_hash.get_assignment_rank(EdgeAssignment(formalism::ParameterIndex(first_index),
+                                                                    first_object.get_index(),
+                                                                    formalism::ParameterIndex(second_index),
+                                                                    second_object.get_index())));
             }
         }
     }
@@ -233,21 +235,24 @@ public:
         auto& empty_assignment_bound = m_set[EmptyAssignment::rank];
         empty_assignment_bound = hull(empty_assignment_bound, ClosedInterval<float_t>(value, value));
 
-        for (size_t first_index = 0; first_index < arity; ++first_index)
+        for (uint_t first_index = 0; first_index < arity; ++first_index)
         {
             const auto first_object = arguments[first_index];
 
             // Complete vertex.
-            auto& single_assignment_bound = m_set[m_hash.get_assignment_rank(VertexAssignment(first_index, first_object.get_index().get_value()))];
+            auto& single_assignment_bound =
+                m_set[m_hash.get_assignment_rank(VertexAssignment(formalism::ParameterIndex(first_index), first_object.get_index()))];
             single_assignment_bound = hull(single_assignment_bound, ClosedInterval<float_t>(value, value));
 
-            for (size_t second_index = first_index + 1; second_index < arity; ++second_index)
+            for (uint_t second_index = first_index + 1; second_index < arity; ++second_index)
             {
                 const auto second_object = arguments[second_index];
 
                 // Ordered complete edge.
-                auto& double_assignment_bound = m_set[m_hash.get_assignment_rank(
-                    EdgeAssignment(first_index, first_object.get_index().get_value(), second_index, second_object.get_index().get_value()))];
+                auto& double_assignment_bound = m_set[m_hash.get_assignment_rank(EdgeAssignment(formalism::ParameterIndex(first_index),
+                                                                                                first_object.get_index(),
+                                                                                                formalism::ParameterIndex(second_index),
+                                                                                                second_object.get_index()))];
                 double_assignment_bound = hull(double_assignment_bound, ClosedInterval<float_t>(value, value));
             }
         }

@@ -30,6 +30,7 @@
 #include "tyr/common/segmented_vector.hpp"
 #include "tyr/common/span.hpp"
 #include "tyr/common/types.hpp"
+#include "tyr/common/uint_mixins.hpp"
 #include "tyr/common/unordered_set.hpp"
 #include "tyr/common/variant.hpp"
 

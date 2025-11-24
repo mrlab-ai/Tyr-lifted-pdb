@@ -18,15 +18,17 @@
 #ifndef TYR_FORMALISM_PARAMETER_INDEX_HPP_
 #define TYR_FORMALISM_PARAMETER_INDEX_HPP_
 
+#include "tyr/common/uint_mixins.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 namespace tyr::formalism
 {
-enum class ParameterIndex : uint_t
+struct ParameterIndex : FixedUintMixin<ParameterIndex>
 {
+    using Base = FixedUintMixin<ParameterIndex>;
+    using Base::Base;
 };
 
-inline uint_t to_uint_t(ParameterIndex index) noexcept { return static_cast<uint_t>(index); }
 }
 
 #endif

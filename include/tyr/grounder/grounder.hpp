@@ -23,6 +23,7 @@
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/fact_set.hpp"
+#include "tyr/grounder/formatter.hpp"
 #include "tyr/grounder/generator.hpp"
 #include "tyr/grounder/kpkc.hpp"
 

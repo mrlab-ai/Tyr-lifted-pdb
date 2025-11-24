@@ -92,7 +92,7 @@ namespace tyr
 {
 inline std::ostream& print(std::ostream& os, const formalism::ParameterIndex& el)
 {
-    fmt::print(os, "{}", to_uint_t(el));
+    fmt::print(os, "{}", uint_t(el));
     return os;
 }
 

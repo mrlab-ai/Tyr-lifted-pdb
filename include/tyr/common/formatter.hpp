@@ -20,6 +20,7 @@
 
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/index_mixins.hpp"
+#include "tyr/common/uint_mixins.hpp"
 
 #include <array>
 #include <fmt/core.h>
@@ -84,6 +85,9 @@ std::ostream& operator<<(std::ostream& os, const FlatIndexMixin<Derived>& mixin)
 
 template<typename Derived, HasValue Group>
 std::ostream& operator<<(std::ostream& os, const GroupIndexMixin<Derived, Group>& mixin);
+
+template<typename Derived>
+std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& mixin);
 
 template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
 std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec);
@@ -249,6 +253,13 @@ template<typename Derived, HasValue Group>
 std::ostream& operator<<(std::ostream& os, const GroupIndexMixin<Derived, Group>& mixin)
 {
     os << to_string(mixin.group.value) << ":" << to_string(mixin.value);
+    return os;
+}
+
+template<typename Derived>
+std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& mixin)
+{
+    os << to_string(mixin.value);
     return os;
 }
 

@@ -346,7 +346,7 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
              { GripperStaticPredicate::Room, { { true, { 0 } }, { true, { 1 } } } } })
     {
         static_atom_builder.index.group = convert(predicate);
-        static_atom_builder.index.group = convert(predicate);
+        static_literal_builder.index.group = convert(predicate);
 
         for (const auto& [polarity, params] : polarity_and_params_per_atoms)
         {
@@ -620,10 +620,12 @@ inline std::pair<Index<formalism::Program>, formalism::Repository> create_exampl
     auto buffer = cista::Buffer {};
 
     program_builder.static_predicates = add_static_predicates(repository);
+
     program_builder.fluent_predicates = add_fluent_predicates(repository);
     program_builder.objects = add_objects(repository);
     program_builder.static_atoms = add_static_ground_atoms(repository);
     program_builder.fluent_atoms = add_fluent_ground_atoms(repository);
+
     program_builder.rules.push_back(add_rule_move(repository));
     program_builder.rules.push_back(add_rule_pick(repository));
     program_builder.rules.push_back(add_rule_drop(repository));

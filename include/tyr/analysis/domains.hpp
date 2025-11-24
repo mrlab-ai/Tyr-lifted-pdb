@@ -121,7 +121,7 @@ void restrict_parameter_domain_from_static_atom(Proxy<formalism::Atom<formalism:
                 if constexpr (std::is_same_v<ProxyType, Proxy<formalism::Object, formalism::Repository>>) {}
                 else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
                 {
-                    const auto parameter_index = to_uint_t(arg);
+                    const auto parameter_index = uint_t(arg);
                     auto& parameter_domain = parameter_domains[parameter_index];
                     const auto& predicate_domain = static_predicate_domain_sets[predicate.get_index().value][pos];
 
@@ -154,7 +154,7 @@ void restrict_parameter_domain_from_static_function_term(Proxy<formalism::Functi
                 if constexpr (std::is_same_v<ProxyType, Proxy<formalism::Object, formalism::Repository>>) {}
                 else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
                 {
-                    const auto parameter_index = to_uint_t(arg);
+                    const auto parameter_index = uint_t(arg);
                     auto& parameter_domain = parameter_domains[parameter_index];
                     const auto& predicate_domain = static_function_domain_sets[function.get_index().value][pos];
 
@@ -264,7 +264,7 @@ void lift_parameter_domain_from_fluent_atom(Proxy<formalism::Atom<formalism::Flu
                 if constexpr (std::is_same_v<ProxyType, Proxy<formalism::Object, formalism::Repository>>) {}
                 else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
                 {
-                    const auto parameter_index = to_uint_t(arg);
+                    const auto parameter_index = uint_t(arg);
                     const auto& parameter_domain = parameter_domains[parameter_index];
                     auto& function_domain = fluent_predicate_domain_sets[predicate.get_index().value][pos];
 
@@ -297,7 +297,7 @@ void lift_parameter_domain_from_fluent_function_term(Proxy<formalism::FunctionTe
                 if constexpr (std::is_same_v<ProxyType, Proxy<formalism::Object, formalism::Repository>>) {}
                 else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
                 {
-                    const auto parameter_index = to_uint_t(arg);
+                    const auto parameter_index = uint_t(arg);
                     const auto& parameter_domain = parameter_domains[parameter_index];
                     auto& function_domain = fluent_function_domain_sets[function.get_index().value][pos];
 

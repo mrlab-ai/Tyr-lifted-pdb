@@ -55,7 +55,9 @@ TEST(TyrTests, TyrGrounderStaticConsistencyGraph)
         const auto rule = program.get_rules()[i];
         const auto& parameter_domains = domains.rule_domains[i];
 
-        grounder::StaticConsistencyGraph(rule.get_body(), parameter_domains, assignment_sets.static_sets);
+        auto graph = grounder::StaticConsistencyGraph(rule.get_body(), parameter_domains, assignment_sets.static_sets);
+
+        std::cout << graph << std::endl;
     }
 }
 }
