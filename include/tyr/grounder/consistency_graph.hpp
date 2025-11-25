@@ -952,6 +952,15 @@ ClosedInterval<A> evaluate_partially(float_t number,
 }
 
 template<IsFloatingPoint A, typename StructureType, formalism::IsContext C>
+ClosedInterval<A> evaluate_partially(Proxy<Index<formalism::FunctionTerm<formalism::StaticTag>>, C> function_term,
+                                     const StructureType& element,
+                                     const FunctionAssignmentSets<formalism::StaticTag>& static_assignment_sets,
+                                     const FunctionAssignmentSets<formalism::FluentTag>& fluent_assignment_sets) noexcept
+{
+    return compute_tightest_closed_interval(function_term, element, );
+}
+
+template<IsFloatingPoint A, typename StructureType, formalism::IsContext C>
 bool is_satisfiable(Proxy<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> op,
                     const StructureType& element,
                     const FunctionAssignmentSets<formalism::StaticTag>& static_assignment_sets,
