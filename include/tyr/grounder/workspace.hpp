@@ -32,14 +32,15 @@ struct ImmutableRuleWorkspace
     const AssignmentSets& assignment_sets;
 
     // Rule infos
-    const Proxy<formalism::Rule, C> rule;
-    const StaticConsistencyGraph<C>& static_consistency_graph;
+    const Proxy<Index<formalism::Rule>, C> rule;
+    const kpkc::DenseKPartiteGraph& consistency_graph;
 };
 
 template<formalism::IsContext C>
 struct MutableRuleWorkspace
 {
     formalism::ScopedRepository<C>& repository;
+    kpkc::Workspace& kpkc_workspace;
 };
 
 }

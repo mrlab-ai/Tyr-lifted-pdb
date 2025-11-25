@@ -38,6 +38,12 @@ struct ImmutableRuleWorkspace;
 
 template<formalism::IsContext C>
 struct MutableRuleWorkspace;
+
+namespace kpkc
+{
+struct DenseKPartiteGraph;
+struct Workspace;
+}
 }
 
 #endif

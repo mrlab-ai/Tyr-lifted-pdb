@@ -18,6 +18,8 @@
 #ifndef TYR_GROUNDER_KPKC_HPP_
 #define TYR_GROUNDER_KPKC_HPP_
 
+#include "tyr/grounder/kpkc_data.hpp"
+
 #include <boost/dynamic_bitset.hpp>
 #include <cassert>
 #include <cstddef>
@@ -29,39 +31,9 @@
 
 namespace tyr::grounder::kpkc
 {
-/**
- * V = num vertices
- * K = num partitions
- */
-
-/// @brief `DenseConsistencyGraph` is a dense representation of the consistency graph for a rule and a set of facts.
-struct DenseConsistencyGraph
-{
-    std::vector<boost::dynamic_bitset<>> adjacency_matrix;  ///< Dimensions V x V
-    std::vector<std::vector<uint_t>> partitions;            ///< Dimensions K x V
-    size_t num_vertices;
-    size_t k;
-};
-
-/// @brief Helper to allocate a DenseConsistencyGraph from a given StaticConsistencyGraph.
-template<formalism::IsContext C>
-inline DenseConsistencyGraph allocate_dense_graph(const StaticConsistencyGraph<C>& sparse_graph);
-
-/// @brief `Workspace` is preallocated memory for a rule.
-struct Workspace
-{
-    std::vector<std::vector<boost::dynamic_bitset<>>> compatible_vertices;  ///< Dimensions K x K x V
-    boost::dynamic_bitset<> partition_bits;                                 ///< Dimensions K
-    std::vector<uint_t> partial_solution;                                   ///< Dimensions K
-    size_t k;
-};
-
-/// @brief Helper to allocate a Workspace from a given StaticConsistencyGraph.
-template<formalism::IsContext C>
-inline Workspace allocate_workspace(const StaticConsistencyGraph<C>& sparse_graph);
 
 template<typename Callback>
-void create_k_clique_in_k_partite_graph_generator_recursively(const DenseConsistencyGraph& graph, Workspace& workspace, Callback&& callback, size_t depth)
+void for_each_k_clique_recursively(const DenseKPartiteGraph& graph, Workspace& workspace, Callback&& callback, size_t depth)
 {
     assert(depth < graph.partitions.size());
 
@@ -143,7 +115,7 @@ void create_k_clique_in_k_partite_graph_generator_recursively(const DenseConsist
 
             if ((partial_solution.size() + possible_additions) == k)
             {
-                create_k_clique_in_k_partite_graph_generator_recursively(graph, workspace, callback, depth + 1);
+                for_each_k_clique_recursively(graph, workspace, callback, depth + 1);
             }
 
             partition_bits[best_partition] = 0;
@@ -156,9 +128,9 @@ void create_k_clique_in_k_partite_graph_generator_recursively(const DenseConsist
 }
 
 template<typename Callback>
-void create_k_clique_in_k_partite_graph_generator(const DenseConsistencyGraph& graph, Workspace& workspace, Callback&& callback)
+void for_each_k_clique(const DenseKPartiteGraph& graph, Workspace& workspace, Callback&& callback)
 {
-    create_k_clique_in_k_partite_graph_generator_recursively(graph, workspace, callback, 0);
+    for_each_k_clique_recursively(graph, workspace, callback, 0);
 }
 }
 

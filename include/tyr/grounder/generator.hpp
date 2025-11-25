@@ -21,12 +21,21 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
 #include "tyr/grounder/declarations.hpp"
+#include "tyr/grounder/kpkc.hpp"
 
 namespace tyr::grounder
 {
 template<formalism::IsContext C>
 void ground(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
 {
+    kpkc::for_each_k_clique(immutable_workspace.consistency_graph,
+                            mutable_workspace.kpkc_workspace,
+                            [](auto&& clique)
+                            {
+                                // TODO: ground the conjunctive condition and check if it applicable
+
+                                // TODO: ground the final rule
+                            });
 }
 }
 

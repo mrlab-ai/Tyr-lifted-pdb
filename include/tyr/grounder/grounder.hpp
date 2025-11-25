@@ -26,6 +26,8 @@
 #include "tyr/grounder/formatter.hpp"
 #include "tyr/grounder/generator.hpp"
 #include "tyr/grounder/kpkc.hpp"
+#include "tyr/grounder/kpkc_data.hpp"
+#include "tyr/grounder/kpkc_utils.hpp"
 #include "tyr/grounder/workspace.hpp"
 
 #endif
