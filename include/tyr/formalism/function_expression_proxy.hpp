@@ -25,15 +25,18 @@
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<formalism::FunctionExpression, C> : public VariantProxy<typename Data<formalism::FunctionExpression>::Variant, C>
+class Proxy<Data<formalism::FunctionExpression>, C>
 {
 private:
-    using Base = VariantProxy<typename Data<formalism::FunctionExpression>::Variant, C>;
+    const C* context;
+    Data<formalism::FunctionExpression> fexpr;
 
 public:
     using Tag = formalism::FunctionExpression;
 
-    Proxy(Data<formalism::FunctionExpression> fexpr, const C& context) : Base(fexpr.value, context) {}
+    auto get() const { return Proxy<typename Data<formalism::FunctionExpression>::Variant, C>(fexpr.value, *context); }
+
+    Proxy(Data<formalism::FunctionExpression> fexpr, const C& context) : context(&context), fexpr(fexpr) {}
 };
 }
 

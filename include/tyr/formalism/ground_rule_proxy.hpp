@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_GROUND_RULE_PROXY_HPP_
 #define TYR_FORMALISM_GROUND_RULE_PROXY_HPP_
 
-#include "tyr/common/span.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/boolean_operator_proxy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_proxy.hpp"
@@ -30,7 +30,7 @@
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<formalism::GroundRule, C>
+class Proxy<Index<formalism::GroundRule>, C>
 {
 private:
     const C* context;
@@ -44,10 +44,13 @@ public:
     const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
-    auto get_binding() const { return SpanProxy<formalism::Object, C>(get().objects, *context); }
-    auto get_static_body() const { return SpanProxy<formalism::GroundLiteral<formalism::StaticTag>, C>(get().static_body, *context); }
-    auto get_fluent_body() const { return SpanProxy<formalism::GroundLiteral<formalism::FluentTag>, C>(get().fluent_body, *context); }
-    auto get_numeric_body() const { return SpanProxy<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>, C>(get().numeric_body, *context); }
+    auto get_binding() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *context); }
+    auto get_static_body() const { return Proxy<IndexList<formalism::GroundLiteral<formalism::StaticTag>>, C>(get().static_body, *context); }
+    auto get_fluent_body() const { return Proxy<IndexList<formalism::GroundLiteral<formalism::FluentTag>>, C>(get().fluent_body, *context); }
+    auto get_numeric_body() const
+    {
+        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_body, *context);
+    }
     auto get_head() const { return Proxy<formalism::GroundAtom<formalism::FluentTag>, C>(get().head, *context); }
 };
 }

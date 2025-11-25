@@ -18,15 +18,16 @@
 #ifndef TYR_FORMALISM_MULTI_OPERATOR_PROXY_HPP_
 #define TYR_FORMALISM_MULTI_OPERATOR_PROXY_HPP_
 
-#include "tyr/common/span.hpp"
 #include "tyr/common/types.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_expression_proxy.hpp"
 #include "tyr/formalism/multi_operator_index.hpp"
 
 namespace tyr
 {
 template<formalism::IsOp Op, typename T, formalism::IsContext C>
-class Proxy<formalism::MultiOperator<Op, T>, C>
+class Proxy<Index<formalism::MultiOperator<Op, T>>, C>
 {
 private:
     const C* context;
@@ -40,7 +41,7 @@ public:
     const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
-    auto get_args() const { return SpanProxy<T, C>(get().args, *context); }
+    auto get_args() const { return Proxy<::cista::offset::vector<T>, C>(get().args, *context); }
 };
 
 }

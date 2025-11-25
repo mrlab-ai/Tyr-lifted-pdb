@@ -29,14 +29,12 @@ struct Data<formalism::BinaryOperator<Op, T>>
 {
     using Tag = formalism::BinaryOperator<Op, T>;
 
-    using Reference = ReferenceType<T>;
-
     Index<formalism::BinaryOperator<Op, T>> index;
-    Reference lhs;
-    Reference rhs;
+    T lhs;
+    T rhs;
 
     Data() = default;
-    Data(Index<formalism::BinaryOperator<Op, T>> index, Reference lhs, Reference rhs) : index(index), lhs(lhs), rhs(rhs) {}
+    Data(Index<formalism::BinaryOperator<Op, T>> index, T lhs, T rhs) : index(index), lhs(lhs), rhs(rhs) {}
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;

@@ -44,13 +44,13 @@ template<formalism::IsContext C>
 class VertexAssignmentIterator
 {
 private:
-    SpanProxy<formalism::Term, C> m_terms;
+    Proxy<DataList<formalism::Term>, C> m_terms;
     const Vertex* m_vertex;
     uint_t m_pos;
 
     VertexAssignment m_assignment;
 
-    const SpanProxy<formalism::Term, C>& get_terms() const noexcept { return m_terms; }
+    const Proxy<DataList<formalism::Term>, C>& get_terms() const noexcept { return m_terms; }
     const Vertex& get_vertex() const noexcept { return *m_vertex; }
 
     void advance() noexcept
@@ -82,7 +82,7 @@ public:
     using iterator_category = std::forward_iterator_tag;
 
     VertexAssignmentIterator() noexcept : m_terms(nullptr), m_vertex(nullptr), m_pos(std::numeric_limits<uint_t>::max()) {}
-    VertexAssignmentIterator(SpanProxy<formalism::Term, C> terms, const Vertex& vertex, bool begin) noexcept :
+    VertexAssignmentIterator(Proxy<DataList<formalism::Term>, C> terms, const Vertex& vertex, bool begin) noexcept :
         m_terms(terms),
         m_vertex(&vertex),
         m_pos(begin ? 0 : std::numeric_limits<uint_t>::max())
@@ -112,11 +112,11 @@ template<formalism::IsContext C>
 class VertexAssignmentRange
 {
 private:
-    SpanProxy<formalism::Term, C> m_terms;
+    Proxy<DataList<formalism::Term>, C> m_terms;
     const Vertex& m_vertex;
 
 public:
-    VertexAssignmentRange(SpanProxy<formalism::Term, C> terms, const Vertex& vertex) noexcept : m_terms(terms), m_vertex(vertex) {}
+    VertexAssignmentRange(Proxy<DataList<formalism::Term>, C> terms, const Vertex& vertex) noexcept : m_terms(terms), m_vertex(vertex) {}
 
     auto begin() const noexcept { return VertexAssignmentIterator<C>(m_terms, m_vertex, true); }
 
@@ -132,13 +132,13 @@ template<formalism::IsContext C>
 class EdgeAssignmentIterator
 {
 private:
-    SpanProxy<formalism::Term, C> m_terms;
+    Proxy<DataList<formalism::Term>, C> m_terms;
     const Edge* m_edge;
     uint_t m_pos;
 
     EdgeAssignment m_assignment;
 
-    const SpanProxy<formalism::Term, C>& get_terms() const noexcept { return m_terms; }
+    const Proxy<DataList<formalism::Term>, C>& get_terms() const noexcept { return m_terms; }
     const Edge& get_edge() const noexcept { return *m_edge; }
 
     void advance() noexcept
@@ -206,7 +206,7 @@ public:
     using iterator_category = std::forward_iterator_tag;
 
     EdgeAssignmentIterator() noexcept : m_terms(nullptr), m_edge(nullptr), m_pos(std::numeric_limits<uint_t>::max()), m_assignment() {}
-    EdgeAssignmentIterator(SpanProxy<formalism::Term, C> terms, const Edge& edge, bool begin) noexcept :
+    EdgeAssignmentIterator(Proxy<DataList<formalism::Term>, C> terms, const Edge& edge, bool begin) noexcept :
         m_terms(terms),
         m_edge(&edge),
         m_pos(begin ? 0 : std::numeric_limits<uint_t>::max()),
@@ -237,11 +237,11 @@ template<formalism::IsContext C>
 class EdgeAssignmentRange
 {
 private:
-    SpanProxy<formalism::Term, C> m_terms;
+    Proxy<DataList<formalism::Term>, C> m_terms;
     const Edge& m_edge;
 
 public:
-    EdgeAssignmentRange(SpanProxy<formalism::Term, C> terms, const Edge& edge) noexcept : m_terms(terms), m_edge(edge) {}
+    EdgeAssignmentRange(Proxy<DataList<formalism::Term>, C> terms, const Edge& edge) noexcept : m_terms(terms), m_edge(edge) {}
 
     auto begin() const noexcept { return EdgeAssignmentIterator<C>(m_terms, m_edge, true); }
 
@@ -269,7 +269,7 @@ public:
     }
 
     template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-    bool consistent_literals(SpanProxy<formalism::Literal<T>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
+    bool consistent_literals(Proxy<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
     {
         for (const auto& literal : literals)
         {
@@ -314,14 +314,14 @@ public:
     }
 
     template<typename T, formalism::IsContext C>
-    bool consistent_literals(SpanProxy<formalism::BooleanOperator<T>, C> numeric_constraints,
+    bool consistent_literals(Proxy<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
                              const FunctionAssignmentSet<formalism::StaticTag>& static_function_assignment_sets,
                              const FunctionAssignmentSet<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept;
 
     template<formalism::IsContext C>
-    Index<formalism::Object> get_object_if_overlap(Proxy<formalism::Term, C> term) const noexcept
+    Index<formalism::Object> get_object_if_overlap(Proxy<Data<formalism::Term>, C> term) const noexcept
     {
-        return std::visit(
+        return visit(
             [&](auto&& arg)
             {
                 using Type = std::decay_t<decltype(arg)>;
@@ -333,16 +333,16 @@ public:
                     else
                         return Index<formalism::Object>::max();
                 }
-                else if constexpr (std::is_same_v<Type, Index<formalism::Object>>)
+                else if constexpr (std::is_same_v<Type, Proxy<Index<formalism::Object>, C>>)
                 {
-                    return arg;
+                    return arg.get_index();
                 }
                 else
                 {
                     static_assert(dependent_false<Type>::value, "Missing case");
                 }
             },
-            term.index_variant());
+            term.get());
     }
 
     uint_t get_index() const noexcept { return m_index; }
@@ -365,7 +365,7 @@ public:
     Edge(Vertex src, Vertex dst) noexcept : m_src(std::move(src)), m_dst(std::move(dst)) {}
 
     template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-    bool consistent_literals(SpanProxy<formalism::Literal<T>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
+    bool consistent_literals(Proxy<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
     {
         for (const auto& literal : literals)
         {
@@ -412,14 +412,14 @@ public:
     }
 
     template<typename T, formalism::IsContext C>
-    bool consistent_literals(SpanProxy<formalism::BooleanOperator<T>, C> numeric_constraints,
+    bool consistent_literals(Proxy<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
                              const FunctionAssignmentSet<formalism::StaticTag>& static_function_assignment_sets,
                              const FunctionAssignmentSet<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept;
 
     template<formalism::IsContext C>
-    Index<formalism::Object> get_object_if_overlap(Proxy<formalism::Term, C> term) const noexcept
+    Index<formalism::Object> get_object_if_overlap(Proxy<Data<formalism::Term>, C> term) const noexcept
     {
-        return std::visit(
+        return visit(
             [&](auto&& arg)
             {
                 using Type = std::decay_t<decltype(arg)>;
@@ -433,16 +433,16 @@ public:
                     else
                         return Index<formalism::Object>::max();
                 }
-                else if constexpr (std::is_same_v<Type, Index<formalism::Object>>)
+                else if constexpr (std::is_same_v<Type, Proxy<Index<formalism::Object>, C>>)
                 {
-                    return arg;
+                    return arg.get_index();
                 }
                 else
                 {
                     static_assert(dependent_false<Type>::value, "Missing case");
                 }
             },
-            term.index_variant());
+            term.get());
     }
 
     const Vertex& get_src() const noexcept { return m_src; }
@@ -457,7 +457,7 @@ class StaticConsistencyGraph
 {
 private:
     /// @brief Helper to initialize vertices.
-    details::Vertices compute_vertices(Proxy<formalism::ConjunctiveCondition, C> condition,
+    details::Vertices compute_vertices(Proxy<Index<formalism::ConjunctiveCondition>, C> condition,
                                        const analysis::DomainListList& parameter_domains,
                                        const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets)
     {
@@ -485,7 +485,7 @@ private:
 
     /// @brief Helper to initialize edges.
     std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
-    compute_edges(Proxy<formalism::ConjunctiveCondition, C> condition,
+    compute_edges(Proxy<Index<formalism::ConjunctiveCondition>, C> condition,
                   const analysis::DomainListList& parameter_domains,
                   const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                   const details::Vertices& vertices)
@@ -529,7 +529,7 @@ private:
     }
 
 public:
-    StaticConsistencyGraph(Proxy<formalism::ConjunctiveCondition, C> condition,
+    StaticConsistencyGraph(Proxy<Index<formalism::ConjunctiveCondition>, C> condition,
                            const analysis::DomainListList& parameter_domains,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets) :
         m_condition(condition)
@@ -641,7 +641,7 @@ private:
     friend class EdgeIterator;
 
 private:
-    Proxy<formalism::ConjunctiveCondition, C> m_condition;
+    Proxy<Index<formalism::ConjunctiveCondition>, C> m_condition;
 
     /* The data member of the consistency graph. */
     details::Vertices m_vertices;

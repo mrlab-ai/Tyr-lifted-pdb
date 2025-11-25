@@ -54,7 +54,7 @@ TEST(TyrTests, TyrFormalismProxy)
     auto [atom, atom_success] = repository.get_or_create(atom_builder, buffer);
 
     // Recurse through proxy
-    auto atom_proxy = Proxy<Atom<FluentTag>, Repository>(atom->index, repository);
+    auto atom_proxy = Proxy<Index<Atom<FluentTag>>, Repository>(atom->index, repository);
     auto atom_relation_proxy = atom_proxy.get_predicate();
     auto atom_terms_proxy = atom_proxy.get_terms();
 
@@ -65,7 +65,7 @@ TEST(TyrTests, TyrFormalismProxy)
         {
             using ProxyType = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<ProxyType, Proxy<Object, Repository>>)
+            if constexpr (std::is_same_v<ProxyType, Proxy<Index<Object>, Repository>>)
             {
                 EXPECT_EQ(arg.get_index(), object->index);
             }
@@ -74,7 +74,7 @@ TEST(TyrTests, TyrFormalismProxy)
                 FAIL() << "Expected ObjectProxy for first term, got a different proxy type";
             }
         },
-        atom_terms_proxy[0]);
+        atom_terms_proxy[0].get());
     visit(
         [&](auto&& arg)
         {
@@ -89,7 +89,7 @@ TEST(TyrTests, TyrFormalismProxy)
                 FAIL() << "Expected VariableProxy for first term, got a different proxy type";
             }
         },
-        atom_terms_proxy[1]);
+        atom_terms_proxy[1].get());
 }
 
 }

@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_PROGRAM_PROXY_HPP_
 #define TYR_FORMALISM_PROGRAM_PROXY_HPP_
 
-#include "tyr/common/span.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
@@ -31,7 +31,7 @@
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<formalism::Program, C>
+class Proxy<Index<formalism::Program>, C>
 {
 private:
     const C* context;
@@ -49,25 +49,25 @@ public:
     template<formalism::IsStaticOrFluentTag T>
     auto get_predicates() const
     {
-        return SpanProxy<formalism::Predicate<T>, C>(get().template get_predicates<T>(), *context);
+        return Proxy<IndexList<formalism::Predicate<T>>, C>(get().template get_predicates<T>(), *context);
     }
     template<formalism::IsStaticOrFluentTag T>
     auto get_functions() const
     {
-        return SpanProxy<formalism::Function<T>, C>(get().template get_functions<T>(), *context);
+        return Proxy<IndexList<formalism::Function<T>>, C>(get().template get_functions<T>(), *context);
     }
-    auto get_objects() const { return SpanProxy<formalism::Object, C>(get().objects, *context); }
+    auto get_objects() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_atoms() const
     {
-        return SpanProxy<formalism::GroundAtom<T>, C>(get().template get_atoms<T>(), *context);
+        return Proxy<IndexList<formalism::GroundAtom<T>>, C>(get().template get_atoms<T>(), *context);
     }
     template<formalism::IsStaticOrFluentTag T>
     auto get_function_values() const
     {
-        return SpanProxy<formalism::GroundFunctionTermValue<T>, C>(get().template get_function_values<T>(), *context);
+        return Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C>(get().template get_function_values<T>(), *context);
     }
-    auto get_rules() const { return SpanProxy<formalism::Rule, C>(get().rules, *context); }
+    auto get_rules() const { return Proxy<IndexList<formalism::Rule>, C>(get().rules, *context); }
 };
 }
 

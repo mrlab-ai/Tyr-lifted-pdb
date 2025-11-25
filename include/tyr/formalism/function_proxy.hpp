@@ -25,7 +25,7 @@
 namespace tyr
 {
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<formalism::Function<T>, C>
+class Proxy<Index<formalism::Function<T>>, C>
 {
 private:
     const C* context;

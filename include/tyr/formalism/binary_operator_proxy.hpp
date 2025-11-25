@@ -26,7 +26,7 @@
 namespace tyr
 {
 template<formalism::IsOp Op, typename T, formalism::IsContext C>
-class Proxy<formalism::BinaryOperator<Op, T>, C>
+class Proxy<Index<formalism::BinaryOperator<Op, T>>, C>
 {
 private:
     const C* context;
@@ -44,7 +44,7 @@ public:
     {
         if constexpr (IsProxyable<T, C>)
         {
-            return ProxyType<T, C>(get().lhs, *context);
+            return Proxy<T, C>(get().lhs, *context);
         }
         else
         {
@@ -55,7 +55,7 @@ public:
     {
         if constexpr (IsProxyable<T, C>)
         {
-            return ProxyType<T, C>(get().rhs, *context);
+            return Proxy<T, C>(get().rhs, *context);
         }
         else
         {

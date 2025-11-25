@@ -25,13 +25,13 @@
 
 namespace tyr
 {
-template<formalism::IsOp Op, typename ArgTag>
-struct Index<formalism::BinaryOperator<Op, ArgTag>> : FlatIndexMixin<Index<formalism::BinaryOperator<Op, ArgTag>>>
+template<formalism::IsOp Op, typename T>
+struct Index<formalism::BinaryOperator<Op, T>> : FlatIndexMixin<Index<formalism::BinaryOperator<Op, T>>>
 {
-    using Tag = formalism::BinaryOperator<Op, ArgTag>;
+    using Tag = formalism::BinaryOperator<Op, T>;
 
     // Inherit constructors
-    using Base = FlatIndexMixin<Index<formalism::BinaryOperator<Op, ArgTag>>>;
+    using Base = FlatIndexMixin<Index<formalism::BinaryOperator<Op, T>>>;
     using Base::Base;
 };
 }

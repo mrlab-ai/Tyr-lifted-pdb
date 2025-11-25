@@ -35,14 +35,14 @@ struct Data<formalism::ConjunctiveCondition>
     IndexList<formalism::Variable> variables;
     IndexList<formalism::Literal<formalism::StaticTag>> static_literals;
     IndexList<formalism::Literal<formalism::FluentTag>> fluent_literals;
-    DataList<formalism::BooleanOperator<formalism::FunctionExpression>> numeric_constraints;
+    DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>> numeric_constraints;
 
     Data() = default;
     Data(Index<formalism::ConjunctiveCondition> index,
          IndexList<formalism::Variable> variables,
          IndexList<formalism::Literal<formalism::StaticTag>> static_literals,
          IndexList<formalism::Literal<formalism::FluentTag>> fluent_literals,
-         DataList<formalism::BooleanOperator<formalism::FunctionExpression>> numeric_constraints) :
+         DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>> numeric_constraints) :
         index(index),
         variables(std::move(variables)),
         static_literals(std::move(static_literals)),

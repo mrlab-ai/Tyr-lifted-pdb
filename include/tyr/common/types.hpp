@@ -18,6 +18,7 @@
 #ifndef TYR_COMMON_TYPES_HPP_
 #define TYR_COMMON_TYPES_HPP_
 
+#include <cista/containers/variant.h>
 #include <cista/containers/vector.h>
 
 namespace tyr

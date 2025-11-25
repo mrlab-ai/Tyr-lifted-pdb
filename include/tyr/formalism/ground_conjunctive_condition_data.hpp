@@ -35,14 +35,14 @@ struct Data<formalism::GroundConjunctiveCondition>
     IndexList<formalism::Object> objects;
     IndexList<formalism::GroundLiteral<formalism::StaticTag>> static_literals;
     IndexList<formalism::GroundLiteral<formalism::FluentTag>> fluent_literals;
-    DataList<formalism::BooleanOperator<formalism::GroundFunctionExpression>> numeric_constraints;
+    DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> numeric_constraints;
 
     Data() = default;
     Data(Index<formalism::GroundConjunctiveCondition> index,
          IndexList<formalism::Object> objects,
          IndexList<formalism::GroundLiteral<formalism::StaticTag>> static_literals,
          IndexList<formalism::GroundLiteral<formalism::FluentTag>> fluent_literals,
-         DataList<formalism::BooleanOperator<formalism::GroundFunctionExpression>> numeric_constraints) :
+         DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> numeric_constraints) :
         index(index),
         objects(std::move(objects)),
         static_literals(std::move(static_literals)),

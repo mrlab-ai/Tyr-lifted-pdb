@@ -26,18 +26,19 @@
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<formalism::Term, C> : public VariantProxy<typename Data<formalism::Term>::Variant, C>
+class Proxy<Data<formalism::Term>, C>
 {
 private:
-    using Base = VariantProxy<typename Data<formalism::Term>::Variant, C>;
+    const C* context;
+    Data<formalism::Term> term;
 
 public:
     using Tag = formalism::Term;
 
-    Proxy(Data<formalism::Term> term, const C& context) : Base(term.value, context) {}
-};
+    auto get() const { return Proxy<typename Data<formalism::Term>::Variant, C>(term.value, *context); }
 
-static_assert(IsProxyable<formalism::Term, formalism::Repository>);
+    Proxy(Data<formalism::Term> term, const C& context) : context(&context), term(term) {}
+};
 }
 
 #endif

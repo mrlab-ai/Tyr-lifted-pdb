@@ -43,7 +43,7 @@ Listeners compute_listeners(const RuleStrata& strata, const formalism::Repositor
 
         for (const auto rule_index : stratum)
         {
-            const auto rule = Proxy<formalism::Rule, formalism::Repository>(rule_index, repository);
+            const auto rule = Proxy<Index<formalism::Rule>, formalism::Repository>(rule_index, repository);
 
             for (const auto literal : rule.get_body().get_literals<formalism::FluentTag>())
             {

@@ -26,7 +26,7 @@
 namespace tyr
 {
 template<formalism::IsOp Op, typename T, formalism::IsContext C>
-class Proxy<formalism::UnaryOperator<Op, T>, C>
+class Proxy<Index<formalism::UnaryOperator<Op, T>>, C>
 {
 private:
     const C* context;
@@ -44,7 +44,7 @@ public:
     {
         if constexpr (IsProxyable<T, C>)
         {
-            return ProxyType<T, C>(get().arg, *context);
+            return Proxy<T, C>(get().arg, *context);
         }
         else
         {

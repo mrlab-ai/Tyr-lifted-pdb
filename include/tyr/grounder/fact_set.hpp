@@ -25,8 +25,8 @@ namespace tyr::grounder
 template<formalism::IsContext C>
 struct FactSets
 {
-    SpanProxy<formalism::GroundAtom<formalism::FluentTag>, C> predicate;
-    SpanProxy<formalism::GroundFunctionTermValue<formalism::FluentTag>, C> function;
+    Proxy<IndexList<formalism::GroundAtom<formalism::FluentTag>>, C> predicate;
+    Proxy<IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>>, C> function;
 };
 }
 

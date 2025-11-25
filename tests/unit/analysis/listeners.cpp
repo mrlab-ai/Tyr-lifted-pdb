@@ -29,7 +29,7 @@ namespace tyr::tests
 TEST(TyrTests, TyrAnalysisListeners)
 {
     auto [program_index, repository] = create_example_problem();
-    auto program = Proxy<Program, Repository>(program_index, repository);
+    auto program = Proxy<Index<Program>, Repository>(program_index, repository);
 
     auto rule_strata = analysis::compute_rule_stratification(program);
     auto listeners = analysis::compute_listeners(rule_strata, repository);

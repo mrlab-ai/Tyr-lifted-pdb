@@ -26,7 +26,7 @@
 namespace tyr
 {
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<formalism::GroundFunctionTermValue<T>, C>
+class Proxy<Index<formalism::GroundFunctionTermValue<T>>, C>
 {
 private:
     const C* context;
@@ -40,7 +40,7 @@ public:
     const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
-    auto get_term() const { return Proxy<formalism::GroundFunctionTerm<T>, C>(get().term, *context); }
+    auto get_term() const { return Proxy<Index<formalism::GroundFunctionTerm<T>>, C>(get().term, *context); }
     auto get_value() const { return get().value; }
 };
 }

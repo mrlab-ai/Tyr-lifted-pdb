@@ -26,15 +26,18 @@
 namespace tyr
 {
 template<typename T, formalism::IsContext C>
-class Proxy<formalism::BooleanOperator<T>, C> : public VariantProxy<typename Data<formalism::BooleanOperator<T>>::Variant, C>
+class Proxy<Data<formalism::BooleanOperator<T>>, C>
 {
 private:
-    using Base = VariantProxy<typename Data<formalism::BooleanOperator<T>>::Variant, C>;
+    const C* context;
+    Data<formalism::BooleanOperator<T>> op;
 
 public:
     using Tag = formalism::BooleanOperator<T>;
 
-    Proxy(Data<formalism::BooleanOperator<T>> op, const C& context) : Base(op.value, context) {}
+    auto get() const { return Proxy<typename Data<formalism::BooleanOperator<T>>::Variant, C>(op.value, *context); }
+
+    Proxy(Data<formalism::BooleanOperator<T>> op, const C& context) : context(&context), op(op) {}
 };
 }
 

@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_SPAN_HPP_
-#define TYR_COMMON_SPAN_HPP_
+#ifndef TYR_COMMON_VECTOR_HPP_
+#define TYR_COMMON_VECTOR_HPP_
 
 #include "tyr/common/declarations.hpp"
 
@@ -26,57 +26,48 @@
 
 namespace tyr
 {
-template<typename T, typename Context>
-class SpanProxy
+
+template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator, typename Context>
+class Proxy<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, Context>
 {
 public:
-    using Reference = ReferenceType<T>;
-    using Proxy = ProxyType<T, Context>;
+    using Container = ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>;
 
-private:
-    const Context* m_context;
-    std::span<const Reference> m_span;
+    Proxy(const Container& data, const Context& context) : m_context(&context), m_data(&data) {}
 
-public:
-    template<std::ranges::random_access_range Container>
-        requires std::convertible_to<std::ranges::range_value_t<const Container>, Reference>
-    explicit SpanProxy(const Container& container, const Context& context) : m_context(&context), m_span(std::data(container), std::size(container))
-    {
-    }
+    size_t size() const noexcept { return data().size(); }
+    bool empty() const noexcept { return data().empty(); }
 
-    size_t size() const noexcept { return m_span.size(); }
-    bool empty() const noexcept { return m_span.empty(); }
-
-    Proxy operator[](size_t i) const
+    auto operator[](size_t i) const
     {
         if constexpr (IsProxyable<T, Context>)
         {
-            return Proxy(m_span[i], *m_context);
+            return Proxy<T, Context>(data()[i], context());
         }
         else
         {
-            return m_span[i];
+            return data()[i];
         }
     }
 
     struct const_iterator
     {
         const Context* ctx;
-        const Reference* ptr;
+        const T* ptr;
 
         using difference_type = std::ptrdiff_t;
-        using value_type = Proxy;
+        using value_type = std::conditional_t<IsProxyable<T, Context>, ::tyr::Proxy<T, Context>, T>;
         using iterator_category = std::random_access_iterator_tag;
         using iterator_concept = std::random_access_iterator_tag;
 
         const_iterator() : ctx(nullptr), ptr(nullptr) {}
-        const_iterator(const Reference* ptr, const Context& ctx) : ctx(&ctx), ptr(ptr) {}
+        const_iterator(const T* ptr, const Context& ctx) : ctx(&ctx), ptr(ptr) {}
 
-        Proxy operator*() const
+        auto operator*() const
         {
             if constexpr (IsProxyable<T, Context>)
             {
-                return Proxy(*ptr, *ctx);
+                return Proxy<T, Context>(*ptr, *ctx);
             }
             else
             {
@@ -145,10 +136,10 @@ public:
         friend difference_type operator-(const_iterator lhs, const_iterator rhs) { return lhs.ptr - rhs.ptr; }
 
         // []
-        Proxy operator[](difference_type n) const
+        auto operator[](difference_type n) const
         {
             if constexpr (IsProxyable<T, Context>)
-                return Proxy(*(ptr + n), *ctx);
+                return Proxy<T, Context>(*(ptr + n), *ctx);
             else
                 return *(ptr + n);
         }
@@ -167,9 +158,16 @@ public:
         friend bool operator>=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(lhs < rhs); }
     };
 
-    const_iterator begin() const { return const_iterator { m_span.data(), *m_context }; }
+    const_iterator begin() const { return const_iterator { data().data(), context() }; }
 
-    const_iterator end() const { return const_iterator { m_span.data() + m_span.size(), *m_context }; }
+    const_iterator end() const { return const_iterator { data().data() + data().size(), context() }; }
+
+    const Context& context() const { return *m_context; }
+    const Container& data() const { return *m_data; }
+
+private:
+    const Context* m_context;
+    const Container* m_data;
 };
 }
 

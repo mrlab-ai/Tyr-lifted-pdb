@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_GROUND_CONJUNCTIVE_CONDITION_PROXY_HPP_
 #define TYR_FORMALISM_GROUND_CONJUNCTIVE_CONDITION_PROXY_HPP_
 
-#include "tyr/common/span.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/boolean_operator_proxy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_conjunctive_condition_index.hpp"
@@ -29,7 +29,7 @@
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<formalism::GroundConjunctiveCondition, C>
+class Proxy<Index<formalism::GroundConjunctiveCondition>, C>
 {
 private:
     const C* context;
@@ -43,15 +43,15 @@ public:
     const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
-    auto get_objects() const { return SpanProxy<formalism::Object, C>(get().objects, *context); }
+    auto get_objects() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_literals() const
     {
-        return SpanProxy<formalism::GroundLiteral<T>, C>(get().template get_literals<T>(), *context);
+        return Proxy<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_literals<T>(), *context);
     }
     auto get_numeric_constraints() const
     {
-        return SpanProxy<formalism::BooleanOperator<formalism::GroundFunctionExpression>, C>(get().numeric_constraints, *context);
+        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_constraints, *context);
     }
     auto get_arity() const { return get().objects.size(); }
 };

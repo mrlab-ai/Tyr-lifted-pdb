@@ -18,8 +18,8 @@
 #ifndef TYR_FORMALISM_ATOM_PROXY_HPP_
 #define TYR_FORMALISM_ATOM_PROXY_HPP_
 
-#include "tyr/common/span.hpp"
 #include "tyr/common/types.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/predicate_proxy.hpp"
@@ -29,7 +29,7 @@
 namespace tyr
 {
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<formalism::Atom<T>, C>
+class Proxy<Index<formalism::Atom<T>>, C>
 {
 private:
     const C* context;
@@ -43,8 +43,8 @@ public:
     const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
-    auto get_predicate() const { return Proxy<formalism::Predicate<T>, C>(index.group, *context); }
-    auto get_terms() const { return SpanProxy<formalism::Term, C>(get().terms, *context); }
+    auto get_predicate() const { return Proxy<Index<formalism::Predicate<T>>, C>(index.group, *context); }
+    auto get_terms() const { return Proxy<DataList<formalism::Term>, C>(get().terms, *context); }
 };
 }
 

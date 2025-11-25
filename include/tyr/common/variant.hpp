@@ -29,35 +29,33 @@
 namespace tyr
 {
 
-template<typename Variant, typename Context>
-class VariantProxy
+template<typename Context, typename... T>
+class Proxy<::cista::offset::variant<T...>, Context>
 {
-private:
-    const Context* m_context;
-    Variant m_value;
-
 public:
-    VariantProxy(Variant value, const Context& context) : m_context(&context), m_value(value) {}
+    using Variant = ::cista::offset::variant<T...>;
 
-    const Variant& index_variant() const noexcept { return m_value; }
+    Proxy(const Variant& data, const Context& context) : m_context(&context), m_data(&data) {}
+
+    const Variant& index_variant() const noexcept { return *m_data; }
     const Context& context() const noexcept { return *m_context; }
 
-    template<typename T>
+    template<typename U>
     bool is() const noexcept
     {
-        return std::holds_alternative<T>(index_variant());
+        return std::holds_alternative<U>(index_variant());
     }
 
-    template<typename T>
+    template<typename U>
     auto get() const
     {
-        if constexpr (IsProxyable<T, Context>)
+        if constexpr (IsProxyable<U, Context>)
         {
-            return ProxyType<T, Context>(std::get<T>(index_variant()), context());
+            return Proxy<U, Context>(std::get<U>(index_variant()), context());
         }
         else
         {
-            return std::get<T>(index_variant());
+            return std::get<U>(index_variant());
         }
     }
 
@@ -65,13 +63,13 @@ public:
     decltype(auto) apply(F&& f) const
     {
         return std::visit(
-            [&](auto arg) -> decltype(auto)
+            [&](auto&& arg) -> decltype(auto)
             {
-                using T = std::decay_t<decltype(arg)>;
+                using U = std::decay_t<decltype(arg)>;
 
-                if constexpr (IsProxyable<T, Context>)
+                if constexpr (IsProxyable<U, Context>)
                 {
-                    return std::forward<F>(f)(ProxyType<T, Context>(arg, context()));
+                    return std::forward<F>(f)(Proxy<U, Context>(arg, context()));
                 }
                 else
                 {
@@ -80,19 +78,22 @@ public:
             },
             index_variant());
     }
+
+private:
+    const Context* m_context;
+    const Variant* m_data;
 };
 
-template<typename Visitor, typename Variant, typename Context>
-constexpr auto visit(Visitor&& vis, tyr::VariantProxy<Variant, Context>&& v)
+template<typename Visitor, typename Context, typename... T>
+constexpr auto visit(Visitor&& vis, Proxy<::cista::offset::variant<T...>, Context>&& v)
 {
     return v.apply(std::forward<Visitor>(vis));
 }
 
-template<typename Visitor, typename Variant, typename Context>
-constexpr auto visit(Visitor&& vis, const tyr::VariantProxy<Variant, Context>& v)
+template<typename Visitor, typename Context, typename... T>
+constexpr auto visit(Visitor&& vis, const Proxy<::cista::offset::variant<T...>, Context>& v)
 {
     return v.apply(vis);
 }
-
 }
 #endif

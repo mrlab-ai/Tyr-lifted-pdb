@@ -26,7 +26,7 @@
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<formalism::Object, C>
+class Proxy<Index<formalism::Object>, C>
 {
 private:
     const C* context;

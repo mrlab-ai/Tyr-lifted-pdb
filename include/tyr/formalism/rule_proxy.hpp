@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_RULE_PROXY_HPP_
 #define TYR_FORMALISM_RULE_PROXY_HPP_
 
-#include "tyr/common/span.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/conjunctive_condition_proxy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -27,7 +27,7 @@
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<formalism::Rule, C>
+class Proxy<Index<formalism::Rule>, C>
 {
 private:
     const C* context;
@@ -41,8 +41,8 @@ public:
     const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
-    auto get_body() const { return Proxy<formalism::ConjunctiveCondition, C>(get().body, *context); }
-    auto get_head() const { return Proxy<formalism::Atom<formalism::FluentTag>, C>(get().head, *context); }
+    auto get_body() const { return Proxy<Index<formalism::ConjunctiveCondition>, C>(get().body, *context); }
+    auto get_head() const { return Proxy<Index<formalism::Atom<formalism::FluentTag>>, C>(get().head, *context); }
 };
 }
 

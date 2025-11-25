@@ -29,13 +29,11 @@ struct Data<formalism::MultiOperator<Op, T>>
 {
     using Tag = formalism::MultiOperator<Op, T>;
 
-    using Reference = ReferenceType<T>;
-
     Index<formalism::MultiOperator<Op, T>> index;
-    ::cista::offset::vector<Reference> args;
+    ::cista::offset::vector<T> args;
 
     Data() = default;
-    Data(Index<formalism::MultiOperator<Op, T>> index, ::cista::offset::vector<Reference> args) : index(index), args(std::move(args)) {}
+    Data(Index<formalism::MultiOperator<Op, T>> index, ::cista::offset::vector<T> args) : index(index), args(std::move(args)) {}
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;

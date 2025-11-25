@@ -110,7 +110,7 @@ private:
 
 public:
     template<formalism::IsContext C>
-    PredicateAssignmentSet(Proxy<formalism::Predicate<T>, C> predicate, const analysis::DomainListList& parameter_domains, size_t num_objects) :
+    PredicateAssignmentSet(Proxy<Index<formalism::Predicate<T>>, C> predicate, const analysis::DomainListList& parameter_domains, size_t num_objects) :
         m_predicate(predicate.get_index()),
         m_hash(PerfectAssignmentHash(parameter_domains, num_objects)),
         m_set(m_hash.size(), false)
@@ -120,7 +120,7 @@ public:
     void reset() noexcept { m_set.reset(); }
 
     template<formalism::IsContext C>
-    void insert(Proxy<formalism::GroundAtom<T>, C> ground_atom)
+    void insert(Proxy<Index<formalism::GroundAtom<T>>, C> ground_atom)
     {
         const auto arity = ground_atom.get_predicate().get_arity();
         const auto objects = ground_atom.get_terms();
@@ -163,7 +163,9 @@ public:
     PredicateAssignmentSets() = default;
 
     template<formalism::IsContext C>
-    PredicateAssignmentSets(SpanProxy<formalism::Predicate<T>, C> predicates, const analysis::DomainListListList& predicate_domains, size_t num_objects) :
+    PredicateAssignmentSets(Proxy<IndexList<formalism::Predicate<T>>, C> predicates,
+                            const analysis::DomainListListList& predicate_domains,
+                            size_t num_objects) :
         m_sets()
     {
         /* Validate inputs. */
@@ -182,14 +184,14 @@ public:
     }
 
     template<formalism::IsContext C>
-    void insert(SpanProxy<formalism::GroundAtom<T>, C> ground_atoms)
+    void insert(Proxy<IndexList<formalism::GroundAtom<T>>, C> ground_atoms)
     {
         for (const auto ground_atom : ground_atoms)
             m_sets[ground_atom.get_index().get_group().get_value()].insert(ground_atom);
     }
 
     template<formalism::IsContext C>
-    void insert(Proxy<formalism::GroundAtom<T>, C> ground_atom)
+    void insert(Proxy<Index<formalism::GroundAtom<T>>, C> ground_atom)
     {
         m_sets[ground_atom.get_index().get_group().get_value()].insert(ground_atom);
     }
@@ -215,7 +217,7 @@ public:
     FunctionAssignmentSet() = default;
 
     template<formalism::IsContext C>
-    FunctionAssignmentSet(Proxy<formalism::Function<T>, C> function, const analysis::DomainListList& parameter_domains, size_t num_objects) :
+    FunctionAssignmentSet(Proxy<Index<formalism::Function<T>>, C> function, const analysis::DomainListList& parameter_domains, size_t num_objects) :
         m_function(function.get_index()),
         m_hash(PerfectAssignmentHash(parameter_domains, num_objects)),
         m_set(m_hash.size(), ClosedInterval<float_t>())
@@ -225,7 +227,7 @@ public:
     void reset() noexcept { std::fill(m_set.begin(), m_set.end(), ClosedInterval<float_t>()); }
 
     template<formalism::IsContext C>
-    void insert(Proxy<formalism::GroundFunctionTerm<T>, C> function_term, float_t value)
+    void insert(Proxy<Index<formalism::GroundFunctionTerm<T>>, C> function_term, float_t value)
     {
         const auto arity = function_term.get_function().get_arity();
         const auto arguments = function_term.get_terms();
@@ -259,7 +261,7 @@ public:
     }
 
     template<formalism::IsContext C>
-    void insert(Proxy<formalism::GroundFunctionTermValue<T>, C> function_term_value)
+    void insert(Proxy<Index<formalism::GroundFunctionTermValue<T>>, C> function_term_value)
     {
         insert(function_term_value.get_term(), function_term_value.get_value());
     }
@@ -281,7 +283,8 @@ public:
     FunctionAssignmentSets() = default;
 
     template<formalism::IsContext C>
-    FunctionAssignmentSets(SpanProxy<formalism::Function<T>, C> functions, const analysis::DomainListListList& function_domains, size_t num_objects) : m_sets()
+    FunctionAssignmentSets(Proxy<IndexList<formalism::Function<T>>, C> functions, const analysis::DomainListListList& function_domains, size_t num_objects) :
+        m_sets()
     {
         /* Validate inputs. */
         for (uint_t i = 0; i < functions.size(); ++i)
@@ -299,14 +302,14 @@ public:
     }
 
     template<formalism::IsContext C>
-    void insert(SpanProxy<formalism::GroundFunctionTerm<T>, C> function_terms, const std::vector<float_t>& values)
+    void insert(Proxy<IndexList<formalism::GroundFunctionTerm<T>>, C> function_terms, const std::vector<float_t>& values)
     {
         for (size_t i = 0; i < function_terms.size(); ++i)
             m_sets[function_terms[i].get_index().get_group().get_value()].insert(function_terms[i], values[i]);
     }
 
     template<formalism::IsContext C>
-    void insert(SpanProxy<formalism::GroundFunctionTermValue<T>, C> function_term_values)
+    void insert(Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> function_term_values)
     {
         for (size_t i = 0; i < function_term_values.size(); ++i)
             m_sets[function_term_values[i].get_index().get_group().get_value()].insert(function_term_values[i]);
@@ -332,8 +335,8 @@ struct TaggedAssignmentSets<formalism::StaticTag>
     TaggedAssignmentSets() = default;
 
     template<formalism::IsContext C>
-    TaggedAssignmentSets(SpanProxy<formalism::Predicate<formalism::StaticTag>, C> static_predicates,
-                         SpanProxy<formalism::Function<formalism::StaticTag>, C> static_functions,
+    TaggedAssignmentSets(Proxy<IndexList<formalism::Predicate<formalism::StaticTag>>, C> static_predicates,
+                         Proxy<IndexList<formalism::Function<formalism::StaticTag>>, C> static_functions,
                          const analysis::DomainListListList& static_predicate_domains,
                          const analysis::DomainListListList& static_function_domains,
                          size_t num_objects) :
@@ -352,8 +355,8 @@ struct TaggedAssignmentSets<formalism::FluentTag>
     TaggedAssignmentSets() = default;
 
     template<formalism::IsContext C>
-    TaggedAssignmentSets(SpanProxy<formalism::Predicate<formalism::FluentTag>, C> fluent_predicates,
-                         SpanProxy<formalism::Function<formalism::FluentTag>, C> fluent_functions,
+    TaggedAssignmentSets(Proxy<IndexList<formalism::Predicate<formalism::FluentTag>>, C> fluent_predicates,
+                         Proxy<IndexList<formalism::Function<formalism::FluentTag>>, C> fluent_functions,
                          const analysis::DomainListListList& fluent_predicate_domains,
                          const analysis::DomainListListList& fluent_function_domains,
                          size_t num_objects) :
@@ -375,7 +378,7 @@ struct AssignmentSets
     TaggedAssignmentSets<formalism::FluentTag> fluent_sets;
 
     template<formalism::IsContext C>
-    AssignmentSets(Proxy<formalism::Program, C> program, const analysis::VariableDomains& domains) :
+    AssignmentSets(Proxy<Index<formalism::Program>, C> program, const analysis::VariableDomains& domains) :
         static_sets(program.template get_predicates<formalism::StaticTag>(),
                     program.template get_functions<formalism::StaticTag>(),
                     domains.static_predicate_domains,

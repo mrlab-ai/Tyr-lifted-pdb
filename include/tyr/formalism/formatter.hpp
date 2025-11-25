@@ -380,7 +380,7 @@ inline std::ostream& print(std::ostream& os, const Proxy<formalism::GroundRule, 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Program>& el) { return os; }
 
 template<formalism::IsContext C>
-inline std::ostream& print(std::ostream& os, const Proxy<formalism::Program, C>& el)
+inline std::ostream& print(std::ostream& os, const Proxy<Index<formalism::Program>, C>& el)
 {
     return os;
 }
