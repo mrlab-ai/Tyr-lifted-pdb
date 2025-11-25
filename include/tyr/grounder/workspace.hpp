@@ -15,19 +15,33 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_GROUNDER_GENERATOR_HPP_
-#define TYR_GROUNDER_GENERATOR_HPP_
+#ifndef TYR_GROUNDER_WORKSPACE_HPP_
+#define TYR_GROUNDER_WORKSPACE_HPP_
 
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_index.hpp"
-#include "tyr/grounder/declarations.hpp"
+#include "tyr/grounder/consistency_graph.hpp"
 
 namespace tyr::grounder
 {
+
 template<formalism::IsContext C>
-void ground(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
+struct ImmutableRuleWorkspace
 {
-}
+    // Fact infos
+    const FactSets<C>& fact_sets;
+    const AssignmentSets& assignment_sets;
+
+    // Rule infos
+    const Proxy<formalism::Rule, C> rule;
+    const StaticConsistencyGraph<C>& static_consistency_graph;
+};
+
+template<formalism::IsContext C>
+struct MutableRuleWorkspace
+{
+    formalism::ScopedRepository<C>& repository;
+};
+
 }
 
 #endif

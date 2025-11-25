@@ -32,6 +32,12 @@ struct AssignmentSets;
 
 template<formalism::IsContext C>
 class StaticConsistencyGraph;
+
+template<formalism::IsContext C>
+struct ImmutableRuleWorkspace;
+
+template<formalism::IsContext C>
+struct MutableRuleWorkspace;
 }
 
 #endif

@@ -23,15 +23,15 @@
 
 namespace tyr::formalism
 {
-
+template<IsContext C>
 class ScopedRepository
 {
 private:
-    const Repository& global;
-    Repository& local;
+    const C& global;
+    C& local;
 
 public:
-    ScopedRepository(const Repository& global, Repository& local) : global(global), local(local) {}
+    ScopedRepository(const C& global, C& local) : global(global), local(local) {}
 
     // nullptr signals that the object does not exist.
     template<IsGroupType T>
@@ -64,7 +64,7 @@ public:
         // Manually assign index to continue indexing.
         builder.index.value = global.size(builder.index) + local.size(builder.index);
 
-        return local.get_or_create<T, false>(builder, buf);
+        return local.template get_or_create<T, false>(builder, buf);
     }
 
     // const T* always points to a valid instantiation of the class.
@@ -76,9 +76,9 @@ public:
             return std::make_pair(ptr, false);
 
         // Manually assign index to continue indexing.
-        builder.index.value = global.size<T>() + local.size<T>();
+        builder.index.value = global.template size<T>() + local.template size<T>();
 
-        return local.get_or_create<T, false>(builder, buf);
+        return local.template get_or_create<T, false>(builder, buf);
     }
 
     template<IsGroupType T>
@@ -93,15 +93,22 @@ public:
     template<IsFlatType T>
     const Data<T>& operator[](Index<T> index) const
     {
-        if (index.value < global.size<T>())
+        if (index.value < global.template size<T>())
             return global[index];
 
         return local[index];
     }
 };
 
-static_assert(IsRepository<ScopedRepository>);
-static_assert(IsContext<ScopedRepository>);
+/// @brief Make ScopedRepository a trivial context.
+template<IsContext C>
+inline const ScopedRepository<C>& get_repository(const ScopedRepository<C>& context) noexcept
+{
+    return context;
+}
+
+static_assert(IsRepository<ScopedRepository<Repository>>);
+static_assert(IsContext<ScopedRepository<Repository>>);
 
 }
 

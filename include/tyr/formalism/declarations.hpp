@@ -76,13 +76,6 @@ concept IsOp = std::same_as<T, OpEq> || std::same_as<T, OpLe> || std::same_as<T,
                || std::same_as<T, OpAdd> || std::same_as<T, OpMul> || std::same_as<T, OpDiv> || std::same_as<T, OpSub>;
 
 /**
- * Forward declarations
- */
-
-class Repository;
-class ScopedRepository;
-
-/**
  * Formalism tag
  */
 
@@ -198,16 +191,6 @@ struct Program
 /**
  * Context
  */
-
-/// @brief Make Repository a trivial context.
-/// @param context
-/// @return
-inline const Repository& get_repository(const Repository& context) noexcept { return context; }
-
-/// @brief Make ScopedRepository a trivial context.
-/// @param context
-/// @return
-inline const ScopedRepository& get_repository(const ScopedRepository& context) noexcept { return context; }
 
 template<typename Repo, typename Tag>
 concept HasRepositoryAccessFor = requires(const Repo& r, Index<Tag> idx) {
