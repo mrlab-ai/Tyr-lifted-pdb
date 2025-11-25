@@ -75,6 +75,9 @@ TEST(TyrTests, TyrGrounderGenerator)
     {
         const auto& static_consistency_graph = static_consistency_graphs[i];
         auto& consistency_graph = consistency_graphs[i];
+        auto& kpkc_workspace = kpkc_workspaces[i];
+
+        grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
     }
 
     // Once: Create a repository for each rule
@@ -95,6 +98,9 @@ TEST(TyrTests, TyrGrounderGenerator)
     // TODO: we can use onetbb parallel for here later.
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
+        std::cout << "r: " << i << std::endl;
+
+        // Combine all the data dependencies into workspaces.
         auto immutable_workspace = grounder::ImmutableRuleWorkspace<Repository> { fact_sets, assignment_sets, program.get_rules()[i], consistency_graphs[i] };
         auto mutable_workspace = grounder::MutableRuleWorkspace<Repository> { rule_scoped_repositories[i], kpkc_workspaces[i] };
 

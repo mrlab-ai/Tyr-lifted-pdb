@@ -314,9 +314,13 @@ public:
     }
 
     template<typename T, formalism::IsContext C>
-    bool consistent_literals(Proxy<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
-                             const FunctionAssignmentSet<formalism::StaticTag>& static_function_assignment_sets,
-                             const FunctionAssignmentSet<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept;
+    bool consistent_numeric_constraints(Proxy<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
+                                        const FunctionAssignmentSets<formalism::StaticTag>& static_function_assignment_sets,
+                                        const FunctionAssignmentSets<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept
+    {
+        // TODO
+        return true;
+    }
 
     template<formalism::IsContext C>
     Index<formalism::Object> get_object_if_overlap(Proxy<Data<formalism::Term>, C> term) const noexcept
@@ -412,9 +416,13 @@ public:
     }
 
     template<typename T, formalism::IsContext C>
-    bool consistent_literals(Proxy<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
-                             const FunctionAssignmentSet<formalism::StaticTag>& static_function_assignment_sets,
-                             const FunctionAssignmentSet<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept;
+    bool consistent_numeric_constraints(Proxy<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
+                                        const FunctionAssignmentSets<formalism::StaticTag>& static_function_assignment_sets,
+                                        const FunctionAssignmentSets<formalism::FluentTag>& fluent_function_assignment_sets) const noexcept
+    {
+        // TODO
+        return true;
+    }
 
     template<formalism::IsContext C>
     Index<formalism::Object> get_object_if_overlap(Proxy<Data<formalism::Term>, C> term) const noexcept
@@ -457,15 +465,19 @@ class StaticConsistencyGraph
 {
 private:
     /// @brief Helper to initialize vertices.
-    details::Vertices compute_vertices(Proxy<Index<formalism::ConjunctiveCondition>, C> condition,
-                                       const analysis::DomainListList& parameter_domains,
-                                       const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets)
+    std::pair<details::Vertices, std::vector<std::vector<uint_t>>> compute_vertices(Proxy<Index<formalism::ConjunctiveCondition>, C> condition,
+                                                                                    const analysis::DomainListList& parameter_domains,
+                                                                                    const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets)
     {
         auto vertices = details::Vertices {};
+
+        auto partitions = std::vector<std::vector<uint_t>> {};
 
         for (uint_t parameter_index = 0; parameter_index < condition.get_arity(); ++parameter_index)
         {
             auto& parameter_domain = parameter_domains[parameter_index];
+
+            auto partition = std::vector<uint_t> {};
 
             for (const auto object_index : parameter_domain)
             {
@@ -476,11 +488,16 @@ private:
                 assert(vertex.get_index() == vertex_index);
 
                 if (vertex.consistent_literals(condition.template get_literals<formalism::StaticTag>(), static_assignment_sets.predicate))
+                {
                     vertices.push_back(std::move(vertex));
+                    partition.push_back(vertex.get_index());
+                }
             }
+
+            partitions.push_back(partition);
         }
 
-        return vertices;
+        return { std::move(vertices), std::move(partitions) };
     }
 
     /// @brief Helper to initialize edges.
@@ -534,15 +551,15 @@ public:
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets) :
         m_condition(condition)
     {
-        m_vertices = compute_vertices(condition, parameter_domains, static_assignment_sets);
+        auto [vertices_, partitions_] = compute_vertices(condition, parameter_domains, static_assignment_sets);
+        m_vertices = std::move(vertices_);
+        m_partitions = std::move(partitions_);
 
         auto [sources_, target_offsets_, targets_] = compute_edges(condition, parameter_domains, static_assignment_sets, m_vertices);
 
         m_sources = std::move(sources_);
         m_target_offsets = std::move(target_offsets_);
         m_targets = std::move(targets_);
-
-        m_vertex_mask.resize(m_vertices.size());
     }
 
     auto consistent_vertices(const AssignmentSets& assignment_sets) const
@@ -552,27 +569,23 @@ public:
                    [this, &assignment_sets](auto&& vertex)
                    {
                        return vertex.consistent_literals(m_condition.template get_literals<formalism::FluentTag>(), assignment_sets.fluent_sets.predicate)
-                              && vertex.consistent_literals(m_condition.get_numeric_constraints(),
-                                                            assignment_sets.static_sets.function,
-                                                            assignment_sets.fluent_sets.function);
+                              && vertex.consistent_numeric_constraints(m_condition.get_numeric_constraints(),
+                                                                       assignment_sets.static_sets.function,
+                                                                       assignment_sets.fluent_sets.function);
                    });
     }
 
-    auto consistent_edges(const AssignmentSets& assignment_sets) const
+    auto consistent_edges(const AssignmentSets& assignment_sets, const boost::dynamic_bitset<>& consistent_vertices) const
     {
-        m_vertex_mask.reset();
-        for (const auto& v : consistent_vertices(assignment_sets))
-            m_vertex_mask.set(v.get_index());
-
         return get_edges()
                | std::views::filter(
-                   [this, &assignment_sets](auto&& edge)
+                   [this, &consistent_vertices, &assignment_sets](auto&& edge)
                    {
-                       return m_vertex_mask.test(edge.get_src().get_index()) && m_vertex_mask.test(edge.get_dst().get_index())
+                       return consistent_vertices.test(edge.get_src().get_index()) && consistent_vertices.test(edge.get_dst().get_index())
                               && edge.consistent_literals(m_condition.template get_literals<formalism::FluentTag>(), assignment_sets.fluent_sets.predicate)
-                              && edge.consistent_literals(m_condition.get_numeric_constraints(),
-                                                          assignment_sets.static_sets.function,
-                                                          assignment_sets.fluent_sets.function);
+                              && edge.consistent_numeric_constraints(m_condition.get_numeric_constraints(),
+                                                                     assignment_sets.static_sets.function,
+                                                                     assignment_sets.fluent_sets.function);
                    });
     }
 
@@ -582,6 +595,10 @@ public:
 
     size_t get_num_vertices() const noexcept { return m_vertices.size(); }
     size_t get_num_edges() const noexcept { return m_targets.size(); }
+
+    Proxy<Index<formalism::ConjunctiveCondition>, C> get_condition() const noexcept { return m_condition; }
+
+    const std::vector<std::vector<uint_t>>& get_partitions() const noexcept { return m_partitions; }
 
 private:
     class EdgeIterator
@@ -651,8 +668,7 @@ private:
     std::vector<uint_t> m_target_offsets;
     std::vector<uint_t> m_targets;
 
-    // To speedup consistent_edges
-    mutable boost::dynamic_bitset<> m_vertex_mask;
+    std::vector<std::vector<uint_t>> m_partitions;
 };
 }
 

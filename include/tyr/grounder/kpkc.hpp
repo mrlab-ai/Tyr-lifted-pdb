@@ -101,7 +101,7 @@ void for_each_k_clique_recursively(const DenseKPartiteGraph& graph, Workspace& w
                 offset += partition_size;
             }
 
-            partition_bits[best_partition] = 1;
+            partition_bits.set(best_partition);
 
             uint_t possible_additions = 0;
             for (uint_t partition = 0; partition < k; ++partition)
@@ -118,7 +118,7 @@ void for_each_k_clique_recursively(const DenseKPartiteGraph& graph, Workspace& w
                 for_each_k_clique_recursively(graph, workspace, callback, depth + 1);
             }
 
-            partition_bits[best_partition] = 0;
+            partition_bits.reset(best_partition);
         }
 
         partial_solution.pop_back();

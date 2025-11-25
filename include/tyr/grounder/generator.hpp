@@ -33,6 +33,7 @@ void ground(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWor
                             [](auto&& clique)
                             {
                                 // TODO: ground the conjunctive condition and check if it applicable
+                                std::cout << to_string(clique) << std::endl;
 
                                 // TODO: ground the final rule
                             });
