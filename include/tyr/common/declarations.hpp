@@ -19,7 +19,6 @@
 #define TYR_COMMON_CONCEPTS_HPP_
 
 #include "tyr/common/config.hpp"
-#include "tyr/common/types.hpp"
 
 #include <boost/hana.hpp>
 #include <cista/containers/string.h>
@@ -60,39 +59,6 @@ struct dependent_false : std::false_type
 };
 
 /**
- * We distinguish between Tag, instantiations of Data<Tag>, Index<Tag>, Proxy<Tag>, and other data types.
- * - Lightweight types might not define an Index<Tag> specialization,
- *   in which case we would like to store Data<Tag> directly inplace.
- * - Data<Tag> stores either Index<Tag2> or Data<Tag2> or other data types.
- * - Index<Tag> is just 1 or 2 integers to reference Data<Tag>.
- * - Proxy<Tag> is just an Index<Tag> and a Context to recurse through the underlying Data.
- */
-
-/* Define requirements on Index. */
-
-template<typename T>
-concept HasValue = requires(const T& a) {
-    { a.get_value() } -> std::same_as<uint_t>;
-};
-
-template<typename T>
-concept HasGroup = requires(const T& a) {
-    { a.get_group() } -> HasValue;
-};
-
-/// @brief Check whether T is a flat type.
-template<typename T>
-concept IsFlatType = HasValue<Index<T>> && !HasGroup<Index<T>>;
-
-/// @brief Check whether T is a group type.
-template<typename T>
-concept IsGroupType = HasValue<Index<T>> && HasGroup<Index<T>>;
-
-/// @brief Check whether T is proxyable. T should be cheap to copy! If not, create an Index type and store Data in a Repository.
-template<typename T, typename C>
-concept IsProxyable = requires(T type, const C& context) { Proxy<T, C>(type, context); };
-
-/**
  * Forward declarations and type defs
  */
 
@@ -104,12 +70,6 @@ struct EqualTo;
 
 template<typename T>
 class ObserverPtr;
-
-template<typename Derived>
-struct FlatIndexMixin;
-
-template<typename Derived, HasValue Group>
-struct GroupIndexMixin;
 
 template<typename T>
 using UnorderedSet = std::unordered_set<T, Hash<T>, EqualTo<T>>;

@@ -21,6 +21,7 @@
 #include "tyr/common/config.hpp"
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/equal_to.hpp"
+#include "tyr/common/types.hpp"
 
 #include <limits>
 #include <tuple>

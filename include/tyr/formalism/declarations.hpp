@@ -72,8 +72,13 @@ struct OpDiv
 };
 
 template<typename T>
-concept IsOp = std::same_as<T, OpEq> || std::same_as<T, OpLe> || std::same_as<T, OpLt> || std::same_as<T, OpGe> || std::same_as<T, OpGt>
-               || std::same_as<T, OpAdd> || std::same_as<T, OpMul> || std::same_as<T, OpDiv> || std::same_as<T, OpSub>;
+concept IsBooleanOp = std::same_as<T, OpEq> || std::same_as<T, OpLe> || std::same_as<T, OpLt> || std::same_as<T, OpGe> || std::same_as<T, OpGt>;
+
+template<typename T>
+concept IsArithmeticOp = std::same_as<T, OpAdd> || std::same_as<T, OpMul> || std::same_as<T, OpDiv> || std::same_as<T, OpSub>;
+
+template<typename T>
+concept IsOp = IsBooleanOp<T> || IsArithmeticOp<T>;
 
 /**
  * Formalism tag
