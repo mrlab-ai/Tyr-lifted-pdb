@@ -324,22 +324,22 @@ public:
         return visit(
             [&](auto&& arg)
             {
-                using Type = std::decay_t<decltype(arg)>;
+                using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Type, formalism::ParameterIndex>)
+                if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     if (m_parameter_index == arg)
                         return m_object_index;
                     else
                         return Index<formalism::Object>::max();
                 }
-                else if constexpr (std::is_same_v<Type, Proxy<Index<formalism::Object>, C>>)
+                else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::Object>, C>>)
                 {
                     return arg.get_index();
                 }
                 else
                 {
-                    static_assert(dependent_false<Type>::value, "Missing case");
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
             term.get());
@@ -422,9 +422,9 @@ public:
         return visit(
             [&](auto&& arg)
             {
-                using Type = std::decay_t<decltype(arg)>;
+                using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Type, formalism::ParameterIndex>)
+                if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     if (m_src.get_parameter_index() == arg)
                         return m_src.get_object_index();
@@ -433,13 +433,13 @@ public:
                     else
                         return Index<formalism::Object>::max();
                 }
-                else if constexpr (std::is_same_v<Type, Proxy<Index<formalism::Object>, C>>)
+                else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::Object>, C>>)
                 {
                     return arg.get_index();
                 }
                 else
                 {
-                    static_assert(dependent_false<Type>::value, "Missing case");
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
             term.get());

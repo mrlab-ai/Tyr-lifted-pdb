@@ -137,8 +137,8 @@ private:
                                             RepositoryTraits<BinaryOperator<OpGe, Data<GroundFunctionExpression>>>::EntryType,
                                             RepositoryTraits<BinaryOperator<OpGt, Data<GroundFunctionExpression>>>::EntryType,
                                             RepositoryTraits<ConjunctiveCondition>::EntryType,
-                                            RepositoryTraits<GroundConjunctiveCondition>::EntryType,
                                             RepositoryTraits<Rule>::EntryType,
+                                            RepositoryTraits<GroundConjunctiveCondition>::EntryType,
                                             RepositoryTraits<GroundRule>::EntryType,
                                             RepositoryTraits<Program>::EntryType>;
 

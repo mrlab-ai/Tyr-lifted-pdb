@@ -63,9 +63,9 @@ TEST(TyrTests, TyrFormalismProxy)
     visit(
         [&](auto&& arg)
         {
-            using ProxyType = std::decay_t<decltype(arg)>;
+            using Alternative = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<ProxyType, Proxy<Index<Object>, Repository>>)
+            if constexpr (std::is_same_v<Alternative, Proxy<Index<Object>, Repository>>)
             {
                 EXPECT_EQ(arg.get_index(), object->index);
             }
@@ -78,9 +78,9 @@ TEST(TyrTests, TyrFormalismProxy)
     visit(
         [&](auto&& arg)
         {
-            using ProxyType = std::decay_t<decltype(arg)>;
+            using Alternative = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<ProxyType, ParameterIndex>)
+            if constexpr (std::is_same_v<Alternative, ParameterIndex>)
             {
                 EXPECT_EQ(arg, ParameterIndex(0));
             }

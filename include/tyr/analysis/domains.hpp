@@ -116,10 +116,10 @@ void restrict_parameter_domain_from_static_atom(Proxy<Index<formalism::Atom<form
         visit(
             [&](auto&& arg)
             {
-                using ProxyType = std::decay_t<decltype(arg)>;
+                using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<ProxyType, Proxy<Index<formalism::Object>, formalism::Repository>>) {}
-                else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
+                if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::Object>, formalism::Repository>>) {}
+                else if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
                     auto& parameter_domain = parameter_domains[parameter_index];
@@ -129,7 +129,7 @@ void restrict_parameter_domain_from_static_atom(Proxy<Index<formalism::Atom<form
                 }
                 else
                 {
-                    static_assert(dependent_false<ProxyType>::value, "Missing case");
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
             term.get());
@@ -149,10 +149,10 @@ void restrict_parameter_domain_from_static_function_term(Proxy<Index<formalism::
         visit(
             [&](auto&& arg)
             {
-                using ProxyType = std::decay_t<decltype(arg)>;
+                using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<ProxyType, Proxy<Index<formalism::Object>, formalism::Repository>>) {}
-                else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
+                if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::Object>, formalism::Repository>>) {}
+                else if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
                     auto& parameter_domain = parameter_domains[parameter_index];
@@ -162,7 +162,7 @@ void restrict_parameter_domain_from_static_function_term(Proxy<Index<formalism::
                 }
                 else
                 {
-                    static_assert(dependent_false<ProxyType>::value, "Missing case");
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
             term.get());
@@ -177,65 +177,65 @@ void restrict_parameter_domain_from_function_expression(Proxy<Data<formalism::Fu
     visit(
         [&](auto&& arg)
         {
-            using ProxyType = std::decay_t<decltype(arg)>;
+            using Alternative = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<ProxyType, float_t>) {}
+            if constexpr (std::is_same_v<Alternative, float_t>) {}
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::UnaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 restrict_parameter_domain_from_function_expression(arg.get_arg(), parameter_domains, static_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::BinaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
                 restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::BinaryOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
                 restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::BinaryOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
                 restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::BinaryOperator<formalism::OpDiv, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
                 restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::MultiOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 for (const auto part : arg.get_args())
                     restrict_parameter_domain_from_function_expression(part, parameter_domains, static_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::MultiOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 for (const auto part : arg.get_args())
                     restrict_parameter_domain_from_function_expression(part, parameter_domains, static_function_domain_sets);
             }
-            else if constexpr (std::is_same_v<ProxyType, Proxy<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>)
+            else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>)
             {
                 restrict_parameter_domain_from_static_function_term(arg, parameter_domains, static_function_domain_sets);
             }
-            else if constexpr (std::is_same_v<ProxyType, Proxy<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>) {}
+            else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>) {}
             else
             {
-                static_assert(dependent_false<ProxyType>::value, "Missing case");
+                static_assert(dependent_false<Alternative>::value, "Missing case");
             }
         },
         fexpr.get());
@@ -266,10 +266,10 @@ void lift_parameter_domain_from_fluent_atom(Proxy<Index<formalism::Atom<formalis
         visit(
             [&](auto&& arg)
             {
-                using ProxyType = std::decay_t<decltype(arg)>;
+                using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<ProxyType, Proxy<Index<formalism::Object>, formalism::Repository>>) {}
-                else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
+                if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::Object>, formalism::Repository>>) {}
+                else if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
                     const auto& parameter_domain = parameter_domains[parameter_index];
@@ -279,7 +279,7 @@ void lift_parameter_domain_from_fluent_atom(Proxy<Index<formalism::Atom<formalis
                 }
                 else
                 {
-                    static_assert(dependent_false<ProxyType>::value, "Missing case");
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
             term.get());
@@ -299,10 +299,10 @@ void lift_parameter_domain_from_fluent_function_term(Proxy<Index<formalism::Func
         visit(
             [&](auto&& arg)
             {
-                using ProxyType = std::decay_t<decltype(arg)>;
+                using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<ProxyType, Proxy<Index<formalism::Object>, formalism::Repository>>) {}
-                else if constexpr (std::is_same_v<ProxyType, formalism::ParameterIndex>)
+                if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::Object>, formalism::Repository>>) {}
+                else if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
                     const auto& parameter_domain = parameter_domains[parameter_index];
@@ -312,7 +312,7 @@ void lift_parameter_domain_from_fluent_function_term(Proxy<Index<formalism::Func
                 }
                 else
                 {
-                    static_assert(dependent_false<ProxyType>::value, "Missing case");
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
             term.get());
@@ -327,65 +327,65 @@ void lift_parameter_domain_from_function_expression(Proxy<Data<formalism::Functi
     visit(
         [&](auto&& arg)
         {
-            using ProxyType = std::decay_t<decltype(arg)>;
+            using Alternative = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<ProxyType, float_t>) {}
+            if constexpr (std::is_same_v<Alternative, float_t>) {}
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::UnaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 lift_parameter_domain_from_function_expression(arg.get_arg(), parameter_domains, fluent_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::BinaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
                 lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::BinaryOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
                 lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::BinaryOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
                 lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::BinaryOperator<formalism::OpDiv, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
                 lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::MultiOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 for (const auto part : arg.get_args())
                     lift_parameter_domain_from_function_expression(part, parameter_domains, fluent_function_domain_sets);
             }
             else if constexpr (std::is_same_v<
-                                   ProxyType,
+                                   Alternative,
                                    Proxy<Index<formalism::MultiOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 for (const auto part : arg.get_args())
                     lift_parameter_domain_from_function_expression(part, parameter_domains, fluent_function_domain_sets);
             }
-            else if constexpr (std::is_same_v<ProxyType, Proxy<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>) {}
-            else if constexpr (std::is_same_v<ProxyType, Proxy<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>)
+            else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>) {}
+            else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>)
             {
                 lift_parameter_domain_from_fluent_function_term(arg, parameter_domains, fluent_function_domain_sets);
             }
             else
             {
-                static_assert(dependent_false<ProxyType>::value, "Missing case");
+                static_assert(dependent_false<Alternative>::value, "Missing case");
             }
         },
         fexpr.get());

@@ -19,12 +19,10 @@
 #define TYR_FORMALISM_GROUND_RULE_PROXY_HPP_
 
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/boolean_operator_proxy.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_proxy.hpp"
-#include "tyr/formalism/ground_literal_proxy.hpp"
+#include "tyr/formalism/ground_conjunctive_condition_proxy.hpp"
 #include "tyr/formalism/ground_rule_index.hpp"
-#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr
@@ -44,14 +42,8 @@ public:
     const auto& get() const { return get_repository(*context)[index]; }
 
     auto get_index() const { return index; }
-    auto get_binding() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *context); }
-    auto get_static_body() const { return Proxy<IndexList<formalism::GroundLiteral<formalism::StaticTag>>, C>(get().static_body, *context); }
-    auto get_fluent_body() const { return Proxy<IndexList<formalism::GroundLiteral<formalism::FluentTag>>, C>(get().fluent_body, *context); }
-    auto get_numeric_body() const
-    {
-        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_body, *context);
-    }
-    auto get_head() const { return Proxy<formalism::GroundAtom<formalism::FluentTag>, C>(get().head, *context); }
+    auto get_body() const { return Proxy<Index<formalism::GroundConjunctiveCondition>, C>(get().body, *context); }
+    auto get_head() const { return Proxy<Index<formalism::GroundAtom<formalism::FluentTag>>, C>(get().head, *context); }
 };
 }
 
