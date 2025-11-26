@@ -30,6 +30,7 @@
 #include "tyr/formalism/boolean_operator_data.hpp"
 #include "tyr/formalism/boolean_operator_proxy.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
+#include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/conjunctive_condition_index.hpp"

@@ -41,6 +41,9 @@ struct MutableRuleWorkspace
 {
     formalism::ScopedRepository<C>& repository;
     kpkc::Workspace& kpkc_workspace;
+
+    IndexList<formalism::Object>& binding;
+    formalism::Builder& builder;
 };
 
 }
