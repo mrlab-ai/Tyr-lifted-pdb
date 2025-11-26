@@ -45,13 +45,13 @@ template<typename T>
 using IndexList = ::cista::offset::vector<Index<T>>;
 
 template<typename T, typename Context>
-struct Proxy
+struct View
 {
-    // Proxy type is optional for recursing through data using the Context.
+    // View type is optional for recursing through data using the Context.
 };
 
 template<typename T, typename C>
-concept IsProxyable = requires(T type, const C& context) { Proxy<T, C>(type, context); };
+concept IsViewable = requires(T type, const C& context) { View<T, C>(type, context); };
 
 /**
  * Experimental design: We distinguish between Flat and Group Indices.

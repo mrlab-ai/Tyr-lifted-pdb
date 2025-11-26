@@ -15,35 +15,33 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_GROUND_FUNCTION_TERM_VALUE_PROXY_HPP_
-#define TYR_FORMALISM_GROUND_FUNCTION_TERM_VALUE_PROXY_HPP_
+#ifndef TYR_FORMALISM_BOOLEAN_OPERATOR_VIEW_HPP_
+#define TYR_FORMALISM_BOOLEAN_OPERATOR_VIEW_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_function_term_proxy.hpp"
-#include "tyr/formalism/ground_function_term_value_index.hpp"
+#include "tyr/common/types.hpp"
+#include "tyr/common/variant.hpp"
+#include "tyr/formalism/boolean_operator_data.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr
 {
-template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<Index<formalism::GroundFunctionTermValue<T>>, C>
+template<typename T, formalism::IsContext C>
+class View<Data<formalism::BooleanOperator<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::GroundFunctionTermValue<T>> m_data;
+    Data<formalism::BooleanOperator<T>> m_data;
 
 public:
-    using Tag = formalism::GroundFunctionTermValue<T>;
+    using Tag = formalism::BooleanOperator<T>;
 
-    Proxy(Index<formalism::GroundFunctionTermValue<T>> data, const C& context) : m_context(&context), m_data(data) {}
-
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    auto get() const { return View<typename Data<formalism::BooleanOperator<T>>::Variant, C>(m_data.value, *m_context); }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return m_data; }
-    auto get_term() const { return Proxy<Index<formalism::GroundFunctionTerm<T>>, C>(get().term, *m_context); }
-    auto get_value() const { return get().value; }
+    auto get_arity() const { return m_data.arity; }
+
+    View(Data<formalism::BooleanOperator<T>> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

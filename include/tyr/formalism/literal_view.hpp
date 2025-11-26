@@ -15,18 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_LITERAL_PROXY_HPP_
-#define TYR_FORMALISM_LITERAL_PROXY_HPP_
+#ifndef TYR_FORMALISM_LITERAL_VIEW_HPP_
+#define TYR_FORMALISM_LITERAL_VIEW_HPP_
 
-#include "tyr/formalism/atom_proxy.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_index.hpp"
-#include "tyr/formalism/predicate_proxy.hpp"
+#include "tyr/formalism/predicate_view.hpp"
 
 namespace tyr
 {
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<Index<formalism::Literal<T>>, C>
+class View<Index<formalism::Literal<T>>, C>
 {
 private:
     const C* m_context;
@@ -35,15 +35,15 @@ private:
 public:
     using Tag = formalism::Literal<T>;
 
-    Proxy(Index<formalism::Literal<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::Literal<T>> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_predicate() const { return Proxy<Index<formalism::Predicate<T>>, C>(m_data.group, *m_context); }
-    auto get_atom() const { return Proxy<Index<formalism::Atom<T>>, C>(get().atom_index, *m_context); }
+    auto get_predicate() const { return View<Index<formalism::Predicate<T>>, C>(m_data.group, *m_context); }
+    auto get_atom() const { return View<Index<formalism::Atom<T>>, C>(get().atom_index, *m_context); }
     auto get_polarity() const { return get().polarity; }
 };
 }

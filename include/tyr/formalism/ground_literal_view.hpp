@@ -15,47 +15,38 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_UNARY_OPERATOR_PROXY_HPP_
-#define TYR_FORMALISM_UNARY_OPERATOR_PROXY_HPP_
+#ifndef TYR_FORMALISM_GROUND_LITERAL_VIEW_HPP_
+#define TYR_FORMALISM_GROUND_LITERAL_VIEW_HPP_
 
-#include "tyr/common/types.hpp"
-#include "tyr/common/variant.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/unary_operator_index.hpp"
+#include "tyr/formalism/ground_atom_view.hpp"
+#include "tyr/formalism/ground_literal_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
+#include "tyr/formalism/repository.hpp"
 
 namespace tyr
 {
-template<formalism::IsOp Op, typename T, formalism::IsContext C>
-class Proxy<Index<formalism::UnaryOperator<Op, T>>, C>
+template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
+class View<Index<formalism::GroundLiteral<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::UnaryOperator<Op, T>> m_data;
+    Index<formalism::GroundLiteral<T>> m_data;
 
 public:
-    using Tag = formalism::UnaryOperator<Op, T>;
-    using OpType = Op;
+    using Tag = formalism::GroundLiteral<T>;
 
-    Proxy(Index<formalism::UnaryOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::GroundLiteral<T>> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_arg() const
-    {
-        if constexpr (IsProxyable<T, C>)
-        {
-            return Proxy<T, C>(get().arg, *m_context);
-        }
-        else
-        {
-            return get().arg;
-        }
-    }
+    auto get_predicate() const { return View<Index<formalism::Predicate<T>>, C>(m_data.predicate_index, *m_context); }
+    auto get_atom() const { return View<Index<formalism::GroundAtom<T>>, C>(get().atom_index, *m_context); }
+    auto get_polarity() const { return get().polarity; }
 };
-
 }
 
 #endif

@@ -29,21 +29,21 @@ namespace tyr
 {
 
 template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator, typename Context>
-class Proxy<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, Context>
+class View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, Context>
 {
 public:
     using Container = ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>;
 
-    Proxy(const Container& data, const Context& context) : m_context(&context), m_data(&data) {}
+    View(const Container& data, const Context& context) : m_context(&context), m_data(&data) {}
 
     size_t size() const noexcept { return get_data().size(); }
     bool empty() const noexcept { return get_data().empty(); }
 
     auto operator[](size_t i) const
     {
-        if constexpr (IsProxyable<T, Context>)
+        if constexpr (IsViewable<T, Context>)
         {
-            return Proxy<T, Context>(get_data()[i], get_context());
+            return View<T, Context>(get_data()[i], get_context());
         }
         else
         {
@@ -53,9 +53,9 @@ public:
 
     decltype(auto) front() const
     {
-        if constexpr (IsProxyable<T, Context>)
+        if constexpr (IsViewable<T, Context>)
         {
-            return Proxy<T, Context>(get_data().front(), get_context());
+            return View<T, Context>(get_data().front(), get_context());
         }
         else
         {
@@ -69,7 +69,7 @@ public:
         const T* ptr;
 
         using difference_type = std::ptrdiff_t;
-        using value_type = std::conditional_t<IsProxyable<T, Context>, ::tyr::Proxy<T, Context>, T>;
+        using value_type = std::conditional_t<IsViewable<T, Context>, ::tyr::View<T, Context>, T>;
         using iterator_category = std::random_access_iterator_tag;
         using iterator_concept = std::random_access_iterator_tag;
 
@@ -78,9 +78,9 @@ public:
 
         auto operator*() const
         {
-            if constexpr (IsProxyable<T, Context>)
+            if constexpr (IsViewable<T, Context>)
             {
-                return Proxy<T, Context>(*ptr, *ctx);
+                return View<T, Context>(*ptr, *ctx);
             }
             else
             {
@@ -151,8 +151,8 @@ public:
         // []
         auto operator[](difference_type n) const
         {
-            if constexpr (IsProxyable<T, Context>)
-                return Proxy<T, Context>(*(ptr + n), *ctx);
+            if constexpr (IsViewable<T, Context>)
+                return View<T, Context>(*(ptr + n), *ctx);
             else
                 return *(ptr + n);
         }

@@ -24,13 +24,13 @@
 namespace tyr::grounder
 {
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-bool literal_holds(Proxy<Index<formalism::GroundLiteral<T>>, C> literal, const PredicateFactSet<T, C>& predicate_fact_sets) noexcept
+bool literal_holds(View<Index<formalism::GroundLiteral<T>>, C> literal, const PredicateFactSet<T, C>& predicate_fact_sets) noexcept
 {
     return predicate_fact_sets.contains(literal.get_atom().get_index()) != literal.get_polarity();
 }
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-bool literals_hold(Proxy<IndexList<formalism::GroundLiteral<T>>, C> literals, const PredicateFactSet<T, C>& predicate_fact_sets) noexcept
+bool literals_hold(View<IndexList<formalism::GroundLiteral<T>>, C> literals, const PredicateFactSet<T, C>& predicate_fact_sets) noexcept
 {
     for (const auto literal : literals)
     {
@@ -41,7 +41,7 @@ bool literals_hold(Proxy<IndexList<formalism::GroundLiteral<T>>, C> literals, co
 }
 
 template<formalism::IsContext C>
-bool nullary_conditions_hold(Proxy<Index<formalism::ConjunctiveCondition>, C> condition, const FactSets<C>& fact_sets) noexcept
+bool nullary_conditions_hold(View<Index<formalism::ConjunctiveCondition>, C> condition, const FactSets<C>& fact_sets) noexcept
 {
     return literals_hold(condition.template get_nullary_literals<formalism::StaticTag>(), fact_sets.static_sets.predicate)
            && literals_hold(condition.template get_nullary_literals<formalism::FluentTag>(), fact_sets.fluent_sets.predicate);

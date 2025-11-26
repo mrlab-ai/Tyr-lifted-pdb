@@ -239,7 +239,7 @@ struct EqualTo<std::span<T, Extent>>
 
 /// @brief EqualTo specialization for types T that satisfy `HasIdentifyingMembers`.
 /// Dereferences the underlying pointer before forwarding the call to the std::equal_to
-/// specialization of `IdentifiableMemberProxy` of T to pairwise compare all members.
+/// specialization of `IdentifiableMemberView` of T to pairwise compare all members.
 /// @tparam T is the type.
 template<typename T>
 struct EqualTo<ObserverPtr<T>>
@@ -247,7 +247,7 @@ struct EqualTo<ObserverPtr<T>>
     bool operator()(ObserverPtr<T> lhs, ObserverPtr<T> rhs) const { return EqualTo<std::remove_cvref_t<T>> {}(*lhs, *rhs); }
 };
 
-/// @brief EqualTo specialization for an `IdentifiableMembersProxy`
+/// @brief EqualTo specialization for an `IdentifiableMembersView`
 /// that pairwise compares all members.
 /// @tparam ...Ts are the types of all members.
 template<HasIdentifyingMembers T>

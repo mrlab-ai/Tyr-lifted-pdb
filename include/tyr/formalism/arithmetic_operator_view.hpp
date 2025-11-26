@@ -15,31 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_GROUND_FUNCTION_EXPRESSION_PROXY_HPP_
-#define TYR_FORMALISM_GROUND_FUNCTION_EXPRESSION_PROXY_HPP_
+#ifndef TYR_FORMALISM_ARITHMETIC_OPERATOR_VIEW_HPP_
+#define TYR_FORMALISM_ARITHMETIC_OPERATOR_VIEW_HPP_
 
+#include "tyr/common/types.hpp"
 #include "tyr/common/variant.hpp"
-#include "tyr/formalism/ground_function_expression_data.hpp"
+#include "tyr/formalism/arithmetic_operator_data.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr
 {
-
-template<formalism::IsContext C>
-class Proxy<Data<formalism::GroundFunctionExpression>, C>
+template<typename T, formalism::IsContext C>
+class View<Data<formalism::ArithmeticOperator<T>>, C>
 {
 private:
     const C* m_context;
-    Data<formalism::GroundFunctionExpression> m_data;
+    Data<formalism::ArithmeticOperator<T>> m_data;
 
 public:
-    using Tag = formalism::GroundFunctionExpression;
+    using Tag = formalism::ArithmeticOperator<T>;
 
-    auto get() const { return Proxy<typename Data<formalism::GroundFunctionExpression>::Variant, C>(m_data.value, *m_context); }
+    auto get() const { return View<typename Data<formalism::ArithmeticOperator<T>>::Variant, C>(m_data.value, *m_context); }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
-    Proxy(Data<formalism::GroundFunctionExpression> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Data<formalism::ArithmeticOperator<T>> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

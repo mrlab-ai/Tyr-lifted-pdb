@@ -15,37 +15,47 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_RULE_PROXY_HPP_
-#define TYR_FORMALISM_RULE_PROXY_HPP_
+#ifndef TYR_FORMALISM_UNARY_OPERATOR_VIEW_HPP_
+#define TYR_FORMALISM_UNARY_OPERATOR_VIEW_HPP_
 
-#include "tyr/common/vector.hpp"
-#include "tyr/formalism/conjunctive_condition_proxy.hpp"
+#include "tyr/common/types.hpp"
+#include "tyr/common/variant.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/rule_index.hpp"
+#include "tyr/formalism/unary_operator_index.hpp"
 
 namespace tyr
 {
-template<formalism::IsContext C>
-class Proxy<Index<formalism::Rule>, C>
+template<formalism::IsOp Op, typename T, formalism::IsContext C>
+class View<Index<formalism::UnaryOperator<Op, T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::Rule> m_data;
+    Index<formalism::UnaryOperator<Op, T>> m_data;
 
 public:
-    using Tag = formalism::Rule;
+    using Tag = formalism::UnaryOperator<Op, T>;
+    using OpType = Op;
 
-    Proxy(Index<formalism::Rule> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::UnaryOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_body() const { return Proxy<Index<formalism::ConjunctiveCondition>, C>(get().body, *m_context); }
-    auto get_head() const { return Proxy<Index<formalism::Atom<formalism::FluentTag>>, C>(get().head, *m_context); }
+    auto get_arg() const
+    {
+        if constexpr (IsViewable<T, C>)
+        {
+            return View<T, C>(get().arg, *m_context);
+        }
+        else
+        {
+            return get().arg;
+        }
+    }
 };
+
 }
 
 #endif

@@ -32,7 +32,7 @@ struct ImmutableRuleWorkspace
     const AssignmentSets& assignment_sets;
 
     // Rule infos
-    const Proxy<Index<formalism::Rule>, C> rule;
+    const View<Index<formalism::Rule>, C> rule;
     const kpkc::DenseKPartiteGraph& consistency_graph;
 };
 

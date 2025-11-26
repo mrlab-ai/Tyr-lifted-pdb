@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_GROUND_FUNCTION_TERM_PROXY_HPP_
-#define TYR_FORMALISM_GROUND_FUNCTION_TERM_PROXY_HPP_
+#ifndef TYR_FORMALISM_GROUND_FUNCTION_TERM_VIEW_HPP_
+#define TYR_FORMALISM_GROUND_FUNCTION_TERM_VIEW_HPP_
 
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_proxy.hpp"
+#include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/ground_function_term_index.hpp"
 #include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -28,7 +28,7 @@
 namespace tyr
 {
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<Index<formalism::GroundFunctionTerm<T>>, C>
+class View<Index<formalism::GroundFunctionTerm<T>>, C>
 {
 private:
     const C* m_context;
@@ -37,15 +37,15 @@ private:
 public:
     using Tag = formalism::GroundFunctionTerm<T>;
 
-    Proxy(Index<formalism::GroundFunctionTerm<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::GroundFunctionTerm<T>> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_function() const { return Proxy<Index<formalism::Function<T>>, C>(m_data.group, *m_context); }
-    auto get_terms() const { return Proxy<IndexList<formalism::Object>, C>(get().terms, *m_context); }
+    auto get_function() const { return View<Index<formalism::Function<T>>, C>(m_data.group, *m_context); }
+    auto get_terms() const { return View<IndexList<formalism::Object>, C>(get().terms, *m_context); }
 };
 }
 

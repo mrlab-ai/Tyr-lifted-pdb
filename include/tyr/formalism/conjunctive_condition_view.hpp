@@ -15,21 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_PROXY_HPP_
-#define TYR_FORMALISM_CONJUNCTIVE_CONDITION_PROXY_HPP_
+#ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_VIEW_HPP_
+#define TYR_FORMALISM_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/boolean_operator_proxy.hpp"
+#include "tyr/formalism/boolean_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/literal_proxy.hpp"
+#include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/variable_proxy.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<Index<formalism::ConjunctiveCondition>, C>
+class View<Index<formalism::ConjunctiveCondition>, C>
 {
 private:
     const C* m_context;
@@ -38,31 +38,31 @@ private:
 public:
     using Tag = formalism::ConjunctiveCondition;
 
-    Proxy(Index<formalism::ConjunctiveCondition> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::ConjunctiveCondition> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_variables() const { return Proxy<IndexList<formalism::Variable>, C>(get().variables, *m_context); }
+    auto get_variables() const { return View<IndexList<formalism::Variable>, C>(get().variables, *m_context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_literals() const
     {
-        return Proxy<IndexList<formalism::Literal<T>>, C>(get().template get_literals<T>(), *m_context);
+        return View<IndexList<formalism::Literal<T>>, C>(get().template get_literals<T>(), *m_context);
     }
     auto get_numeric_constraints() const
     {
-        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(get().numeric_constraints, *m_context);
+        return View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(get().numeric_constraints, *m_context);
     }
     template<formalism::IsStaticOrFluentTag T>
     auto get_nullary_literals() const
     {
-        return Proxy<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_nullary_literals<T>(), *m_context);
+        return View<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_nullary_literals<T>(), *m_context);
     }
     auto get_nullary_numeric_constraints() const
     {
-        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().nullary_numeric_constraints, *m_context);
+        return View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().nullary_numeric_constraints, *m_context);
     }
     auto get_arity() const { return get().variables.size(); }
 };

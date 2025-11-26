@@ -15,31 +15,36 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_TERM_PROXY_HPP_
-#define TYR_FORMALISM_TERM_PROXY_HPP_
+#ifndef TYR_FORMALISM_ATOM_VIEW_HPP_
+#define TYR_FORMALISM_ATOM_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
-#include "tyr/common/variant.hpp"
+#include "tyr/common/vector.hpp"
+#include "tyr/formalism/atom_index.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 namespace tyr
 {
-template<formalism::IsContext C>
-class Proxy<Data<formalism::Term>, C>
+template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
+class View<Index<formalism::Atom<T>>, C>
 {
 private:
-    const C* m_context;
-    Data<formalism::Term> m_data;
+    const C* context;
+    Index<formalism::Atom<T>> index;
 
 public:
-    using Tag = formalism::Term;
+    using Tag = formalism::Atom<T>;
 
-    auto get() const { return Proxy<typename Data<formalism::Term>::Variant, C>(m_data.value, *m_context); }
-    const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    View(Index<formalism::Atom<T>> index, const C& context) : context(&context), index(index) {}
 
-    Proxy(Data<formalism::Term> data, const C& context) : m_context(&context), m_data(data) {}
+    const auto& get() const { return get_repository(*context)[index]; }
+
+    auto get_index() const { return index; }
+    auto get_predicate() const { return View<Index<formalism::Predicate<T>>, C>(index.group, *context); }
+    auto get_terms() const { return View<DataList<formalism::Term>, C>(get().terms, *context); }
 };
 }
 

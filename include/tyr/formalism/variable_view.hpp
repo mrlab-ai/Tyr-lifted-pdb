@@ -15,33 +15,34 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_BOOLEAN_OPERATOR_PROXY_HPP_
-#define TYR_FORMALISM_BOOLEAN_OPERATOR_PROXY_HPP_
+#ifndef TYR_FORMALISM_VARIABLE_VIEW_HPP_
+#define TYR_FORMALISM_VARIABLE_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
-#include "tyr/common/variant.hpp"
-#include "tyr/formalism/boolean_operator_data.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/variable_index.hpp"
 
 namespace tyr
 {
-template<typename T, formalism::IsContext C>
-class Proxy<Data<formalism::BooleanOperator<T>>, C>
+template<formalism::IsContext C>
+class View<Index<formalism::Variable>, C>
 {
 private:
     const C* m_context;
-    Data<formalism::BooleanOperator<T>> m_data;
+    Index<formalism::Variable> m_data;
 
 public:
-    using Tag = formalism::BooleanOperator<T>;
+    using Tag = formalism::Variable;
 
-    auto get() const { return Proxy<typename Data<formalism::BooleanOperator<T>>::Variant, C>(m_data.value, *m_context); }
+    View(Index<formalism::Variable> data, const C& context) : m_context(&context), m_data(data) {}
+
+    const auto& get() const { return formalism::get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
-    auto get_arity() const { return m_data.arity; }
-
-    Proxy(Data<formalism::BooleanOperator<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    auto get_index() const { return m_data; }
+    const auto& get_name() const { return get().name; }
 };
 }
 

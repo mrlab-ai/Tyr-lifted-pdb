@@ -44,7 +44,7 @@ struct PredicateStrata
     std::vector<UnorderedSet<Index<formalism::Predicate<formalism::FluentTag>>>> strata;
 };
 
-PredicateStrata compute_predicate_stratification(Proxy<Index<formalism::Program>, formalism::Repository> program)
+PredicateStrata compute_predicate_stratification(View<Index<formalism::Program>, formalism::Repository> program)
 {
     auto R = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, StratumStatus>> {};
 
@@ -138,7 +138,7 @@ PredicateStrata compute_predicate_stratification(Proxy<Index<formalism::Program>
 /// Source: https://users.cecs.anu.edu.au/~thiebaux/papers/ijcai03.pdf
 /// @param program is the program
 /// @return is the RuleStrata
-RuleStrata compute_rule_stratification(Proxy<Index<formalism::Program>, formalism::Repository> program)
+RuleStrata compute_rule_stratification(View<Index<formalism::Program>, formalism::Repository> program)
 {
     const auto predicate_stratification = details::compute_predicate_stratification(program);
 
@@ -153,7 +153,7 @@ RuleStrata compute_rule_stratification(Proxy<Index<formalism::Program>, formalis
         for (const auto rule : remaining_rules)
         {
             if (predicate_stratum.count(
-                    Proxy<Index<formalism::Rule>, formalism::Repository>(rule, program.get_context()).get_head().get_predicate().get_index()))
+                    View<Index<formalism::Rule>, formalism::Repository>(rule, program.get_context()).get_head().get_predicate().get_index()))
             {
                 stratum.insert(rule);
             }

@@ -15,36 +15,34 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_ATOM_PROXY_HPP_
-#define TYR_FORMALISM_ATOM_PROXY_HPP_
+#ifndef TYR_FORMALISM_OBJECT_VIEW_HPP_
+#define TYR_FORMALISM_OBJECT_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
-#include "tyr/common/vector.hpp"
-#include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/predicate_proxy.hpp"
+#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/term_data.hpp"
 
 namespace tyr
 {
-template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<Index<formalism::Atom<T>>, C>
+template<formalism::IsContext C>
+class View<Index<formalism::Object>, C>
 {
 private:
-    const C* context;
-    Index<formalism::Atom<T>> index;
+    const C* m_context;
+    Index<formalism::Object> m_data;
 
 public:
-    using Tag = formalism::Atom<T>;
+    using Tag = formalism::Object;
 
-    Proxy(Index<formalism::Atom<T>> index, const C& context) : context(&context), index(index) {}
+    View(Index<formalism::Object> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
-    auto get_predicate() const { return Proxy<Index<formalism::Predicate<T>>, C>(index.group, *context); }
-    auto get_terms() const { return Proxy<DataList<formalism::Term>, C>(get().terms, *context); }
+    auto get_index() const { return m_data; }
+    const auto& get_name() const { return get().name; }
 };
 }
 

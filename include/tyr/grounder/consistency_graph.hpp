@@ -44,13 +44,13 @@ template<formalism::IsContext C>
 class VertexAssignmentIterator
 {
 private:
-    Proxy<DataList<formalism::Term>, C> m_terms;
+    View<DataList<formalism::Term>, C> m_terms;
     const Vertex* m_vertex;
     uint_t m_pos;
 
     VertexAssignment m_assignment;
 
-    const Proxy<DataList<formalism::Term>, C>& get_terms() const noexcept { return m_terms; }
+    const View<DataList<formalism::Term>, C>& get_terms() const noexcept { return m_terms; }
     const Vertex& get_vertex() const noexcept { return *m_vertex; }
 
     void advance() noexcept
@@ -82,7 +82,7 @@ public:
     using iterator_category = std::forward_iterator_tag;
 
     VertexAssignmentIterator() noexcept : m_terms(nullptr), m_vertex(nullptr), m_pos(std::numeric_limits<uint_t>::max()) {}
-    VertexAssignmentIterator(Proxy<DataList<formalism::Term>, C> terms, const Vertex& vertex, bool begin) noexcept :
+    VertexAssignmentIterator(View<DataList<formalism::Term>, C> terms, const Vertex& vertex, bool begin) noexcept :
         m_terms(terms),
         m_vertex(&vertex),
         m_pos(begin ? 0 : std::numeric_limits<uint_t>::max())
@@ -112,11 +112,11 @@ template<formalism::IsContext C>
 class VertexAssignmentRange
 {
 private:
-    Proxy<DataList<formalism::Term>, C> m_terms;
+    View<DataList<formalism::Term>, C> m_terms;
     const Vertex& m_vertex;
 
 public:
-    VertexAssignmentRange(Proxy<DataList<formalism::Term>, C> terms, const Vertex& vertex) noexcept : m_terms(terms), m_vertex(vertex) {}
+    VertexAssignmentRange(View<DataList<formalism::Term>, C> terms, const Vertex& vertex) noexcept : m_terms(terms), m_vertex(vertex) {}
 
     auto begin() const noexcept { return VertexAssignmentIterator<C>(m_terms, m_vertex, true); }
 
@@ -132,13 +132,13 @@ template<formalism::IsContext C>
 class EdgeAssignmentIterator
 {
 private:
-    Proxy<DataList<formalism::Term>, C> m_terms;
+    View<DataList<formalism::Term>, C> m_terms;
     const Edge* m_edge;
     uint_t m_pos;
 
     EdgeAssignment m_assignment;
 
-    const Proxy<DataList<formalism::Term>, C>& get_terms() const noexcept { return m_terms; }
+    const View<DataList<formalism::Term>, C>& get_terms() const noexcept { return m_terms; }
     const Edge& get_edge() const noexcept { return *m_edge; }
 
     void advance() noexcept
@@ -206,7 +206,7 @@ public:
     using iterator_category = std::forward_iterator_tag;
 
     EdgeAssignmentIterator() noexcept : m_terms(nullptr), m_edge(nullptr), m_pos(std::numeric_limits<uint_t>::max()), m_assignment() {}
-    EdgeAssignmentIterator(Proxy<DataList<formalism::Term>, C> terms, const Edge& edge, bool begin) noexcept :
+    EdgeAssignmentIterator(View<DataList<formalism::Term>, C> terms, const Edge& edge, bool begin) noexcept :
         m_terms(terms),
         m_edge(&edge),
         m_pos(begin ? 0 : std::numeric_limits<uint_t>::max()),
@@ -237,11 +237,11 @@ template<formalism::IsContext C>
 class EdgeAssignmentRange
 {
 private:
-    Proxy<DataList<formalism::Term>, C> m_terms;
+    View<DataList<formalism::Term>, C> m_terms;
     const Edge& m_edge;
 
 public:
-    EdgeAssignmentRange(Proxy<DataList<formalism::Term>, C> terms, const Edge& edge) noexcept : m_terms(terms), m_edge(edge) {}
+    EdgeAssignmentRange(View<DataList<formalism::Term>, C> terms, const Edge& edge) noexcept : m_terms(terms), m_edge(edge) {}
 
     auto begin() const noexcept { return EdgeAssignmentIterator<C>(m_terms, m_edge, true); }
 
@@ -253,23 +253,23 @@ ClosedInterval<float_t>
 compute_tightest_closed_interval_helper(ClosedInterval<float_t> bounds, const FunctionAssignmentSet<T>& sets, const Range& range) noexcept;
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-ClosedInterval<float_t> compute_tightest_closed_interval(Proxy<Index<formalism::FunctionTerm<T>>, C> function_term,
+ClosedInterval<float_t> compute_tightest_closed_interval(View<Index<formalism::FunctionTerm<T>>, C> function_term,
                                                          const Vertex& element,
                                                          const FunctionAssignmentSets<T>& function_assignment_sets) noexcept;
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-ClosedInterval<float_t> compute_tightest_closed_interval(Proxy<Index<formalism::FunctionTerm<T>>, C> function,
+ClosedInterval<float_t> compute_tightest_closed_interval(View<Index<formalism::FunctionTerm<T>>, C> function,
                                                          const Edge& element,
                                                          const FunctionAssignmentSets<T>& function_skeleton_assignment_sets) noexcept;
 
 template<typename StructureType, formalism::IsContext C>
-ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpression>, C> fexpr,
+ClosedInterval<float_t> evaluate_partially(View<Data<formalism::FunctionExpression>, C> fexpr,
                                            const StructureType& element,
                                            const FunctionAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                                            const FunctionAssignmentSets<formalism::FluentTag>& fluent_assignment_sets) noexcept;
 
 template<typename StructureType, formalism::IsContext C>
-bool is_satisfiable(Proxy<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> numeric_constraint,
+bool is_satisfiable(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> numeric_constraint,
                     const StructureType& element,
                     const FunctionAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                     const FunctionAssignmentSets<formalism::FluentTag>& fluent_assignment_sets) noexcept;
@@ -295,7 +295,7 @@ public:
     }
 
     template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-    bool consistent_literals(Proxy<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
+    bool consistent_literals(View<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
     {
         for (const auto& literal : literals)
         {
@@ -340,7 +340,7 @@ public:
     }
 
     template<formalism::IsContext C>
-    bool consistent_numeric_constraints(Proxy<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> numeric_constraints,
+    bool consistent_numeric_constraints(View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> numeric_constraints,
                                         const FunctionAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                                         const FunctionAssignmentSets<formalism::FluentTag>& fluent_assignment_sets) const noexcept
     {
@@ -363,7 +363,7 @@ public:
     }
 
     template<formalism::IsContext C>
-    Index<formalism::Object> get_object_if_overlap(Proxy<Data<formalism::Term>, C> term) const noexcept
+    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, C> term) const noexcept
     {
         return visit(
             [&](auto&& arg)
@@ -377,7 +377,7 @@ public:
                     else
                         return Index<formalism::Object>::max();
                 }
-                else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::Object>, C>>)
+                else if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, C>>)
                 {
                     return arg.get_index();
                 }
@@ -409,7 +409,7 @@ public:
     Edge(Vertex src, Vertex dst) noexcept : m_src(std::move(src)), m_dst(std::move(dst)) {}
 
     template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-    bool consistent_literals(Proxy<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
+    bool consistent_literals(View<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
     {
         for (const auto& literal : literals)
         {
@@ -456,7 +456,7 @@ public:
     }
 
     template<typename T, formalism::IsContext C>
-    bool consistent_numeric_constraints(Proxy<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
+    bool consistent_numeric_constraints(View<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
                                         const FunctionAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                                         const FunctionAssignmentSets<formalism::FluentTag>& fluent_assignment_sets) const noexcept
     {
@@ -479,7 +479,7 @@ public:
     }
 
     template<formalism::IsContext C>
-    Index<formalism::Object> get_object_if_overlap(Proxy<Data<formalism::Term>, C> term) const noexcept
+    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, C> term) const noexcept
     {
         return visit(
             [&](auto&& arg)
@@ -495,7 +495,7 @@ public:
                     else
                         return Index<formalism::Object>::max();
                 }
-                else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::Object>, C>>)
+                else if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, C>>)
                 {
                     return arg.get_index();
                 }
@@ -519,7 +519,7 @@ class StaticConsistencyGraph
 {
 private:
     /// @brief Helper to initialize vertices.
-    std::pair<details::Vertices, std::vector<std::vector<uint_t>>> compute_vertices(Proxy<Index<formalism::ConjunctiveCondition>, C> condition,
+    std::pair<details::Vertices, std::vector<std::vector<uint_t>>> compute_vertices(View<Index<formalism::ConjunctiveCondition>, C> condition,
                                                                                     const analysis::DomainListList& parameter_domains,
                                                                                     const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets)
     {
@@ -556,7 +556,7 @@ private:
 
     /// @brief Helper to initialize edges.
     std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
-    compute_edges(Proxy<Index<formalism::ConjunctiveCondition>, C> condition,
+    compute_edges(View<Index<formalism::ConjunctiveCondition>, C> condition,
                   const analysis::DomainListList& parameter_domains,
                   const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                   const details::Vertices& vertices)
@@ -600,7 +600,7 @@ private:
     }
 
 public:
-    StaticConsistencyGraph(Proxy<Index<formalism::ConjunctiveCondition>, C> condition,
+    StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, C> condition,
                            const analysis::DomainListList& parameter_domains,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets) :
         m_condition(condition)
@@ -650,7 +650,7 @@ public:
     size_t get_num_vertices() const noexcept { return m_vertices.size(); }
     size_t get_num_edges() const noexcept { return m_targets.size(); }
 
-    Proxy<Index<formalism::ConjunctiveCondition>, C> get_condition() const noexcept { return m_condition; }
+    View<Index<formalism::ConjunctiveCondition>, C> get_condition() const noexcept { return m_condition; }
 
     const std::vector<std::vector<uint_t>>& get_partitions() const noexcept { return m_partitions; }
 
@@ -712,7 +712,7 @@ private:
     friend class EdgeIterator;
 
 private:
-    Proxy<Index<formalism::ConjunctiveCondition>, C> m_condition;
+    View<Index<formalism::ConjunctiveCondition>, C> m_condition;
 
     /* The data member of the consistency graph. */
     details::Vertices m_vertices;
@@ -746,7 +746,7 @@ compute_tightest_closed_interval_helper(ClosedInterval<float_t> bounds, const Fu
 }
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-ClosedInterval<float_t> compute_tightest_closed_interval(Proxy<Index<formalism::FunctionTerm<T>>, C> function_term,
+ClosedInterval<float_t> compute_tightest_closed_interval(View<Index<formalism::FunctionTerm<T>>, C> function_term,
                                                          const Vertex& element,
                                                          const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
 {
@@ -760,7 +760,7 @@ ClosedInterval<float_t> compute_tightest_closed_interval(Proxy<Index<formalism::
 }
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-ClosedInterval<float_t> compute_tightest_closed_interval(Proxy<Index<formalism::FunctionTerm<T>>, C> function_term,
+ClosedInterval<float_t> compute_tightest_closed_interval(View<Index<formalism::FunctionTerm<T>>, C> function_term,
                                                          const Edge& element,
                                                          const FunctionAssignmentSets<T>& function_skeleton_assignment_sets) noexcept
 {
@@ -778,7 +778,7 @@ ClosedInterval<float_t> compute_tightest_closed_interval(Proxy<Index<formalism::
 }
 
 template<typename StructureType, formalism::IsContext C>
-ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpression>, C> fexpr,
+ClosedInterval<float_t> evaluate_partially(View<Data<formalism::FunctionExpression>, C> fexpr,
                                            const StructureType& element,
                                            const FunctionAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                                            const FunctionAssignmentSets<formalism::FluentTag>& fluent_assignment_sets) noexcept
@@ -794,13 +794,13 @@ ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpress
             }
             else if constexpr (std::is_same_v<
                                    Alternative,
-                                   Proxy<Index<formalism::UnaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
+                                   View<Index<formalism::UnaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 return formalism::apply(formalism::OpSub {}, evaluate_partially(arg.get_arg(), element, static_assignment_sets, fluent_assignment_sets));
             }
             else if constexpr (std::is_same_v<
                                    Alternative,
-                                   Proxy<Index<formalism::BinaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
+                                   View<Index<formalism::BinaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 return formalism::apply(formalism::OpSub {},
                                         evaluate_partially(arg.get_lhs(), element, static_assignment_sets, fluent_assignment_sets),
@@ -808,7 +808,7 @@ ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpress
             }
             else if constexpr (std::is_same_v<
                                    Alternative,
-                                   Proxy<Index<formalism::BinaryOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
+                                   View<Index<formalism::BinaryOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 return formalism::apply(formalism::OpAdd {},
                                         evaluate_partially(arg.get_lhs(), element, static_assignment_sets, fluent_assignment_sets),
@@ -816,7 +816,7 @@ ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpress
             }
             else if constexpr (std::is_same_v<
                                    Alternative,
-                                   Proxy<Index<formalism::BinaryOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
+                                   View<Index<formalism::BinaryOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 return formalism::apply(formalism::OpMul {},
                                         evaluate_partially(arg.get_lhs(), element, static_assignment_sets, fluent_assignment_sets),
@@ -824,7 +824,7 @@ ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpress
             }
             else if constexpr (std::is_same_v<
                                    Alternative,
-                                   Proxy<Index<formalism::BinaryOperator<formalism::OpDiv, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
+                                   View<Index<formalism::BinaryOperator<formalism::OpDiv, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 return formalism::apply(formalism::OpDiv {},
                                         evaluate_partially(arg.get_lhs(), element, static_assignment_sets, fluent_assignment_sets),
@@ -832,7 +832,7 @@ ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpress
             }
             else if constexpr (std::is_same_v<
                                    Alternative,
-                                   Proxy<Index<formalism::MultiOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
+                                   View<Index<formalism::MultiOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 const auto child_fexprs = arg.get_args();
 
@@ -847,7 +847,7 @@ ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpress
             }
             else if constexpr (std::is_same_v<
                                    Alternative,
-                                   Proxy<Index<formalism::MultiOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
+                                   View<Index<formalism::MultiOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
             {
                 const auto child_fexprs = arg.get_args();
 
@@ -860,11 +860,11 @@ ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpress
                                                                    evaluate_partially(child_expr, element, static_assignment_sets, fluent_assignment_sets));
                                        });
             }
-            else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>)
+            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>)
             {
                 return compute_tightest_closed_interval(arg, element, static_assignment_sets);
             }
-            else if constexpr (std::is_same_v<Alternative, Proxy<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>)
+            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>)
             {
                 return compute_tightest_closed_interval(arg, element, fluent_assignment_sets);
             }
@@ -877,7 +877,7 @@ ClosedInterval<float_t> evaluate_partially(Proxy<Data<formalism::FunctionExpress
 }
 
 template<typename StructureType, formalism::IsContext C>
-bool is_satisfiable(Proxy<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> op,
+bool is_satisfiable(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> op,
                     const StructureType& element,
                     const FunctionAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                     const FunctionAssignmentSets<formalism::FluentTag>& fluent_assignment_sets) noexcept

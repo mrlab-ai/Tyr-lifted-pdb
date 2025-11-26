@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FUNCTION_EXPRESSION_PROXY_HPP_
-#define TYR_FORMALISM_FUNCTION_EXPRESSION_PROXY_HPP_
+#ifndef TYR_FORMALISM_FUNCTION_EXPRESSION_VIEW_HPP_
+#define TYR_FORMALISM_FUNCTION_EXPRESSION_VIEW_HPP_
 
 #include "tyr/common/variant.hpp"
 #include "tyr/formalism/function_expression_data.hpp"
@@ -25,7 +25,7 @@
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<Data<formalism::FunctionExpression>, C>
+class View<Data<formalism::FunctionExpression>, C>
 {
 private:
     const C* m_context;
@@ -34,11 +34,11 @@ private:
 public:
     using Tag = formalism::FunctionExpression;
 
-    auto get() const { return Proxy<typename Data<formalism::FunctionExpression>::Variant, C>(m_data.value, *m_context); }
+    auto get() const { return View<typename Data<formalism::FunctionExpression>::Variant, C>(m_data.value, *m_context); }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
-    Proxy(Data<formalism::FunctionExpression> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Data<formalism::FunctionExpression> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

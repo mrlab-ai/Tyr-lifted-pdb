@@ -15,31 +15,37 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_ARITHMETIC_OPERATOR_PROXY_HPP_
-#define TYR_FORMALISM_ARITHMETIC_OPERATOR_PROXY_HPP_
+#ifndef TYR_FORMALISM_GROUND_ATOM_VIEW_HPP_
+#define TYR_FORMALISM_GROUND_ATOM_VIEW_HPP_
 
-#include "tyr/common/types.hpp"
-#include "tyr/common/variant.hpp"
-#include "tyr/formalism/arithmetic_operator_data.hpp"
+#include "tyr/common/vector.hpp"
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr
 {
-template<typename T, formalism::IsContext C>
-class Proxy<Data<formalism::ArithmeticOperator<T>>, C>
+template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
+class View<Index<formalism::GroundAtom<T>>, C>
 {
 private:
     const C* m_context;
-    Data<formalism::ArithmeticOperator<T>> m_data;
+    Index<formalism::GroundAtom<T>> m_data;
 
 public:
-    using Tag = formalism::ArithmeticOperator<T>;
+    using Tag = formalism::GroundAtom<T>;
 
-    auto get() const { return Proxy<typename Data<formalism::ArithmeticOperator<T>>::Variant, C>(m_data.value, *m_context); }
+    View(Index<formalism::GroundAtom<T>> data, const C& context) : m_context(&context), m_data(data) {}
+
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
-    Proxy(Data<formalism::ArithmeticOperator<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    auto get_index() const { return m_data; }
+    auto get_predicate() const { return View<Index<formalism::Predicate<T>>, C>(m_data.group, *m_context); }
+    auto get_terms() const { return View<IndexList<formalism::Object>, C>(get().terms, *m_context); }
 };
 }
 

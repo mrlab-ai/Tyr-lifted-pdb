@@ -27,12 +27,12 @@ namespace tyr
 {
 
 template<typename Context, typename... T>
-class Proxy<::cista::offset::variant<T...>, Context>
+class View<::cista::offset::variant<T...>, Context>
 {
 public:
     using Variant = ::cista::offset::variant<T...>;
 
-    Proxy(const Variant& data, const Context& context) : m_context(&context), m_data(&data) {}
+    View(const Variant& data, const Context& context) : m_context(&context), m_data(&data) {}
 
     const Variant& index_variant() const noexcept { return *m_data; }
     const Context& context() const noexcept { return *m_context; }
@@ -46,9 +46,9 @@ public:
     template<typename U>
     auto get() const
     {
-        if constexpr (IsProxyable<U, Context>)
+        if constexpr (IsViewable<U, Context>)
         {
-            return Proxy<U, Context>(std::get<U>(index_variant()), context());
+            return View<U, Context>(std::get<U>(index_variant()), context());
         }
         else
         {
@@ -64,9 +64,9 @@ public:
             {
                 using U = std::decay_t<decltype(arg)>;
 
-                if constexpr (IsProxyable<U, Context>)
+                if constexpr (IsViewable<U, Context>)
                 {
-                    return std::forward<F>(f)(Proxy<U, Context>(arg, context()));
+                    return std::forward<F>(f)(View<U, Context>(arg, context()));
                 }
                 else
                 {
@@ -85,13 +85,13 @@ private:
 };
 
 template<typename Visitor, typename Context, typename... T>
-constexpr auto visit(Visitor&& vis, Proxy<::cista::offset::variant<T...>, Context>&& v)
+constexpr auto visit(Visitor&& vis, View<::cista::offset::variant<T...>, Context>&& v)
 {
     return v.apply(std::forward<Visitor>(vis));
 }
 
 template<typename Visitor, typename Context, typename... T>
-constexpr auto visit(Visitor&& vis, const Proxy<::cista::offset::variant<T...>, Context>& v)
+constexpr auto visit(Visitor&& vis, const View<::cista::offset::variant<T...>, Context>& v)
 {
     return v.apply(vis);
 }

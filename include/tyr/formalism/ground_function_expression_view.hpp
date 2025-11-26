@@ -15,35 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PREDICATE_PROXY_HPP_
-#define TYR_FORMALISM_PREDICATE_PROXY_HPP_
+#ifndef TYR_FORMALISM_GROUND_FUNCTION_EXPRESSION_VIEW_HPP_
+#define TYR_FORMALISM_GROUND_FUNCTION_EXPRESSION_VIEW_HPP_
 
-#include "tyr/common/types.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/common/variant.hpp"
+#include "tyr/formalism/ground_function_expression_data.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr
 {
-template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<Index<formalism::Predicate<T>>, C>
+
+template<formalism::IsContext C>
+class View<Data<formalism::GroundFunctionExpression>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::Predicate<T>> m_data;
+    Data<formalism::GroundFunctionExpression> m_data;
 
 public:
-    using Tag = formalism::Predicate<T>;
+    using Tag = formalism::GroundFunctionExpression;
 
-    Proxy(Index<formalism::Predicate<T>> data, const C& context) : m_context(&context), m_data(data) {}
-
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    auto get() const { return View<typename Data<formalism::GroundFunctionExpression>::Variant, C>(m_data.value, *m_context); }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return m_data; }
-    const auto& get_name() const { return get().name; }
-    auto get_arity() const { return get().arity; }
+    View(Data<formalism::GroundFunctionExpression> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

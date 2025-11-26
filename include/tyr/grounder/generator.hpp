@@ -26,6 +26,39 @@
 
 namespace tyr::grounder
 {
+
+template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
+View<Index<formalism::GroundAtom<T>>, C> ground(View<Index<formalism::Atom<T>>, C> element,
+                                                const IndexList<formalism::Object>& binding,
+                                                formalism::Builder& builder,
+                                                formalism::ScopedRepository<C>& repository)
+{
+}
+
+template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
+View<Index<formalism::GroundLiteral<T>>, C> ground(View<Index<formalism::Literal<T>>, C> element,
+                                                   const IndexList<formalism::Object>& binding,
+                                                   formalism::Builder& builder,
+                                                   formalism::ScopedRepository<C>& repository)
+{
+}
+
+template<formalism::IsContext C>
+View<Index<formalism::GroundConjunctiveCondition>, C> ground(View<Index<formalism::ConjunctiveCondition>, C> element,
+                                                             const IndexList<formalism::Object>& binding,
+                                                             formalism::Builder& builder,
+                                                             formalism::ScopedRepository<C>& repository)
+{
+}
+
+template<formalism::IsContext C>
+View<Index<formalism::GroundRule>, C> ground(View<Index<formalism::Rule>, C> element,
+                                             const IndexList<formalism::Object>& binding,
+                                             formalism::Builder& builder,
+                                             formalism::ScopedRepository<C>& repository)
+{
+}
+
 template<formalism::IsContext C>
 void ground_nullary_case(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
 {

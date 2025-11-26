@@ -15,32 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FUNCTION_PROXY_HPP_
-#define TYR_FORMALISM_FUNCTION_PROXY_HPP_
+#ifndef TYR_FORMALISM_TERM_VIEW_HPP_
+#define TYR_FORMALISM_TERM_VIEW_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_index.hpp"
+#include "tyr/common/types.hpp"
+#include "tyr/common/variant.hpp"
 #include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/term_data.hpp"
 
 namespace tyr
 {
-template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<Index<formalism::Function<T>>, C>
+template<formalism::IsContext C>
+class View<Data<formalism::Term>, C>
 {
 private:
-    const C* context;
-    Index<formalism::Function<T>> index;
+    const C* m_context;
+    Data<formalism::Term> m_data;
 
 public:
-    using Tag = formalism::Function<T>;
+    using Tag = formalism::Term;
 
-    Proxy(Index<formalism::Function<T>> index, const C& context) : context(&context), index(index) {}
+    auto get() const { return View<typename Data<formalism::Term>::Variant, C>(m_data.value, *m_context); }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    const auto& get() const { return get_repository(*context)[index]; }
-
-    auto get_index() const { return index; }
-    const auto& get_name() const { return get().name; }
-    auto get_arity() const { return get().arity; }
+    View(Data<formalism::Term> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

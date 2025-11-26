@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PROGRAM_PROXY_HPP_
-#define TYR_FORMALISM_PROGRAM_PROXY_HPP_
+#ifndef TYR_FORMALISM_PROGRAM_VIEW_HPP_
+#define TYR_FORMALISM_PROGRAM_VIEW_HPP_
 
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -26,12 +26,12 @@
 #include "tyr/formalism/predicate_index.hpp"
 #include "tyr/formalism/program_index.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/rule_proxy.hpp"
+#include "tyr/formalism/rule_view.hpp"
 
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<Index<formalism::Program>, C>
+class View<Index<formalism::Program>, C>
 {
 private:
     const C* m_context;
@@ -40,7 +40,7 @@ private:
 public:
     using Tag = formalism::Program;
 
-    Proxy(Index<formalism::Program> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::Program> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
@@ -50,25 +50,25 @@ public:
     template<formalism::IsStaticOrFluentTag T>
     auto get_predicates() const
     {
-        return Proxy<IndexList<formalism::Predicate<T>>, C>(get().template get_predicates<T>(), *m_context);
+        return View<IndexList<formalism::Predicate<T>>, C>(get().template get_predicates<T>(), *m_context);
     }
     template<formalism::IsStaticOrFluentTag T>
     auto get_functions() const
     {
-        return Proxy<IndexList<formalism::Function<T>>, C>(get().template get_functions<T>(), *m_context);
+        return View<IndexList<formalism::Function<T>>, C>(get().template get_functions<T>(), *m_context);
     }
-    auto get_objects() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *m_context); }
+    auto get_objects() const { return View<IndexList<formalism::Object>, C>(get().objects, *m_context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_atoms() const
     {
-        return Proxy<IndexList<formalism::GroundAtom<T>>, C>(get().template get_atoms<T>(), *m_context);
+        return View<IndexList<formalism::GroundAtom<T>>, C>(get().template get_atoms<T>(), *m_context);
     }
     template<formalism::IsStaticOrFluentTag T>
     auto get_function_values() const
     {
-        return Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C>(get().template get_function_values<T>(), *m_context);
+        return View<IndexList<formalism::GroundFunctionTermValue<T>>, C>(get().template get_function_values<T>(), *m_context);
     }
-    auto get_rules() const { return Proxy<IndexList<formalism::Rule>, C>(get().rules, *m_context); }
+    auto get_rules() const { return View<IndexList<formalism::Rule>, C>(get().rules, *m_context); }
 };
 }
 

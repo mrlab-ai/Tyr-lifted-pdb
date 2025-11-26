@@ -15,56 +15,36 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_BINARY_OPERATOR_PROXY_HPP_
-#define TYR_FORMALISM_BINARY_OPERATOR_PROXY_HPP_
+#ifndef TYR_FORMALISM_MULTI_OPERATOR_VIEW_HPP_
+#define TYR_FORMALISM_MULTI_OPERATOR_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
-#include "tyr/common/variant.hpp"
-#include "tyr/formalism/binary_operator_index.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_expression_view.hpp"
+#include "tyr/formalism/multi_operator_index.hpp"
 
 namespace tyr
 {
 template<formalism::IsOp Op, typename T, formalism::IsContext C>
-class Proxy<Index<formalism::BinaryOperator<Op, T>>, C>
+class View<Index<formalism::MultiOperator<Op, T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::BinaryOperator<Op, T>> m_data;
+    Index<formalism::MultiOperator<Op, T>> m_data;
 
 public:
-    using Tag = formalism::BinaryOperator<Op, T>;
+    using Tag = formalism::MultiOperator<Op, T>;
     using OpType = Op;
 
-    Proxy(Index<formalism::BinaryOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::MultiOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_lhs() const
-    {
-        if constexpr (IsProxyable<T, C>)
-        {
-            return Proxy<T, C>(get().lhs, *m_context);
-        }
-        else
-        {
-            return get().lhs;
-        }
-    }
-    auto get_rhs() const
-    {
-        if constexpr (IsProxyable<T, C>)
-        {
-            return Proxy<T, C>(get().rhs, *m_context);
-        }
-        else
-        {
-            return get().rhs;
-        }
-    }
+    auto get_args() const { return View<::cista::offset::vector<T>, C>(get().args, *m_context); }
 };
 
 }

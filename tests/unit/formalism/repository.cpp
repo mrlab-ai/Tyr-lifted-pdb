@@ -105,7 +105,7 @@ TEST(TyrTests, TyrFormalismRepository)
     EXPECT_FALSE(atom_success_1);
 }
 
-TEST(TyrTests, TyrFormalismProxy)
+TEST(TyrTests, TyrFormalismView)
 {
     auto repository = Repository();
     auto buffer = Buffer();

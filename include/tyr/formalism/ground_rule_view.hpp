@@ -15,20 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_GROUND_RULE_PROXY_HPP_
-#define TYR_FORMALISM_GROUND_RULE_PROXY_HPP_
+#ifndef TYR_FORMALISM_GROUND_RULE_VIEW_HPP_
+#define TYR_FORMALISM_GROUND_RULE_VIEW_HPP_
 
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_proxy.hpp"
-#include "tyr/formalism/ground_conjunctive_condition_proxy.hpp"
+#include "tyr/formalism/ground_atom_view.hpp"
+#include "tyr/formalism/ground_conjunctive_condition_view.hpp"
 #include "tyr/formalism/ground_rule_index.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<Index<formalism::GroundRule>, C>
+class View<Index<formalism::GroundRule>, C>
 {
 private:
     const C* m_context;
@@ -37,15 +37,15 @@ private:
 public:
     using Tag = formalism::GroundRule;
 
-    Proxy(Index<formalism::GroundRule> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::GroundRule> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_body() const { return Proxy<Index<formalism::GroundConjunctiveCondition>, C>(get().body, *m_context); }
-    auto get_head() const { return Proxy<Index<formalism::GroundAtom<formalism::FluentTag>>, C>(get().head, *m_context); }
+    auto get_body() const { return View<Index<formalism::GroundConjunctiveCondition>, C>(get().body, *m_context); }
+    auto get_head() const { return View<Index<formalism::GroundAtom<formalism::FluentTag>>, C>(get().head, *m_context); }
 };
 }
 

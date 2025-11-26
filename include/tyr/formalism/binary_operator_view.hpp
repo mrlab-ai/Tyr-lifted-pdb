@@ -15,36 +15,58 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FUNCTION_TERM_PROXY_HPP_
-#define TYR_FORMALISM_FUNCTION_TERM_PROXY_HPP_
+#ifndef TYR_FORMALISM_BINARY_OPERATOR_VIEW_HPP_
+#define TYR_FORMALISM_BINARY_OPERATOR_VIEW_HPP_
 
+#include "tyr/common/types.hpp"
+#include "tyr/common/variant.hpp"
+#include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_proxy.hpp"
-#include "tyr/formalism/function_term_index.hpp"
-#include "tyr/formalism/repository.hpp"
 
 namespace tyr
 {
-template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
-class Proxy<Index<formalism::FunctionTerm<T>>, C>
+template<formalism::IsOp Op, typename T, formalism::IsContext C>
+class View<Index<formalism::BinaryOperator<Op, T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::FunctionTerm<T>> m_data;
+    Index<formalism::BinaryOperator<Op, T>> m_data;
 
 public:
-    using Tag = formalism::FunctionTerm<T>;
+    using Tag = formalism::BinaryOperator<Op, T>;
+    using OpType = Op;
 
-    Proxy(Index<formalism::FunctionTerm<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::BinaryOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_function() const { return Proxy<Index<formalism::Function<T>>, C>(m_data.group, *m_context); }
-    auto get_terms() const { return Proxy<DataList<formalism::Term>, C>(get().terms, *m_context); }
+    auto get_lhs() const
+    {
+        if constexpr (IsViewable<T, C>)
+        {
+            return View<T, C>(get().lhs, *m_context);
+        }
+        else
+        {
+            return get().lhs;
+        }
+    }
+    auto get_rhs() const
+    {
+        if constexpr (IsViewable<T, C>)
+        {
+            return View<T, C>(get().rhs, *m_context);
+        }
+        else
+        {
+            return get().rhs;
+        }
+    }
 };
+
 }
 
 #endif

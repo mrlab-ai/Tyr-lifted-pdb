@@ -270,7 +270,7 @@ struct Hash<std::span<T, Extent>>
 
 /// @brief std::hash specialization for types T that satisfy `HasIdentifyingMembers`.
 /// Dereferences the underlying pointer before forwarding the call to the std::hash
-/// specialization of `IdentifiableMembersProxy` of T to compute a hash based on all members.
+/// specialization of `IdentifiableMembersView` of T to compute a hash based on all members.
 /// @tparam T is the type.
 template<typename T>
 struct Hash<ObserverPtr<T>>
@@ -278,7 +278,7 @@ struct Hash<ObserverPtr<T>>
     size_t operator()(ObserverPtr<T> ptr) const { return Hash<std::remove_cvref_t<T>> {}(*ptr); }
 };
 
-/// @brief std::hash specialization for an `IdentifiableMembersProxy`
+/// @brief std::hash specialization for an `IdentifiableMembersView`
 /// that computes a hash based on all members.
 /// @tparam ...Ts are the types of all members.
 template<HasIdentifyingMembers T>

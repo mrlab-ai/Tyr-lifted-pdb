@@ -25,7 +25,7 @@ using namespace tyr::formalism;
 namespace tyr::tests
 {
 
-TEST(TyrTests, TyrFormalismProxy)
+TEST(TyrTests, TyrFormalismView)
 {
     auto repository = Repository();
     auto buffer = Buffer();
@@ -54,7 +54,7 @@ TEST(TyrTests, TyrFormalismProxy)
     auto [atom, atom_success] = repository.get_or_create(atom_builder, buffer);
 
     // Recurse through proxy
-    auto atom_proxy = Proxy<Index<Atom<FluentTag>>, Repository>(atom->index, repository);
+    auto atom_proxy = View<Index<Atom<FluentTag>>, Repository>(atom->index, repository);
     auto atom_relation_proxy = atom_proxy.get_predicate();
     auto atom_terms_proxy = atom_proxy.get_terms();
 
@@ -65,13 +65,13 @@ TEST(TyrTests, TyrFormalismProxy)
         {
             using Alternative = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<Alternative, Proxy<Index<Object>, Repository>>)
+            if constexpr (std::is_same_v<Alternative, View<Index<Object>, Repository>>)
             {
                 EXPECT_EQ(arg.get_index(), object->index);
             }
             else
             {
-                FAIL() << "Expected ObjectProxy for first term, got a different proxy type";
+                FAIL() << "Expected ObjectView for first term, got a different proxy type";
             }
         },
         atom_terms_proxy[0].get());
@@ -86,7 +86,7 @@ TEST(TyrTests, TyrFormalismProxy)
             }
             else
             {
-                FAIL() << "Expected VariableProxy for first term, got a different proxy type";
+                FAIL() << "Expected VariableView for first term, got a different proxy type";
             }
         },
         atom_terms_proxy[1].get());

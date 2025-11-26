@@ -21,9 +21,9 @@
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_proxy.hpp"
+#include "tyr/formalism/ground_atom_view.hpp"
 #include "tyr/formalism/ground_function_term_index.hpp"
-#include "tyr/formalism/ground_function_term_value_proxy.hpp"
+#include "tyr/formalism/ground_function_term_value_view.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <limits>
@@ -44,7 +44,7 @@ private:
     BitsetType m_bitset;
 
 public:
-    explicit PredicateFactSet(Proxy<IndexList<formalism::GroundAtom<T>>, C> view) : m_context(view.get_context()), m_indices() { insert(view); }
+    explicit PredicateFactSet(View<IndexList<formalism::GroundAtom<T>>, C> view) : m_context(view.get_context()), m_indices() { insert(view); }
 
     void reset()
     {
@@ -52,7 +52,7 @@ public:
         m_bitset.reset();
     }
 
-    void insert(Proxy<Index<formalism::GroundAtom<T>>, C> view)
+    void insert(View<Index<formalism::GroundAtom<T>>, C> view)
     {
         if (&m_context != &view.get_context())
             throw std::runtime_error("Incompatible contexts.");
@@ -67,7 +67,7 @@ public:
         m_bitset.set(index);
     }
 
-    void insert(Proxy<IndexList<formalism::GroundAtom<T>>, C> view)
+    void insert(View<IndexList<formalism::GroundAtom<T>>, C> view)
     {
         for (const auto atom : view)
             insert(atom);
@@ -75,7 +75,7 @@ public:
 
     bool contains(Index<formalism::GroundAtom<T>> index) const noexcept { return m_bitset.test(index); }
 
-    auto get_facts() const noexcept { return Proxy<IndexList<formalism::GroundAtom<T>>, C>(m_indices, m_context); }
+    auto get_facts() const noexcept { return View<IndexList<formalism::GroundAtom<T>>, C>(m_indices, m_context); }
 };
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
@@ -93,7 +93,7 @@ private:
     VectorType m_vector;
 
 public:
-    explicit FunctionFactSet(Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> view) : m_context(view.get_context()), m_indices(), m_unique()
+    explicit FunctionFactSet(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> view) : m_context(view.get_context()), m_indices(), m_unique()
     {
         insert(view);
     }
@@ -105,7 +105,7 @@ public:
         m_vector.reset(std::numeric_limits<float_t>::quiet_NaN());
     }
 
-    void insert(Proxy<Index<formalism::GroundFunctionTermValue<T>>, C> view)
+    void insert(View<Index<formalism::GroundFunctionTermValue<T>>, C> view)
     {
         if (&m_context != &view.get_context())
             throw std::runtime_error("Incompatible contexts.");
@@ -121,7 +121,7 @@ public:
         m_vector[term_index] = view.get_value();
     }
 
-    void insert(Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
+    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
     {
         for (const auto function_value : view)
             insert(function_value);
@@ -129,7 +129,7 @@ public:
 
     float_t operator[](Index<formalism::GroundFunctionTerm<T>> index) const noexcept { return m_vector[index]; }
 
-    auto get_facts() const noexcept { return Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C>(m_indices, m_context); }
+    auto get_facts() const noexcept { return View<IndexList<formalism::GroundFunctionTermValue<T>>, C>(m_indices, m_context); }
 };
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
@@ -138,7 +138,7 @@ struct TaggedFactSets
     PredicateFactSet<T, C> predicate;
     FunctionFactSet<T, C> function;
 
-    TaggedFactSets(Proxy<IndexList<formalism::GroundAtom<T>>, C> atoms, Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> function_terms) :
+    TaggedFactSets(View<IndexList<formalism::GroundAtom<T>>, C> atoms, View<IndexList<formalism::GroundFunctionTermValue<T>>, C> function_terms) :
         predicate(atoms),
         function(function_terms)
     {
@@ -152,7 +152,7 @@ struct FactSets
     TaggedFactSets<formalism::FluentTag, C> fluent_sets;
 
     // Convenience constructor
-    explicit FactSets(Proxy<Index<formalism::Program>, C> program) :
+    explicit FactSets(View<Index<formalism::Program>, C> program) :
         static_sets(program.template get_atoms<formalism::StaticTag>(), program.template get_function_values<formalism::StaticTag>()),
         fluent_sets(program.template get_atoms<formalism::FluentTag>(), program.template get_function_values<formalism::FluentTag>())
     {

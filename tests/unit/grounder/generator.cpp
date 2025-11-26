@@ -30,7 +30,7 @@ namespace tyr::tests
 TEST(TyrTests, TyrGrounderGenerator)
 {
     auto [program_index, repository] = create_example_problem();
-    auto program = Proxy<Index<Program>, Repository>(program_index, repository);
+    auto program = View<Index<Program>, Repository>(program_index, repository);
 
     // Once: Analyze variable domains to compress assignment sets
     auto domains = analysis::compute_variable_domains(program);

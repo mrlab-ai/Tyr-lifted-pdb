@@ -15,21 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_GROUND_CONJUNCTIVE_CONDITION_PROXY_HPP_
-#define TYR_FORMALISM_GROUND_CONJUNCTIVE_CONDITION_PROXY_HPP_
+#ifndef TYR_FORMALISM_GROUND_CONJUNCTIVE_CONDITION_VIEW_HPP_
+#define TYR_FORMALISM_GROUND_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/boolean_operator_proxy.hpp"
+#include "tyr/formalism/boolean_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_conjunctive_condition_index.hpp"
-#include "tyr/formalism/ground_literal_proxy.hpp"
-#include "tyr/formalism/object_proxy.hpp"
+#include "tyr/formalism/ground_literal_view.hpp"
+#include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr
 {
 template<formalism::IsContext C>
-class Proxy<Index<formalism::GroundConjunctiveCondition>, C>
+class View<Index<formalism::GroundConjunctiveCondition>, C>
 {
 private:
     const C* m_context;
@@ -38,22 +38,22 @@ private:
 public:
     using Tag = formalism::GroundConjunctiveCondition;
 
-    Proxy(Index<formalism::GroundConjunctiveCondition> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::GroundConjunctiveCondition> data, const C& context) : m_context(&context), m_data(data) {}
 
     const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 
     auto get_index() const { return m_data; }
-    auto get_objects() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *m_context); }
+    auto get_objects() const { return View<IndexList<formalism::Object>, C>(get().objects, *m_context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_literals() const
     {
-        return Proxy<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_literals<T>(), *m_context);
+        return View<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_literals<T>(), *m_context);
     }
     auto get_numeric_constraints() const
     {
-        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_constraints, *m_context);
+        return View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_constraints, *m_context);
     }
     auto get_arity() const { return get().objects.size(); }
 };
