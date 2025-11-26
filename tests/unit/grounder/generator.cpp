@@ -93,6 +93,8 @@ TEST(TyrTests, TyrGrounderGenerator)
     auto bindings = std::vector<IndexList<formalism::Object>>(program.get_rules().size());
     // Once: Create builders
     auto builders = std::vector<formalism::Builder>(program.get_rules().size());
+    // Once: Create container for applicable ground rules
+    auto ground_rules = std::vector<IndexList<formalism::GroundRule>>(program.get_rules().size());
 
     // Per fact set: Create workspaces that wrap all the data for grounding, then call ground
     // TODO: we can use onetbb parallel for here later.
@@ -102,7 +104,8 @@ TEST(TyrTests, TyrGrounderGenerator)
 
         // Combine all the data dependencies into workspaces.
         auto immutable_workspace = grounder::ImmutableRuleWorkspace<Repository> { fact_sets, assignment_sets, program.get_rules()[i], consistency_graphs[i] };
-        auto mutable_workspace = grounder::MutableRuleWorkspace<Repository> { rule_scoped_repositories[i], kpkc_workspaces[i], bindings[i], builders[i] };
+        auto mutable_workspace =
+            grounder::MutableRuleWorkspace<Repository> { rule_scoped_repositories[i], kpkc_workspaces[i], bindings[i], builders[i], ground_rules[i] };
 
         grounder::ground(immutable_workspace, mutable_workspace);
     }

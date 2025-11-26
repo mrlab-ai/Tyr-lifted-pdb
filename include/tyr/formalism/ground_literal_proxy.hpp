@@ -38,7 +38,7 @@ public:
 
     Proxy(Index<formalism::GroundLiteral<T>> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(m_context)[m_data]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return m_data; }
 

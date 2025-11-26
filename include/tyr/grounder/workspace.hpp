@@ -44,6 +44,8 @@ struct MutableRuleWorkspace
 
     IndexList<formalism::Object>& binding;
     formalism::Builder& builder;
+
+    IndexList<formalism::GroundRule>& ground_rules;
 };
 
 }

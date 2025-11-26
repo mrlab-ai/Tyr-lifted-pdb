@@ -20,13 +20,24 @@
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/grounder/applicability.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/kpkc.hpp"
 
 namespace tyr::grounder
 {
 template<formalism::IsContext C>
-void ground(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
+void ground_nullary_case(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
+{
+}
+
+template<formalism::IsContext C>
+void ground_unary_case(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
+{
+}
+
+template<formalism::IsContext C>
+void ground_general_case(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
 {
     kpkc::for_each_k_clique(immutable_workspace.consistency_graph,
                             mutable_workspace.kpkc_workspace,
@@ -38,6 +49,26 @@ void ground(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWor
                                 // TODO: ground the final rule
                             });
 }
+
+template<formalism::IsContext C>
+void ground(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
+{
+    const auto rule = immutable_workspace.rule;
+    const auto& fact_sets = immutable_workspace.fact_sets;
+
+    if (!nullary_conditions_hold(rule.get_body(), fact_sets))
+        return;
+
+    const auto arity = rule.get_body().get_arity();
+
+    if (arity == 0)
+        ground_nullary_case(immutable_workspace, mutable_workspace);
+    else if (arity == 1)
+        ground_unary_case(immutable_workspace, mutable_workspace);
+    else
+        ground_general_case(immutable_workspace, mutable_workspace);
+}
+
 }
 
 #endif
