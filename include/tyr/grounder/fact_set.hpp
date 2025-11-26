@@ -35,7 +35,8 @@ template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 class PredicateFactSet
 {
 private:
-    Proxy<IndexList<formalism::GroundAtom<T>>, C> m_view;
+    const C& m_context;
+    IndexList<formalism::GroundAtom<T>> m_indices;
 
     using BitsetType =
         std::conditional_t<IsGroupType<formalism::GroundAtom<T>>, GroupDynamicBitset<formalism::GroundAtom<T>>, FlatDynamicBitset<formalism::GroundAtom<T>>>;
@@ -43,31 +44,47 @@ private:
     BitsetType m_bitset;
 
 public:
-    explicit PredicateFactSet(Proxy<IndexList<formalism::GroundAtom<T>>, C> view) : m_view(view) { initialize(view); }
+    explicit PredicateFactSet(Proxy<IndexList<formalism::GroundAtom<T>>, C> view) : m_context(view.get_context()), m_indices() { insert(view); }
 
-    void initialize(Proxy<IndexList<formalism::GroundAtom<T>>, C> view)
+    void reset()
     {
-        m_view = view;
+        m_indices.clear();
         m_bitset.reset();
+    }
 
-        for (const auto atom : m_view)
-        {
-            m_bitset.resize_to_fit(atom.get_index());
+    void insert(Proxy<Index<formalism::GroundAtom<T>>, C> view)
+    {
+        if (&m_context != &view.get_context())
+            throw std::runtime_error("Incompatible contexts.");
 
-            m_bitset.set(atom.get_index());
-        }
+        const auto index = view.get_index();
+
+        m_bitset.resize_to_fit(index);
+
+        if (!m_bitset.test(index))
+            m_indices.push_back(index);
+
+        m_bitset.set(index);
+    }
+
+    void insert(Proxy<IndexList<formalism::GroundAtom<T>>, C> view)
+    {
+        for (const auto atom : view)
+            insert(atom);
     }
 
     bool contains(Index<formalism::GroundAtom<T>> index) const noexcept { return m_bitset.test(index); }
 
-    auto get_facts() const noexcept { return m_view; }
+    auto get_facts() const noexcept { return Proxy<IndexList<formalism::GroundAtom<T>>, C>(m_indices, m_context); }
 };
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 class FunctionFactSet
 {
 private:
-    Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> m_view;
+    const C& m_context;
+    IndexList<formalism::GroundFunctionTermValue<T>> m_indices;
+    UnorderedSet<Index<formalism::GroundFunctionTerm<T>>> m_unique;
 
     using VectorType = std::conditional_t<IsGroupType<formalism::GroundFunctionTerm<T>>,
                                           GroupVector<formalism::GroundFunctionTerm<T>, float_t>,
@@ -76,24 +93,43 @@ private:
     VectorType m_vector;
 
 public:
-    explicit FunctionFactSet(Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> view) : m_view(view) { initialize(view); }
-
-    void initialize(Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
+    explicit FunctionFactSet(Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> view) : m_context(view.get_context()), m_indices(), m_unique()
     {
-        m_view = view;
+        insert(view);
+    }
+
+    void reset()
+    {
+        m_indices.clear();
+        m_unique.clear();
         m_vector.reset(std::numeric_limits<float_t>::quiet_NaN());
+    }
 
-        for (const auto function_value : m_view)
-        {
-            m_vector.resize_to_fit(function_value.get_term().get_index(), std::numeric_limits<float_t>::quiet_NaN());
+    void insert(Proxy<Index<formalism::GroundFunctionTermValue<T>>, C> view)
+    {
+        if (&m_context != &view.get_context())
+            throw std::runtime_error("Incompatible contexts.");
 
-            m_vector[function_value.get_term().get_index()] = function_value.get_value();
-        }
+        const auto term_index = view.get_term().get_index();
+
+        if (m_unique.contains(term_index))
+            throw std::runtime_error("Multiple value assignments to a ground function term.");
+
+        m_indices.push_back(view.get_index());
+        m_unique.insert(term_index);
+        m_vector.resize_to_fit(term_index, std::numeric_limits<float_t>::quiet_NaN());
+        m_vector[term_index] = view.get_value();
+    }
+
+    void insert(Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
+    {
+        for (const auto function_value : view)
+            insert(function_value);
     }
 
     float_t operator[](Index<formalism::GroundFunctionTerm<T>> index) const noexcept { return m_vector[index]; }
 
-    auto get_facts() const noexcept { return m_view; }
+    auto get_facts() const noexcept { return Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C>(m_indices, m_context); }
 };
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>

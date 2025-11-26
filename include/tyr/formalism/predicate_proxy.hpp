@@ -29,17 +29,19 @@ template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 class Proxy<Index<formalism::Predicate<T>>, C>
 {
 private:
-    const C* context;
-    Index<formalism::Predicate<T>> index;
+    const C* m_context;
+    Index<formalism::Predicate<T>> m_data;
 
 public:
     using Tag = formalism::Predicate<T>;
 
-    Proxy(Index<formalism::Predicate<T>> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::Predicate<T>> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
+    auto get_index() const { return m_data; }
     const auto& get_name() const { return get().name; }
     auto get_arity() const { return get().arity; }
 };

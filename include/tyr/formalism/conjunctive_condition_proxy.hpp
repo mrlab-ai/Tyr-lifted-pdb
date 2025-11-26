@@ -32,35 +32,37 @@ template<formalism::IsContext C>
 class Proxy<Index<formalism::ConjunctiveCondition>, C>
 {
 private:
-    const C* context;
-    Index<formalism::ConjunctiveCondition> index;
+    const C* m_context;
+    Index<formalism::ConjunctiveCondition> m_data;
 
 public:
     using Tag = formalism::ConjunctiveCondition;
 
-    Proxy(Index<formalism::ConjunctiveCondition> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::ConjunctiveCondition> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
-    auto get_variables() const { return Proxy<IndexList<formalism::Variable>, C>(get().variables, *context); }
+    auto get_index() const { return m_data; }
+    auto get_variables() const { return Proxy<IndexList<formalism::Variable>, C>(get().variables, *m_context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_literals() const
     {
-        return Proxy<IndexList<formalism::Literal<T>>, C>(get().template get_literals<T>(), *context);
+        return Proxy<IndexList<formalism::Literal<T>>, C>(get().template get_literals<T>(), *m_context);
     }
     auto get_numeric_constraints() const
     {
-        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(get().numeric_constraints, *context);
+        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(get().numeric_constraints, *m_context);
     }
     template<formalism::IsStaticOrFluentTag T>
     auto get_nullary_literals() const
     {
-        return Proxy<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_literals<T>(), *context);
+        return Proxy<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_literals<T>(), *m_context);
     }
     auto get_nullary_numeric_constraints() const
     {
-        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_constraints, *context);
+        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_constraints, *m_context);
     }
     auto get_arity() const { return get().variables.size(); }
 };

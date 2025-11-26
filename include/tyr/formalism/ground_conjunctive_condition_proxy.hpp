@@ -32,26 +32,28 @@ template<formalism::IsContext C>
 class Proxy<Index<formalism::GroundConjunctiveCondition>, C>
 {
 private:
-    const C* context;
-    Index<formalism::GroundConjunctiveCondition> index;
+    const C* m_context;
+    Index<formalism::GroundConjunctiveCondition> m_data;
 
 public:
     using Tag = formalism::GroundConjunctiveCondition;
 
-    Proxy(Index<formalism::GroundConjunctiveCondition> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::GroundConjunctiveCondition> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
-    auto get_objects() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *context); }
+    auto get_index() const { return m_data; }
+    auto get_objects() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *m_context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_literals() const
     {
-        return Proxy<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_literals<T>(), *context);
+        return Proxy<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_literals<T>(), *m_context);
     }
     auto get_numeric_constraints() const
     {
-        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_constraints, *context);
+        return Proxy<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_constraints, *m_context);
     }
     auto get_arity() const { return get().objects.size(); }
 };

@@ -29,15 +29,17 @@ template<typename T, formalism::IsContext C>
 class Proxy<Data<formalism::ArithmeticOperator<T>>, C>
 {
 private:
-    const C* context;
-    Data<formalism::ArithmeticOperator<T>> op;
+    const C* m_context;
+    Data<formalism::ArithmeticOperator<T>> m_data;
 
 public:
     using Tag = formalism::ArithmeticOperator<T>;
 
-    auto get() const { return Proxy<typename Data<formalism::ArithmeticOperator<T>>::Variant, C>(op.value, *context); }
+    auto get() const { return Proxy<typename Data<formalism::ArithmeticOperator<T>>::Variant, C>(m_data.value, *m_context); }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    Proxy(Data<formalism::ArithmeticOperator<T>> op, const C& context) : context(&context), op(op) {}
+    Proxy(Data<formalism::ArithmeticOperator<T>> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

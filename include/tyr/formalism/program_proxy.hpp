@@ -34,40 +34,41 @@ template<formalism::IsContext C>
 class Proxy<Index<formalism::Program>, C>
 {
 private:
-    const C* context;
-    Index<formalism::Program> index;
+    const C* m_context;
+    Index<formalism::Program> m_data;
 
 public:
     using Tag = formalism::Program;
 
-    Proxy(Index<formalism::Program> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::Program> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const C& get_context() const { return *context; }
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
+    auto get_index() const { return m_data; }
     template<formalism::IsStaticOrFluentTag T>
     auto get_predicates() const
     {
-        return Proxy<IndexList<formalism::Predicate<T>>, C>(get().template get_predicates<T>(), *context);
+        return Proxy<IndexList<formalism::Predicate<T>>, C>(get().template get_predicates<T>(), *m_context);
     }
     template<formalism::IsStaticOrFluentTag T>
     auto get_functions() const
     {
-        return Proxy<IndexList<formalism::Function<T>>, C>(get().template get_functions<T>(), *context);
+        return Proxy<IndexList<formalism::Function<T>>, C>(get().template get_functions<T>(), *m_context);
     }
-    auto get_objects() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *context); }
+    auto get_objects() const { return Proxy<IndexList<formalism::Object>, C>(get().objects, *m_context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_atoms() const
     {
-        return Proxy<IndexList<formalism::GroundAtom<T>>, C>(get().template get_atoms<T>(), *context);
+        return Proxy<IndexList<formalism::GroundAtom<T>>, C>(get().template get_atoms<T>(), *m_context);
     }
     template<formalism::IsStaticOrFluentTag T>
     auto get_function_values() const
     {
-        return Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C>(get().template get_function_values<T>(), *context);
+        return Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C>(get().template get_function_values<T>(), *m_context);
     }
-    auto get_rules() const { return Proxy<IndexList<formalism::Rule>, C>(get().rules, *context); }
+    auto get_rules() const { return Proxy<IndexList<formalism::Rule>, C>(get().rules, *m_context); }
 };
 }
 

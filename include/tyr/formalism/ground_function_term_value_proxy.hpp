@@ -29,18 +29,20 @@ template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 class Proxy<Index<formalism::GroundFunctionTermValue<T>>, C>
 {
 private:
-    const C* context;
-    Index<formalism::GroundFunctionTermValue<T>> index;
+    const C* m_context;
+    Index<formalism::GroundFunctionTermValue<T>> m_data;
 
 public:
     using Tag = formalism::GroundFunctionTermValue<T>;
 
-    Proxy(Index<formalism::GroundFunctionTermValue<T>> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::GroundFunctionTermValue<T>> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
-    auto get_term() const { return Proxy<Index<formalism::GroundFunctionTerm<T>>, C>(get().term, *context); }
+    auto get_index() const { return m_data; }
+    auto get_term() const { return Proxy<Index<formalism::GroundFunctionTerm<T>>, C>(get().term, *m_context); }
     auto get_value() const { return get().value; }
 };
 }

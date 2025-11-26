@@ -31,19 +31,21 @@ template<formalism::IsContext C>
 class Proxy<Index<formalism::GroundRule>, C>
 {
 private:
-    const C* context;
-    Index<formalism::GroundRule> index;
+    const C* m_context;
+    Index<formalism::GroundRule> m_data;
 
 public:
     using Tag = formalism::GroundRule;
 
-    Proxy(Index<formalism::GroundRule> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::GroundRule> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
-    auto get_body() const { return Proxy<Index<formalism::GroundConjunctiveCondition>, C>(get().body, *context); }
-    auto get_head() const { return Proxy<Index<formalism::GroundAtom<formalism::FluentTag>>, C>(get().head, *context); }
+    auto get_index() const { return m_data; }
+    auto get_body() const { return Proxy<Index<formalism::GroundConjunctiveCondition>, C>(get().body, *m_context); }
+    auto get_head() const { return Proxy<Index<formalism::GroundAtom<formalism::FluentTag>>, C>(get().head, *m_context); }
 };
 }
 

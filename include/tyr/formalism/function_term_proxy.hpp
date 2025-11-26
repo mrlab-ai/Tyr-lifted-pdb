@@ -29,19 +29,21 @@ template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 class Proxy<Index<formalism::FunctionTerm<T>>, C>
 {
 private:
-    const C* context;
-    Index<formalism::FunctionTerm<T>> index;
+    const C* m_context;
+    Index<formalism::FunctionTerm<T>> m_data;
 
 public:
     using Tag = formalism::FunctionTerm<T>;
 
-    Proxy(Index<formalism::FunctionTerm<T>> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::FunctionTerm<T>> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
-    auto get_function() const { return Proxy<Index<formalism::Function<T>>, C>(index.group, *context); }
-    auto get_terms() const { return Proxy<DataList<formalism::Term>, C>(get().terms, *context); }
+    auto get_index() const { return m_data; }
+    auto get_function() const { return Proxy<Index<formalism::Function<T>>, C>(m_data.group, *m_context); }
+    auto get_terms() const { return Proxy<DataList<formalism::Term>, C>(get().terms, *m_context); }
 };
 }
 

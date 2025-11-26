@@ -29,17 +29,19 @@ template<typename T, formalism::IsContext C>
 class Proxy<Data<formalism::BooleanOperator<T>>, C>
 {
 private:
-    const C* context;
-    Data<formalism::BooleanOperator<T>> op;
+    const C* m_context;
+    Data<formalism::BooleanOperator<T>> m_data;
 
 public:
     using Tag = formalism::BooleanOperator<T>;
 
-    auto get() const { return Proxy<typename Data<formalism::BooleanOperator<T>>::Variant, C>(op.value, *context); }
+    auto get() const { return Proxy<typename Data<formalism::BooleanOperator<T>>::Variant, C>(m_data.value, *m_context); }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_arity() const { return op.arity; }
+    auto get_arity() const { return m_data.arity; }
 
-    Proxy(Data<formalism::BooleanOperator<T>> op, const C& context) : context(&context), op(op) {}
+    Proxy(Data<formalism::BooleanOperator<T>> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

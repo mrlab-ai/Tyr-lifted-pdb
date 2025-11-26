@@ -29,17 +29,19 @@ template<formalism::IsContext C>
 class Proxy<Index<formalism::Object>, C>
 {
 private:
-    const C* context;
-    Index<formalism::Object> index;
+    const C* m_context;
+    Index<formalism::Object> m_data;
 
 public:
     using Tag = formalism::Object;
 
-    Proxy(Index<formalism::Object> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::Object> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
+    auto get_index() const { return m_data; }
     const auto& get_name() const { return get().name; }
 };
 }

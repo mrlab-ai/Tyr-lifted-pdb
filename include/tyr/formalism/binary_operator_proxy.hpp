@@ -29,23 +29,25 @@ template<formalism::IsOp Op, typename T, formalism::IsContext C>
 class Proxy<Index<formalism::BinaryOperator<Op, T>>, C>
 {
 private:
-    const C* context;
-    Index<formalism::BinaryOperator<Op, T>> index;
+    const C* m_context;
+    Index<formalism::BinaryOperator<Op, T>> m_data;
 
 public:
     using Tag = formalism::BinaryOperator<Op, T>;
     using OpType = Op;
 
-    Proxy(Index<formalism::BinaryOperator<Op, T>> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::BinaryOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
+    auto get_index() const { return m_data; }
     auto get_lhs() const
     {
         if constexpr (IsProxyable<T, C>)
         {
-            return Proxy<T, C>(get().lhs, *context);
+            return Proxy<T, C>(get().lhs, *m_context);
         }
         else
         {
@@ -56,7 +58,7 @@ public:
     {
         if constexpr (IsProxyable<T, C>)
         {
-            return Proxy<T, C>(get().rhs, *context);
+            return Proxy<T, C>(get().rhs, *m_context);
         }
         else
         {

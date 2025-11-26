@@ -28,15 +28,17 @@ template<formalism::IsContext C>
 class Proxy<Data<formalism::FunctionExpression>, C>
 {
 private:
-    const C* context;
-    Data<formalism::FunctionExpression> fexpr;
+    const C* m_context;
+    Data<formalism::FunctionExpression> m_data;
 
 public:
     using Tag = formalism::FunctionExpression;
 
-    auto get() const { return Proxy<typename Data<formalism::FunctionExpression>::Variant, C>(fexpr.value, *context); }
+    auto get() const { return Proxy<typename Data<formalism::FunctionExpression>::Variant, C>(m_data.value, *m_context); }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    Proxy(Data<formalism::FunctionExpression> fexpr, const C& context) : context(&context), fexpr(fexpr) {}
+    Proxy(Data<formalism::FunctionExpression> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

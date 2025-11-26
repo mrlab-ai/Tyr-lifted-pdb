@@ -31,19 +31,21 @@ template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
 class Proxy<Index<formalism::GroundAtom<T>>, C>
 {
 private:
-    const C* context;
-    Index<formalism::GroundAtom<T>> index;
+    const C* m_context;
+    Index<formalism::GroundAtom<T>> m_data;
 
 public:
     using Tag = formalism::GroundAtom<T>;
 
-    Proxy(Index<formalism::GroundAtom<T>> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::GroundAtom<T>> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
-    auto get_predicate() const { return Proxy<Index<formalism::Predicate<T>>, C>(index.group, *context); }
-    auto get_terms() const { return Proxy<IndexList<formalism::Object>, C>(get().terms, *context); }
+    auto get_index() const { return m_data; }
+    auto get_predicate() const { return Proxy<Index<formalism::Predicate<T>>, C>(m_data.group, *m_context); }
+    auto get_terms() const { return Proxy<IndexList<formalism::Object>, C>(get().terms, *m_context); }
 };
 }
 

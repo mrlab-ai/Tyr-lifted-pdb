@@ -29,15 +29,17 @@ template<formalism::IsContext C>
 class Proxy<Data<formalism::Term>, C>
 {
 private:
-    const C* context;
-    Data<formalism::Term> term;
+    const C* m_context;
+    Data<formalism::Term> m_data;
 
 public:
     using Tag = formalism::Term;
 
-    auto get() const { return Proxy<typename Data<formalism::Term>::Variant, C>(term.value, *context); }
+    auto get() const { return Proxy<typename Data<formalism::Term>::Variant, C>(m_data.value, *m_context); }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    Proxy(Data<formalism::Term> term, const C& context) : context(&context), term(term) {}
+    Proxy(Data<formalism::Term> data, const C& context) : m_context(&context), m_data(data) {}
 };
 }
 

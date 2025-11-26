@@ -30,19 +30,21 @@ template<formalism::IsOp Op, typename T, formalism::IsContext C>
 class Proxy<Index<formalism::MultiOperator<Op, T>>, C>
 {
 private:
-    const C* context;
-    Index<formalism::MultiOperator<Op, T>> index;
+    const C* m_context;
+    Index<formalism::MultiOperator<Op, T>> m_data;
 
 public:
     using Tag = formalism::MultiOperator<Op, T>;
     using OpType = Op;
 
-    Proxy(Index<formalism::MultiOperator<Op, T>> index, const C& context) : context(&context), index(index) {}
+    Proxy(Index<formalism::MultiOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
 
-    const auto& get() const { return get_repository(*context)[index]; }
+    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return m_data; }
 
-    auto get_index() const { return index; }
-    auto get_args() const { return Proxy<::cista::offset::vector<T>, C>(get().args, *context); }
+    auto get_index() const { return m_data; }
+    auto get_args() const { return Proxy<::cista::offset::vector<T>, C>(get().args, *m_context); }
 };
 
 }

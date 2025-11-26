@@ -36,18 +36,18 @@ public:
 
     Proxy(const Container& data, const Context& context) : m_context(&context), m_data(&data) {}
 
-    size_t size() const noexcept { return data().size(); }
-    bool empty() const noexcept { return data().empty(); }
+    size_t size() const noexcept { return get_data().size(); }
+    bool empty() const noexcept { return get_data().empty(); }
 
     auto operator[](size_t i) const
     {
         if constexpr (IsProxyable<T, Context>)
         {
-            return Proxy<T, Context>(data()[i], context());
+            return Proxy<T, Context>(get_data()[i], get_context());
         }
         else
         {
-            return data()[i];
+            return get_data()[i];
         }
     }
 
@@ -55,11 +55,11 @@ public:
     {
         if constexpr (IsProxyable<T, Context>)
         {
-            return Proxy<T, Context>(data().front(), context());
+            return Proxy<T, Context>(get_data().front(), get_context());
         }
         else
         {
-            return data().front();
+            return get_data().front();
         }
     }
 
@@ -171,12 +171,12 @@ public:
         friend bool operator>=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(lhs < rhs); }
     };
 
-    const_iterator begin() const { return const_iterator { data().data(), context() }; }
+    const_iterator begin() const { return const_iterator { get_data().data(), get_context() }; }
 
-    const_iterator end() const { return const_iterator { data().data() + data().size(), context() }; }
+    const_iterator end() const { return const_iterator { get_data().data() + get_data().size(), get_context() }; }
 
-    const Context& context() const { return *m_context; }
-    const Container& data() const { return *m_data; }
+    const Context& get_context() const { return *m_context; }
+    const Container& get_data() const { return *m_data; }
 
 private:
     const Context* m_context;

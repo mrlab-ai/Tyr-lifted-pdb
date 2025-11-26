@@ -76,6 +76,9 @@ public:
             index_variant());
     }
 
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_data() const noexcept { return *m_data; }
+
 private:
     const Context* m_context;
     const Variant* m_data;
