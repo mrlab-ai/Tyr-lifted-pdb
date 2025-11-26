@@ -22,6 +22,7 @@
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_proxy.hpp"
+#include "tyr/formalism/ground_function_term_index.hpp"
 #include "tyr/formalism/ground_function_term_value_proxy.hpp"
 
 #include <boost/dynamic_bitset.hpp>
@@ -36,7 +37,8 @@ class PredicateFactSet
 private:
     Proxy<IndexList<formalism::GroundAtom<T>>, C> m_view;
 
-    using BitsetType = std::conditional_t<IsGroupType<formalism::GroundAtom<T>>, GroupDynamicBitset, FlatDynamicBitset>;
+    using BitsetType =
+        std::conditional_t<IsGroupType<formalism::GroundAtom<T>>, GroupDynamicBitset<formalism::GroundAtom<T>>, FlatDynamicBitset<formalism::GroundAtom<T>>>;
 
     BitsetType m_bitset;
 
@@ -45,15 +47,15 @@ public:
 
     void initialize(Proxy<IndexList<formalism::GroundAtom<T>>, C> view)
     {
-        //        m_view = view;
-        //        m_bitset.reset();
-        //
-        //        for (const auto atom : m_view)
-        //        {
-        //            m_bitset.resize_to_fit(atom.get_index());
-        //
-        //            m_bitset.set(atom.get_index());
-        //        }
+        m_view = view;
+        m_bitset.reset();
+
+        for (const auto atom : m_view)
+        {
+            m_bitset.resize_to_fit(atom.get_index());
+
+            m_bitset.set(atom.get_index());
+        }
     }
 
     bool contains(Index<formalism::GroundAtom<T>> index) const noexcept { return m_bitset.test(index); }
@@ -67,7 +69,9 @@ class FunctionFactSet
 private:
     Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> m_view;
 
-    using VectorType = std::conditional_t<IsGroupType<formalism::GroundFunctionTermValue<T>>, GroupVector<float_t>, FlatVector<float_t>>;
+    using VectorType = std::conditional_t<IsGroupType<formalism::GroundFunctionTerm<T>>,
+                                          GroupVector<formalism::GroundFunctionTerm<T>, float_t>,
+                                          FlatVector<formalism::GroundFunctionTerm<T>, float_t>>;
 
     VectorType m_vector;
 
@@ -76,18 +80,17 @@ public:
 
     void initialize(Proxy<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
     {
-        //         m_view = view;
-        //         m_vector.reset(std::numeric_limits<float_t>::quiet_NaN());
-        //
-        //         for (const auto function_value : m_view)
-        //         {
-        //             m_vector.resize_to_fit(function_value.get_function().get_index());
-        //
-        //             m_vector[function_value.get_function().get_index()] = function_value.get_value();
-        //         }
+        m_view = view;
+        m_vector.reset(std::numeric_limits<float_t>::quiet_NaN());
+
+        for (const auto function_value : m_view)
+        {
+            m_vector.resize_to_fit(function_value.get_term().get_index(), std::numeric_limits<float_t>::quiet_NaN());
+
+            m_vector[function_value.get_term().get_index()] = function_value.get_value();
+        }
     }
 
-    float_t at(Index<formalism::GroundFunctionTerm<T>> index) const noexcept { return m_vector.at(index); }
     float_t operator[](Index<formalism::GroundFunctionTerm<T>> index) const noexcept { return m_vector[index]; }
 
     auto get_facts() const noexcept { return m_view; }
