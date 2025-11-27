@@ -17,7 +17,7 @@ add_gtest(analysis_domains                               "analysis/domains.cpp")
 add_gtest(analysis_stratification                        "analysis/stratification.cpp")
 add_gtest(analysis_listeners                             "analysis/listeners.cpp")
 
-add_gtest(cista_indexed_hash_set                         "cista/indexed_hash_set.cpp")
+add_gtest(buffer_indexed_hash_set                        "buffer/indexed_hash_set.cpp")
 
 add_gtest(formalism_repository                           "formalism/repository.cpp")
 add_gtest(formalism_proxy                                "formalism/proxy.cpp")

@@ -66,7 +66,7 @@
 #include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/variable_index.hpp"
 //
-#include "tyr/cista/declarations.hpp"
+#include "tyr/buffer/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 namespace tyr::formalism

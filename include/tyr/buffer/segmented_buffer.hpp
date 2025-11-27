@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_CISTA_BYTE_BUFFER_SEGMENTED_HPP_
-#define TYR_CISTA_BYTE_BUFFER_SEGMENTED_HPP_
+#ifndef TYR_BUFFER_SEGMENTED_BUFFER_HPP_
+#define TYR_BUFFER_SEGMENTED_BUFFER_HPP_
 
 #include "tyr/common/bits.hpp"
 
@@ -28,10 +28,10 @@
 #include <stdexcept>
 #include <vector>
 
-namespace tyr::cista
+namespace tyr::buffer
 {
 
-class ByteBufferSegmented
+class SegmentedBuffer
 {
 private:
     size_t m_seg_size;
@@ -81,7 +81,7 @@ private:
     }
 
 public:
-    explicit ByteBufferSegmented(size_t seg_size = 1024) : m_seg_size(seg_size), m_segments(), m_cur_seg(-1), m_cur_pos(0), m_size(0), m_capacity(0)
+    explicit SegmentedBuffer(size_t seg_size = 1024) : m_seg_size(seg_size), m_segments(), m_cur_seg(-1), m_cur_pos(0), m_size(0), m_capacity(0)
     {
         assert(is_power_of_two(seg_size));
 

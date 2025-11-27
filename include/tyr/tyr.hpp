@@ -22,7 +22,7 @@
 #include "tyr/analysis/analysis.hpp"
 
 // Cista
-#include "tyr/cista/cista.hpp"
+#include "tyr/buffer/buffer.hpp"
 
 // Common
 #include "tyr/common/common.hpp"

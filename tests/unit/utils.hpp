@@ -111,7 +111,7 @@ inline IndexList<formalism::Predicate<formalism::StaticTag>> add_static_predicat
     auto result = IndexList<formalism::Predicate<formalism::StaticTag>> {};
 
     auto predicate_builder = Data<formalism::Predicate<formalism::StaticTag>> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     for (const auto& [name, arity] : std::vector<std::pair<std::string, size_t>> { { "object", 1 },  //
                                                                                    { "number", 1 },
@@ -156,7 +156,7 @@ inline IndexList<formalism::Predicate<formalism::FluentTag>> add_fluent_predicat
     auto result = IndexList<formalism::Predicate<formalism::FluentTag>> {};
 
     auto predicate_builder = Data<formalism::Predicate<formalism::FluentTag>> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     for (const auto& [name, arity] : std::vector<std::pair<std::string, size_t>> { { "at-robby", 1 },
                                                                                    { "at", 2 },
@@ -204,7 +204,7 @@ inline IndexList<formalism::Object> add_objects(formalism::Repository& repositor
     auto result = IndexList<formalism::Object> {};
 
     auto object_builder = Data<formalism::Object> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     for (const auto& name : std::vector<std::string> { "rooma", "roomb", "left", "right", "ball1", "ball2" })
     {
@@ -247,7 +247,7 @@ inline IndexList<formalism::GroundAtom<formalism::StaticTag>> add_static_ground_
     auto result = IndexList<formalism::GroundAtom<formalism::StaticTag>> {};
 
     auto ground_atom_builder = Data<formalism::GroundAtom<formalism::StaticTag>> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     for (const auto& [predicate, atoms] : std::vector<std::pair<GripperStaticPredicate, std::vector<std::vector<GripperObject>>>> {
              { GripperStaticPredicate::Object,
@@ -289,7 +289,7 @@ inline IndexList<formalism::GroundAtom<formalism::FluentTag>> add_fluent_ground_
     auto result = IndexList<formalism::GroundAtom<formalism::FluentTag>> {};
 
     auto ground_atom_builder = Data<formalism::GroundAtom<formalism::FluentTag>> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     for (const auto& [predicate, atoms] : std::vector<std::pair<GripperFluentPredicate, std::vector<std::vector<GripperObject>>>> {
              { GripperFluentPredicate::Free, { { GripperObject::Left }, { GripperObject::Right } } },
@@ -330,7 +330,7 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
     auto fluent_literal_builder = Data<formalism::Literal<formalism::FluentTag>> {};
     auto conjunctive_condition_builder = Data<formalism::ConjunctiveCondition> {};
     auto rule_builder = Data<formalism::Rule> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     for (const auto& name : std::vector<std::string> { "?from_0", "?to_0" })
     {
@@ -425,7 +425,7 @@ inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
     auto fluent_literal_builder = Data<formalism::Literal<formalism::FluentTag>> {};
     auto conjunctive_condition_builder = Data<formalism::ConjunctiveCondition> {};
     auto rule_builder = Data<formalism::Rule> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     for (const auto& name : std::vector<std::string> { "?obj_0", "?room_0", "?gripper_0" })
     {
@@ -525,7 +525,7 @@ inline Index<formalism::Rule> add_rule_drop(formalism::Repository& repository)
     auto fluent_literal_builder = Data<formalism::Literal<formalism::FluentTag>> {};
     auto conjunctive_condition_builder = Data<formalism::ConjunctiveCondition> {};
     auto rule_builder = Data<formalism::Rule> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     for (const auto& name : std::vector<std::string> { "?obj_0", "?room_0", "?gripper_0" })
     {
@@ -617,7 +617,7 @@ inline std::pair<Index<formalism::Program>, formalism::Repository> create_exampl
 {
     auto repository = formalism::Repository();
     auto program_builder = Data<formalism::Program> {};
-    auto buffer = cista::Buffer {};
+    auto buffer = buffer::Buffer {};
 
     program_builder.static_predicates = add_static_predicates(repository);
 

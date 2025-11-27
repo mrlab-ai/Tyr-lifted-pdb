@@ -10,35 +10,16 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *<
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_CISTA_DECLARATIONS_HPP_
-#define TYR_CISTA_DECLARATIONS_HPP_
+#ifndef TYR_BUFFER_BUFFER_HPP_
+#define TYR_BUFFER_BUFFER_HPP_
 
-#include "tyr/common/declarations.hpp"
-#include "tyr/common/types.hpp"
-
-#include <iostream>
-
-namespace cista
-{
-template<typename Buf>
-struct buf;
-}
-
-namespace tyr::cista
-{
-using Buffer = ::cista::buf<std::vector<uint8_t>>;
-
-template<typename Tag, typename H = Hash<ObserverPtr<const Data<Tag>>>, typename E = EqualTo<ObserverPtr<const Data<Tag>>>>
-class IndexedHashSet;
-
-template<typename Tag, typename H = Hash<ObserverPtr<const Data<Tag>>>, typename E = EqualTo<ObserverPtr<const Data<Tag>>>>
-
-using IndexedHashSetList = std::vector<IndexedHashSet<Tag, H, E>>;
-}
+#include "tyr/buffer/declarations.hpp"
+#include "tyr/buffer/indexed_hash_set.hpp"
+#include "tyr/buffer/segmented_buffer.hpp"
 
 #endif

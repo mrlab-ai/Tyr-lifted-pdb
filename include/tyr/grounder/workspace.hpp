@@ -45,7 +45,7 @@ struct MutableRuleWorkspace
 
     IndexList<formalism::Object>& binding;
     formalism::Builder& builder;
-    cista::Buffer& buffer;
+    buffer::Buffer& buffer;
 
     IndexList<formalism::GroundRule>& ground_rules;
 };

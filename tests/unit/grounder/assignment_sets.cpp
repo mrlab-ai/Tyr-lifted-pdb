@@ -21,7 +21,7 @@
 #include <tyr/analysis/analysis.hpp>
 #include <tyr/grounder/grounder.hpp>
 
-using namespace tyr::cista;
+using namespace tyr::buffer;
 using namespace tyr::formalism;
 
 namespace tyr::tests

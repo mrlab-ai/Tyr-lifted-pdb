@@ -15,12 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_CISTA_UNORDERED_INDEXED_HASH_SET_HPP_
-#define TYR_CISTA_UNORDERED_INDEXED_HASH_SET_HPP_
+#ifndef TYR_BUFFER_UNORDERED_INDEXED_HASH_SET_HPP_
+#define TYR_BUFFER_UNORDERED_INDEXED_HASH_SET_HPP_
 
 #include "cista/serialization.h"
-#include "tyr/cista/byte_buffer_segmented.hpp"
-#include "tyr/cista/declarations.hpp"
+#include "tyr/buffer/declarations.hpp"
+#include "tyr/buffer/segmented_buffer.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/observer_ptr.hpp"
@@ -32,14 +32,14 @@
 #include <utility>
 #include <vector>
 
-namespace tyr::cista
+namespace tyr::buffer
 {
 template<typename Tag, typename H, typename E>
 class IndexedHashSet
 {
 private:
     // Persistent storage
-    ByteBufferSegmented m_storage;
+    SegmentedBuffer m_storage;
 
     // Deduplication
     gtl::flat_hash_set<ObserverPtr<const Data<Tag>>, H, E> m_set;

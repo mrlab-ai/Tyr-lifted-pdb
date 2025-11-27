@@ -21,7 +21,7 @@
 #include <tyr/analysis/analysis.hpp>
 #include <tyr/grounder/grounder.hpp>
 
-using namespace tyr::cista;
+using namespace tyr::buffer;
 using namespace tyr::formalism;
 
 namespace tyr::tests
@@ -96,7 +96,7 @@ TEST(TyrTests, TyrGrounderGenerator)
     // Once: Create builders
     auto builders = std::vector<formalism::Builder>(program.get_rules().size());
     // Once: Create buffers
-    auto buffers = std::vector<cista::Buffer>(program.get_rules().size());
+    auto buffers = std::vector<buffer::Buffer>(program.get_rules().size());
     // Once: Create container for applicable ground rules
     auto ground_rules = std::vector<IndexList<formalism::GroundRule>>(program.get_rules().size());
 

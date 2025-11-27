@@ -19,7 +19,7 @@
 
 #include <gtest/gtest.h>
 
-using namespace tyr::cista;
+using namespace tyr::buffer;
 using namespace tyr::formalism;
 
 namespace tyr::tests

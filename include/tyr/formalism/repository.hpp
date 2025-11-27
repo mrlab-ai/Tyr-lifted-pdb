@@ -66,8 +66,8 @@
 #include "tyr/formalism/variable_data.hpp"
 #include "tyr/formalism/variable_index.hpp"
 //
-#include "tyr/cista/declarations.hpp"
-#include "tyr/cista/indexed_hash_set.hpp"
+#include "tyr/buffer/declarations.hpp"
+#include "tyr/buffer/indexed_hash_set.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 #include <boost/hana.hpp>
@@ -80,11 +80,11 @@ class Repository
 private:
     /// @brief `FlatRepositoryEntry` is the mapping from data type to an indexed hash set.
     template<typename T>
-    using FlatRepositoryEntry = boost::hana::pair<boost::hana::type<T>, cista::IndexedHashSet<T>>;
+    using FlatRepositoryEntry = boost::hana::pair<boost::hana::type<T>, buffer::IndexedHashSet<T>>;
 
     /// @brief `GroupRepositoryEntry` is the mapping from data type to a list of indexed hash sets.
     template<typename T>
-    using GroupRepositoryEntry = boost::hana::pair<boost::hana::type<T>, cista::IndexedHashSetList<T>>;
+    using GroupRepositoryEntry = boost::hana::pair<boost::hana::type<T>, buffer::IndexedHashSetList<T>>;
 
     template<typename T>
     struct RepositoryTraits
@@ -177,7 +177,7 @@ public:
     }
 
     template<IsGroupType T, bool AssignIndex = true>
-    std::pair<View<Index<T>, Repository>, bool> get_or_create(Data<T>& builder, cista::Buffer& buf)
+    std::pair<View<Index<T>, Repository>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
         auto& list = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 
@@ -197,7 +197,7 @@ public:
     }
 
     template<IsFlatType T, bool AssignIndex = true>
-    std::pair<View<Index<T>, Repository>, bool> get_or_create(Data<T>& builder, cista::Buffer& buf)
+    std::pair<View<Index<T>, Repository>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
         auto& indexed_hash_set = boost::hana::at_key(m_repository, boost::hana::type<T> {});
 

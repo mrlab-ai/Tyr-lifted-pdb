@@ -58,7 +58,7 @@ public:
     }
 
     template<IsGroupType T, bool AssignIndex = true>
-    std::pair<View<Index<T>, ScopedRepository<C>>, bool> get_or_create(Data<T>& builder, cista::Buffer& buf)
+    std::pair<View<Index<T>, ScopedRepository<C>>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
         if (auto ptr = global.find(builder))
             return std::make_pair(View<Index<T>, ScopedRepository<C>>(ptr->get_data(), *this), false);
@@ -70,7 +70,7 @@ public:
     }
 
     template<IsFlatType T, bool AssignIndex = true>
-    std::pair<View<Index<T>, ScopedRepository<C>>, bool> get_or_create(Data<T>& builder, cista::Buffer& buf)
+    std::pair<View<Index<T>, ScopedRepository<C>>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
         if (auto ptr = global.find(builder))
             return std::make_pair(View<Index<T>, ScopedRepository<C>>(ptr->get_data(), *this), false);
