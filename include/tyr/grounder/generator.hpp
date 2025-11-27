@@ -89,6 +89,131 @@ View<Index<formalism::GroundLiteral<T>>, formalism::ScopedRepository<C>> ground(
     return repository.get_or_create(ground_literal, buffer).first;
 }
 
+template<formalism::IsStaticOrFluentTag T, formalism::IsContext C>
+View<Index<formalism::GroundFunctionTerm<T>>, formalism::ScopedRepository<C>> ground(View<Index<formalism::FunctionTerm<T>>, C> element,
+                                                                                     MutableRuleWorkspace<C>& workspace)
+{
+    // Fetch and clear
+    auto& binding = workspace.binding;
+    auto& builder = workspace.builder;
+    auto& repository = workspace.repository;
+    auto& buffer = workspace.buffer;
+    auto& fterm = builder.template get_fterm<T>();
+    auto& objects = fterm.objects;
+    objects.clear();
+
+    // Fill data
+    fterm.index.group = element.get_index().get_group();
+    for (const auto term : element.get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
+                {
+                    objects.push_back(binding[uint_t(arg)]);
+                }
+                else if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, C>>)
+                {
+                    objects.push_back(arg.get_index());
+                }
+                else
+                {
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+                }
+            },
+            term.get());
+    }
+
+    // Canonicalize and Serialize
+    canonicalize(fterm);
+    return repository.get_or_create(fterm, buffer).first;
+}
+
+template<typename StructureType, formalism::IsContext C>
+View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>> ground(View<Data<formalism::FunctionExpression>, C> element,
+                                                                                       MutableRuleWorkspace<C>& workspace)
+{
+    return visit([&](auto&& arg) -> bool { return ground(arg, workspace); }, element.get());
+}
+
+template<formalism::IsOp O, formalism::IsContext C>
+View<Index<formalism::UnaryOperator<O, formalism::GroundFunctionExpression>>, formalism::ScopedRepository<C>>
+ground(View<Index<formalism::UnaryOperator<O, formalism::FunctionExpression>>, C> element, MutableRuleWorkspace<C>& workspace)
+{
+    // Fetch and clear
+    auto& binding = workspace.binding;
+    auto& builder = workspace.builder;
+    auto& repository = workspace.repository;
+    auto& buffer = workspace.buffer;
+    auto& unary = builder.template get_unary<O>();
+
+    // Fill data
+    unary.arg = ground(element.get_arg(), workspace).get_index();
+
+    // Canonicalize and Serialize
+    canonicalize(unary);
+    return repository.get_or_create(unary, buffer).first;
+}
+
+template<formalism::IsOp O, formalism::IsContext C>
+View<Index<formalism::BinaryOperator<O, formalism::GroundFunctionExpression>>, formalism::ScopedRepository<C>>
+ground(View<Index<formalism::BinaryOperator<O, formalism::FunctionExpression>>, C> element, MutableRuleWorkspace<C>& workspace)
+{
+    // Fetch and clear
+    auto& binding = workspace.binding;
+    auto& builder = workspace.builder;
+    auto& repository = workspace.repository;
+    auto& buffer = workspace.buffer;
+    auto& binary = builder.template get_binary<O>();
+
+    // Fill data
+    binary.lhs = ground(element.get_lhs(), workspace).get_index();
+    binary.rhs = ground(element.get_rhs(), workspace).get_index();
+
+    // Canonicalize and Serialize
+    canonicalize(binary);
+    return repository.get_or_create(binary, buffer).first;
+}
+
+template<formalism::IsOp O, formalism::IsContext C>
+View<Index<formalism::MultiOperator<O, formalism::GroundFunctionExpression>>, formalism::ScopedRepository<C>>
+ground(View<Index<formalism::MultiOperator<O, formalism::FunctionExpression>>, C> element, MutableRuleWorkspace<C>& workspace)
+{
+    // Fetch and clear
+    auto& binding = workspace.binding;
+    auto& builder = workspace.builder;
+    auto& repository = workspace.repository;
+    auto& buffer = workspace.buffer;
+    auto& multi = builder.template get_multi<O>();
+    auto& args = multi.args;
+    args.clear();
+
+    // Fill data
+    for (const auto arg : element.get_args())
+        args.push_back(ground(arg, workspace).get_index());
+
+    // Canonicalize and Serialize
+    canonicalize(multi);
+    return repository.get_or_create(multi, buffer).first;
+}
+
+template<formalism::IsContext C>
+View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+ground(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
+{
+    return visit([&](auto&& arg) -> bool { return ground(arg, workspace); }, element.get());
+}
+
+template<formalism::IsContext C>
+View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+ground(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
+{
+    return visit([&](auto&& arg) -> bool { return ground(arg, workspace); }, element.get());
+}
+
 template<formalism::IsContext C>
 View<Index<formalism::GroundConjunctiveCondition>, formalism::ScopedRepository<C>> ground(View<Index<formalism::ConjunctiveCondition>, C> element,
                                                                                           MutableRuleWorkspace<C>& workspace)
@@ -115,7 +240,7 @@ View<Index<formalism::GroundConjunctiveCondition>, formalism::ScopedRepository<C
     for (const auto literal : element.template get_literals<formalism::FluentTag>())
         fluent_literals.push_back(ground(literal, workspace).get_index());
     // for (const auto numeric_constraint : element.get_numeric_constraints())
-    //     numeric_constraints.push_back(ground(numeric_constraint, workspace).get_index());
+    //     numeric_constraints.push_back(ground(numeric_constraint, workspace));
 
     // Canonicalize and Serialize
     canonicalize(conj_cond);

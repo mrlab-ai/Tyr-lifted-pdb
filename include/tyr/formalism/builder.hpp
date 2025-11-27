@@ -310,18 +310,18 @@ struct Builder
         else if constexpr (std::is_same_v<T, FluentTag>)
             return fluent_function;
         else
-            static_assert(dependent_false<T>::value, "Missing Builder::get_function for this tag.");
+            static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
     template<IsStaticOrFluentTag T>
-    auto& get_function_term() noexcept
+    auto& get_fterm() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
             return static_fterm;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return fluent_fterm;
         else
-            static_assert(dependent_false<T>::value, "Missing Builder::get_function_term for this tag.");
+            static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
     template<IsStaticOrFluentTag T>
@@ -332,7 +332,7 @@ struct Builder
         else if constexpr (std::is_same_v<T, FluentTag>)
             return ground_fluent_fterm;
         else
-            static_assert(dependent_false<T>::value, "Missing Builder::get_ground_function_term for this tag.");
+            static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
     template<IsStaticOrFluentTag T>
@@ -343,7 +343,7 @@ struct Builder
         else if constexpr (std::is_same_v<T, FluentTag>)
             return ground_fluent_fterm_value;
         else
-            static_assert(dependent_false<T>::value, "Missing Builder::get_ground_function_term_value for this tag.");
+            static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
     // ================== Expressions ==================
