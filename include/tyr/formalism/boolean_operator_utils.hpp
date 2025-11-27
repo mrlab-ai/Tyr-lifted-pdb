@@ -24,6 +24,47 @@
 
 namespace tyr::formalism
 {
+
+template<typename T>
+inline bool apply(OpEq, T lhs, T rhs)
+{
+    return lhs == rhs;
+}
+
+template<typename T>
+inline bool apply(OpNe, T lhs, T rhs)
+{
+    return lhs != rhs;
+}
+
+template<typename T>
+inline bool apply(OpGe, T lhs, T rhs)
+{
+    return lhs >= rhs;
+}
+
+template<typename T>
+inline bool apply(OpGt, T lhs, T rhs)
+{
+    return lhs > rhs;
+}
+
+template<typename T>
+inline bool apply(OpLe, T lhs, T rhs)
+{
+    return lhs <= rhs;
+}
+
+template<typename T>
+inline bool apply(OpLt, T lhs, T rhs)
+{
+    return lhs < rhs;
+}
+
+/**
+ * Existential
+ */
+
 template<IsFloatingPoint A>
 inline bool apply_existential(OpEq, const ClosedInterval<A>& lhs, const ClosedInterval<A>& rhs)
 {

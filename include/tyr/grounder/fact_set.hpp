@@ -127,6 +127,8 @@ public:
             insert(fterm_value);
     }
 
+    bool contains(Index<formalism::GroundFunctionTerm<T>> index) const noexcept { return m_unique.contains(index); }
+
     float_t operator[](Index<formalism::GroundFunctionTerm<T>> index) const noexcept { return m_vector[index]; }
 
     auto get_facts() const noexcept { return View<IndexList<formalism::GroundFunctionTermValue<T>>, C>(m_indices, m_context); }
@@ -156,6 +158,17 @@ struct FactSets
         static_sets(program.template get_atoms<formalism::StaticTag>(), program.template get_fterm_values<formalism::StaticTag>()),
         fluent_sets(program.template get_atoms<formalism::FluentTag>(), program.template get_fterm_values<formalism::FluentTag>())
     {
+    }
+
+    template<formalism::IsStaticOrFluentTag T>
+    auto& get() const
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_sets;
+        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
+            return fluent_sets;
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
     }
 };
 }

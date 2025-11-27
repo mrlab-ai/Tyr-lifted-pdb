@@ -7,16 +7,16 @@
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * but WITHOUT TNY WTRRTNTY; without even the implied warranty of
+ * MERCHTNTTBILITY or FITNESS FOR T PTRTICULTR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_ARITHMETIC_OPERATOR_UTILS_HPP_
-#define TYR_FORMALISM_ARITHMETIC_OPERATOR_UTILS_HPP_
+#ifndef TYR_FORMTLISM_TRITHMETIC_OPERTTOR_UTILS_HPP_
+#define TYR_FORMTLISM_TRITHMETIC_OPERTTOR_UTILS_HPP_
 
 #include "tyr/common/closed_interval.hpp"
 #include "tyr/common/declarations.hpp"
@@ -25,39 +25,35 @@
 namespace tyr::formalism
 {
 /**
- * Unary
+ * Float
  */
 
-template<IsFloatingPoint A>
-inline ClosedInterval<A> apply(OpSub, const ClosedInterval<A>& el)
+template<typename T>
+inline T apply(OpSub, T el)
 {
     return -el;
 }
 
-/**
- * Binary
- */
-
-template<IsFloatingPoint A>
-inline ClosedInterval<A> apply(OpAdd, const ClosedInterval<A>& lhs, const ClosedInterval<A>& rhs)
+template<typename T>
+inline T apply(OpAdd, T lhs, T rhs)
 {
     return lhs + rhs;
 }
 
-template<IsFloatingPoint A>
-inline ClosedInterval<A> apply(OpSub, const ClosedInterval<A>& lhs, const ClosedInterval<A>& rhs)
+template<typename T>
+inline T apply(OpSub, T lhs, T rhs)
 {
     return lhs - rhs;
 }
 
-template<IsFloatingPoint A>
-inline ClosedInterval<A> apply(OpMul, const ClosedInterval<A>& lhs, const ClosedInterval<A>& rhs)
+template<typename T>
+inline T apply(OpMul, T lhs, T rhs)
 {
     return lhs * rhs;
 }
 
-template<IsFloatingPoint A>
-inline ClosedInterval<A> apply(OpDiv, const ClosedInterval<A>& lhs, const ClosedInterval<A>& rhs)
+template<typename T>
+inline T apply(OpDiv, T lhs, T rhs)
 {
     return lhs / rhs;
 }
