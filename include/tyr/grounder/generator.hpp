@@ -98,7 +98,7 @@ View<Index<formalism::GroundFunctionTerm<T>>, formalism::ScopedRepository<C>> gr
     auto& builder = workspace.builder;
     auto& repository = workspace.repository;
     auto& buffer = workspace.buffer;
-    auto& fterm = builder.template get_fterm<T>();
+    auto& fterm = builder.template get_ground_fterm<T>();
     auto& objects = fterm.objects;
     objects.clear();
 
@@ -132,26 +132,54 @@ View<Index<formalism::GroundFunctionTerm<T>>, formalism::ScopedRepository<C>> gr
     return repository.get_or_create(fterm, buffer).first;
 }
 
-template<typename StructureType, formalism::IsContext C>
+template<formalism::IsContext C>
 View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>> ground(View<Data<formalism::FunctionExpression>, C> element,
                                                                                        MutableRuleWorkspace<C>& workspace)
 {
-    return visit([&](auto&& arg) -> bool { return ground(arg, workspace); }, element.get());
+    return visit(
+        [&](auto&& arg)
+        {
+            using Alternative = std::decay_t<decltype(arg)>;
+
+            if constexpr (std::is_same_v<Alternative, float_t>)
+            {
+                return View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>>(Data<formalism::GroundFunctionExpression>(arg),
+                                                                                                       workspace.repository);
+            }
+            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>)
+            {
+                return View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>>(
+                    Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_index()),
+                    workspace.repository);
+            }
+            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>)
+            {
+                return View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>>(
+                    Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_index()),
+                    workspace.repository);
+            }
+            else
+            {
+                return View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>>(
+                    Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_index()),
+                    workspace.repository);
+            }
+        },
+        element.get());
 }
 
 template<formalism::IsOp O, formalism::IsContext C>
-View<Index<formalism::UnaryOperator<O, formalism::GroundFunctionExpression>>, formalism::ScopedRepository<C>>
-ground(View<Index<formalism::UnaryOperator<O, formalism::FunctionExpression>>, C> element, MutableRuleWorkspace<C>& workspace)
+View<Index<formalism::UnaryOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+ground(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
-    auto& binding = workspace.binding;
     auto& builder = workspace.builder;
     auto& repository = workspace.repository;
     auto& buffer = workspace.buffer;
-    auto& unary = builder.template get_unary<O>();
+    auto& unary = builder.template get_ground_unary<O>();
 
     // Fill data
-    unary.arg = ground(element.get_arg(), workspace).get_index();
+    unary.arg = ground(element.get_arg(), workspace).get_data();
 
     // Canonicalize and Serialize
     canonicalize(unary);
@@ -159,19 +187,18 @@ ground(View<Index<formalism::UnaryOperator<O, formalism::FunctionExpression>>, C
 }
 
 template<formalism::IsOp O, formalism::IsContext C>
-View<Index<formalism::BinaryOperator<O, formalism::GroundFunctionExpression>>, formalism::ScopedRepository<C>>
-ground(View<Index<formalism::BinaryOperator<O, formalism::FunctionExpression>>, C> element, MutableRuleWorkspace<C>& workspace)
+View<Index<formalism::BinaryOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+ground(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
-    auto& binding = workspace.binding;
     auto& builder = workspace.builder;
     auto& repository = workspace.repository;
     auto& buffer = workspace.buffer;
-    auto& binary = builder.template get_binary<O>();
+    auto& binary = builder.template get_ground_binary<O>();
 
     // Fill data
-    binary.lhs = ground(element.get_lhs(), workspace).get_index();
-    binary.rhs = ground(element.get_rhs(), workspace).get_index();
+    binary.lhs = ground(element.get_lhs(), workspace).get_data();
+    binary.rhs = ground(element.get_rhs(), workspace).get_data();
 
     // Canonicalize and Serialize
     canonicalize(binary);
@@ -179,21 +206,20 @@ ground(View<Index<formalism::BinaryOperator<O, formalism::FunctionExpression>>, 
 }
 
 template<formalism::IsOp O, formalism::IsContext C>
-View<Index<formalism::MultiOperator<O, formalism::GroundFunctionExpression>>, formalism::ScopedRepository<C>>
-ground(View<Index<formalism::MultiOperator<O, formalism::FunctionExpression>>, C> element, MutableRuleWorkspace<C>& workspace)
+View<Index<formalism::MultiOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+ground(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
-    auto& binding = workspace.binding;
     auto& builder = workspace.builder;
     auto& repository = workspace.repository;
     auto& buffer = workspace.buffer;
-    auto& multi = builder.template get_multi<O>();
+    auto& multi = builder.template get_ground_multi<O>();
     auto& args = multi.args;
     args.clear();
 
     // Fill data
     for (const auto arg : element.get_args())
-        args.push_back(ground(arg, workspace).get_index());
+        args.push_back(ground(arg, workspace).get_data());
 
     // Canonicalize and Serialize
     canonicalize(multi);
@@ -204,14 +230,28 @@ template<formalism::IsContext C>
 View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
 ground(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
-    return visit([&](auto&& arg) -> bool { return ground(arg, workspace); }, element.get());
+    return visit(
+        [&](auto&& arg)
+        {
+            return View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>(
+                Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>(ground(arg, workspace).get_index()),
+                workspace.repository);
+        },
+        element.get());
 }
 
 template<formalism::IsContext C>
 View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
 ground(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
-    return visit([&](auto&& arg) -> bool { return ground(arg, workspace); }, element.get());
+    return visit(
+        [&](auto&& arg)
+        {
+            return View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>(
+                Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>(ground(arg, workspace).get_index()),
+                workspace.repository);
+        },
+        element.get());
 }
 
 template<formalism::IsContext C>
@@ -239,8 +279,8 @@ View<Index<formalism::GroundConjunctiveCondition>, formalism::ScopedRepository<C
         static_literals.push_back(ground(literal, workspace).get_index());
     for (const auto literal : element.template get_literals<formalism::FluentTag>())
         fluent_literals.push_back(ground(literal, workspace).get_index());
-    // for (const auto numeric_constraint : element.get_numeric_constraints())
-    //     numeric_constraints.push_back(ground(numeric_constraint, workspace));
+    for (const auto numeric_constraint : element.get_numeric_constraints())
+        numeric_constraints.push_back(ground(numeric_constraint, workspace).get_data());
 
     // Canonicalize and Serialize
     canonicalize(conj_cond);

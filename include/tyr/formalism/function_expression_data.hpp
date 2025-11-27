@@ -48,7 +48,11 @@ struct Data<formalism::FunctionExpression>
     Data(Variant value) : value(value) {}
 
     friend bool operator==(const Data& lhs, const Data& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
+    friend bool operator!=(const Data& lhs, const Data& rhs) { return lhs.value != rhs.value; }
+    friend bool operator<=(const Data& lhs, const Data& rhs) { return lhs.value <= rhs.value; }
     friend bool operator<(const Data& lhs, const Data& rhs) { return lhs.value < rhs.value; }
+    friend bool operator>=(const Data& lhs, const Data& rhs) { return lhs.value >= rhs.value; }
+    friend bool operator>(const Data& lhs, const Data& rhs) { return lhs.value > rhs.value; }
 
     auto cista_members() const noexcept { return std::tie(value); }
     auto identifying_members() const noexcept { return std::tie(value); }

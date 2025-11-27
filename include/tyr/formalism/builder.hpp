@@ -227,6 +227,28 @@ struct Builder
             static_assert(dependent_false<O>::value, "Missing Builder for the given types.");
     }
 
+    template<IsOp O>
+    auto& get_multi() noexcept
+    {
+        if constexpr (std::is_same_v<O, OpAdd>)
+            return multi_add;
+        else if constexpr (std::is_same_v<O, OpMul>)
+            return multi_mul;
+        else
+            static_assert(dependent_false<O>::value, "Missing Builder for the given types.");
+    }
+
+    template<IsOp O>
+    auto& get_ground_multi() noexcept
+    {
+        if constexpr (std::is_same_v<O, OpAdd>)
+            return ground_multi_add;
+        else if constexpr (std::is_same_v<O, OpMul>)
+            return ground_multi_mul;
+        else
+            static_assert(dependent_false<O>::value, "Missing Builder for the given types.");
+    }
+
     auto& get_boolean() noexcept { return boolean; }
 
     auto& get_ground_boolean() noexcept { return ground_boolean; }
@@ -325,7 +347,7 @@ struct Builder
     }
 
     template<IsStaticOrFluentTag T>
-    auto& get_ground_function_term() noexcept
+    auto& get_ground_fterm() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
             return ground_static_fterm;
@@ -336,7 +358,7 @@ struct Builder
     }
 
     template<IsStaticOrFluentTag T>
-    auto& get_ground_function_term_value() noexcept
+    auto& get_ground_fterm_value() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
             return ground_static_fterm_value;
@@ -348,13 +370,13 @@ struct Builder
 
     // ================== Expressions ==================
 
-    auto& get_function_expression() noexcept { return fexpr; }
-    auto& get_ground_function_expression() noexcept { return ground_fexpr; }
+    auto& get_fexpr() noexcept { return fexpr; }
+    auto& get_ground_fexpr() noexcept { return ground_fexpr; }
 
     // ================== Conditions / Rules / Program ==================
 
-    auto& get_conjunctive_condition() noexcept { return conj_cond; }
-    auto& get_ground_conjunctive_condition() noexcept { return ground_conj_cond; }
+    auto& get_conj_cond() noexcept { return conj_cond; }
+    auto& get_ground_conj_cond() noexcept { return ground_conj_cond; }
 
     auto& get_rule() noexcept { return rule; }
     auto& get_ground_rule() noexcept { return ground_rule; }
