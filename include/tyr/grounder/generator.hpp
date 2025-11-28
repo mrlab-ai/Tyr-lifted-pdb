@@ -18,8 +18,7 @@
 #ifndef TYR_GROUNDER_GENERATOR_HPP_
 #define TYR_GROUNDER_GENERATOR_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/formalism/formalism.hpp"
 #include "tyr/grounder/applicability.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/kpkc.hpp"

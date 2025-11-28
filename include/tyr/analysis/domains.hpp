@@ -137,21 +137,93 @@ void restrict_parameter_domain_from_static_atom(View<Index<formalism::Atom<forma
     }
 }
 
-void restrict_parameter_domain_from_static_function_term(View<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository> fterm,
-                                                         DomainSetList& parameter_domains,
-                                                         const DomainSetListList& static_function_domain_sets)
+/**
+ * Restrict
+ */
+
+template<formalism::IsContext C>
+void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets);
+
+void restrict_parameter_domain(float_t, DomainSetList&, const DomainSetListList&) {}
+
+template<formalism::IsOp O, formalism::IsContext C>
+void restrict_parameter_domain(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets)
 {
-    const auto function = fterm.get_function();
+    restrict_parameter_domain(element.get_arg(), parameter_domains, static_function_domain_sets);
+}
+
+template<formalism::IsOp O, formalism::IsContext C>
+void restrict_parameter_domain(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets)
+{
+    restrict_parameter_domain(element.get_lhs(), parameter_domains, static_function_domain_sets);
+    restrict_parameter_domain(element.get_rhs(), parameter_domains, static_function_domain_sets);
+}
+
+template<formalism::IsOp O, formalism::IsContext C>
+void restrict_parameter_domain(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets)
+{
+    for (const auto arg : element.get_args())
+        restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets);
+}
+
+template<formalism::IsContext C>
+void restrict_parameter_domain(View<Index<formalism::Atom<formalism::StaticTag>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_predicate_domain_sets)
+{
+    const auto predicate = element.get_predicate();
 
     auto pos = size_t { 0 };
-    for (const auto term : fterm.get_terms())
+    for (const auto term : element.get_terms())
     {
         visit(
             [&](auto&& arg)
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, formalism::Repository>>) {}
+                if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, C>>) {}
+                else if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
+                {
+                    const auto parameter_index = uint_t(arg);
+                    auto& parameter_domain = parameter_domains[parameter_index];
+                    const auto& predicate_domain = static_predicate_domain_sets[predicate.get_index().value][pos];
+
+                    intersect_inplace(parameter_domain, predicate_domain);
+                }
+                else
+                {
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+                }
+            },
+            term.get());
+        ++pos;
+    }
+}
+
+template<formalism::IsContext C>
+void restrict_parameter_domain(View<Index<formalism::FunctionTerm<formalism::StaticTag>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets)
+{
+    const auto function = element.get_function();
+
+    auto pos = size_t { 0 };
+    for (const auto term : element.get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, C>>) {}
                 else if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
@@ -170,105 +242,90 @@ void restrict_parameter_domain_from_static_function_term(View<Index<formalism::F
     }
 }
 
-void restrict_parameter_domain_from_function_expression(View<Data<formalism::FunctionExpression>, formalism::Repository> fexpr,
-                                                        DomainSetList& parameter_domains,
-                                                        const DomainSetListList& static_function_domain_sets)
+template<formalism::IsContext C>
+void restrict_parameter_domain(View<Index<formalism::FunctionTerm<formalism::FluentTag>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets)
 {
-    visit(
-        [&](auto&& arg)
-        {
-            using Alternative = std::decay_t<decltype(arg)>;
-
-            if constexpr (std::is_same_v<Alternative, float_t>) {}
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::UnaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                restrict_parameter_domain_from_function_expression(arg.get_arg(), parameter_domains, static_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::BinaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
-                restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::BinaryOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
-                restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::BinaryOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
-                restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::BinaryOperator<formalism::OpDiv, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
-                restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::MultiOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                for (const auto part : arg.get_args())
-                    restrict_parameter_domain_from_function_expression(part, parameter_domains, static_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::MultiOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                for (const auto part : arg.get_args())
-                    restrict_parameter_domain_from_function_expression(part, parameter_domains, static_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>)
-            {
-                restrict_parameter_domain_from_static_function_term(arg, parameter_domains, static_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>) {}
-            else
-            {
-                static_assert(dependent_false<Alternative>::value, "Missing case");
-            }
-        },
-        fexpr.get());
 }
 
-void restrict_parameter_domain_from_boolean_operator(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, formalism::Repository> op,
-                                                     DomainSetList& parameter_domains,
-                                                     const DomainSetListList& static_function_domain_sets)
+template<formalism::IsContext C>
+void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets)
 {
-    visit(
-        [&](auto&& arg)
-        {
-            restrict_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, static_function_domain_sets);
-            restrict_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, static_function_domain_sets);
-        },
-        op.get());
+    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get());
 }
 
-void lift_parameter_domain_from_fluent_atom(View<Index<formalism::Atom<formalism::FluentTag>>, formalism::Repository> atom,
-                                            const DomainSetList& parameter_domains,
-                                            DomainSetListList& fluent_predicate_domain_sets)
+template<formalism::IsContext C>
+void restrict_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets)
 {
-    const auto predicate = atom.get_predicate();
+    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get());
+}
+
+template<formalism::IsContext C>
+void restrict_parameter_domain(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& static_function_domain_sets)
+{
+    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get());
+}
+
+/**
+ * Lift
+ */
+
+template<formalism::IsContext C>
+void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets);
+
+void lift_parameter_domain(float_t, const DomainSetList&, DomainSetListList&) {}
+
+template<formalism::IsOp O, formalism::IsContext C>
+void lift_parameter_domain(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets)
+{
+    lift_parameter_domain(element.get_arg(), parameter_domains, fluent_function_domain_sets);
+}
+
+template<formalism::IsOp O, formalism::IsContext C>
+void lift_parameter_domain(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets)
+{
+    lift_parameter_domain(element.get_lhs(), parameter_domains, fluent_function_domain_sets);
+    lift_parameter_domain(element.get_rhs(), parameter_domains, fluent_function_domain_sets);
+}
+
+template<formalism::IsOp O, formalism::IsContext C>
+void lift_parameter_domain(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression>>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets)
+{
+    for (const auto arg : element.get_args())
+        lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets);
+}
+
+template<formalism::IsContext C>
+void lift_parameter_domain(View<Index<formalism::Atom<formalism::FluentTag>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_predicate_domain_sets)
+{
+    const auto predicate = element.get_predicate();
 
     auto pos = size_t { 0 };
-    for (const auto term : atom.get_terms())
+    for (const auto term : element.get_terms())
     {
         visit(
             [&](auto&& arg)
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, formalism::Repository>>) {}
+                if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, C>>) {}
                 else if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
@@ -287,21 +344,22 @@ void lift_parameter_domain_from_fluent_atom(View<Index<formalism::Atom<formalism
     }
 }
 
-void lift_parameter_domain_from_fluent_function_term(View<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository> fterm,
-                                                     const DomainSetList& parameter_domains,
-                                                     DomainSetListList& fluent_function_domain_sets)
+template<formalism::IsContext C>
+void lift_parameter_domain(View<Index<formalism::FunctionTerm<formalism::FluentTag>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets)
 {
-    const auto function = fterm.get_function();
+    const auto function = element.get_function();
 
     auto pos = size_t { 0 };
-    for (const auto term : fterm.get_terms())
+    for (const auto term : element.get_terms())
     {
         visit(
             [&](auto&& arg)
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, formalism::Repository>>) {}
+                if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, C>>) {}
                 else if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
@@ -320,88 +378,35 @@ void lift_parameter_domain_from_fluent_function_term(View<Index<formalism::Funct
     }
 }
 
-void lift_parameter_domain_from_function_expression(View<Data<formalism::FunctionExpression>, formalism::Repository> fexpr,
-                                                    const DomainSetList& parameter_domains,
-                                                    DomainSetListList& fluent_function_domain_sets)
+template<formalism::IsContext C>
+void lift_parameter_domain(View<Index<formalism::FunctionTerm<formalism::StaticTag>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets)
 {
-    visit(
-        [&](auto&& arg)
-        {
-            using Alternative = std::decay_t<decltype(arg)>;
-
-            if constexpr (std::is_same_v<Alternative, float_t>) {}
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::UnaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                lift_parameter_domain_from_function_expression(arg.get_arg(), parameter_domains, fluent_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::BinaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
-                lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::BinaryOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
-                lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::BinaryOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
-                lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::BinaryOperator<formalism::OpDiv, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
-                lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::MultiOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                for (const auto part : arg.get_args())
-                    lift_parameter_domain_from_function_expression(part, parameter_domains, fluent_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<
-                                   Alternative,
-                                   View<Index<formalism::MultiOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>, formalism::Repository>>)
-            {
-                for (const auto part : arg.get_args())
-                    lift_parameter_domain_from_function_expression(part, parameter_domains, fluent_function_domain_sets);
-            }
-            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>) {}
-            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>)
-            {
-                lift_parameter_domain_from_fluent_function_term(arg, parameter_domains, fluent_function_domain_sets);
-            }
-            else
-            {
-                static_assert(dependent_false<Alternative>::value, "Missing case");
-            }
-        },
-        fexpr.get());
 }
 
-void lift_parameter_domain_from_boolean_operator(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, formalism::Repository> op,
-                                                 const DomainSetList& parameter_domains,
-                                                 DomainSetListList& fluent_function_domain_sets)
+template<formalism::IsContext C>
+void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets)
 {
-    visit(
-        [&](auto&& arg)
-        {
-            lift_parameter_domain_from_function_expression(arg.get_lhs(), parameter_domains, fluent_function_domain_sets);
-            lift_parameter_domain_from_function_expression(arg.get_rhs(), parameter_domains, fluent_function_domain_sets);
-        },
-        op.get());
+    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get());
+}
+
+template<formalism::IsContext C>
+void lift_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets)
+{
+    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get());
+}
+
+template<formalism::IsContext C>
+void lift_parameter_domain(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& fluent_function_domain_sets)
+{
+    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get());
 }
 
 VariableDomains compute_variable_domains(View<Index<formalism::Program>, formalism::Repository> program)
@@ -431,10 +436,10 @@ VariableDomains compute_variable_domains(View<Index<formalism::Program>, formali
             auto parameter_domains = DomainSetList(variables.size(), universe);
 
             for (const auto literal : rule.get_body().get_literals<formalism::StaticTag>())
-                restrict_parameter_domain_from_static_atom(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
+                restrict_parameter_domain(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
 
             for (const auto op : rule.get_body().get_numeric_constraints())
-                restrict_parameter_domain_from_boolean_operator(op, parameter_domains, static_function_domain_sets);
+                restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
 
             rule_domain_sets.push_back(std::move(parameter_domains));
         }
@@ -447,12 +452,12 @@ VariableDomains compute_variable_domains(View<Index<formalism::Program>, formali
         auto& parameter_domains = rule_domain_sets[rule.get_index().value];
 
         for (const auto literal : rule.get_body().get_literals<formalism::FluentTag>())
-            lift_parameter_domain_from_fluent_atom(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets);
+            lift_parameter_domain(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets);
 
         for (const auto op : rule.get_body().get_numeric_constraints())
-            lift_parameter_domain_from_boolean_operator(op, parameter_domains, fluent_function_domain_sets);
+            lift_parameter_domain(op, parameter_domains, fluent_function_domain_sets);
 
-        lift_parameter_domain_from_fluent_atom(rule.get_head(), parameter_domains, fluent_predicate_domain_sets);
+        lift_parameter_domain(rule.get_head(), parameter_domains, fluent_predicate_domain_sets);
     }
 
     ///--- Step 5: Compress sets to vectors.

@@ -20,10 +20,7 @@
 
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_view.hpp"
-#include "tyr/formalism/ground_function_term_index.hpp"
-#include "tyr/formalism/ground_function_term_value_view.hpp"
+#include "tyr/formalism/formalism.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <limits>

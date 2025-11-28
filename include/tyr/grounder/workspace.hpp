@@ -18,8 +18,8 @@
 #ifndef TYR_GROUNDER_WORKSPACE_HPP_
 #define TYR_GROUNDER_WORKSPACE_HPP_
 
-#include "tyr/formalism/declarations.hpp"
 #include "tyr/grounder/consistency_graph.hpp"
+#include "tyr/grounder/declarations.hpp"
 
 namespace tyr::grounder
 {

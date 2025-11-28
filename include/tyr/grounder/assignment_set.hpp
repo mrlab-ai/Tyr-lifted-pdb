@@ -21,8 +21,7 @@
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/closed_interval.hpp"
 #include "tyr/common/config.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_view.hpp"
+#include "tyr/formalism/formalism.hpp"
 #include "tyr/grounder/assignment.hpp"
 #include "tyr/grounder/fact_set.hpp"
 
@@ -381,6 +380,17 @@ struct AssignmentSets
     {
         static_sets.insert(fact_sets.static_sets);
         fluent_sets.insert(fact_sets.fluent_sets);
+    }
+
+    template<formalism::IsStaticOrFluentTag T>
+    auto& get() const
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_sets;
+        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
+            return fluent_sets;
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
     }
 };
 
