@@ -258,15 +258,25 @@ public:
         return repository.size();
     }
 
-    //    void clear() noexcept
-    //    {
-    //        boost::hana::for_each(m_repository,
-    //                              [](auto&& pair)
-    //                              {
-    //                                  auto& map = boost::hana::second(pair);
-    //                                  map.clear();
-    //                              });
-    //    }
+    void clear() noexcept
+    {
+        boost::hana::for_each(m_repository,
+                              [](auto&& pair)
+                              {
+                                  using KeyType = typename decltype(+boost::hana::first(pair))::type;
+                                  auto& storage = boost::hana::second(pair);
+
+                                  if constexpr (IsGroupType<KeyType>)
+                                  {
+                                      for (auto& indexed_hash_set : storage)
+                                          indexed_hash_set.clear();
+                                  }
+                                  else
+                                  {
+                                      storage.clear();
+                                  }
+                              });
+    }
 };
 
 /// @brief Make Repository a trivial context.
