@@ -80,52 +80,44 @@ struct Data<formalism::Program>
     const auto& get_predicates() const
     {
         if constexpr (std::same_as<T, formalism::StaticTag>)
-        {
             return static_predicates;
-        }
         else if constexpr (std::same_as<T, formalism::FluentTag>)
-        {
             return fluent_predicates;
-        }
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
     }
 
     template<formalism::IsStaticOrFluentTag T>
     const auto& get_functions() const
     {
         if constexpr (std::same_as<T, formalism::StaticTag>)
-        {
             return static_functions;
-        }
         else if constexpr (std::same_as<T, formalism::FluentTag>)
-        {
             return fluent_functions;
-        }
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
     }
 
     template<formalism::IsStaticOrFluentTag T>
     const auto& get_atoms() const
     {
         if constexpr (std::same_as<T, formalism::StaticTag>)
-        {
             return static_atoms;
-        }
         else if constexpr (std::same_as<T, formalism::FluentTag>)
-        {
             return fluent_atoms;
-        }
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
     }
 
     template<formalism::IsStaticOrFluentTag T>
     const auto& get_fterm_values() const
     {
         if constexpr (std::same_as<T, formalism::StaticTag>)
-        {
             return static_fterm_values;
-        }
         else if constexpr (std::same_as<T, formalism::FluentTag>)
-        {
             return fluent_fterm_values;
-        }
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
     }
 
     auto cista_members() const noexcept
