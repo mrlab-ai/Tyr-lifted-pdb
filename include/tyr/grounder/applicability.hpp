@@ -67,20 +67,20 @@ auto evaluate(View<Index<formalism::GroundFunctionTerm<T>>, C1> element, const F
 template<formalism::IsContext C1, formalism::IsContext C2>
 auto evaluate(View<Data<formalism::GroundFunctionExpression>, C1> element, const FactSets<C2>& fact_sets)
 {
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get());
+    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
 }
 
 template<formalism::IsContext C1, formalism::IsContext C2>
 auto evaluate(View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C2>> element,
               const FactSets<C1>& fact_sets)
 {
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get());
+    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
 }
 
 template<formalism::IsContext C1, formalism::IsContext C2>
 auto evaluate(View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C1> element, const FactSets<C2>& fact_sets)
 {
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get());
+    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
 }
 
 template<formalism::IsStaticOrFluentTag T, formalism::IsContext C1, formalism::IsContext C2>

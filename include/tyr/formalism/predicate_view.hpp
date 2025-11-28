@@ -30,22 +30,22 @@ class View<Index<formalism::Predicate<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::Predicate<T>> m_data;
+    Index<formalism::Predicate<T>> m_handle;
 
 public:
     using Tag = formalism::Predicate<T>;
 
-    View(Index<formalism::Predicate<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::Predicate<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    const auto& get_name() const { return get().name; }
-    auto get_arity() const { return get().arity; }
+    auto get_index() const noexcept { return m_handle; }
+    const auto& get_name() const { return get_data().name; }
+    auto get_arity() const { return get_data().arity; }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

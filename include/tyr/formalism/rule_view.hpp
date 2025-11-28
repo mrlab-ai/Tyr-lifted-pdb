@@ -31,22 +31,22 @@ class View<Index<formalism::Rule>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::Rule> m_data;
+    Index<formalism::Rule> m_handle;
 
 public:
     using Tag = formalism::Rule;
 
-    View(Index<formalism::Rule> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::Rule> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    auto get_body() const { return View<Index<formalism::ConjunctiveCondition>, C>(get().body, *m_context); }
-    auto get_head() const { return View<Index<formalism::Atom<formalism::FluentTag>>, C>(get().head, *m_context); }
+    auto get_index() const noexcept { return m_handle; }
+    auto get_body() const { return View<Index<formalism::ConjunctiveCondition>, C>(get_data().body, *m_context); }
+    auto get_head() const { return View<Index<formalism::Atom<formalism::FluentTag>>, C>(get_data().head, *m_context); }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

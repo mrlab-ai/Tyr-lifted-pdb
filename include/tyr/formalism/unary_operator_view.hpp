@@ -30,32 +30,32 @@ class View<Index<formalism::UnaryOperator<Op, T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::UnaryOperator<Op, T>> m_data;
+    Index<formalism::UnaryOperator<Op, T>> m_handle;
 
 public:
     using Tag = formalism::UnaryOperator<Op, T>;
     using OpType = Op;
 
-    View(Index<formalism::UnaryOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::UnaryOperator<Op, T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
+    auto get_index() const noexcept { return m_handle; }
     auto get_arg() const
     {
         if constexpr (IsViewable<T, C>)
         {
-            return View<T, C>(get().arg, *m_context);
+            return View<T, C>(get_data().arg, *m_context);
         }
         else
         {
-            return get().arg;
+            return get_data().arg;
         }
     }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 
 }

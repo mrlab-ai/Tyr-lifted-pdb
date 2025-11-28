@@ -30,43 +30,43 @@ class View<Index<formalism::BinaryOperator<Op, T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::BinaryOperator<Op, T>> m_data;
+    Index<formalism::BinaryOperator<Op, T>> m_handle;
 
 public:
     using Tag = formalism::BinaryOperator<Op, T>;
     using OpType = Op;
 
-    View(Index<formalism::BinaryOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::BinaryOperator<Op, T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
+    auto get_index() const noexcept { return m_handle; }
     auto get_lhs() const
     {
         if constexpr (IsViewable<T, C>)
         {
-            return View<T, C>(get().lhs, *m_context);
+            return View<T, C>(get_data().lhs, *m_context);
         }
         else
         {
-            return get().lhs;
+            return get_data().lhs;
         }
     }
     auto get_rhs() const
     {
         if constexpr (IsViewable<T, C>)
         {
-            return View<T, C>(get().rhs, *m_context);
+            return View<T, C>(get_data().rhs, *m_context);
         }
         else
         {
-            return get().rhs;
+            return get_data().rhs;
         }
     }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 
 }

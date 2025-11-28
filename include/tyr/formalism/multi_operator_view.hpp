@@ -31,22 +31,22 @@ class View<Index<formalism::MultiOperator<Op, T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::MultiOperator<Op, T>> m_data;
+    Index<formalism::MultiOperator<Op, T>> m_handle;
 
 public:
     using Tag = formalism::MultiOperator<Op, T>;
     using OpType = Op;
 
-    View(Index<formalism::MultiOperator<Op, T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::MultiOperator<Op, T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    auto get_args() const { return View<::cista::offset::vector<T>, C>(get().args, *m_context); }
+    auto get_index() const noexcept { return m_handle; }
+    auto get_args() const { return View<::cista::offset::vector<T>, C>(get_data().args, *m_context); }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 
 }

@@ -31,23 +31,23 @@ class View<Index<formalism::GroundLiteral<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::GroundLiteral<T>> m_data;
+    Index<formalism::GroundLiteral<T>> m_handle;
 
 public:
     using Tag = formalism::GroundLiteral<T>;
 
-    View(Index<formalism::GroundLiteral<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::GroundLiteral<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    auto get_predicate() const { return View<Index<formalism::Predicate<T>>, C>(m_data.predicate_index, *m_context); }
-    auto get_atom() const { return View<Index<formalism::GroundAtom<T>>, C>(get().atom, *m_context); }
-    auto get_polarity() const { return get().polarity; }
+    auto get_index() const noexcept { return m_handle; }
+    auto get_predicate() const { return View<Index<formalism::Predicate<T>>, C>(m_handle.predicate_index, *m_context); }
+    auto get_atom() const { return View<Index<formalism::GroundAtom<T>>, C>(get_data().atom, *m_context); }
+    auto get_polarity() const { return get_data().polarity; }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

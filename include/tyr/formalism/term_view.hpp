@@ -30,18 +30,20 @@ class View<Data<formalism::Term>, C>
 {
 private:
     const C* m_context;
-    Data<formalism::Term> m_data;
+    Data<formalism::Term> m_handle;
 
 public:
     using Tag = formalism::Term;
 
-    auto get() const { return View<typename Data<formalism::Term>::Variant, C>(m_data.value, *m_context); }
+    View(Data<formalism::Term> data, const C& context) : m_context(&context), m_handle(data) {}
+
+    const auto& get_data() const { return m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    View(Data<formalism::Term> data, const C& context) : m_context(&context), m_data(data) {}
+    auto get_variant() const { return View<typename Data<formalism::Term>::Variant, C>(m_handle.value, *m_context); }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

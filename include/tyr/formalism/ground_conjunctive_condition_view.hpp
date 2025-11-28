@@ -33,31 +33,31 @@ class View<Index<formalism::GroundConjunctiveCondition>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::GroundConjunctiveCondition> m_data;
+    Index<formalism::GroundConjunctiveCondition> m_handle;
 
 public:
     using Tag = formalism::GroundConjunctiveCondition;
 
-    View(Index<formalism::GroundConjunctiveCondition> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::GroundConjunctiveCondition> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    auto get_objects() const { return View<IndexList<formalism::Object>, C>(get().objects, *m_context); }
+    auto get_index() const noexcept { return m_handle; }
+    auto get_objects() const { return View<IndexList<formalism::Object>, C>(get_data().objects, *m_context); }
     template<formalism::IsStaticOrFluentTag T>
     auto get_literals() const
     {
-        return View<IndexList<formalism::GroundLiteral<T>>, C>(get().template get_literals<T>(), *m_context);
+        return View<IndexList<formalism::GroundLiteral<T>>, C>(get_data().template get_literals<T>(), *m_context);
     }
     auto get_numeric_constraints() const
     {
-        return View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get().numeric_constraints, *m_context);
+        return View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get_data().numeric_constraints, *m_context);
     }
-    auto get_arity() const { return get().objects.size(); }
+    auto get_arity() const { return get_data().objects.size(); }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

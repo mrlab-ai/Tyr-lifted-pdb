@@ -74,7 +74,7 @@ TEST(TyrTests, TyrFormalismView)
                 FAIL() << "Expected ObjectView for first term, got a different proxy type";
             }
         },
-        atom_terms_proxy[0].get());
+        atom_terms_proxy[0].get_variant());
     visit(
         [&](auto&& arg)
         {
@@ -89,7 +89,7 @@ TEST(TyrTests, TyrFormalismView)
                 FAIL() << "Expected VariableView for first term, got a different proxy type";
             }
         },
-        atom_terms_proxy[1].get());
+        atom_terms_proxy[1].get_variant());
 }
 
 }

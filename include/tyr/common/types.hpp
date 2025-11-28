@@ -51,7 +51,16 @@ struct View
 };
 
 template<typename T, typename C>
-concept IsViewable = requires(T type, const C& context) { View<T, C>(type, context); };
+concept IsViewable = requires(T type, const C& context) {
+    // Constructor
+    View<T, C>(type, context);
+    // Method to retrieve the underlying Data.
+    { View<T, C>(type, context).get_data() };
+    // Method to retrieve the underlying context.
+    { View<T, C>(type, context).get_context() };
+    // Method to retrieve the underlying lightweight handle or data.
+    { View<T, C>(type, context).get_handle() } -> std::same_as<const T&>;
+};
 
 }
 

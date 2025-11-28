@@ -106,8 +106,8 @@ PredicateStrata compute_predicate_stratification(View<Index<formalism::Program>,
     }
 
     auto predicate_strata = PredicateStrata {};
-    auto remaining = UnorderedSet<Index<formalism::Predicate<formalism::FluentTag>>>(program.get().get_predicates<formalism::FluentTag>().begin(),
-                                                                                     program.get().get_predicates<formalism::FluentTag>().end());
+    auto remaining = UnorderedSet<Index<formalism::Predicate<formalism::FluentTag>>>(program.get_data().get_predicates<formalism::FluentTag>().begin(),
+                                                                                     program.get_data().get_predicates<formalism::FluentTag>().end());
     while (!remaining.empty())
     {
         auto stratum = UnorderedSet<Index<formalism::Predicate<formalism::FluentTag>>> {};
@@ -144,7 +144,7 @@ RuleStrata compute_rule_stratification(View<Index<formalism::Program>, formalism
 
     auto rule_strata = RuleStrata {};
 
-    auto remaining_rules = UnorderedSet<Index<formalism::Rule>>(program.get().rules.begin(), program.get().rules.end());
+    auto remaining_rules = UnorderedSet<Index<formalism::Rule>>(program.get_data().rules.begin(), program.get_data().rules.end());
 
     for (const auto& predicate_stratum : predicate_stratification.strata)
     {

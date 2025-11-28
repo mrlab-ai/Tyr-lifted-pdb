@@ -60,7 +60,7 @@ View<Index<formalism::GroundAtom<T>>, formalism::ScopedRepository<C>> ground(Vie
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
     }
 
     // Canonicalize and Serialize
@@ -122,7 +122,7 @@ View<Index<formalism::GroundFunctionTerm<T>>, formalism::ScopedRepository<C>> gr
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
     }
 
     // Canonicalize and Serialize
@@ -163,7 +163,7 @@ View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>> 
                     workspace.repository);
             }
         },
-        element.get());
+        element.get_variant());
 }
 
 template<formalism::IsOp O, formalism::IsContext C>
@@ -235,7 +235,7 @@ ground(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>
                 Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>(ground(arg, workspace).get_index()),
                 workspace.repository);
         },
-        element.get());
+        element.get_variant());
 }
 
 template<formalism::IsContext C>
@@ -249,7 +249,7 @@ ground(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpressio
                 Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>(ground(arg, workspace).get_index()),
                 workspace.repository);
         },
-        element.get());
+        element.get_variant());
 }
 
 template<formalism::IsContext C>

@@ -29,18 +29,20 @@ class View<Data<formalism::FunctionExpression>, C>
 {
 private:
     const C* m_context;
-    Data<formalism::FunctionExpression> m_data;
+    Data<formalism::FunctionExpression> m_handle;
 
 public:
     using Tag = formalism::FunctionExpression;
 
-    auto get() const { return View<typename Data<formalism::FunctionExpression>::Variant, C>(m_data.value, *m_context); }
+    View(Data<formalism::FunctionExpression> handle, const C& context) : m_context(&context), m_handle(handle) {}
+
+    const auto& get_data() const { return m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    View(Data<formalism::FunctionExpression> data, const C& context) : m_context(&context), m_data(data) {}
+    auto get_variant() const { return View<typename Data<formalism::FunctionExpression>::Variant, C>(m_handle.value, *m_context); }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

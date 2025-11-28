@@ -30,20 +30,22 @@ class View<Data<formalism::BooleanOperator<T>>, C>
 {
 private:
     const C* m_context;
-    Data<formalism::BooleanOperator<T>> m_data;
+    Data<formalism::BooleanOperator<T>> m_handle;
 
 public:
     using Tag = formalism::BooleanOperator<T>;
 
-    auto get() const { return View<typename Data<formalism::BooleanOperator<T>>::Variant, C>(m_data.value, *m_context); }
+    View(Data<formalism::BooleanOperator<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
+
+    const auto& get_data() const { return m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_arity() const { return m_data.arity; }
+    auto get_variant() const { return View<typename Data<formalism::BooleanOperator<T>>::Variant, C>(m_handle.value, *m_context); }
 
-    View(Data<formalism::BooleanOperator<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    auto get_arity() const { return m_handle.arity; }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

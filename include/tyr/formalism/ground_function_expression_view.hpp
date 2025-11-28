@@ -30,18 +30,20 @@ class View<Data<formalism::GroundFunctionExpression>, C>
 {
 private:
     const C* m_context;
-    Data<formalism::GroundFunctionExpression> m_data;
+    Data<formalism::GroundFunctionExpression> m_handle;
 
 public:
     using Tag = formalism::GroundFunctionExpression;
 
-    auto get() const { return View<typename Data<formalism::GroundFunctionExpression>::Variant, C>(m_data.value, *m_context); }
+    View(Data<formalism::GroundFunctionExpression> handle, const C& context) : m_context(&context), m_handle(handle) {}
+
+    const auto& get_data() const { return m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    View(Data<formalism::GroundFunctionExpression> data, const C& context) : m_context(&context), m_data(data) {}
+    auto get_variant() const { return View<typename Data<formalism::GroundFunctionExpression>::Variant, C>(m_handle.value, *m_context); }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

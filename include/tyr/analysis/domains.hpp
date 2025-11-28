@@ -132,7 +132,7 @@ void restrict_parameter_domain_from_static_atom(View<Index<formalism::Atom<forma
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
         ++pos;
     }
 }
@@ -203,7 +203,7 @@ void restrict_parameter_domain(View<Index<formalism::Atom<formalism::StaticTag>>
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
         ++pos;
     }
 }
@@ -237,7 +237,7 @@ void restrict_parameter_domain(View<Index<formalism::FunctionTerm<formalism::Sta
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
         ++pos;
     }
 }
@@ -254,7 +254,7 @@ void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> elem
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
 {
-    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get());
+    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get_variant());
 }
 
 template<formalism::IsContext C>
@@ -262,7 +262,7 @@ void restrict_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<form
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
 {
-    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get());
+    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get_variant());
 }
 
 template<formalism::IsContext C>
@@ -270,7 +270,7 @@ void restrict_parameter_domain(View<Data<formalism::BooleanOperator<Data<formali
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
 {
-    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get());
+    visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get_variant());
 }
 
 /**
@@ -339,7 +339,7 @@ void lift_parameter_domain(View<Index<formalism::Atom<formalism::FluentTag>>, C>
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
         ++pos;
     }
 }
@@ -373,7 +373,7 @@ void lift_parameter_domain(View<Index<formalism::FunctionTerm<formalism::FluentT
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
         ++pos;
     }
 }
@@ -390,7 +390,7 @@ void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
 {
-    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get());
+    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get_variant());
 }
 
 template<formalism::IsContext C>
@@ -398,7 +398,7 @@ void lift_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalis
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
 {
-    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get());
+    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get_variant());
 }
 
 template<formalism::IsContext C>
@@ -406,7 +406,7 @@ void lift_parameter_domain(View<Data<formalism::BooleanOperator<Data<formalism::
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
 {
-    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get());
+    visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get_variant());
 }
 
 VariableDomains compute_variable_domains(View<Index<formalism::Program>, formalism::Repository> program)

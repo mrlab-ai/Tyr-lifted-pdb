@@ -30,22 +30,22 @@ class View<Index<formalism::Literal<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::Literal<T>> m_data;
+    Index<formalism::Literal<T>> m_handle;
 
 public:
     using Tag = formalism::Literal<T>;
 
-    View(Index<formalism::Literal<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::Literal<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    auto get_atom() const { return View<Index<formalism::Atom<T>>, C>(get().atom_index, *m_context); }
-    auto get_polarity() const { return get().polarity; }
+    auto get_index() const noexcept { return m_handle; }
+    auto get_atom() const { return View<Index<formalism::Atom<T>>, C>(get_data().atom_index, *m_context); }
+    auto get_polarity() const { return get_data().polarity; }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

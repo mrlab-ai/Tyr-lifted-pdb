@@ -240,10 +240,10 @@ auto merge(View<Index<GroundAtom<T>>, C_SRC> element, Builder& builder, C_DST& d
 
     auto& atom = builder.template get_ground_atom<T>();
 
-    atom.predicate = merge(element.get_predicate(), builder, destination, buffer, cache).get_data();
+    atom.predicate = merge(element.get_predicate(), builder, destination, buffer, cache).get_index();
     atom.objects.clear();
     for (const auto object : element.get_objects())
-        atom.objects.push_back(merge(object, builder, destination, buffer, cache).get_data());
+        atom.objects.push_back(merge(object, builder, destination, buffer, cache).get_index());
 
     canonicalize(atom);
     auto result = destination.get_or_create(atom, buffer).first;
@@ -264,7 +264,7 @@ auto merge(View<Index<GroundLiteral<T>>, C_SRC> element, Builder& builder, C_DST
     auto& literal = builder.template get_ground_literal<T>();
 
     literal.polarity = element.get_polarity();
-    literal.atom = merge(element.get_atom(), builder, destination, buffer, cache).get_data();
+    literal.atom = merge(element.get_atom(), builder, destination, buffer, cache).get_index();
 
     canonicalize(literal);
     auto result = destination.get_or_create(literal, buffer).first;
@@ -304,10 +304,10 @@ auto merge(View<Index<GroundFunctionTerm<T>>, C_SRC> element, Builder& builder, 
 
     auto& fterm = builder.template get_ground_fterm<T>();
 
-    fterm.function = merge(element.get_function(), builder, destination, buffer, cache).get_data();
+    fterm.function = merge(element.get_function(), builder, destination, buffer, cache).get_index();
     fterm.objects.clear();
     for (const auto object : element.get_objects())
-        fterm.objects.push_back(merge(object, builder, destination, buffer, cache).get_data());
+        fterm.objects.push_back(merge(object, builder, destination, buffer, cache).get_index());
 
     canonicalize(fterm);
     auto result = destination.get_or_create(fterm, buffer).first;
@@ -332,11 +332,11 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
             }
             else
             {
-                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(merge(arg, builder, destination, buffer, cache).get_data()),
+                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(merge(arg, builder, destination, buffer, cache).get_index()),
                                                                    destination);
             }
         },
-        element.get());
+        element.get_variant());
 }
 
 template<IsContext C_SRC, IsContext C_DST>
@@ -350,10 +350,10 @@ auto merge(View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_SRC>
         [&](auto&& arg)
         {
             return View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_DST>(
-                Data<ArithmeticOperator<Data<GroundFunctionExpression>>>(merge(arg, builder, destination, buffer, cache).get_data()),
+                Data<ArithmeticOperator<Data<GroundFunctionExpression>>>(merge(arg, builder, destination, buffer, cache).get_index()),
                 destination);
         },
-        element.get());
+        element.get_variant());
 }
 
 template<IsContext C_SRC, IsContext C_DST>
@@ -367,10 +367,10 @@ auto merge(View<Data<BooleanOperator<Data<GroundFunctionExpression>>>, C_SRC> el
         [&](auto&& arg)
         {
             return View<Data<BooleanOperator<Data<GroundFunctionExpression>>>, C_DST>(
-                Data<BooleanOperator<Data<GroundFunctionExpression>>>(merge(arg, builder, destination, buffer, cache).get_data()),
+                Data<BooleanOperator<Data<GroundFunctionExpression>>>(merge(arg, builder, destination, buffer, cache).get_index()),
                 destination);
         },
-        element.get());
+        element.get_variant());
 }
 
 template<IsContext C_SRC, IsContext C_DST>
@@ -393,11 +393,11 @@ auto merge(View<Index<GroundConjunctiveCondition>, C_SRC> element,
     conj_cond.numeric_constraints.clear();
 
     for (const auto object : element.get_objects())
-        conj_cond.objects.push_back(merge(object, builder, destination, buffer, cache).get_data());
+        conj_cond.objects.push_back(merge(object, builder, destination, buffer, cache).get_index());
     for (const auto literal : element.template get_literals<StaticTag>())
-        conj_cond.static_literals.push_back(merge(literal, builder, destination, buffer, cache).get_data());
+        conj_cond.static_literals.push_back(merge(literal, builder, destination, buffer, cache).get_index());
     for (const auto literal : element.template get_literals<FluentTag>())
-        conj_cond.fluent_literals.push_back(merge(literal, builder, destination, buffer, cache).get_data());
+        conj_cond.fluent_literals.push_back(merge(literal, builder, destination, buffer, cache).get_index());
     for (const auto numeric_constraint : element.get_numeric_constraints())
         conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, destination, buffer, cache).get_data());
 
@@ -419,8 +419,8 @@ auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& dest
 
     auto& rule = builder.get_ground_rule();
 
-    rule.body = merge(element.get_body(), builder, destination, buffer, cache).get_data();
-    rule.head = merge(element.get_head(), builder, destination, buffer, cache).get_data();
+    rule.body = merge(element.get_body(), builder, destination, buffer, cache).get_index();
+    rule.head = merge(element.get_head(), builder, destination, buffer, cache).get_index();
 
     canonicalize(rule);
     auto result = destination.get_or_create(rule, buffer).first;

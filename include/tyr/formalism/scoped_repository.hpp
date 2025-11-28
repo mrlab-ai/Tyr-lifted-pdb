@@ -37,10 +37,10 @@ public:
     std::optional<View<Index<T>, ScopedRepository<C>>> find(const Data<T>& builder) const
     {
         if (auto ptr = global.find(builder))
-            return View<Index<T>, ScopedRepository<C>>(ptr->get_data(), *this);
+            return View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this);
 
         if (auto ptr = local.find(builder))
-            return View<Index<T>, ScopedRepository<C>>(ptr->get_data(), *this);
+            return View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this);
 
         return std::nullopt;
     }
@@ -49,12 +49,12 @@ public:
     std::pair<View<Index<T>, ScopedRepository<C>>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
         if (auto ptr = global.find(builder))
-            return std::make_pair(View<Index<T>, ScopedRepository<C>>(ptr->get_data(), *this), false);
+            return std::make_pair(View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this), false);
 
         // Manually assign index to continue indexing.
         builder.index.value = global.template size<T>() + local.template size<T>();
 
-        return std::make_pair(View<Index<T>, ScopedRepository<C>>(local.template get_or_create<T, false>(builder, buf).first.get_data(), *this), true);
+        return std::make_pair(View<Index<T>, ScopedRepository<C>>(local.template get_or_create<T, false>(builder, buf).first.get_index(), *this), true);
     }
 
     template<typename T>

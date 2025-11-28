@@ -364,7 +364,7 @@ public:
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
     }
 
     uint_t get_index() const noexcept { return m_index; }
@@ -481,7 +481,7 @@ public:
                     static_assert(dependent_false<Alternative>::value, "Missing case");
                 }
             },
-            term.get());
+            term.get_variant());
     }
 
     const Vertex& get_src() const noexcept { return m_src; }
@@ -799,7 +799,7 @@ auto evaluate_partially(View<Index<formalism::FunctionTerm<T>>, C> element, cons
 template<typename StructureType, formalism::IsContext C>
 auto evaluate_partially(View<Data<formalism::FunctionExpression>, C> element, const StructureType& graph_entity, const AssignmentSets& assignment_sets)
 {
-    return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get());
+    return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get_variant());
 }
 
 template<typename StructureType, formalism::IsContext C>
@@ -807,7 +807,7 @@ auto evaluate_partially(View<Data<formalism::ArithmeticOperator<Data<formalism::
                         const StructureType& graph_entity,
                         const AssignmentSets& assignment_sets)
 {
-    return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get());
+    return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get_variant());
 }
 
 template<typename StructureType, formalism::IsContext C>
@@ -815,7 +815,7 @@ auto evaluate_partially(View<Data<formalism::BooleanOperator<Data<formalism::Fun
                         const StructureType& graph_entity,
                         const AssignmentSets& assignment_sets)
 {
-    return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get());
+    return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get_variant());
 }
 
 template<typename StructureType, formalism::IsContext C>
@@ -832,7 +832,7 @@ bool is_satisfiable(View<Data<formalism::BooleanOperator<Data<formalism::Functio
                                                 evaluate_partially(arg.get_lhs(), graph_entity, assignment_sets),
                                                 evaluate_partially(arg.get_rhs(), graph_entity, assignment_sets));
         },
-        element.get());
+        element.get_variant());
 }
 
 }

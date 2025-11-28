@@ -30,21 +30,21 @@ class View<Index<formalism::Variable>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::Variable> m_data;
+    Index<formalism::Variable> m_handle;
 
 public:
     using Tag = formalism::Variable;
 
-    View(Index<formalism::Variable> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::Variable> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return formalism::get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return formalism::get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    const auto& get_name() const { return get().name; }
+    auto get_index() const noexcept { return m_handle; }
+    const auto& get_name() const { return get_data().name; }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

@@ -175,6 +175,7 @@ public:
 
     const_iterator end() const { return const_iterator { get_data().data() + get_data().size(), get_context() }; }
 
+    const Container& get() const { return *m_data; }
     const Context& get_context() const { return *m_context; }
     const Container& get_data() const { return *m_data; }
 

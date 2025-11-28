@@ -30,22 +30,22 @@ class View<Index<formalism::GroundFunctionTermValue<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::GroundFunctionTermValue<T>> m_data;
+    Index<formalism::GroundFunctionTermValue<T>> m_handle;
 
 public:
     using Tag = formalism::GroundFunctionTermValue<T>;
 
-    View(Index<formalism::GroundFunctionTermValue<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::GroundFunctionTermValue<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    auto get_fterm() const { return View<Index<formalism::GroundFunctionTerm<T>>, C>(get().fterm, *m_context); }
-    auto get_value() const { return get().value; }
+    auto get_index() const noexcept { return m_handle; }
+    auto get_fterm() const { return View<Index<formalism::GroundFunctionTerm<T>>, C>(get_data().fterm, *m_context); }
+    auto get_value() const { return get_data().value; }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

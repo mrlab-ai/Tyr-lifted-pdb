@@ -76,6 +76,7 @@ public:
             index_variant());
     }
 
+    const auto& get() const noexcept { return *m_data; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_data() const noexcept { return *m_data; }
 

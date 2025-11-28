@@ -32,22 +32,22 @@ class View<Index<formalism::GroundAtom<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::GroundAtom<T>> m_data;
+    Index<formalism::GroundAtom<T>> m_handle;
 
 public:
     using Tag = formalism::GroundAtom<T>;
 
-    View(Index<formalism::GroundAtom<T>> data, const C& context) : m_context(&context), m_data(data) {}
+    View(Index<formalism::GroundAtom<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get() const { return get_repository(*m_context)[m_data]; }
+    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_index() const { return m_data; }
-    auto get_predicate() const { return View<Index<formalism::Predicate<T>>, C>(get().predicate, *m_context); }
-    auto get_objects() const { return View<IndexList<formalism::Object>, C>(get().objects, *m_context); }
+    auto get_index() const noexcept { return m_handle; }
+    auto get_predicate() const { return View<Index<formalism::Predicate<T>>, C>(get_data().predicate, *m_context); }
+    auto get_objects() const { return View<IndexList<formalism::Object>, C>(get_data().objects, *m_context); }
 
-    auto identifying_members() const noexcept { return std::tie(m_context, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
 }
 

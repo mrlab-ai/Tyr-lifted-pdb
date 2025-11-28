@@ -207,7 +207,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::ArithmeticOpe
 template<typename T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const View<Data<formalism::ArithmeticOperator<T>>, C>& el)
 {
-    fmt::print(os, "{}", to_string(el.get()));
+    fmt::print(os, "{}", to_string(el.get_variant()));
     return os;
 }
 
@@ -221,7 +221,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::BooleanOperat
 template<typename T, formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const View<Data<formalism::BooleanOperator<T>>, C>& el)
 {
-    fmt::print(os, "{}", to_string(el.get()));
+    fmt::print(os, "{}", to_string(el.get_variant()));
     return os;
 }
 
@@ -260,7 +260,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Term>& el)
 template<formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const View<Data<formalism::Term>, C>& el)
 {
-    fmt::print(os, "{}", to_string(el.get()));
+    fmt::print(os, "{}", to_string(el.get_variant()));
     return os;
 }
 
@@ -411,7 +411,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::FunctionExpre
 template<formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const View<Data<formalism::FunctionExpression>, C>& el)
 {
-    fmt::print(os, "{}", to_string(el.get()));
+    fmt::print(os, "{}", to_string(el.get_variant()));
     return os;
 }
 
@@ -424,7 +424,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundFunctio
 template<formalism::IsContext C>
 inline std::ostream& print(std::ostream& os, const View<Data<formalism::GroundFunctionExpression>, C>& el)
 {
-    fmt::print(os, "{}", to_string(el.get()));
+    fmt::print(os, "{}", to_string(el.get_variant()));
     return os;
 }
 
