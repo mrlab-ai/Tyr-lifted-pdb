@@ -53,15 +53,18 @@ The high level C++ datalog interface aims to be as follows
 auto parser = tyr::formalism::Parser("program.dl");
 
 auto program = parser.get_program();
-
-auto goal_condition = parser.parse_goal_condition("goal_condition.dl")
+auto static_facts = parser.parse_static_facts("static_facts.fl")
+auto fluent_facts = parser.parse_fluent_facts("fluent_facts.dl");
+auto goal = parser.parse_goal("goal.dl");
 
 const auto annotated = bool{true};
 const auto weighted = bool{true};
 
-auto solver = tyr::solver::Solver(program);
+// Solver can be reused for different sets of fluent facts
+auto solver = tyr::solver::Solver(program, static_facts);
 
-auto solution = solver.solve(goal_condition, annotated, weighted);
+// Solution is a ground facts and rules annotated with achievers and cost
+auto solution = solver.solve(fluent_facts, goal, annotated, weighted);
 
 ```
   
