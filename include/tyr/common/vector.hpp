@@ -39,7 +39,7 @@ public:
     size_t size() const noexcept { return get_data().size(); }
     bool empty() const noexcept { return get_data().empty(); }
 
-    auto operator[](size_t i) const
+    decltype(auto) operator[](size_t i) const
     {
         if constexpr (IsViewable<T, Context>)
         {
@@ -76,7 +76,7 @@ public:
         const_iterator() : ctx(nullptr), ptr(nullptr) {}
         const_iterator(const T* ptr, const Context& ctx) : ctx(&ctx), ptr(ptr) {}
 
-        auto operator*() const
+        decltype(auto) operator*() const
         {
             if constexpr (IsViewable<T, Context>)
             {

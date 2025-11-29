@@ -20,6 +20,8 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_expression_data.hpp"
+#include "tyr/formalism/function_term_index.hpp"
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
 
 namespace tyr
@@ -31,16 +33,23 @@ struct Data<formalism::planning::NumericEffect<T>>
     using Tag = formalism::planning::NumericEffect<T>;
 
     Index<formalism::planning::NumericEffect<T>> index;
+    Index<formalism::FunctionTerm<T>> fterm;
+    Data<formalism::FunctionExpression> fexpr;
 
     Data() = default;
-    Data(Index<formalism::planning::NumericEffect<T>>) : index(index) {}
+    Data(Index<formalism::planning::NumericEffect<T>> index, Index<formalism::FunctionTerm<T>> fterm, Data<formalism::FunctionExpression> fexpr) :
+        index(index),
+        fterm(fterm),
+        fexpr(fexpr)
+    {
+    }
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() const noexcept { return std::tie(index); }
-    auto identifying_members() const noexcept { return std::tie(); }
+    auto cista_members() const noexcept { return std::tie(index, fterm, fexpr); }
+    auto identifying_members() const noexcept { return std::tie(fterm, fexpr); }
 };
 }
 

@@ -19,9 +19,8 @@
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 
 #include "tyr/common/types.hpp"
-#include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/conditional_effect_index.hpp"
+#include "tyr/formalism/literal_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
 

@@ -30,13 +30,43 @@ template<typename Context, typename T>
 class View<::cista::optional<T>, Context>
 {
 public:
-    using Optional = ::cista::offset::variant<T...>;
+    using Optional = ::cista::optional<T>;
 
     View(const Optional& handle, const Context& context) : m_context(&context), m_handle(&handle) {}
 
     const auto& get_data() const noexcept { return *m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
+
+    bool has_value() const noexcept { return m_handle->has_value(); }
+
+    decltype(auto) value() const
+    {
+        if constexpr (IsViewable<T, Context>)
+        {
+            return View<T, Context>(**m_handle, *m_context);
+        }
+        else
+        {
+            return m_handle->value();
+        }
+    }
+
+    decltype(auto) operator*() const { return value(); }
+
+    auto operator->() const
+    {
+        if constexpr (IsViewable<T, Context>)
+        {
+            static_assert(!IsViewable<T, Context>,
+                          "operator-> is not supported when T is viewable; "
+                          "call .value() first to get a View<T, Context>.");
+        }
+        else
+        {
+            return &m_handle->value();
+        }
+    }
 
 private:
     const Context* m_context;

@@ -265,6 +265,10 @@ struct GroundAxiom
 struct Task
 {
 };
+
+struct Domain
+{
+};
 }
 
 /**

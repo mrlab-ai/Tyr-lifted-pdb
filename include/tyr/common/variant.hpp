@@ -43,7 +43,7 @@ public:
     }
 
     template<typename U>
-    auto get() const
+    decltype(auto) get() const
     {
         if constexpr (IsViewable<U, Context>)
         {

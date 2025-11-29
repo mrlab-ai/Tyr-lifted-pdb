@@ -30,6 +30,9 @@
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_data.hpp"
+#include "tyr/formalism/planning/domain_index.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/ground_action_data.hpp"
 #include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/formalism/planning/ground_action_view.hpp"
@@ -51,4 +54,5 @@
 #include "tyr/formalism/planning/task_data.hpp"
 #include "tyr/formalism/planning/task_index.hpp"
 #include "tyr/formalism/planning/task_view.hpp"
+
 #endif
