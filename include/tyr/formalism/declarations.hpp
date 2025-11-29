@@ -38,9 +38,12 @@ struct FluentTag
 struct DerivedTag
 {
 };
+struct AuxiliaryTag
+{
+};
 
 template<typename T>
-concept IsFactTag = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || std::same_as<T, DerivedTag>;
+concept IsFactTag = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || std::same_as<T, DerivedTag> || std::same_as<T, AuxiliaryTag>;
 
 /**
  * Tags to dispatch operators

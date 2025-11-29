@@ -20,6 +20,7 @@
 
 #include "tyr/common/declarations.hpp"
 
+#include <cista/containers/optional.h>
 #include <cista/containers/variant.h>
 #include <cista/containers/vector.h>
 

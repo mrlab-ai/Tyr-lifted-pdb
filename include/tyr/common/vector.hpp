@@ -34,7 +34,7 @@ class View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Alloca
 public:
     using Container = ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>;
 
-    View(const Container& data, const Context& context) : m_context(&context), m_data(&data) {}
+    View(const Container& handle, const Context& context) : m_context(&context), m_handle(&handle) {}
 
     size_t size() const noexcept { return get_data().size(); }
     bool empty() const noexcept { return get_data().empty(); }
@@ -175,13 +175,13 @@ public:
 
     const_iterator end() const { return const_iterator { get_data().data() + get_data().size(), get_context() }; }
 
-    const Container& get() const { return *m_data; }
-    const Context& get_context() const { return *m_context; }
-    const Container& get_data() const { return *m_data; }
+    const auto& get_data() const { return *m_handle; }
+    const auto& get_context() const { return *m_context; }
+    const auto& get_handle() const { return m_handle; }
 
 private:
     const Context* m_context;
-    const Container* m_data;
+    const Container* m_handle;
 };
 
 }

@@ -88,6 +88,23 @@ struct EqualTo<::cista::offset::variant<Ts...>>
     }
 };
 
+template<typename T>
+struct EqualTo<::cista::optional<T>>
+{
+    using Type = ::cista::optional<T>;
+
+    size_t operator()(const Type& lhs, const Type& rhs) const
+    {
+        if (!lhs.has_value() && !rhs.has_value())
+            return true;
+
+        if (lhs.has_value() != rhs.has_value())
+            return false;
+
+        return EqualTo<T> {}(*lhs, *rhs);
+    }
+};
+
 template<typename T, size_t N>
 struct EqualTo<std::array<T, N>>
 {

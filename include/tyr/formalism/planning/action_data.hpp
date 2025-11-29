@@ -21,7 +21,6 @@
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
 

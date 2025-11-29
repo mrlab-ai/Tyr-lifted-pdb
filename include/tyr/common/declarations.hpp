@@ -21,6 +21,7 @@
 #include "tyr/common/config.hpp"
 
 #include <boost/hana.hpp>
+#include <cista/containers/optional.h>
 #include <cista/containers/string.h>
 #include <cista/containers/variant.h>
 #include <cista/containers/vector.h>

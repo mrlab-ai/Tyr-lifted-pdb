@@ -22,7 +22,6 @@
 #include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/planning/axiom_index.hpp"
 
 namespace tyr

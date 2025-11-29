@@ -32,10 +32,9 @@ class View<::cista::offset::variant<T...>, Context>
 public:
     using Variant = ::cista::offset::variant<T...>;
 
-    View(const Variant& data, const Context& context) : m_context(&context), m_data(&data) {}
+    View(const Variant& handle, const Context& context) : m_context(&context), m_handle(&handle) {}
 
-    const Variant& index_variant() const noexcept { return *m_data; }
-    const Context& context() const noexcept { return *m_context; }
+    const Variant& index_variant() const noexcept { return *m_handle; }
 
     template<typename U>
     bool is() const noexcept
@@ -48,7 +47,7 @@ public:
     {
         if constexpr (IsViewable<U, Context>)
         {
-            return View<U, Context>(std::get<U>(index_variant()), context());
+            return View<U, Context>(std::get<U>(index_variant()), get_context());
         }
         else
         {
@@ -66,7 +65,7 @@ public:
 
                 if constexpr (IsViewable<U, Context>)
                 {
-                    return std::forward<F>(f)(View<U, Context>(arg, context()));
+                    return std::forward<F>(f)(View<U, Context>(arg, get_context()));
                 }
                 else
                 {
@@ -76,13 +75,13 @@ public:
             index_variant());
     }
 
-    const auto& get() const noexcept { return *m_data; }
+    const auto& get_data() const noexcept { return *m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
-    const auto& get_data() const noexcept { return *m_data; }
+    const auto& get_handle() const noexcept { return m_handle; }
 
 private:
     const Context* m_context;
-    const Variant* m_data;
+    const Variant* m_handle;
 };
 
 template<typename Visitor, typename Context, typename... T>

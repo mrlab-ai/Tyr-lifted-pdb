@@ -85,6 +85,9 @@ template<typename C, typename... Ts>
     requires(sizeof...(Ts) > 0)
 inline std::ostream& operator<<(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el);
 
+template<typename C, typename T>
+inline std::ostream& operator<<(std::ostream& os, const View<::cista::optional<T>, C>& el);
+
 template<typename Derived>
 std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& mixin);
 
@@ -283,6 +286,16 @@ template<typename... Ts>
 std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& variant)
 {
     std::visit([&](auto&& arg) { os << to_string(arg); }, variant);
+    return os;
+}
+
+template<typename C, typename T>
+inline std::ostream& operator<<(std::ostream& os, const View<::cista::optional<T>, C>& el)
+{
+    if (el)
+        os << to_string(*el);
+    else
+        os << "nullopt";
     return os;
 }
 

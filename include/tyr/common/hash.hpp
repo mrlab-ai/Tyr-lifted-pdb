@@ -56,7 +56,7 @@ inline size_t hash_combine(const Ts&... rest);
 template<typename T>
 struct Hash
 {
-    size_t operator()(const T& element) const { return std::hash<T> {}(element); }
+    size_t operator()(const T& el) const { return std::hash<T> {}(el); }
 };
 
 template<>
@@ -64,13 +64,13 @@ struct Hash<::cista::offset::string>
 {
     using Type = ::cista::offset::string;
 
-    size_t operator()(const Type& element) const
+    size_t operator()(const Type& el) const
     {
-        size_t aggregated_hash = element.size();
+        size_t aggregated_hash = el.size();
 
-        for (const auto& element : element)
+        for (const auto& item : el)
         {
-            hash_combine(aggregated_hash, element);
+            hash_combine(aggregated_hash, item);
         }
 
         return aggregated_hash;
@@ -82,13 +82,13 @@ struct Hash<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Alloc
 {
     using Type = ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>;
 
-    size_t operator()(const Type& element) const
+    size_t operator()(const Type& el) const
     {
-        size_t aggregated_hash = element.size();
+        size_t aggregated_hash = el.size();
 
-        for (const auto& element : element)
+        for (const auto& item : el)
         {
-            hash_combine(aggregated_hash, element);
+            hash_combine(aggregated_hash, item);
         }
 
         return aggregated_hash;
@@ -100,9 +100,23 @@ struct Hash<::cista::offset::variant<Ts...>>
 {
     using Type = ::cista::offset::variant<Ts...>;
 
-    size_t operator()(const Type& variant) const
+    size_t operator()(const Type& el) const
     {
-        return variant.apply([](auto&& arg) -> size_t { return Hash<std::remove_cvref_t<decltype(arg)>> {}(arg); });
+        return el.apply([](auto&& arg) -> size_t { return Hash<std::remove_cvref_t<decltype(arg)>> {}(arg); });
+    }
+};
+
+template<typename T>
+struct Hash<::cista::optional<T>>
+{
+    using Type = ::cista::optional<T>;
+
+    size_t operator()(const Type& el) const
+    {
+        if (!el.has_value())
+            return 0x9e3779b97f4a7c15ULL;
+
+        return Hash<T> {}(*el);
     }
 };
 
