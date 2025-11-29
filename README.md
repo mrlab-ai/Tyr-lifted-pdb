@@ -45,22 +45,43 @@ TODO
 
 ## 3. Datalog Interface
 
-  
-
-## 4 PDDL Interface
+The high level C++ datalog interface aims to be as follows
 
 ```cpp
 #include <tyr/tyr.hpp>
 
-auto parser = tyr::formalism::planning::Parser("domain.pddl")
-auto task = parse.parse_task("problem.pddl")
+auto parser = tyr::formalism::Parser("program.dl");
+
+auto program = parser.get_program();
+
+auto goal_condition = parser.parse_goal_condition("goal_condition.dl")
+
+const auto annotated = bool{true};
+const auto weighted = bool{true};
+
+auto solver = tyr::solver::Solver(program);
+
+auto solution = solver.solve(goal_condition, annotated, weighted);
+
+```
+  
+
+## 4 PDDL Interface
+
+The high level C++ planning interface aims to be as follows.
+
+```cpp
+#include <tyr/tyr.hpp>
+
+auto parser = tyr::formalism::planning::Parser("domain.pddl");
+auto task = parse.parse_task("problem.pddl");
 
 // Get the initial node (state + metric value)
-auto initial_node = task.get_initial_node()
+auto initial_node = task.get_initial_node();
 
 // Get the applicable actions
-auto applicable_actions = initial_node.get_applicable_actions()
+auto applicable_actions = initial_node.get_applicable_actions();
 
 // Get the successor nodes (states + metric values)
-auto successor_nodes = initial_node.get_successor_nodes()
+auto successor_nodes = initial_node.get_successor_nodes();
 ```
