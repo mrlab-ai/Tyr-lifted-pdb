@@ -62,6 +62,11 @@ concept IsViewable = requires(T type, const C& context) {
     { View<T, C>(type, context).get_handle() } -> std::same_as<const T&>;
 };
 
+template<typename T>
+concept IsIndex = requires(T a) {
+    { a.get_value() } -> std::same_as<uint_t>;
+};
+
 }
 
 #endif

@@ -15,25 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_TYR_HPP_
-#define TYR_TYR_HPP_
+#ifndef TYR_PLANNING_PLANNING_HPP_
+#define TYR_PLANNING_PLANNING_HPP_
 
-// Analysis
-#include "tyr/analysis/analysis.hpp"
-
-// Cista
-#include "tyr/buffer/buffer.hpp"
-
-// Common
-#include "tyr/common/common.hpp"
-
-// Formalism
-#include "tyr/formalism/formalism.hpp"
-
-// Grounder
-#include "tyr/grounder/grounder.hpp"
-
-// Planning
-#include "tyr/planning/planning.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/node.hpp"
+#include "tyr/planning/packed_state.hpp"
+#include "tyr/planning/state.hpp"
+#include "tyr/planning/state_index.hpp"
+#include "tyr/planning/task.hpp"
+#include "tyr/planning/unpacked_state.hpp"
 
 #endif

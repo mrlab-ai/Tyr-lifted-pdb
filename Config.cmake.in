@@ -23,6 +23,26 @@ include("configure_boost")
 # Dependency Handling
 ##############################################################
 
+# -----------
+# abseil
+# -----------
+
+find_dependency(absl CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(absl_FOUND)
+  message(STATUS "Found absl: ${absl_DIR} (found version ${absl_VERSION})")
+endif()
+
+
+# -----------
+# argparse
+# -----------
+
+find_dependency(argparse CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(argparse_FOUND)
+  message(STATUS "Found argparse: ${argparse_DIR} (found version ${argparse_VERSION})")
+endif()
+
+
 # -----
 # Boost
 # -----
@@ -33,6 +53,17 @@ find_dependency(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS iostreams PATHS $
 if(Boost_FOUND)
   message(STATUS "Found Boost: ${Boost_DIR} (found version ${Boost_VERSION})")
 endif()
+
+
+# -----------
+# cista
+# -----------
+
+find_dependency(cista CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(cista_FOUND)
+  message(STATUS "Found cista: ${cista_DIR} (found version ${cista_VERSION})")
+endif()
+
 
 
 # -----
@@ -59,26 +90,6 @@ endif()
 
 
 # -----------
-# argparse
-# -----------
-
-find_dependency(argparse CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
-if(argparse_FOUND)
-  message(STATUS "Found argparse: ${argparse_DIR} (found version ${argparse_VERSION})")
-endif()
-
-
-# -----------
-# cista
-# -----------
-
-find_dependency(cista CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
-if(cista_FOUND)
-  message(STATUS "Found cista: ${cista_DIR} (found version ${cista_VERSION})")
-endif()
-
-
-# -----------
 # TBB
 # -----------
 
@@ -86,6 +97,16 @@ find_dependency(TBB CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(TBB_FOUND)
   include_directories(${TBB_INCLUDE_DIRS})
   message(STATUS "Found TBB: ${TBB_DIR} (found version ${TBB_VERSION})")
+endif()
+
+
+# -----------
+# valla
+# -----------
+
+find_dependency(valla CONFIG COMPONENTS core REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(valla_FOUND)
+  message(STATUS "Found valla: ${valla_DIR} (found version ${valla_VERSION})")
 endif()
 
 

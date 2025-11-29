@@ -15,25 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_TYR_HPP_
-#define TYR_TYR_HPP_
+#include "tyr/planning/state.hpp"
 
-// Analysis
-#include "tyr/analysis/analysis.hpp"
+namespace tyr::planning
+{
 
-// Cista
-#include "tyr/buffer/buffer.hpp"
+State::State(Task& task, SharedObjectPoolPtr<UnpackedState> unpacked) noexcept : m_unpacked(unpacked), m_task(&task) {}
 
-// Common
-#include "tyr/common/common.hpp"
+StateIndex State::get_index() const noexcept { return m_unpacked->get_index(); }
 
-// Formalism
-#include "tyr/formalism/formalism.hpp"
+template<formalism::IsFactTag T>
+const boost::dynamic_bitset<>& State::get_atoms() const noexcept
+{
+    return m_unpacked->get_atoms<T>();
+}
 
-// Grounder
-#include "tyr/grounder/grounder.hpp"
+const std::vector<float_t>& State::get_numeric_variables() const noexcept { return m_unpacked->get_numeric_variables(); }
 
-// Planning
-#include "tyr/planning/planning.hpp"
+Task& State::get_task() noexcept { return *m_task; }
 
-#endif
+}

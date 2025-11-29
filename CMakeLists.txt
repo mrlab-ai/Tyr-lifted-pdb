@@ -93,27 +93,10 @@ configure_ccache()
 
 # set(CMAKE_FIND_DEBUG_MODE TRUE)
 
-# Boost
-# Find Boost headers only according to https://cmake.org/cmake/help/latest/module/FindBoost.html
-configure_boost()
-find_package(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS iostreams PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
-if(Boost_FOUND)
-  message(STATUS "Found Boost: ${Boost_DIR} (found version ${Boost_VERSION})")
-endif()
 
-# Prefer -pthread over -lpthread on platforms that support it
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-
-# CMake's built-in module; no PATHS/NO_DEFAULT_PATH here
-find_package(Threads REQUIRED)
-if(Threads_FOUND)
-  message(STATUS "Found Threads: ${CMAKE_THREAD_LIBS_INIT}")
-endif()
-
-
-find_package(fmt REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
-if(fmt_FOUND)
-  message(STATUS "Found fmt: ${fmt_DIR} (found version ${fmt_VERSION})")
+find_package(absl CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(absl_FOUND)
+  message(STATUS "Found absl: ${absl_DIR} (found version ${absl_VERSION})")
 endif()
 
 
@@ -123,9 +106,33 @@ if(argparse_FOUND)
 endif()
 
 
+# Boost
+# Find Boost headers only according to https://cmake.org/cmake/help/latest/module/FindBoost.html
+configure_boost()
+find_package(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS iostreams PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(Boost_FOUND)
+  message(STATUS "Found Boost: ${Boost_DIR} (found version ${Boost_VERSION})")
+endif()
+
+
 find_package(cista CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(cista_FOUND)
   message(STATUS "Found cista: ${cista_DIR} (found version ${cista_VERSION})")
+endif()
+
+
+find_package(fmt REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(fmt_FOUND)
+  message(STATUS "Found fmt: ${fmt_DIR} (found version ${fmt_VERSION})")
+endif()
+
+
+# Prefer -pthread over -lpthread on platforms that support it
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+# CMake's built-in module; no PATHS/NO_DEFAULT_PATH here
+find_package(Threads REQUIRED)
+if(Threads_FOUND)
+  message(STATUS "Found Threads: ${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
 
@@ -134,6 +141,13 @@ if(TBB_FOUND)
   include_directories(${TBB_INCLUDE_DIRS})
   message(STATUS "Found TBB: ${TBB_DIR} (found version ${TBB_VERSION})")
 endif()
+
+
+find_package(valla CONFIG COMPONENTS core REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(valla_FOUND)
+  message(STATUS "Found valla: ${valla_DIR} (found version ${valla_VERSION})")
+endif()
+
 
 
 ##############################################################

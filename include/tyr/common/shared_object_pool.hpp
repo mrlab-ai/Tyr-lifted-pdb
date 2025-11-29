@@ -37,45 +37,58 @@ template<typename T>
 class SharedObjectPool;
 
 template<typename T>
+struct SharedObjectPoolEntry
+{
+    std::atomic_size_t refcount;
+    T object;
+
+    SharedObjectPoolEntry() : refcount(0), object() {}
+
+    template<typename... Args>
+    explicit SharedObjectPoolEntry(Args&&... args) : refcount(0), object(std::forward<Args>(args)...)
+    {
+    }
+};
+
+template<typename T>
 class SharedObjectPoolPtr
 {
 private:
-    using RefCount = std::atomic_size_t;
-    using Entry = std::pair<RefCount, T>;
+    using Entry = SharedObjectPoolEntry<T>;
 
     SharedObjectPool<T>* m_pool;
-    Entry* m_object;
+    Entry* m_entry;
 
 private:
     void deallocate()
     {
-        assert(m_pool && m_object);
+        assert(m_pool && m_entry);
 
-        m_pool->free(m_object);
+        m_pool->free(m_entry);
         m_pool = nullptr;
-        m_object = nullptr;
+        m_entry = nullptr;
     }
 
     Entry* release() noexcept
     {
-        Entry* temp = m_object;
-        m_object = nullptr;
+        Entry* temp = m_entry;
+        m_entry = nullptr;
         m_pool = nullptr;
         return temp;
     }
 
     void inc_ref_count() noexcept
     {
-        assert(m_object);
+        assert(m_entry);
 
-        m_object->first.fetch_add(1, std::memory_order_relaxed);
+        m_entry->refcount.fetch_add(1, std::memory_order_relaxed);
     }
 
     void dec_ref_count()
     {
-        assert(m_object);
+        assert(m_entry);
 
-        auto old = m_object->first.fetch_sub(1, std::memory_order_acq_rel);
+        auto old = m_entry->refcount.fetch_sub(1, std::memory_order_acq_rel);
 
         assert(old > 0);
         if (old == 1)
@@ -87,18 +100,18 @@ private:
 public:
     SharedObjectPoolPtr() noexcept : SharedObjectPoolPtr(nullptr, nullptr) {}
 
-    SharedObjectPoolPtr(SharedObjectPool<T>* pool, Entry* object) noexcept : m_pool(pool), m_object(object)
+    SharedObjectPoolPtr(SharedObjectPool<T>* pool, Entry* object) noexcept : m_pool(pool), m_entry(object)
     {
-        if (m_pool && m_object)
+        if (m_pool && m_entry)
             inc_ref_count();
     }
 
     SharedObjectPoolPtr(const SharedObjectPoolPtr& other) noexcept : SharedObjectPoolPtr()
     {
         m_pool = other.m_pool;
-        m_object = other.m_object;
+        m_entry = other.m_entry;
 
-        if (m_pool && m_object)
+        if (m_pool && m_entry)
             inc_ref_count();
     }
 
@@ -106,50 +119,50 @@ public:
     {
         if (this != &other)
         {
-            if (m_pool && m_object)
+            if (m_pool && m_entry)
                 dec_ref_count();
 
             m_pool = other.m_pool;
-            m_object = other.m_object;
+            m_entry = other.m_entry;
 
-            if (m_pool && m_object)
+            if (m_pool && m_entry)
                 inc_ref_count();
         }
         return *this;
     }
 
     // Movable
-    SharedObjectPoolPtr(SharedObjectPoolPtr&& other) noexcept : m_pool(other.m_pool), m_object(other.m_object)
+    SharedObjectPoolPtr(SharedObjectPoolPtr&& other) noexcept : m_pool(other.m_pool), m_entry(other.m_entry)
     {
         other.m_pool = nullptr;
-        other.m_object = nullptr;
+        other.m_entry = nullptr;
     }
 
     SharedObjectPoolPtr& operator=(SharedObjectPoolPtr&& other) noexcept
     {
         if (this != &other)
         {
-            if (m_pool && m_object)
+            if (m_pool && m_entry)
                 dec_ref_count();
 
             m_pool = other.m_pool;
-            m_object = other.m_object;
+            m_entry = other.m_entry;
 
             other.m_pool = nullptr;
-            other.m_object = nullptr;
+            other.m_entry = nullptr;
         }
         return *this;
     }
 
     ~SharedObjectPoolPtr()
     {
-        if (m_pool && m_object)
+        if (m_pool && m_entry)
             dec_ref_count();
     }
 
     SharedObjectPoolPtr clone() const
     {
-        if (m_pool && m_object)
+        if (m_pool && m_entry)
         {
             SharedObjectPoolPtr pointer = m_pool->get_or_allocate();
             *pointer = this->operator*();  // copy-assign T
@@ -163,31 +176,30 @@ public:
 
     T& operator*() const noexcept
     {
-        assert(m_object);
-        return m_object->second;
+        assert(m_entry);
+        return m_entry->object;
     }
 
     T* operator->() const noexcept
     {
-        assert(m_object);
-        return &m_object->second;
+        assert(m_entry);
+        return &m_entry->object;
     }
 
     size_t ref_count() const noexcept
     {
-        assert(m_object);
-        return m_object->first.load(std::memory_order_acquire);
+        assert(m_entry);
+        return m_entry->refcount.load(std::memory_order_acquire);
     }
 
-    explicit operator bool() const noexcept { return m_object != nullptr; }
+    explicit operator bool() const noexcept { return m_entry != nullptr; }
 };
 
 template<typename T>
 class SharedObjectPool
 {
 private:
-    using RefCount = std::atomic_size_t;
-    using Entry = std::pair<RefCount, T>;
+    using Entry = SharedObjectPoolEntry<T>;
 
     std::vector<std::unique_ptr<Entry>> m_storage;
     std::stack<Entry*> m_stack;
@@ -196,7 +208,7 @@ private:
     template<typename... Args>
     void allocate(Args&&... args)
     {
-        m_storage.push_back(std::make_unique<Entry>(RefCount { 0 }, T(std::forward<Args>(args)...)));
+        m_storage.push_back(std::make_unique<Entry>(T(std::forward<Args>(args)...)));
         m_stack.push(m_storage.back().get());
     }
 

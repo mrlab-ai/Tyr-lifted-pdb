@@ -24,6 +24,7 @@ endif ()
 # Add subprojects
 ##############################################################
 
+add_subdirectory(abseil)
 add_subdirectory(argparse)
 add_subdirectory(benchmark)
 add_subdirectory(boost)
@@ -33,3 +34,4 @@ add_subdirectory(gtl)
 add_subdirectory(googletest)
 add_subdirectory(nanobind)
 add_subdirectory(oneTBB)
+add_subdirectory(valla)

@@ -1,5 +1,5 @@
 # List of subdirectory names
-set(SUBDIRECTORIES "analysis" "cista" "common" "formalism" "formalism" "grounder")
+set(SUBDIRECTORIES "analysis" "cista" "common" "formalism" "formalism" "grounder" "planning" "solver")
 
 # Initialize empty lists for source and header files
 set(TYR_SRC_FILES "")
@@ -30,7 +30,8 @@ add_library(tyr::core ALIAS core)
 target_link_libraries(core
   PUBLIC
     Threads::Threads
-    TBB::tbb    
+    TBB::tbb
+    valla::core    
   PRIVATE
     fmt::fmt
 )

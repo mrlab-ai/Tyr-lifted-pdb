@@ -15,25 +15,28 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_TYR_HPP_
-#define TYR_TYR_HPP_
+#include "tyr/planning/node.hpp"
 
-// Analysis
-#include "tyr/analysis/analysis.hpp"
+#include "tyr/common/config.hpp"
+#include "tyr/planning/task.hpp"
 
-// Cista
-#include "tyr/buffer/buffer.hpp"
+namespace tyr::planning
+{
 
-// Common
-#include "tyr/common/common.hpp"
+Node::Node(StateIndex state_index, float_t state_metric, planning::Task& task) noexcept :
+    m_task(&task),
+    m_state_metric(state_metric),
+    m_state_index(state_index)
+{
+}
 
-// Formalism
-#include "tyr/formalism/formalism.hpp"
+// Get the unpacked state
+State Node::get_state() const { return m_task->get_state(m_state_index); }
 
-// Grounder
-#include "tyr/grounder/grounder.hpp"
+Task& Node::get_task() noexcept { return *m_task; }
 
-// Planning
-#include "tyr/planning/planning.hpp"
+float_t Node::get_state_metric() const noexcept { return m_state_metric; }
 
-#endif
+StateIndex Node::get_state_index() const noexcept { return m_state_index; }
+
+}

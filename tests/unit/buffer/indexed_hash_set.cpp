@@ -19,7 +19,6 @@
 
 #include <gtest/gtest.h>
 
-using namespace tyr::buffer;
 using namespace tyr::formalism;
 
 namespace tyr::tests
@@ -27,8 +26,8 @@ namespace tyr::tests
 
 TEST(TyrTests, TyrBufferIndexedHashSet)
 {
-    auto repository = IndexedHashSet<Predicate<FluentTag>>();
-    auto buffer = Buffer();
+    auto repository = buffer::IndexedHashSet<Predicate<FluentTag>>();
+    auto buffer = buffer::Buffer();
     auto builder = Data<Predicate<FluentTag>>();
 
     // Create a unique predicate
