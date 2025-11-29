@@ -15,17 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_PLANNING_HPP_
-#define TYR_PLANNING_PLANNING_HPP_
-
-#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"
-#include "tyr/planning/ground_task.hpp"
-#include "tyr/planning/lifted_task.hpp"
-#include "tyr/planning/node.hpp"
-#include "tyr/planning/packed_state.hpp"
-#include "tyr/planning/state.hpp"
-#include "tyr/planning/state_index.hpp"
-#include "tyr/planning/unpacked_state.hpp"
 
-#endif
+namespace tyr::planning
+{
+
+Domain::Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::planning::Domain>, formalism::Repository> domain) :
+    m_repository(std::move(repository)),
+    m_domain(domain)
+{
+}
+
+}

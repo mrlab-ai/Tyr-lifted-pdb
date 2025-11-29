@@ -27,19 +27,19 @@ template<IsContext C>
 class ScopedRepository
 {
 private:
-    const C& global;
-    C& local;
+    const C& parent_scope;
+    C& local_scope;
 
 public:
-    ScopedRepository(const C& global, C& local) : global(global), local(local) {}
+    ScopedRepository(const C& parent_scope, C& local_scope) : parent_scope(parent_scope), local_scope(local_scope) {}
 
     template<typename T>
     std::optional<View<Index<T>, ScopedRepository<C>>> find(const Data<T>& builder) const
     {
-        if (auto ptr = global.find(builder))
+        if (auto ptr = parent_scope.find(builder))
             return View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this);
 
-        if (auto ptr = local.find(builder))
+        if (auto ptr = local_scope.find(builder))
             return View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this);
 
         return std::nullopt;
@@ -48,26 +48,32 @@ public:
     template<typename T, bool AssignIndex = true>
     std::pair<View<Index<T>, ScopedRepository<C>>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
-        if (auto ptr = global.find(builder))
+        if (auto ptr = parent_scope.find(builder))
             return std::make_pair(View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this), false);
 
         // Manually assign index to continue indexing.
-        builder.index.value = global.template size<T>() + local.template size<T>();
+        builder.index.value = parent_scope.template size<T>() + local_scope.template size<T>();
 
-        return std::make_pair(View<Index<T>, ScopedRepository<C>>(local.template get_or_create<T, false>(builder, buf).first.get_index(), *this), true);
+        return std::make_pair(View<Index<T>, ScopedRepository<C>>(local_scope.template get_or_create<T, false>(builder, buf).first.get_index(), *this), true);
     }
 
     template<typename T>
     const Data<T>& operator[](Index<T> index) const
     {
-        const auto global_size = global.template size<T>();
+        const auto parent_scope_size = parent_scope.template size<T>();
 
-        if (index.value < global_size)
-            return global[index];
+        if (index.value < parent_scope_size)
+            return parent_scope[index];
 
-        // Subtract global size to get position in local storage
-        index.value -= global_size;
-        return local[index];
+        // Subtract parent_scope size to get position in local_scope storage
+        index.value -= parent_scope_size;
+        return local_scope[index];
+    }
+
+    template<typename T>
+    size_t size() const
+    {
+        return parent_scope.template size<T>() + local_scope.template size<T>();
     }
 };
 
@@ -78,8 +84,13 @@ inline const ScopedRepository<C>& get_repository(const ScopedRepository<C>& cont
     return context;
 }
 
+// Domain + Task
 static_assert(IsRepository<ScopedRepository<Repository>>);
 static_assert(IsContext<ScopedRepository<Repository>>);
+
+// Domain + Task + Worker threads
+static_assert(IsRepository<ScopedRepository<ScopedRepository<Repository>>>);
+static_assert(IsContext<ScopedRepository<ScopedRepository<Repository>>>);
 
 }
 

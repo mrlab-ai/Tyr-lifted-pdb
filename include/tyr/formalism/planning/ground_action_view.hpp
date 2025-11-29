@@ -29,7 +29,7 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<formalism::planning::GroundAction, C>
+class View<Index<formalism::planning::GroundAction>, C>
 {
 private:
     const C* m_context;

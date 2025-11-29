@@ -34,7 +34,7 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<formalism::planning::Task, C>
+class View<Index<formalism::planning::Task>, C>
 {
 private:
     const C* m_context;

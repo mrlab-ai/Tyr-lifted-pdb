@@ -119,11 +119,11 @@ bool is_canonical(const Data<ArithmeticOperator<T>>& data)
     return true;
 }
 
-bool is_canonical(const Data<Variable>& data) { return true; }
+inline bool is_canonical(const Data<Variable>& data) { return true; }
 
-bool is_canonical(const Data<Object>& data) { return true; }
+inline bool is_canonical(const Data<Object>& data) { return true; }
 
-bool is_canonical(const Data<Term>& data) { return true; }
+inline bool is_canonical(const Data<Term>& data) { return true; }
 
 template<IsFactTag T>
 bool is_canonical(const Data<Predicate<T>>& data)
@@ -167,7 +167,7 @@ bool is_canonical(const Data<FunctionTerm<T>>& data)
     return true;
 }
 
-bool is_canonical(const Data<FunctionExpression>& data) { return true; }
+inline bool is_canonical(const Data<FunctionExpression>& data) { return true; }
 
 template<IsFactTag T>
 bool is_canonical(const Data<GroundFunctionTerm<T>>& data)
@@ -175,7 +175,7 @@ bool is_canonical(const Data<GroundFunctionTerm<T>>& data)
     return true;
 }
 
-bool is_canonical(const Data<GroundFunctionExpression>& data) { return true; }
+inline bool is_canonical(const Data<GroundFunctionExpression>& data) { return true; }
 
 template<IsFactTag T>
 bool is_canonical(const Data<GroundFunctionTermValue<T>>& data)
@@ -183,21 +183,21 @@ bool is_canonical(const Data<GroundFunctionTermValue<T>>& data)
     return true;
 }
 
-bool is_canonical(const Data<ConjunctiveCondition>& data)
+inline bool is_canonical(const Data<ConjunctiveCondition>& data)
 {
     return is_canonical(data.static_literals) && is_canonical(data.fluent_literals) && is_canonical(data.numeric_constraints);
 }
 
-bool is_canonical(const Data<GroundConjunctiveCondition>& data)
+inline bool is_canonical(const Data<GroundConjunctiveCondition>& data)
 {
     return is_canonical(data.static_literals) && is_canonical(data.fluent_literals) && is_canonical(data.numeric_constraints);
 }
 
-bool is_canonical(const Data<Rule>& data) { return true; }
+inline bool is_canonical(const Data<Rule>& data) { return true; }
 
-bool is_canonical(const Data<GroundRule>& data) { return true; }
+inline bool is_canonical(const Data<GroundRule>& data) { return true; }
 
-bool is_canonical(const Data<Program>& data)
+inline bool is_canonical(const Data<Program>& data)
 {
     return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.static_functions)
            && is_canonical(data.fluent_functions) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
@@ -278,16 +278,16 @@ void canonicalize(Data<ArithmeticOperator<T>>& data)
     // Trivially canonical
 }
 
-void canonicalize(Data<Variable>& data)
+inline void canonicalize(Data<Variable>& data)
 {  // Trivially canonical
 }
 
-void canonicalize(Data<Object>& data)
+inline void canonicalize(Data<Object>& data)
 {
     // Trivially canonical
 }
 
-void canonicalize(Data<Term>& data)
+inline void canonicalize(Data<Term>& data)
 {
     // Trivially canonical
 }
@@ -334,7 +334,7 @@ void canonicalize(Data<FunctionTerm<T>>& data)
     // Trivially canonical
 }
 
-void canonicalize(Data<FunctionExpression>& data)
+inline void canonicalize(Data<FunctionExpression>& data)
 {
     // Trivially canonical
 }
@@ -345,7 +345,7 @@ void canonicalize(Data<GroundFunctionTerm<T>>& data)
     // Trivially canonical
 }
 
-void canonicalize(Data<GroundFunctionExpression>& data)
+inline void canonicalize(Data<GroundFunctionExpression>& data)
 {
     // Trivially canonical
 }
@@ -356,31 +356,31 @@ void canonicalize(Data<GroundFunctionTermValue<T>>& data)
     // Trivially canonical
 }
 
-void canonicalize(Data<ConjunctiveCondition>& data)
+inline void canonicalize(Data<ConjunctiveCondition>& data)
 {
     canonicalize(data.static_literals);
     canonicalize(data.fluent_literals);
     canonicalize(data.numeric_constraints);
 }
 
-void canonicalize(Data<GroundConjunctiveCondition>& data)
+inline void canonicalize(Data<GroundConjunctiveCondition>& data)
 {
     canonicalize(data.static_literals);
     canonicalize(data.fluent_literals);
     canonicalize(data.numeric_constraints);
 }
 
-void canonicalize(Data<Rule>& data)
+inline void canonicalize(Data<Rule>& data)
 {
     // Trivially canonical
 }
 
-void canonicalize(Data<GroundRule>& data)
+inline void canonicalize(Data<GroundRule>& data)
 {
     // Trivially canonical
 }
 
-void canonicalize(Data<Program>& data)
+inline void canonicalize(Data<Program>& data)
 {
     canonicalize(data.static_predicates);
     canonicalize(data.fluent_predicates);

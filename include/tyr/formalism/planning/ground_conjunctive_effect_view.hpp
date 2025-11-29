@@ -31,7 +31,7 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<formalism::planning::GroundConjunctiveEffect, C>
+class View<Index<formalism::planning::GroundConjunctiveEffect>, C>
 {
 private:
     const C* m_context;

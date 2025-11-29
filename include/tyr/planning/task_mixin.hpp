@@ -18,15 +18,17 @@
 #ifndef TYR_PLANNING_TASK_MIXIN_HPP_
 #define TYR_PLANNING_TASK_MIXIN_HPP_
 
-#include "tyr/common/indexed_hash_set.hpp"
-#include "tyr/common/shared_object_pool.hpp"
+#include "tyr/common/common.hpp"
 #include "tyr/formalism/formalism.hpp"
+#include "tyr/planning/domain.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/packed_state.hpp"
 #include "tyr/planning/state.hpp"
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/unpacked_state.hpp"
 
+#include <algorithm>
+#include <boost/dynamic_bitset.hpp>
 #include <gtl/phmap.hpp>
 #include <memory>
 #include <valla/valla.hpp>
@@ -103,9 +105,14 @@ private:
     constexpr auto& self() { return static_cast<Task&>(*this); }
 
 public:
-    TaskMixin(std::shared_ptr<formalism::Repository> repository, Index<formalism::planning::Task> task_index) :
+    TaskMixin(std::shared_ptr<Domain> domain,
+              std::shared_ptr<formalism::Repository> repository,
+              std::shared_ptr<formalism::ScopedRepository<formalism::Repository>> scoped_repository,
+              View<Index<formalism::planning::Task>, formalism::ScopedRepository<formalism::Repository>> task) :
+        m_domain(std::move(domain)),
         m_repository(std::move(repository)),
-        m_task_index(task_index)
+        m_scoped_repository(std::move(scoped_repository)),
+        m_task(task)
     {
     }
 
@@ -137,25 +144,28 @@ public:
         return m_packed_states.insert(PackedState(StateIndex(m_packed_states.size()), fluent_atoms, derived_atoms, numeric_variables));
     }
 
-    View<Index<formalism::planning::Task>, formalism::Repository> get_task() const;
+    View<Index<formalism::planning::Task>, formalism::ScopedRepository<formalism::Repository>> get_task() const;
 
     Node<Task> get_initial_node() { return m_initial_node; }
 
-    std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::Repository>, Node<Task>>>
+    std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<Task>>>
     get_labeled_successor_nodes(const Node<Task>& node)
     {
         return self().get_labeled_successor_nodes_impl(node);
     }
 
-    void get_labeled_successor_nodes(const Node<Task>& node,
-                                     std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::Repository>, Node<Task>>>& out_nodes)
+    void get_labeled_successor_nodes(
+        const Node<Task>& node,
+        std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<Task>>>& out_nodes)
     {
         self().get_labeled_successor_nodes_impl(node, out_nodes);
     }
 
 protected:
+    std::shared_ptr<Domain> m_domain;
     std::shared_ptr<formalism::Repository> m_repository;
-    Index<formalism::planning::Task> m_task_index;
+    std::shared_ptr<formalism::ScopedRepository<formalism::Repository>> m_scoped_repository;
+    View<Index<formalism::planning::Task>, formalism::ScopedRepository<formalism::Repository>> m_task;
 
     // States
     valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> m_uint_nodes;
@@ -163,7 +173,7 @@ protected:
     IndexedHashSet<PackedState, StateIndex> m_packed_states;
     SharedObjectPool<UnpackedState> m_unpacked_state_pool;
 
-    // TODO: initial node
+    // Initial node
     Node<Task> m_initial_node;
 };
 

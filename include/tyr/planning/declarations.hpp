@@ -29,6 +29,8 @@ class Node;
 
 class LiftedTask;
 class GroundTask;
+
+class Domain;
 }
 
 #endif

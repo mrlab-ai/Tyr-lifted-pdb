@@ -29,7 +29,7 @@ namespace tyr
 {
 
 template<formalism::IsFactTag T, formalism::IsContext C>
-class View<formalism::planning::NumericEffect<T>, C>
+class View<Index<formalism::planning::NumericEffect<T>>, C>
 {
 private:
     const C* m_context;

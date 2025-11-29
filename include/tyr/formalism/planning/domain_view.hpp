@@ -33,7 +33,7 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<formalism::planning::Domain, C>
+class View<Index<formalism::planning::Domain>, C>
 {
 private:
     const C* m_context;

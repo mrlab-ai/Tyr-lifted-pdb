@@ -19,6 +19,7 @@
 #define TYR_PLANNING_GROUND_TASK_HPP_
 
 #include "tyr/formalism/formalism.hpp"
+#include "tyr/planning/domain.hpp"
 #include "tyr/planning/task_mixin.hpp"
 
 namespace tyr::planning
@@ -29,14 +30,18 @@ class GroundTask : public TaskMixin<GroundTask>
 public:
     // Eventually pass ground facts, actions, and axioms derived from delete relaxation in the constructor
     // and build a data structure to efficiently compute applicable actions.
-    GroundTask(std::shared_ptr<formalism::Repository> repository, Index<formalism::planning::Task> task_index);
+    GroundTask(std::shared_ptr<Domain> domain,
+               std::shared_ptr<formalism::Repository> repository,
+               std::shared_ptr<formalism::ScopedRepository<formalism::Repository>> scoped_repository,
+               View<Index<formalism::planning::Task>, formalism::ScopedRepository<formalism::Repository>> task);
 
-    std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::Repository>, Node<GroundTask>>>
+    std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<GroundTask>>>
     get_labeled_successor_nodes_impl(const Node<GroundTask>& node);
 
     void get_labeled_successor_nodes_impl(
         const Node<GroundTask>& node,
-        std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::Repository>, Node<GroundTask>>>& out_nodes);
+        std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<GroundTask>>>&
+            out_nodes);
 };
 
 }

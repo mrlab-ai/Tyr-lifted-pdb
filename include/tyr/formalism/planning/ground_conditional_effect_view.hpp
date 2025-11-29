@@ -29,7 +29,7 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<formalism::planning::GroundConditionalEffect, C>
+class View<Index<formalism::planning::GroundConditionalEffect>, C>
 {
 private:
     const C* m_context;

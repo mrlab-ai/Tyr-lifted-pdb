@@ -63,6 +63,8 @@
 #include "tyr/formalism/planning/conditional_effect_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
+#include "tyr/formalism/planning/domain_data.hpp"
+#include "tyr/formalism/planning/domain_index.hpp"
 #include "tyr/formalism/planning/ground_action_data.hpp"
 #include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/formalism/planning/ground_axiom_data.hpp"
