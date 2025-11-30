@@ -17,7 +17,33 @@
 
 #include "tyr/planning/parser.hpp"
 
+#include "loki_to_tyr.hpp"
+
 namespace tyr::planning
 {
+
+Parser::Parser(const fs::path& domain_filepath, const loki::ParserOptions& options) :
+    m_loki_parser(loki::Parser(loki::read_file(domain_filepath), domain_filepath, options)),
+    m_loki_domain_translation_result(loki::translate(m_loki_parser.get_domain(), loki::TranslatorOptions())),
+    m_domain_repository(std::make_shared<formalism::Repository>())
+{
+    auto translator = LokiToTyrTranslator();
+    auto builder = formalism::Builder();
+
+    m_domain = translator.translate(m_loki_domain_translation_result.get_translated_domain(), builder, m_domain_repository);
+}
+
+LiftedTaskPtr Parser::parse_problem(const fs::path& problem_filepath, const loki::ParserOptions& options)
+{
+    auto translator = LokiToTyrTranslator();
+    auto builder = formalism::Builder();
+
+    auto task_repository = std::make_shared<formalism::Repository>();
+    auto overlay_task_repository = std::make_shared<formalism::OverlayRepository<formalism::Repository>>(*m_domain_repository, *task_repository);
+
+    return translator.translate(m_loki_parser.parse_problem(problem_filepath, options), builder, overlay_task_repository);
+}
+
+DomainPtr Parser::get_domain() const { return m_domain; }
 
 }

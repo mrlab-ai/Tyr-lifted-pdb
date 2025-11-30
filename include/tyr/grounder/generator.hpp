@@ -27,7 +27,7 @@ namespace tyr::grounder
 {
 
 template<formalism::FactKind T, formalism::Context C>
-View<Index<formalism::GroundAtom<T>>, formalism::ScopedRepository<C>> ground(View<Index<formalism::Atom<T>>, C> element, MutableRuleWorkspace<C>& workspace)
+View<Index<formalism::GroundAtom<T>>, formalism::OverlayRepository<C>> ground(View<Index<formalism::Atom<T>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
     auto& binding = workspace.binding;
@@ -69,8 +69,8 @@ View<Index<formalism::GroundAtom<T>>, formalism::ScopedRepository<C>> ground(Vie
 }
 
 template<formalism::FactKind T, formalism::Context C>
-View<Index<formalism::GroundLiteral<T>>, formalism::ScopedRepository<C>> ground(View<Index<formalism::Literal<T>>, C> element,
-                                                                                MutableRuleWorkspace<C>& workspace)
+View<Index<formalism::GroundLiteral<T>>, formalism::OverlayRepository<C>> ground(View<Index<formalism::Literal<T>>, C> element,
+                                                                                 MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
     auto& builder = workspace.builder;
@@ -88,8 +88,8 @@ View<Index<formalism::GroundLiteral<T>>, formalism::ScopedRepository<C>> ground(
 }
 
 template<formalism::FactKind T, formalism::Context C>
-View<Index<formalism::GroundFunctionTerm<T>>, formalism::ScopedRepository<C>> ground(View<Index<formalism::FunctionTerm<T>>, C> element,
-                                                                                     MutableRuleWorkspace<C>& workspace)
+View<Index<formalism::GroundFunctionTerm<T>>, formalism::OverlayRepository<C>> ground(View<Index<formalism::FunctionTerm<T>>, C> element,
+                                                                                      MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
     auto& binding = workspace.binding;
@@ -131,8 +131,8 @@ View<Index<formalism::GroundFunctionTerm<T>>, formalism::ScopedRepository<C>> gr
 }
 
 template<formalism::Context C>
-View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>> ground(View<Data<formalism::FunctionExpression>, C> element,
-                                                                                       MutableRuleWorkspace<C>& workspace)
+View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>> ground(View<Data<formalism::FunctionExpression>, C> element,
+                                                                                        MutableRuleWorkspace<C>& workspace)
 {
     return visit(
         [&](auto&& arg)
@@ -141,24 +141,24 @@ View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>> 
 
             if constexpr (std::is_same_v<Alternative, float_t>)
             {
-                return View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>>(Data<formalism::GroundFunctionExpression>(arg),
-                                                                                                       workspace.repository);
+                return View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>>(Data<formalism::GroundFunctionExpression>(arg),
+                                                                                                        workspace.repository);
             }
             else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>)
             {
-                return View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>>(
+                return View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>>(
                     Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_index()),
                     workspace.repository);
             }
             else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>)
             {
-                return View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>>(
+                return View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>>(
                     Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_index()),
                     workspace.repository);
             }
             else
             {
-                return View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>>(
+                return View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>>(
                     Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_index()),
                     workspace.repository);
             }
@@ -167,7 +167,7 @@ View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>> 
 }
 
 template<formalism::OpKind O, formalism::Context C>
-View<Index<formalism::UnaryOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+View<Index<formalism::UnaryOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::OverlayRepository<C>>
 ground(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
@@ -185,7 +185,7 @@ ground(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression
 }
 
 template<formalism::OpKind O, formalism::Context C>
-View<Index<formalism::BinaryOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+View<Index<formalism::BinaryOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::OverlayRepository<C>>
 ground(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
@@ -204,7 +204,7 @@ ground(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpressio
 }
 
 template<formalism::OpKind O, formalism::Context C>
-View<Index<formalism::MultiOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+View<Index<formalism::MultiOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::OverlayRepository<C>>
 ground(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
@@ -225,13 +225,13 @@ ground(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression
 }
 
 template<formalism::Context C>
-View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, formalism::OverlayRepository<C>>
 ground(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     return visit(
         [&](auto&& arg)
         {
-            return View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>(
+            return View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, formalism::OverlayRepository<C>>(
                 Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>(ground(arg, workspace).get_index()),
                 workspace.repository);
         },
@@ -239,13 +239,13 @@ ground(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>
 }
 
 template<formalism::Context C>
-View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
+View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::OverlayRepository<C>>
 ground(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     return visit(
         [&](auto&& arg)
         {
-            return View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>(
+            return View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::OverlayRepository<C>>(
                 Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>(ground(arg, workspace).get_index()),
                 workspace.repository);
         },
@@ -253,8 +253,8 @@ ground(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpressio
 }
 
 template<formalism::Context C>
-View<Index<formalism::GroundConjunctiveCondition>, formalism::ScopedRepository<C>> ground(View<Index<formalism::ConjunctiveCondition>, C> element,
-                                                                                          MutableRuleWorkspace<C>& workspace)
+View<Index<formalism::GroundConjunctiveCondition>, formalism::OverlayRepository<C>> ground(View<Index<formalism::ConjunctiveCondition>, C> element,
+                                                                                           MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
     auto& binding = workspace.binding;
@@ -286,7 +286,7 @@ View<Index<formalism::GroundConjunctiveCondition>, formalism::ScopedRepository<C
 }
 
 template<formalism::Context C>
-View<Index<formalism::GroundRule>, formalism::ScopedRepository<C>> ground(View<Index<formalism::Rule>, C> element, MutableRuleWorkspace<C>& workspace)
+View<Index<formalism::GroundRule>, formalism::OverlayRepository<C>> ground(View<Index<formalism::Rule>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
     auto& builder = workspace.builder;

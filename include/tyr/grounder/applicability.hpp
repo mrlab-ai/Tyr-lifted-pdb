@@ -71,7 +71,7 @@ auto evaluate(View<Data<formalism::GroundFunctionExpression>, C1> element, const
 }
 
 template<formalism::Context C1, formalism::Context C2>
-auto evaluate(View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C2>> element,
+auto evaluate(View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::OverlayRepository<C2>> element,
               const FactSets<C1>& fact_sets)
 {
     return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());

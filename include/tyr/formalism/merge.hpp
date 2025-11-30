@@ -18,8 +18,8 @@
 #ifndef TYR_FORMALISM_MERGE_HPP_
 #define TYR_FORMALISM_MERGE_HPP_
 
+#include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/scoped_repository.hpp"
 
 #include <gtl/phmap.hpp>
 

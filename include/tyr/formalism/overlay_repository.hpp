@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_SCOPED_REPOSITORY_HPP_
-#define TYR_FORMALISM_SCOPED_REPOSITORY_HPP_
+#ifndef TYR_FORMALISM_OVERLAY_REPOSITORY_HPP_
+#define TYR_FORMALISM_OVERLAY_REPOSITORY_HPP_
 
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -24,37 +24,37 @@
 namespace tyr::formalism
 {
 template<Context C>
-class ScopedRepository
+class OverlayRepository
 {
 private:
     const C& parent_scope;
     C& local_scope;
 
 public:
-    ScopedRepository(const C& parent_scope, C& local_scope) : parent_scope(parent_scope), local_scope(local_scope) {}
+    OverlayRepository(const C& parent_scope, C& local_scope) : parent_scope(parent_scope), local_scope(local_scope) {}
 
     template<typename T>
-    std::optional<View<Index<T>, ScopedRepository<C>>> find(const Data<T>& builder) const
+    std::optional<View<Index<T>, OverlayRepository<C>>> find(const Data<T>& builder) const
     {
         if (auto ptr = parent_scope.find(builder))
-            return View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this);
+            return View<Index<T>, OverlayRepository<C>>(ptr->get_index(), *this);
 
         if (auto ptr = local_scope.find(builder))
-            return View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this);
+            return View<Index<T>, OverlayRepository<C>>(ptr->get_index(), *this);
 
         return std::nullopt;
     }
 
     template<typename T, bool AssignIndex = true>
-    std::pair<View<Index<T>, ScopedRepository<C>>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
+    std::pair<View<Index<T>, OverlayRepository<C>>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
         if (auto ptr = parent_scope.find(builder))
-            return std::make_pair(View<Index<T>, ScopedRepository<C>>(ptr->get_index(), *this), false);
+            return std::make_pair(View<Index<T>, OverlayRepository<C>>(ptr->get_index(), *this), false);
 
         // Manually assign index to continue indexing.
         builder.index.value = parent_scope.template size<T>() + local_scope.template size<T>();
 
-        return std::make_pair(View<Index<T>, ScopedRepository<C>>(local_scope.template get_or_create<T, false>(builder, buf).first.get_index(), *this), true);
+        return std::make_pair(View<Index<T>, OverlayRepository<C>>(local_scope.template get_or_create<T, false>(builder, buf).first.get_index(), *this), true);
     }
 
     template<typename T>
@@ -77,20 +77,23 @@ public:
     }
 };
 
-/// @brief Make ScopedRepository a trivial context.
 template<Context C>
-inline const ScopedRepository<C>& get_repository(const ScopedRepository<C>& context) noexcept
+using OverlayRepositoryPtr = std::shared_ptr<OverlayRepository<C>>;
+
+/// @brief Make OverlayRepository a trivial context.
+template<Context C>
+inline const OverlayRepository<C>& get_repository(const OverlayRepository<C>& context) noexcept
 {
     return context;
 }
 
 // Domain + Task
-static_assert(IsRepository<ScopedRepository<Repository>>);
-static_assert(Context<ScopedRepository<Repository>>);
+static_assert(IsRepository<OverlayRepository<Repository>>);
+static_assert(Context<OverlayRepository<Repository>>);
 
 // Domain + Task + Worker threads
-static_assert(IsRepository<ScopedRepository<ScopedRepository<Repository>>>);
-static_assert(Context<ScopedRepository<ScopedRepository<Repository>>>);
+static_assert(IsRepository<OverlayRepository<OverlayRepository<Repository>>>);
+static_assert(Context<OverlayRepository<OverlayRepository<Repository>>>);
 
 }
 

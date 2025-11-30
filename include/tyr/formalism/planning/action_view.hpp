@@ -19,10 +19,11 @@
 #define TYR_FORMALISM_PLANNING_ACTION_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr
@@ -48,7 +49,7 @@ public:
     const auto& get_name() const noexcept { return get_data().name; }
     auto get_original_arity() const noexcept { return get_data().original_arity; }
     auto get_condition() const noexcept { return View(get_data().condition, *m_context); }
-    auto get_effect() const noexcept { return View(get_data().effect, *m_context); }
+    auto get_effects() const noexcept { return View(get_data().effects, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

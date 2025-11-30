@@ -36,13 +36,13 @@ public:
     float_t get_state_metric() const noexcept { return m_state_metric; }
     StateIndex get_state_index() const noexcept { return m_state_index; }
 
-    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<Task>>> get_labeled_successor_nodes()
+    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<Task>>> get_labeled_successor_nodes()
     {
         return m_task->get_labeled_successor_nodes(*this);
     }
 
     void get_labeled_successor_nodes(
-        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<Task>>>& out_nodes)
+        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<Task>>>& out_nodes)
     {
         m_task->get_labeled_successor_nodes(*this, out_nodes);
     }

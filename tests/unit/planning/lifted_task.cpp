@@ -30,13 +30,13 @@ TEST(TyrTests, TyrPlanningLiftedTask)
 {
     auto domain_repository = std::make_shared<Repository>();
     auto task_repository = std::make_shared<Repository>();
-    auto scoped_task_repository = std::make_shared<ScopedRepository<Repository>>(*domain_repository, *task_repository);
+    auto scoped_task_repository = std::make_shared<OverlayRepository<Repository>>(*domain_repository, *task_repository);
 
     auto domain_view = View<Index<formalism::Domain>, Repository>(Index<formalism::Domain>(0), *domain_repository);
 
     auto domain = std::make_shared<planning::Domain>(domain_repository, domain_view);
 
-    auto task_view = View<Index<formalism::Task>, ScopedRepository<Repository>>(Index<formalism::Task>(0), *scoped_task_repository);
+    auto task_view = View<Index<formalism::Task>, OverlayRepository<Repository>>(Index<formalism::Task>(0), *scoped_task_repository);
 
     auto task = std::make_shared<planning::LiftedTask>(domain, task_repository, scoped_task_repository, task_view);
 }

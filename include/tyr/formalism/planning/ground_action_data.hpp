@@ -36,17 +36,17 @@ struct Data<formalism::GroundAction>
     Index<formalism::GroundAction> index;
     Index<formalism::Action> action;
     Index<formalism::GroundConjunctiveCondition> condition;
-    Index<formalism::GroundConjunctiveEffect> effect;
+    IndexList<formalism::GroundConditionalEffect> effects;
 
     Data() = default;
     Data(Index<formalism::GroundAction> index,
          Index<formalism::Action> action,
          Index<formalism::GroundConjunctiveCondition> condition,
-         Index<formalism::GroundConjunctiveEffect> effect) :
+         IndexList<formalism::GroundConditionalEffect> effects) :
         index(index),
         action(action),
         condition(condition),
-        effect(effect)
+        effects(std::move(effects))
     {
     }
     Data(const Data& other) = delete;
@@ -54,8 +54,8 @@ struct Data<formalism::GroundAction>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    auto cista_members() const noexcept { return std::tie(index, action, condition, effect); }
-    auto identifying_members() const noexcept { return std::tie(action, condition, effect); }
+    auto cista_members() const noexcept { return std::tie(index, action, condition, effects); }
+    auto identifying_members() const noexcept { return std::tie(action, condition, effects); }
 };
 }
 

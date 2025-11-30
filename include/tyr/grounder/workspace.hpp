@@ -40,7 +40,7 @@ struct ImmutableRuleWorkspace
 template<formalism::Context C>
 struct MutableRuleWorkspace
 {
-    formalism::ScopedRepository<C>& repository;
+    formalism::OverlayRepository<C>& repository;
     kpkc::Workspace& kpkc_workspace;
 
     IndexList<formalism::Object>& binding;

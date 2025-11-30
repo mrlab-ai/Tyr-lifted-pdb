@@ -18,9 +18,29 @@
 #ifndef TYR_PLANNING_PARSER_HPP_
 #define TYR_PLANNING_PARSER_HPP_
 
+#include "tyr/formalism/repository.hpp"
+#include "tyr/planning/declarations.hpp"
+
+#include <loki/loki.hpp>
+
 namespace tyr::planning
 {
+class Parser
+{
+public:
+    explicit Parser(const fs::path& domain_filepath, const loki::ParserOptions& options = loki::ParserOptions());
 
+    LiftedTaskPtr parse_problem(const fs::path& problem_filepath, const loki::ParserOptions& options = loki::ParserOptions());
+
+    DomainPtr get_domain() const;
+
+private:
+    loki::Parser m_loki_parser;
+    loki::DomainTranslationResult m_loki_domain_translation_result;
+
+    formalism::RepositoryPtr m_domain_repository;
+    DomainPtr m_domain;
+};
 }
 
 #endif
