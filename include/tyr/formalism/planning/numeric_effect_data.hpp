@@ -33,12 +33,17 @@ struct Data<formalism::NumericEffect<T>>
     using Tag = formalism::NumericEffect<T>;
 
     Index<formalism::NumericEffect<T>> index;
+    formalism::NumericEffectOpVariant op;
     Index<formalism::FunctionTerm<T>> fterm;
     Data<formalism::FunctionExpression> fexpr;
 
     Data() = default;
-    Data(Index<formalism::NumericEffect<T>> index, Index<formalism::FunctionTerm<T>> fterm, Data<formalism::FunctionExpression> fexpr) :
+    Data(Index<formalism::NumericEffect<T>> index,
+         formalism::NumericEffectOpVariant op,
+         Index<formalism::FunctionTerm<T>> fterm,
+         Data<formalism::FunctionExpression> fexpr) :
         index(index),
+        op(op),
         fterm(fterm),
         fexpr(fexpr)
     {
@@ -50,8 +55,8 @@ struct Data<formalism::NumericEffect<T>>
 
     void clear() noexcept {}
 
-    auto cista_members() const noexcept { return std::tie(index, fterm, fexpr); }
-    auto identifying_members() const noexcept { return std::tie(fterm, fexpr); }
+    auto cista_members() const noexcept { return std::tie(index, op, fterm, fexpr); }
+    auto identifying_members() const noexcept { return std::tie(op, fterm, fexpr); }
 };
 }
 

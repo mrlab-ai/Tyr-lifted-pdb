@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_GROUND_NUMERIC_EFFECT_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/variant.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_function_expression_view.hpp"
 #include "tyr/formalism/ground_function_term_view.hpp"
@@ -45,6 +46,7 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
+    auto get_op() const noexcept { return View(get_data().op, *m_context); }
     auto get_fterm() const noexcept { return View(get_data().fterm, *m_context); }
     auto get_fexpr() const noexcept { return View(get_data().fexpr, *m_context); }
 

@@ -33,12 +33,17 @@ struct Data<formalism::GroundNumericEffect<T>>
     using Tag = formalism::GroundNumericEffect<T>;
 
     Index<formalism::GroundNumericEffect<T>> index;
+    formalism::NumericEffectOpVariant op;
     Index<formalism::GroundFunctionTerm<T>> fterm;
     Data<formalism::GroundFunctionExpression> fexpr;
 
     Data() = default;
-    Data(Index<formalism::GroundNumericEffect<T>> index, Index<formalism::GroundFunctionTerm<T>> fterm, Data<formalism::GroundFunctionExpression> fexpr) :
+    Data(Index<formalism::GroundNumericEffect<T>> index,
+         formalism::NumericEffectOpVariant op,
+         Index<formalism::GroundFunctionTerm<T>> fterm,
+         Data<formalism::GroundFunctionExpression> fexpr) :
         index(index),
+        op(op),
         fterm(fterm),
         fexpr(fexpr)
     {
@@ -50,8 +55,8 @@ struct Data<formalism::GroundNumericEffect<T>>
 
     void clear() noexcept {}
 
-    auto cista_members() const noexcept { return std::tie(index, fterm, fexpr); }
-    auto identifying_members() const noexcept { return std::tie(fterm, fexpr); }
+    auto cista_members() const noexcept { return std::tie(index, op, fterm, fexpr); }
+    auto identifying_members() const noexcept { return std::tie(op, fterm, fexpr); }
 };
 }
 

@@ -225,19 +225,31 @@ struct Program
 
 struct OpAssign
 {
+    static constexpr int kind = 0;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpIncrease
 {
+    static constexpr int kind = 1;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpDecrease
 {
+    static constexpr int kind = 2;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpScaleUp
 {
+    static constexpr int kind = 3;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpScaleDown
 {
+    static constexpr int kind = 4;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
+
+using NumericEffectOpVariant = ::cista::offset::variant<OpAssign, OpIncrease, OpDecrease, OpScaleUp, OpScaleDown>;
 
 template<typename T>
 concept NumericEffectOpKind =

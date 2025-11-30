@@ -597,6 +597,38 @@ private:
 
             auto& numeric_effect = builder.get_numeric_effect<Tag>();
             numeric_effect.clear();
+            switch (element->get_assign_operator())
+            {
+                case loki::AssignOperatorEnum::ASSIGN:
+                {
+                    numeric_effect.op = formalism::OpAssign {};
+                    break;
+                }
+                case loki::AssignOperatorEnum::INCREASE:
+                {
+                    numeric_effect.op = formalism::OpIncrease {};
+                    break;
+                }
+                case loki::AssignOperatorEnum::DECREASE:
+                {
+                    numeric_effect.op = formalism::OpDecrease {};
+                    break;
+                }
+                case loki::AssignOperatorEnum::SCALE_UP:
+                {
+                    numeric_effect.op = formalism::OpScaleUp {};
+                    break;
+                }
+                case loki::AssignOperatorEnum::SCALE_DOWN:
+                {
+                    numeric_effect.op = formalism::OpScaleDown {};
+                    break;
+                }
+                default:
+                {
+                    throw std::runtime_error("Unexpected case.");
+                }
+            }
             numeric_effect.fterm = fterm_index;
             numeric_effect.fexpr = this->translate_lifted(element->get_function_expression(), builder, context);
             formalism::canonicalize(numeric_effect);
