@@ -49,7 +49,7 @@ struct Data<formalism::Task>
     IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values;
     ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value;
     Index<formalism::GroundConjunctiveCondition> goal;
-    Index<formalism::Metric> metric;
+    ::cista::optional<Index<formalism::Metric>> metric;
     IndexList<formalism::Axiom> axioms;
 
     Data() = default;
@@ -64,7 +64,7 @@ struct Data<formalism::Task>
          IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values,
          ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value,
          Index<formalism::GroundConjunctiveCondition> goal,
-         Index<formalism::Metric> metric,
+         ::cista::optional<Index<formalism::Metric>> metric,
          IndexList<formalism::Axiom> axioms) :
         index(index),
         name(std::move(name)),

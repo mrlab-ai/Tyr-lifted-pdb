@@ -30,7 +30,7 @@ class Parser
 public:
     explicit Parser(const fs::path& domain_filepath, const loki::ParserOptions& options = loki::ParserOptions());
 
-    LiftedTaskPtr parse_problem(const fs::path& problem_filepath, const loki::ParserOptions& options = loki::ParserOptions());
+    LiftedTaskPtr parse_task(const fs::path& problem_filepath, const loki::ParserOptions& options = loki::ParserOptions());
 
     DomainPtr get_domain() const;
 

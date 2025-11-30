@@ -18,6 +18,7 @@
 #include "loki_to_tyr.hpp"
 
 #include "tyr/planning/domain.hpp"
+#include "tyr/planning/lifted_task.hpp"
 
 namespace tyr::planning
 {
@@ -317,8 +318,146 @@ DomainPtr LokiToTyrTranslator::translate(const loki::Domain& element, formalism:
 }
 
 LiftedTaskPtr
-LokiToTyrTranslator::translate(const loki::Problem& problem, formalism::Builder& builder, formalism::OverlayRepositoryPtr<formalism::Repository> context)
+LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder& builder, DomainPtr domain, formalism::RepositoryPtr domain_context)
 {
+    /* Perform static type analysis */
+    prepare(element);
+
+    auto& task = builder.get_task();
+    task.clear();
+
+    auto task_context = std::make_shared<formalism::Repository>();
+    auto overlay_task_context = std::make_shared<formalism::OverlayRepository<formalism::Repository>>(*domain_context, *task_context);
+
+    /* Name */
+    task.name = element->get_name();
+
+    /* Requirements section */
+
+    /* Objects section */
+    task.objects = translate_common(element->get_objects(), builder, *overlay_task_context);
+
+    /* Predicates section */
+    const auto func_insert_predicate =
+        [](IndexPredicateVariant index_predicate_variant, IndexList<formalism::Predicate<formalism::DerivedTag>>& derived_predicates)
+    {
+        std::visit(
+            [&](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::StaticTag>>>)
+                    throw std::runtime_error("Static predicate definition in task is not supported");
+                else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::FluentTag>>>)
+                    throw std::runtime_error("Fluent predicate definition in task is not supported");
+                else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::DerivedTag>>>)
+                    derived_predicates.push_back(arg);
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_predicate_variant);
+    };
+
+    for (const auto& index_predicate_variant : translate_common(element->get_predicates(), builder, *overlay_task_context))
+    {
+        func_insert_predicate(index_predicate_variant, task.derived_predicates);
+    }
+
+    /* Initial section */
+    const auto func_insert_ground_atom = [&](IndexGroundLiteralVariant index_atom_variant,
+                                             IndexList<formalism::GroundAtom<formalism::StaticTag>>& static_atoms,
+                                             IndexList<formalism::GroundAtom<formalism::FluentTag>>& fluent_atoms)
+    {
+        std::visit(
+            [&](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::StaticTag>>>)
+                    static_atoms.push_back(
+                        View<Index<formalism::GroundLiteral<formalism::StaticTag>>, formalism::OverlayRepository<formalism::Repository>>(arg,
+                                                                                                                                         *overlay_task_context)
+                            .get_atom()
+                            .get_index());
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::FluentTag>>>)
+                    fluent_atoms.push_back(
+                        View<Index<formalism::GroundLiteral<formalism::FluentTag>>, formalism::OverlayRepository<formalism::Repository>>(arg,
+                                                                                                                                         *overlay_task_context)
+                            .get_atom()
+                            .get_index());
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::DerivedTag>>>)
+                    throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section.");
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_atom_variant);
+    };
+
+    for (const auto& index_atom_variant : translate_grounded(element->get_initial_literals(), builder, *overlay_task_context))
+    {
+        func_insert_ground_atom(index_atom_variant, task.static_atoms, task.fluent_atoms);
+    }
+
+    const auto func_insert_fterm_values = [](IndexGroundFunctionTermValueVariant index_fterm_value_variant,
+                                             IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>>& static_fterm_values,
+                                             IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>>& fluent_fterm_values,
+                                             ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>& auxiliary_fterm_value)
+    {
+        std::visit(
+            [&](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTermValue<formalism::StaticTag>>>)
+                    static_fterm_values.push_back(arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTermValue<formalism::FluentTag>>>)
+                    fluent_fterm_values.push_back(arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>)
+                {
+                    assert(!auxiliary_fterm_value);
+                    auxiliary_fterm_value = arg;
+                }
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_fterm_value_variant);
+    };
+
+    for (const auto index_fterm_value_variant : translate_grounded(element->get_initial_function_values(), builder, *overlay_task_context))
+    {
+        func_insert_fterm_values(index_fterm_value_variant, task.static_fterm_values, task.fluent_fterm_values, task.auxiliary_fterm_value);
+    }
+
+    /* Goal section */
+
+    if (element->get_goal_condition().has_value())
+    {
+        task.goal = translate_grounded(element->get_goal_condition().value(), builder, *overlay_task_context);
+    }
+    else
+    {
+        // Create empty conjunctive condition
+        auto& conj_cond = builder.get_ground_conj_cond();
+        conj_cond.clear();
+        canonicalize(conj_cond);
+        task.goal = overlay_task_context->get_or_create(conj_cond, builder.get_buffer()).first.get_index();
+    }
+
+    /* Metric section */
+    if (element->get_optimization_metric().has_value())
+    {
+        task.metric = translate_grounded(element->get_optimization_metric().value(), builder, *overlay_task_context);
+    }
+    else
+    {
+        task.metric = std::nullopt;
+    }
+
+    /* Structures section */
+    task.axioms = translate_lifted(element->get_axioms(), builder, *overlay_task_context);
+
+    formalism::canonicalize(task);
+    return std::make_shared<LiftedTask>(domain, task_context, overlay_task_context, overlay_task_context->get_or_create(task, builder.get_buffer()).first);
 }
 
 }

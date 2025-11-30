@@ -43,7 +43,7 @@ struct Data<formalism::MultiOperator<Op, T>>
     void clear() noexcept { args.clear(); }
 
     auto cista_members() const noexcept { return std::tie(index, args); }
-    auto identifying_members() const noexcept { return std::tie(args); }
+    auto identifying_members() const noexcept { return std::tie(Op::kind, args); }
 };
 
 }

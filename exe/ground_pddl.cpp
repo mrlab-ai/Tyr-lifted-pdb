@@ -42,4 +42,6 @@ int main(int argc, char** argv)
 
     auto parser = planning::Parser(domain_filepath);
     auto domain = parser.get_domain();
+
+    auto lifted_task = parser.parse_task(problem_filepath);
 }

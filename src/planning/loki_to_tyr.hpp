@@ -814,7 +814,7 @@ private:
                     if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
                     {
                         // We store atoms in the head, not literals
-                        axiom.head = View<Index<formalism::Literal<formalism::DerivedTag>>, formalism::Repository>(arg, context).get_atom().get_index();
+                        axiom.head = View<Index<formalism::Literal<formalism::DerivedTag>>, C>(arg, context).get_atom().get_index();
                     }
                     else
                     {
@@ -840,7 +840,10 @@ private:
         using ReturnType = decltype(this->translate_grounded(std::declval<const T*>(), builder, std::declval<C&>()));
         auto output = ::cista::offset::vector<ReturnType> {};
         output.reserve(input.size());
-        std::transform(std::begin(input), std::end(input), std::back_inserter(output), [&](auto&& arg) { return this->translate_grounded(arg, context); });
+        std::transform(std::begin(input),
+                       std::end(input),
+                       std::back_inserter(output),
+                       [&](auto&& arg) { return this->translate_grounded(arg, builder, context); });
         return output;
     }
 
@@ -848,11 +851,11 @@ private:
     Index<formalism::Object> translate_grounded(loki::Term element, formalism::Builder& builder, C& context)
     {
         return std::visit(
-            [&](auto&& arg) -> Data<formalism::Term>
+            [&](auto&& arg) -> Index<formalism::Object>
             {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, loki::Object>)
-                    return Data<formalism::Term>(translate_common(arg, builder, context));
+                    return translate_common(arg, builder, context);
                 else if constexpr (std::is_same_v<T, loki::Variable>)
                     throw std::runtime_error("Expected ground term.");
                 else
@@ -873,7 +876,7 @@ private:
             auto& atom = builder.template get_ground_atom<Tag>();
             atom.clear();
             atom.predicate = predicate_index;
-            atom.terms = this->translate_grounded(element->get_terms(), builder, context);
+            atom.objects = this->translate_grounded(element->get_terms(), builder, context);
             formalism::canonicalize(atom);
             return context.get_or_create(atom, builder.get_buffer()).first.get_index();
         };
@@ -915,11 +918,11 @@ private:
             [&](auto&& arg) -> IndexGroundLiteralVariant
             {
                 using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, Index<formalism::Atom<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<formalism::GroundAtom<formalism::StaticTag>>>)
                     return build_literal(formalism::StaticTag {}, arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::Atom<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundAtom<formalism::FluentTag>>>)
                     return build_literal(formalism::FluentTag {}, arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::Atom<formalism::DerivedTag>>>)
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundAtom<formalism::DerivedTag>>>)
                     return build_literal(formalism::DerivedTag {}, arg);
                 else
                     static_assert(dependent_false<T>::value, "Missing case for type");
@@ -947,7 +950,7 @@ private:
             binary.lhs = lhs_result;
             binary.rhs = rhs_result;
             formalism::canonicalize(binary);
-            return context.get_or_create(binary, builder.get_buffer()).first.get_index();
+            return Data<formalism::GroundFunctionExpression>(context.get_or_create(binary, builder.get_buffer()).first.get_index());
         };
 
         switch (element->get_binary_operator())
@@ -976,7 +979,7 @@ private:
             multi.clear();
             multi.args = translate_grounded(element->get_function_expressions(), builder, context);
             formalism::canonicalize(multi);
-            return context.get_or_create(multi, builder.get_buffer()).first.get_index();
+            return Data<formalism::GroundFunctionExpression>(context.get_or_create(multi, builder.get_buffer()).first.get_index());
         };
 
         switch (element->get_multi_operator())
@@ -997,13 +1000,29 @@ private:
         minus.clear();
         minus.arg = translate_grounded(element->get_function_expression(), builder, context);
         formalism::canonicalize(minus);
-        return context.get_or_create(minus, builder.get_buffer()).first.get_index();
+        return Data<formalism::GroundFunctionExpression>(context.get_or_create(minus, builder.get_buffer()).first.get_index());
     }
 
     template<formalism::Context C>
     Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionFunction element, formalism::Builder& builder, C& context)
     {
-        return translate_grounded(element->get_function(), builder, context);
+        const auto index_fterm_variant = translate_grounded(element->get_function(), builder, context);
+
+        return std::visit(
+            [&](auto&& arg) -> Data<formalism::GroundFunctionExpression>
+            {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTerm<formalism::StaticTag>>>)
+                    return Data<formalism::GroundFunctionExpression>(arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTerm<formalism::FluentTag>>>)
+                    return Data<formalism::GroundFunctionExpression>(arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTerm<formalism::AuxiliaryTag>>>)
+                    throw std::runtime_error("Cannot create GroundFunctionExpression over auxiliary function term.");
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_fterm_variant);
     }
 
     template<formalism::Context C>
@@ -1024,7 +1043,7 @@ private:
             auto& fterm = builder.template get_ground_fterm<Tag>();
             fterm.clear();
             fterm.function = function_index;
-            fterm.terms = this->translate_grounded(element->get_terms(), builder, context);
+            fterm.objects = this->translate_grounded(element->get_terms(), builder, context);
             formalism::canonicalize(fterm);
             return context.get_or_create(fterm, builder.get_buffer()).first.get_index();
         };
@@ -1048,7 +1067,7 @@ private:
     template<formalism::Context C>
     IndexGroundFunctionTermValueVariant translate_grounded(loki::FunctionValue element, formalism::Builder& builder, C& context)
     {
-        auto index_fterm_variant = translate_ground(element->get_function(), builder, context);
+        auto index_fterm_variant = translate_grounded(element->get_function(), builder, context);
 
         auto build_fterm_value = [&](auto fact_tag, auto fterm_index) -> IndexGroundFunctionTermValueVariant
         {
@@ -1066,11 +1085,11 @@ private:
             [&](auto&& arg) -> IndexGroundFunctionTermValueVariant
             {
                 using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTerm<formalism::StaticTag>>>)
                     return build_fterm_value(formalism::StaticTag {}, arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTerm<formalism::FluentTag>>>)
                     return build_fterm_value(formalism::FluentTag {}, arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::AuxiliaryTag>>>)
+                else if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTerm<formalism::AuxiliaryTag>>>)
                     return build_fterm_value(formalism::AuxiliaryTag {}, arg);
                 else
                     static_assert(dependent_false<T>::value, "Missing case for type");
@@ -1093,7 +1112,8 @@ private:
             binary.lhs = lhs_result;
             binary.rhs = rhs_result;
             formalism::canonicalize(binary);
-            return context.get_or_create(binary, builder.get_buffer()).first.get_index();
+            return Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>(
+                context.get_or_create(binary, builder.get_buffer()).first.get_index());
         };
 
         switch (element->get_binary_comparator())
@@ -1119,7 +1139,7 @@ private:
         auto& conj_condition = builder.get_ground_conj_cond();
         conj_condition.clear();
 
-        const auto func_insert_literal = [](IndexLiteralVariant index_literal_variant,
+        const auto func_insert_literal = [](IndexGroundLiteralVariant index_literal_variant,
                                             IndexList<formalism::GroundLiteral<formalism::StaticTag>>& static_literals,
                                             IndexList<formalism::GroundLiteral<formalism::FluentTag>>& fluent_literals,
                                             IndexList<formalism::GroundLiteral<formalism::DerivedTag>>& derived_literals)
@@ -1224,7 +1244,7 @@ public:
 
     DomainPtr translate(const loki::Domain& domain, formalism::Builder& builder, formalism::RepositoryPtr context);
 
-    LiftedTaskPtr translate(const loki::Problem& problem, formalism::Builder& builder, formalism::OverlayRepositoryPtr<formalism::Repository> context);
+    LiftedTaskPtr translate(const loki::Problem& problem, formalism::Builder& builder, DomainPtr domain, formalism::RepositoryPtr domain_context);
 };
 
 }

@@ -44,7 +44,7 @@ struct Data<formalism::BinaryOperator<Op, T>>
     void clear() noexcept {}
 
     auto cista_members() const noexcept { return std::tie(index, lhs, rhs); }
-    auto identifying_members() const noexcept { return std::tie(lhs, rhs); }
+    auto identifying_members() const noexcept { return std::tie(Op::kind, lhs, rhs); }
 };
 
 }

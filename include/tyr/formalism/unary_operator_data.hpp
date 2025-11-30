@@ -43,7 +43,7 @@ struct Data<formalism::UnaryOperator<Op, T>>
     void clear() noexcept {}
 
     auto cista_members() const noexcept { return std::tie(index, arg); }
-    auto identifying_members() const noexcept { return std::tie(arg); }
+    auto identifying_members() const noexcept { return std::tie(Op::kind, arg); }
 };
 
 }

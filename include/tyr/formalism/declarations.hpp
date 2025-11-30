@@ -51,33 +51,53 @@ concept FactKind = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || s
 
 struct OpEq
 {
+    static constexpr int kind = 0;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpNe
 {
+    static constexpr int kind = 1;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpLe
 {
+    static constexpr int kind = 2;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpLt
 {
+    static constexpr int kind = 3;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpGe
 {
+    static constexpr int kind = 4;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpGt
 {
+    static constexpr int kind = 5;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpAdd
 {
+    static constexpr int kind = 0;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpSub
 {
+    static constexpr int kind = 1;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpMul
 {
+    static constexpr int kind = 2;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpDiv
 {
+    static constexpr int kind = 3;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 
 template<typename T>
@@ -262,9 +282,13 @@ struct GroundAxiom
 
 struct Minimize
 {
+    static constexpr int kind = 0;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct Maximize
 {
+    static constexpr int kind = 1;
+    auto identifying_members() const noexcept { return std::tie(kind); }
 };
 
 template<typename T>
