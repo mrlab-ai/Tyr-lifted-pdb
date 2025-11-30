@@ -263,7 +263,6 @@ View<Index<formalism::GroundConjunctiveCondition>, formalism::OverlayRepository<
                                                                                            MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
-    auto& binding = workspace.binding;
     auto& builder = workspace.builder;
     auto& repository = workspace.repository;
     auto& buffer = workspace.buffer;

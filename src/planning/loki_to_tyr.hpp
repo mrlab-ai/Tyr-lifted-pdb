@@ -67,6 +67,8 @@ using IndexGroundFunctionTermValueVariant = std::variant<Index<formalism::Ground
                                                          Index<formalism::GroundFunctionTermValue<formalism::FluentTag>>,
                                                          Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>;
 
+using IndexNumericEffectVariant = std::variant<Index<formalism::NumericEffect<formalism::FluentTag>>, Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>;
+
 class LokiToTyrTranslator
 {
 private:
@@ -555,14 +557,234 @@ private:
     }
 
     template<formalism::Context C>
-    IndexList<formalism::ConditionalEffect>
-    translate_lifted(loki::Effect element, const IndexList<formalism::Variable>& parameters, formalism::Builder& builder, C& context);
+    IndexNumericEffectVariant translate_lifted(loki::EffectNumeric element, formalism::Builder& builder, C& context)
+    {
+        auto index_fterm_variant = translate_lifted(element->get_function(), builder, context);
+
+        auto build_numeric_effect_term = [&](auto fact_tag, auto fterm_index) -> IndexNumericEffectVariant
+        {
+            using Tag = std::decay_t<decltype(fact_tag)>;
+
+            auto& numeric_effect = builder.get_numeric_effect<Tag>();
+            numeric_effect.clear();
+            numeric_effect.fterm = fterm_index;
+            numeric_effect.fexpr = this->translate_lifted(element->get_function_expression(), builder, context);
+            formalism::canonicalize(numeric_effect);
+            return context.get_or_create(numeric_effect, builder.get_buffer());
+        };
+
+        return std::visit(
+            [&](auto&& arg) -> IndexNumericEffectVariant
+            {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::StaticTag>>>)
+                    return build_numeric_effect_term(formalism::StaticTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::FluentTag>>>)
+                    return build_numeric_effect_term(formalism::FluentTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::AuxiliaryTag>>>)
+                    return build_numeric_effect_term(formalism::AuxiliaryTag {}, arg);
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_fterm_variant);
+    }
 
     template<formalism::Context C>
-    Index<formalism::Action> translate_lifted(loki::Action element, formalism::Builder& builder, C& context);
+    IndexList<formalism::ConditionalEffect> translate_lifted(loki::Effect element, formalism::Builder& builder, C& context)
+    {
+        using ConditionalEffectData = std::unordered_map<Index<formalism::ConjunctiveCondition>,
+                                                         std::tuple<IndexList<formalism::Literal<formalism::FluentTag>>,
+                                                                    IndexList<formalism::NumericEffect<formalism::FluentTag>>,
+                                                                    ::cista::optional<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>>>;
+
+        const auto translate_effect_func = [&](loki::Effect effect, ConditionalEffectData& ref_conditional_effect_data)
+        {
+            auto tmp_effect = effect;
+
+            /* 1. Parse universal part. */
+            auto parameters = IndexList<formalism::Variable> {};
+            if (const auto& tmp_effect_forall = std::get_if<loki::EffectCompositeForall>(&tmp_effect->get_effect()))
+            {
+                parameters = translate_common((*tmp_effect_forall)->get_parameters(), builder, context);
+
+                tmp_effect = (*tmp_effect_forall)->get_effect();
+            }
+
+            /* 2. Parse conditional part */
+            auto conjunctive_condition = Index<formalism::ConjunctiveCondition>::max();
+            if (const auto tmp_effect_when = std::get_if<loki::EffectCompositeWhen>(&tmp_effect->get_effect()))
+            {
+                conjunctive_condition = translate_lifted((*tmp_effect_when)->get_condition(), parameters, builder, context);
+
+                tmp_effect = (*tmp_effect_when)->get_effect();
+            }
+            if (conjunctive_condition == Index<formalism::ConjunctiveCondition>::max())
+            {
+                // Create empty conjunctive condition for unconditional effects
+                auto& conj_cond = builder.get_conj_cond();
+                conj_cond.clear();
+                canonicalize(conj_cond);
+                conjunctive_condition = context.get_or_create(conj_cond, builder.get_buffer());
+            }
+
+            // Fetch container to store the effects
+            auto& effect_data = ref_conditional_effect_data[conjunctive_condition];
+            auto& data_fluent_literals = std::get<0>(effect_data);
+            auto& data_fluent_numeric_effects = std::get<1>(effect_data);
+            auto& data_auxiliary_numeric_effect = std::get<2>(effect_data);
+
+            /* 3. Parse effect part */
+            if (const auto& effect_literal = std::get_if<loki::EffectLiteral>(&tmp_effect->get_effect()))
+            {
+                const auto index_literal_variant = translate_lifted((*effect_literal)->get_literal(), builder, context);
+
+                if (std::get_if<Index<formalism::Literal<formalism::DerivedTag>>>(index_literal_variant))
+                {
+                    throw std::runtime_error("Effect literal cannot be Derived!");
+                }
+                else if (std::get_if<Index<formalism::Literal<formalism::StaticTag>>>(index_literal_variant))
+                {
+                    throw std::logic_error("Effect lieral cannot be Static!");
+                }
+
+                data_fluent_literals.push_back(std::get<Index<formalism::Literal<formalism::FluentTag>>>(index_literal_variant));
+            }
+            else if (const auto& effect_numeric = std::get_if<loki::EffectNumeric>(&tmp_effect->get_effect()))
+            {
+                const auto index_numeric_effect_variant = translate_lifted((*effect_numeric), builder, context);
+
+                if (std::get_if<Index<formalism::NumericEffect<formalism::StaticTag>>>(index_numeric_effect_variant))
+                {
+                    throw std::runtime_error("Numeric effect cannot be Static!");
+                }
+                else if (std::get_if<Index<formalism::NumericEffect<formalism::FluentTag>>>(index_numeric_effect_variant))
+                {
+                    data_fluent_numeric_effects.push_back(std::get<Index<formalism::NumericEffect<formalism::FluentTag>>>(index_numeric_effect_variant));
+                }
+                else if (std::get_if<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>(index_numeric_effect_variant))
+                {
+                    if (data_auxiliary_numeric_effect)
+                        throw std::runtime_error("Reassigning auxiliary effect would swallow the previous one. This error indicates a bug in the translation.");
+
+                    data_auxiliary_numeric_effect = std::get<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>(index_numeric_effect_variant);
+                }
+            }
+            else
+            {
+                // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *tmp_effect) << std::endl;
+
+                throw std::logic_error("Unexpected effect type. This error indicates a bug in the translation.");
+            }
+        };
+
+        /* Parse the effect */
+        auto conditional_effect_data = ConditionalEffectData {};
+        // Parse conjunctive part
+        if (const auto& effect_and = std::get_if<loki::EffectAnd>(&element->get_effect()))
+        {
+            for (const auto& nested_effect : (*effect_and)->get_effects())
+            {
+                translate_effect_func(nested_effect, conditional_effect_data);
+            }
+        }
+        else
+        {
+            // Parse non conjunctive
+            translate_effect_func(element, conditional_effect_data);
+        }
+
+        /* Instantiate conditional effects. */
+        auto conditional_effects = IndexList<formalism::ConditionalEffect> {};
+
+        for (const auto& [cond_conjunctive_condition, value] : conditional_effect_data)
+        {
+            const auto& [cond_effect_fluent_literals, cond_effect_fluent_numeric_effects, cond_effect_auxiliary_numeric_effects] = value;
+
+            auto& conj_effect = builder.get_conj_effect();
+            conj_effect.clear();
+            conj_effect.literals = cond_effect_fluent_literals;
+            conj_effect.numeric_effects = cond_effect_fluent_numeric_effects;
+            conj_effect.auxiliary_numeric_effect = cond_effect_auxiliary_numeric_effects;
+            formalism::canonicalize(conj_effect);
+            const auto conj_effect_index = context.get_or_create(conj_effect, builder.get_buffer());
+
+            auto& cond_effect = builder.get_cond_effect();
+            cond_effect.clear();
+            cond_effect.condition = cond_conjunctive_condition;
+            cond_effect.effect = conj_effect_index;
+            formalism::canonicalize(cond_effect);
+            const auto cond_effect_index = context.get_or_create(cond_effect, builder.get_buffer());
+
+            conditional_effects.push_back(cond_effect_index);
+        }
+
+        return conditional_effects;
+    }
 
     template<formalism::Context C>
-    Index<formalism::Axiom> translate_lifted(loki::Axiom element, formalism::Builder& builder, C& context);
+    Index<formalism::Action> translate_lifted(loki::Action element, formalism::Builder& builder, C& context)
+    {
+        auto& action = builder.get_action();
+        action.original_arity = element->get_original_arity();
+
+        // 1. Translate conditions
+        auto conjunctive_condition = Index<formalism::ConjunctiveCondition>::max();
+        if (element->get_condition().has_value())
+        {
+            conjunctive_condition = translate_lifted(element->get_condition().value(), builder, context);
+        }
+        else
+        {
+            // Create empty one
+            auto& conj_cond = builder.get_conj_cond();
+            conj_cond.clear();
+            canonicalize(conj_cond);
+            conjunctive_condition = context.get_or_create(conj_cond, builder.get_buffer());
+        }
+        action.condition = conjunctive_condition;
+
+        // 2. Translate effects
+        auto conditional_effects = IndexList<formalism::ConditionalEffect> {};
+        if (element->get_effect().has_value())
+        {
+            const auto conditional_effects_ = translate_lifted(element->get_effect().value(), builder, context);
+            conditional_effects = conditional_effects_;
+        }
+        action.effects = conditional_effects;
+
+        formalism::canonicalize(action);
+        return context.get_or_create(action, builder.get_buffer());
+    }
+
+    template<formalism::Context C>
+    Index<formalism::Axiom> translate_lifted(loki::Axiom element, formalism::Builder& builder, C& context)
+    {
+        auto& axiom = builder.get_axiom();
+        axiom.clear();
+
+        axiom.body = translate_lifted(element->get_condition(), builder, context);
+        const auto index_literal_variant = translate_lifted(element->get_literal(), builder, context);
+
+        return std::visit(
+            [&](auto&& arg)
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
+                {
+                    // We store atoms in the head, not literals
+                    axiom.head = View<Index<formalism::Literal<formalism::DerivedTag>>, formalism::Repository>(arg, context).get_atom().get_index();
+                }
+                else
+                {
+                    throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head.");
+                }
+            },
+            index_literal_variant);
+
+        formalism::canonicalize(axiom);
+        return context.get_or_create(axiom, builder.get_buffer());
+    }
 
     /**
      * Grounded translation
@@ -780,11 +1002,72 @@ private:
     }
 
     template<formalism::Context C>
-    IndexGroundFunctionTermValueVariant translate_grounded(loki::FunctionValue element, formalism::Builder& builder, C& context);
+    IndexGroundFunctionTermValueVariant translate_grounded(loki::FunctionValue element, formalism::Builder& builder, C& context)
+    {
+        auto index_fterm_variant = translate_ground(element->get_function(), builder, context);
+
+        auto build_fterm_value = [&](auto fact_tag, auto fterm_index) -> IndexGroundFunctionTermValueVariant
+        {
+            using Tag = std::decay_t<decltype(fact_tag)>;
+
+            auto& fterm_value = builder.template get_ground_fterm_value<Tag>();
+            fterm_value.clear();
+            fterm_value.fterm = fterm_index;
+            fterm_value.value = element->get_number();
+            formalism::canonicalize(fterm_value);
+            return context.get_or_create(fterm_value, builder.get_buffer());
+        };
+
+        return std::visit(
+            [&](auto&& arg) -> IndexGroundFunctionTermValueVariant
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::StaticTag>>>)
+                    return build_fterm_value(formalism::StaticTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::FluentTag>>>)
+                    return build_fterm_value(formalism::FluentTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::AuxiliaryTag>>>)
+                    return build_fterm_value(formalism::AuxiliaryTag {}, arg);
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_fterm_variant);
+    }
 
     template<formalism::Context C>
     Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>
-    translate_grounded(loki::ConditionNumericConstraint element, formalism::Builder& builder, C& context);
+    translate_grounded(loki::ConditionNumericConstraint element, formalism::Builder& builder, C& context)
+    {
+        auto build_binary_op = [&](auto op_tag) -> Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>
+        {
+            using Tag = std::decay_t<decltype(op_tag)>;
+
+            auto& binary = builder.template get_ground_binary<Tag>();
+            binary.clear();
+            auto lhs_result = translate_grounded(element->get_left_function_expression(), builder, context);
+            auto rhs_result = translate_grounded(element->get_right_function_expression(), builder, context);
+            binary.lhs = lhs_result;
+            binary.rhs = rhs_result;
+            formalism::canonicalize(binary);
+            return context.get_or_create(binary, builder.get_buffer());
+        };
+
+        switch (element->get_binary_comparator())
+        {
+            case loki::BinaryComparatorEnum::EQUAL:
+                return build_binary_op(formalism::OpEq {});
+            case loki::BinaryComparatorEnum::LESS_EQUAL:
+                return build_binary_op(formalism::OpLe {});
+            case loki::BinaryComparatorEnum::LESS:
+                return build_binary_op(formalism::OpLt {});
+            case loki::BinaryComparatorEnum::GREATER_EQUAL:
+                return build_binary_op(formalism::OpGe {});
+            case loki::BinaryComparatorEnum::GREATER:
+                return build_binary_op(formalism::OpGt {});
+            default:
+                throw std::runtime_error("Unexpected case");
+        }
+    }
 
     template<formalism::Context C>
     Index<formalism::GroundConjunctiveCondition> translate_grounded(loki::Condition element, formalism::Builder& builder, C& context)
@@ -866,10 +1149,34 @@ private:
     }
 
     template<formalism::Context C>
-    Index<formalism::Metric> translate_grounded(loki::OptimizationMetric element, formalism::Builder& builder, C& context);
+    Index<formalism::Metric> translate_grounded(loki::OptimizationMetric element, formalism::Builder& builder, C& context)
+    {
+        auto& metric = builder.get_metric();
+        metric.clear();
+
+        metric.fexpr = translate_grounded(element->get_function_expression(), builder, context);
+        switch (element->get_optimization_metric())
+        {
+            case loki::OptimizationMetricEnum::MINIMIZE:
+            {
+                metric.objective = formalism::Minimize {};
+                break;
+            }
+            case loki::OptimizationMetricEnum::MAXIMIZE:
+            {
+                metric.objective = formalism::Maximize {};
+                break;
+            }
+            default:
+                throw std::runtime_error("Unexpected case.");
+        }
+
+        formalism::canonicalize(metric);
+        return context.get_or_create(metric, builder.get_buffer());
+    }
 
 public:
-    LokiToTyrTranslator();
+    LokiToTyrTranslator() = default;
 
     DomainPtr translate(const loki::Domain& domain, formalism::Builder& builder, formalism::RepositoryPtr context);
 
