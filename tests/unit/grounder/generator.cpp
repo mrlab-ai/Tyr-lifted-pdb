@@ -121,14 +121,13 @@ TEST(TyrTests, TyrGrounderGenerator)
 
     // Merge the ScopeRepositories into the global one
     // TODO: Use ontbb parallel for loop and merge in log_2(num rules) depth.
-    auto buffer = buffer::Buffer {};
     auto merge_cache = formalism::MergeCache<formalism::OverlayRepository<Repository>, Repository> {};
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
         for (const auto ground_rule_index : ground_rules[i])
         {
             auto ground_rule = View<Index<formalism::GroundRule>, formalism::OverlayRepository<Repository>>(ground_rule_index, rule_scoped_repositories[i]);
-            formalism::merge(ground_rule, builders[i], repository, buffer, merge_cache);
+            formalism::merge(ground_rule, builders[i], repository, merge_cache);
         }
     }
 }

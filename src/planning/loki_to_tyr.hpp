@@ -19,6 +19,7 @@
 #define TYR_SRC_PLANNING_LOKI_TO_TYR_HPP_
 
 #include "tyr/formalism/builder.hpp"
+#include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -92,50 +93,107 @@ private:
             this->prepare(element.value());
         }
     }
-    void prepare(loki::FunctionSkeleton function_skeleton);
-    void prepare(loki::Object object);
-    void prepare(loki::Parameter parameter);
-    void prepare(loki::Predicate predicate);
-    void prepare(loki::Requirements requirements);
-    void prepare(loki::Type type);
-    void prepare(loki::Variable variable);
-    void prepare(loki::Term term);
-    void prepare(loki::Atom atom);
-    void prepare(loki::Literal literal);
-    void prepare(loki::FunctionExpressionNumber function_expression);
-    void prepare(loki::FunctionExpressionBinaryOperator function_expression);
-    void prepare(loki::FunctionExpressionMultiOperator function_expression);
-    void prepare(loki::FunctionExpressionMinus function_expression);
-    void prepare(loki::FunctionExpressionFunction function_expression);
-    void prepare(loki::FunctionExpression function_expression);
-    void prepare(loki::Function function);
-    void prepare(loki::Condition condition);
-    void prepare(loki::Effect effect);
-    void prepare(loki::Action action);
-    void prepare(loki::Axiom axiom);
-    void prepare(loki::Domain domain);
-    void prepare(loki::FunctionValue function_value);
-    void prepare(loki::OptimizationMetric metric);
-    void prepare(loki::Problem problem);
+    void prepare(loki::FunctionSkeleton element);
+    void prepare(loki::Object element);
+    void prepare(loki::Parameter element);
+    void prepare(loki::Predicate element);
+    void prepare(loki::Requirements element);
+    void prepare(loki::Type element);
+    void prepare(loki::Variable element);
+    void prepare(loki::Term element);
+    void prepare(loki::Atom element);
+    void prepare(loki::Literal element);
+    void prepare(loki::FunctionExpressionNumber element);
+    void prepare(loki::FunctionExpressionBinaryOperator element);
+    void prepare(loki::FunctionExpressionMultiOperator element);
+    void prepare(loki::FunctionExpressionMinus element);
+    void prepare(loki::FunctionExpressionFunction element);
+    void prepare(loki::FunctionExpression element);
+    void prepare(loki::Function element);
+    void prepare(loki::Condition element);
+    void prepare(loki::Effect element);
+    void prepare(loki::Action element);
+    void prepare(loki::Axiom element);
+    void prepare(loki::Domain element);
+    void prepare(loki::FunctionValue element);
+    void prepare(loki::OptimizationMetric element);
+    void prepare(loki::Problem element);
 
     /**
      * Common translations.
      */
 
     template<formalism::Context C>
-    IndexFunctionVariant translate_common(loki::FunctionSkeleton function_skeleton, formalism::Builder& builder, C& context);
+    IndexFunctionVariant translate_common(loki::FunctionSkeleton element, formalism::Builder& builder, C& context)
+    {
+        auto build_function = [&](auto tag_const) -> IndexFunctionVariant
+        {
+            using Tag = std::decay_t<decltype(tag_const)>;
+
+            auto& function = builder.template get_function<Tag>();
+            function.name = element->get_name();
+            function.arity = element->get_parameters().size();
+
+            formalism::canonicalize(function);
+            return context.get_or_create(function, builder.get_buffer());
+        };
+
+        if (element->get_name() == "total-cost")
+            return build_function(formalism::AuxiliaryTag {});
+        else if (m_effect_function_skeletons.contains(element->get_name()))
+            return build_function(formalism::FluentTag {});
+        else
+        {
+            return build_function(formalism::StaticTag {});
+        }
+    }
 
     template<formalism::Context C>
-    Index<formalism::Object> translate_common(loki::Object object, formalism::Builder& builder, C& context);
+    Index<formalism::Object> translate_common(loki::Object element, formalism::Builder& builder, C& context)
+    {
+        auto& object = builder.get_object();
+        object.name = element->get_name();
+        formalism::canonicalize(object);
+        return context.get_or_create(object, builder.get_buffer());
+    }
 
     template<formalism::Context C>
-    Index<formalism::Variable> translate_common(loki::Parameter parameter, formalism::Builder& builder, C& context);
+    Index<formalism::Variable> translate_common(loki::Parameter element, formalism::Builder& builder, C& context)
+    {
+        return translate_common(element->get_variable(), builder, context);
+    }
 
     template<formalism::Context C>
-    IndexPredicateVariant translate_common(loki::Predicate predicate, formalism::Builder& builder, C& context);
+    IndexPredicateVariant translate_common(loki::Predicate element, formalism::Builder& builder, C& context)
+    {
+        auto build_predicate = [&](auto tag_const) -> IndexPredicateVariant
+        {
+            using Tag = std::decay_t<decltype(tag_const)>;
+
+            auto& predicate = builder.template get_predicate<Tag>();
+            predicate.name = element->get_name();
+            predicate.arity = element->get_parameters().size();
+
+            formalism::canonicalize(predicate);
+            return context.get_or_create(predicate, builder.get_buffer());
+        };
+
+        if (m_fluent_predicates.count(element->get_name()) && !m_derived_predicates.count(element->get_name()))
+            return build_predicate(formalism::FluentTag {});
+        else if (m_derived_predicates.count(element->get_name()))
+            return build_predicate(formalism::DerivedTag {});
+        else
+            return build_predicate(formalism::StaticTag {});
+    }
 
     template<formalism::Context C>
-    Index<formalism::Variable> translate_common(loki::Variable variable, formalism::Builder& builder, C& context);
+    Index<formalism::Variable> translate_common(loki::Variable element, formalism::Builder& builder, C& context)
+    {
+        auto& variable = builder.get_variable();
+        variable.name = element->get_name();
+        formalism::canonicalize(variable);
+        return context.get_or_create(variable, builder.get_buffer());
+    }
 
     /**
      * Lifted translation.
@@ -155,52 +213,52 @@ private:
     }
 
     template<formalism::Context C>
-    Data<formalism::Term> translate_lifted(loki::Term term, formalism::Builder& builder, C& context);
+    Data<formalism::Term> translate_lifted(loki::Term element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    IndexAtomVariant translate_lifted(loki::Atom atom, formalism::Builder& builder, C& context);
+    IndexAtomVariant translate_lifted(loki::Atom element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    IndexLiteralVariant translate_lifted(loki::Literal literal, formalism::Builder& builder, C& context);
+    IndexLiteralVariant translate_lifted(loki::Literal element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionNumber function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionNumber element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionBinaryOperator function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionBinaryOperator element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionMultiOperator function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionMultiOperator element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionMinus function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionMinus element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionFunction function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionFunction element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpression function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpression element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    IndexFunctionVariant translate_lifted(loki::Function function, formalism::Builder& builder, C& context);
+    IndexFunctionVariant translate_lifted(loki::Function element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
     Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>
-    translate_lifted(loki::ConditionNumericConstraint condition, formalism::Builder& builder, C& context);
+    translate_lifted(loki::ConditionNumericConstraint element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
     Index<formalism::ConjunctiveCondition>
-    translate_lifted(loki::Condition condition, const IndexList<formalism::Variable>& parameters, formalism::Builder& builder, C& context);
+    translate_lifted(loki::Condition element, const IndexList<formalism::Variable>& parameters, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
     IndexList<formalism::ConditionalEffect>
-    translate_lifted(loki::Effect effect, const IndexList<formalism::Variable>& parameters, formalism::Builder& builder, C& context);
+    translate_lifted(loki::Effect element, const IndexList<formalism::Variable>& parameters, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Index<formalism::Action> translate_lifted(loki::Action action, formalism::Builder& builder, C& context);
+    Index<formalism::Action> translate_lifted(loki::Action element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Index<formalism::Axiom> translate_lifted(loki::Axiom axiom, formalism::Builder& builder, C& context);
+    Index<formalism::Axiom> translate_lifted(loki::Axiom element, formalism::Builder& builder, C& context);
 
     /**
      * Grounded translation
@@ -217,53 +275,51 @@ private:
     }
 
     template<formalism::Context C>
-    Index<formalism::Object> translate_grounded(loki::Term term, formalism::Builder& builder, C& context);
+    Index<formalism::Object> translate_grounded(loki::Term element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    IndexGroundAtomVariant translate_grounded(loki::Atom atom, formalism::Builder& builder, C& context);
+    IndexGroundAtomVariant translate_grounded(loki::Atom element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    IndexGroundLiteralVariant translate_grounded(loki::Literal literal, formalism::Builder& builder, C& context);
+    IndexGroundLiteralVariant translate_grounded(loki::Literal element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionNumber function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionNumber element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression>
-    translate_grounded(loki::FunctionExpressionBinaryOperator function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionBinaryOperator element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression>
-    translate_grounded(loki::FunctionExpressionMultiOperator function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionMultiOperator element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionMinus function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionMinus element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionFunction function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionFunction element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpression function_expression, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpression element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    IndexGroundFunctionTermVariant translate_grounded(loki::Function function, formalism::Builder& builder, C& context);
+    IndexGroundFunctionTermVariant translate_grounded(loki::Function element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    IndexGroundFunctionTermValueVariant translate_grounded(loki::FunctionValue numeric_fluent, formalism::Builder& builder, C& context);
+    IndexGroundFunctionTermValueVariant translate_grounded(loki::FunctionValue element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
     Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>
-    translate_grounded(loki::ConditionNumericConstraint condition, formalism::Builder& builder, C& context);
+    translate_grounded(loki::ConditionNumericConstraint element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
     std::tuple<IndexList<formalism::GroundLiteral<formalism::StaticTag>>,
                IndexList<formalism::GroundLiteral<formalism::FluentTag>>,
                IndexList<formalism::GroundLiteral<formalism::DerivedTag>>,
                DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>>
-    translate_grounded(loki::Condition condition, formalism::Builder& builder, C& context);
+    translate_grounded(loki::Condition element, formalism::Builder& builder, C& context);
 
     template<formalism::Context C>
-    Index<formalism::Metric> translate_grounded(loki::OptimizationMetric optimization_metric, formalism::Builder& builder, C& context);
+    Index<formalism::Metric> translate_grounded(loki::OptimizationMetric element, formalism::Builder& builder, C& context);
 
 public:
     LokiToTyrTranslator();

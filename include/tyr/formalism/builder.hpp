@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_BUILDER_HPP_
 
 // Include specialization headers first
+#include "tyr/buffer/declarations.hpp"
 #include "tyr/formalism/arithmetic_operator_data.hpp"
 #include "tyr/formalism/arithmetic_operator_view.hpp"
 #include "tyr/formalism/atom_data.hpp"
@@ -195,6 +196,8 @@ struct Builder
     Data<GroundRule> ground_rule;
 
     Data<Program> program;
+
+    buffer::Buffer buffer;
 
     /**
      * Planning
@@ -505,6 +508,8 @@ struct Builder
 
     auto& get_task() noexcept { return task; }
     auto& get_domain() noexcept { return domain; }
+
+    auto& get_buffer() noexcept { return buffer; }
 };
 
 }
