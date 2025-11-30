@@ -46,7 +46,7 @@ struct Data<formalism::GroundAtom<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept { objects.clear(); }
 
     auto cista_members() const noexcept { return std::tie(index, predicate, objects); }
     auto identifying_members() const noexcept { return std::tie(predicate, objects); }

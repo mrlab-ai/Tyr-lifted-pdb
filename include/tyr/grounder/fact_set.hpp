@@ -66,11 +66,7 @@ public:
             insert(atom);
     }
 
-    bool contains(Index<formalism::GroundAtom<T>> index) const noexcept
-    {
-        std::cout << index << std::endl;
-        return m_bitset.test(index.get_value());
-    }
+    bool contains(Index<formalism::GroundAtom<T>> index) const noexcept { return m_bitset.test(index.get_value()); }
 
     auto get_facts() const noexcept { return View<IndexList<formalism::GroundAtom<T>>, C>(m_indices, m_context); }
 };
