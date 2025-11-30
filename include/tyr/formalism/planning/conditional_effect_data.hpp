@@ -28,18 +28,16 @@ namespace tyr
 {
 
 template<>
-struct Data<formalism::planning::ConditionalEffect>
+struct Data<formalism::ConditionalEffect>
 {
-    using Tag = formalism::planning::ConditionalEffect;
+    using Tag = formalism::ConditionalEffect;
 
-    Index<formalism::planning::ConditionalEffect> index;
+    Index<formalism::ConditionalEffect> index;
     Index<formalism::ConjunctiveCondition> condition;
-    Index<formalism::planning::ConjunctiveEffect> effect;
+    Index<formalism::ConjunctiveEffect> effect;
 
     Data() = default;
-    Data(Index<formalism::planning::ConditionalEffect> index,
-         Index<formalism::ConjunctiveCondition> condition,
-         Index<formalism::planning::ConjunctiveEffect> effect) :
+    Data(Index<formalism::ConditionalEffect> index, Index<formalism::ConjunctiveCondition> condition, Index<formalism::ConjunctiveEffect> effect) :
         index(index),
         condition(condition),
         effect(effect)

@@ -29,16 +29,16 @@ namespace tyr
 {
 
 template<formalism::IsFactTag T, formalism::IsContext C>
-class View<Index<formalism::planning::GroundNumericEffect<T>>, C>
+class View<Index<formalism::GroundNumericEffect<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::planning::GroundNumericEffect<T>> m_handle;
+    Index<formalism::GroundNumericEffect<T>> m_handle;
 
 public:
-    using Tag = formalism::planning::GroundNumericEffect<T>;
+    using Tag = formalism::GroundNumericEffect<T>;
 
-    View(Index<formalism::planning::GroundNumericEffect<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::GroundNumericEffect<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

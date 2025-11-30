@@ -37,6 +37,18 @@
 #include "tyr/formalism/literal_data.hpp"
 #include "tyr/formalism/multi_operator_data.hpp"
 #include "tyr/formalism/object_data.hpp"
+#include "tyr/formalism/planning/action_data.hpp"
+#include "tyr/formalism/planning/axiom_data.hpp"
+#include "tyr/formalism/planning/conditional_effect_data.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_data.hpp"
+#include "tyr/formalism/planning/domain_data.hpp"
+#include "tyr/formalism/planning/ground_action_data.hpp"
+#include "tyr/formalism/planning/ground_axiom_data.hpp"
+#include "tyr/formalism/planning/ground_conditional_effect_data.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_effect_data.hpp"
+#include "tyr/formalism/planning/ground_numeric_effect_data.hpp"
+#include "tyr/formalism/planning/numeric_effect_data.hpp"
+#include "tyr/formalism/planning/task_data.hpp"
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/program_data.hpp"
 #include "tyr/formalism/rule_data.hpp"
@@ -49,10 +61,6 @@
 namespace tyr::formalism
 {
 
-/**
- *
- */
-
 template<typename T>
 bool is_canonical(const IndexList<T>& list)
 {
@@ -64,6 +72,10 @@ bool is_canonical(const DataList<T>& list)
 {
     return std::is_sorted(list.begin(), list.end());
 }
+
+/**
+ * Datalog
+ */
 
 template<IsOp Op, typename T>
 bool is_canonical(const Data<UnaryOperator<Op, T>>& data)
@@ -205,7 +217,52 @@ inline bool is_canonical(const Data<Program>& data)
 }
 
 /**
- * Canonicalize
+ * Planning
+ */
+
+template<IsFactTag T>
+bool is_canonical(const Data<NumericEffect<T>>& data)
+{
+    return true;
+}
+
+template<IsFactTag T>
+bool is_canonical(const Data<GroundNumericEffect<T>>& data)
+{
+    return true;
+}
+
+inline bool is_canonical(const Data<ConditionalEffect>& data) { return true; }
+
+inline bool is_canonical(const Data<GroundConditionalEffect>& data) { return true; }
+
+inline bool is_canonical(const Data<ConjunctiveEffect>& data) { return is_canonical(data.literals) && is_canonical(data.numeric_effects); }
+
+inline bool is_canonical(const Data<GroundConjunctiveEffect>& data) { return is_canonical(data.literals) && is_canonical(data.numeric_effects); }
+
+inline bool is_canonical(const Data<Action>& data) { return true; }
+
+inline bool is_canonical(const Data<GroundAction>& data) { return true; }
+
+inline bool is_canonical(const Data<Axiom>& data) { return true; }
+
+inline bool is_canonical(const Data<GroundAxiom>& data) { return true; }
+
+inline bool is_canonical(const Data<Task>& data)
+{
+    return is_canonical(data.derived_predicates) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
+           && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.axioms);
+}
+
+inline bool is_canonical(const Data<Domain>& data)
+{
+    return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.derived_predicates)
+           && is_canonical(data.static_function) && is_canonical(data.fluent_function) && is_canonical(data.constants) && is_canonical(data.actions)
+           && is_canonical(data.axioms);
+}
+
+/**
+ * Datalog
  */
 
 template<typename T>
@@ -392,6 +449,67 @@ inline void canonicalize(Data<Program>& data)
     canonicalize(data.static_fterm_values);
     canonicalize(data.fluent_fterm_values);
     canonicalize(data.rules);
+}
+
+template<IsFactTag T>
+void canonicalize(Data<NumericEffect<T>>& data)
+{
+}
+
+template<IsFactTag T>
+void canonicalize(Data<GroundNumericEffect<T>>& data)
+{
+}
+
+/**
+ * Planning
+ */
+
+inline void canonicalize(Data<ConditionalEffect>& data) {}
+
+inline void canonicalize(Data<GroundConditionalEffect>& data) {}
+
+inline void canonicalize(Data<ConjunctiveEffect>& data)
+{
+    canonicalize(data.literals);
+    canonicalize(data.numeric_effects);
+}
+
+inline void canonicalize(Data<GroundConjunctiveEffect>& data)
+{
+    canonicalize(data.literals);
+    canonicalize(data.numeric_effects);
+}
+
+inline void canonicalize(Data<Action>& data) {}
+
+inline void canonicalize(Data<GroundAction>& data) {}
+
+inline void canonicalize(Data<Axiom>& data) {}
+
+inline void canonicalize(Data<GroundAxiom>& data) {}
+
+inline void canonicalize(Data<Task>& data)
+{
+    canonicalize(data.derived_predicates);
+    canonicalize(data.objects);
+    canonicalize(data.static_atoms);
+    canonicalize(data.fluent_atoms);
+    canonicalize(data.static_fterm_values);
+    canonicalize(data.fluent_fterm_values);
+    canonicalize(data.axioms);
+}
+
+inline void canonicalize(Data<Domain>& data)
+{
+    canonicalize(data.static_predicates);
+    canonicalize(data.fluent_predicates);
+    canonicalize(data.derived_predicates);
+    canonicalize(data.static_function);
+    canonicalize(data.fluent_function);
+    canonicalize(data.constants);
+    canonicalize(data.actions);
+    canonicalize(data.axioms);
 }
 }
 

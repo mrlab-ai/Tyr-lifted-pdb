@@ -28,18 +28,16 @@ namespace tyr
 {
 
 template<>
-struct Data<formalism::planning::GroundAxiom>
+struct Data<formalism::GroundAxiom>
 {
-    using Tag = formalism::planning::GroundAxiom;
+    using Tag = formalism::GroundAxiom;
 
-    Index<formalism::planning::GroundAxiom> index;
+    Index<formalism::GroundAxiom> index;
     Index<formalism::GroundConjunctiveCondition> body;
     Index<formalism::GroundAtom<formalism::DerivedTag>> head;
 
     Data() = default;
-    Data(Index<formalism::planning::GroundAxiom> index,
-         Index<formalism::GroundConjunctiveCondition> body,
-         Index<formalism::GroundAtom<formalism::DerivedTag>> head) :
+    Data(Index<formalism::GroundAxiom> index, Index<formalism::GroundConjunctiveCondition> body, Index<formalism::GroundAtom<formalism::DerivedTag>> head) :
         index(index),
         body(body),
         head(head)

@@ -29,16 +29,16 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<Index<formalism::planning::Axiom>, C>
+class View<Index<formalism::Axiom>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::planning::Axiom> m_handle;
+    Index<formalism::Axiom> m_handle;
 
 public:
-    using Tag = formalism::planning::Axiom;
+    using Tag = formalism::Axiom;
 
-    View(Index<formalism::planning::Axiom> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::Axiom> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

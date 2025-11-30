@@ -28,16 +28,16 @@ namespace tyr
 {
 
 template<formalism::IsFactTag T>
-struct Data<formalism::planning::NumericEffect<T>>
+struct Data<formalism::NumericEffect<T>>
 {
-    using Tag = formalism::planning::NumericEffect<T>;
+    using Tag = formalism::NumericEffect<T>;
 
-    Index<formalism::planning::NumericEffect<T>> index;
+    Index<formalism::NumericEffect<T>> index;
     Index<formalism::FunctionTerm<T>> fterm;
     Data<formalism::FunctionExpression> fexpr;
 
     Data() = default;
-    Data(Index<formalism::planning::NumericEffect<T>> index, Index<formalism::FunctionTerm<T>> fterm, Data<formalism::FunctionExpression> fexpr) :
+    Data(Index<formalism::NumericEffect<T>> index, Index<formalism::FunctionTerm<T>> fterm, Data<formalism::FunctionExpression> fexpr) :
         index(index),
         fterm(fterm),
         fexpr(fexpr)

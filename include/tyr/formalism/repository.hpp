@@ -153,6 +153,22 @@ private:
                                             RepositoryEntry<Rule>,
                                             RepositoryEntry<GroundConjunctiveCondition>,
                                             RepositoryEntry<GroundRule>,
+                                            RepositoryEntry<Program>,
+                                            RepositoryEntry<NumericEffect<StaticTag>>,
+                                            RepositoryEntry<NumericEffect<FluentTag>>,
+                                            RepositoryEntry<NumericEffect<AuxiliaryTag>>,
+                                            RepositoryEntry<GroundNumericEffect<StaticTag>>,
+                                            RepositoryEntry<GroundNumericEffect<FluentTag>>,
+                                            RepositoryEntry<GroundNumericEffect<AuxiliaryTag>>,
+                                            RepositoryEntry<ConditionalEffect>,
+                                            RepositoryEntry<GroundConditionalEffect>,
+                                            RepositoryEntry<ConjunctiveEffect>,
+                                            RepositoryEntry<GroundConjunctiveEffect>,
+                                            RepositoryEntry<Action>,
+                                            RepositoryEntry<GroundAction>,
+                                            RepositoryEntry<Axiom>,
+                                            RepositoryEntry<GroundAxiom>,
+                                            RepositoryEntry<Domain>,
                                             RepositoryEntry<Program>>;
 
     HanaRepository m_repository;

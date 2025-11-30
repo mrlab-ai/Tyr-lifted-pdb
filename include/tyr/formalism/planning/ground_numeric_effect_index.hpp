@@ -25,12 +25,12 @@
 namespace tyr
 {
 template<formalism::IsFactTag T>
-struct Index<formalism::planning::GroundNumericEffect<T>> : IndexMixin<Index<formalism::planning::GroundNumericEffect<T>>>
+struct Index<formalism::GroundNumericEffect<T>> : IndexMixin<Index<formalism::GroundNumericEffect<T>>>
 {
-    using Tag = formalism::planning::GroundNumericEffect<T>;
+    using Tag = formalism::GroundNumericEffect<T>;
 
     // Inherit constructors
-    using Base = IndexMixin<Index<formalism::planning::GroundNumericEffect<T>>>;
+    using Base = IndexMixin<Index<formalism::GroundNumericEffect<T>>>;
     using Base::Base;
 };
 

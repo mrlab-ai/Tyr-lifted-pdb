@@ -29,16 +29,16 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<Index<formalism::planning::ConditionalEffect>, C>
+class View<Index<formalism::ConditionalEffect>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::planning::ConditionalEffect> m_handle;
+    Index<formalism::ConditionalEffect> m_handle;
 
 public:
-    using Tag = formalism::planning::ConditionalEffect;
+    using Tag = formalism::ConditionalEffect;
 
-    View(Index<formalism::planning::ConditionalEffect> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::ConditionalEffect> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

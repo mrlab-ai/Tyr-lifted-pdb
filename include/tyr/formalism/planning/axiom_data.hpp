@@ -28,16 +28,16 @@ namespace tyr
 {
 
 template<>
-struct Data<formalism::planning::Axiom>
+struct Data<formalism::Axiom>
 {
-    using Tag = formalism::planning::Axiom;
+    using Tag = formalism::Axiom;
 
-    Index<formalism::planning::Axiom> index;
+    Index<formalism::Axiom> index;
     Index<formalism::ConjunctiveCondition> body;
     Index<formalism::Atom<formalism::DerivedTag>> head;
 
     Data() = default;
-    Data(Index<formalism::planning::Axiom> index, Index<formalism::ConjunctiveCondition> body, Index<formalism::Atom<formalism::DerivedTag>> head) :
+    Data(Index<formalism::Axiom> index, Index<formalism::ConjunctiveCondition> body, Index<formalism::Atom<formalism::DerivedTag>> head) :
         index(index),
         body(body),
         head(head)

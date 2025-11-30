@@ -20,7 +20,7 @@
 namespace tyr::planning
 {
 
-Domain::Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::planning::Domain>, formalism::Repository> domain) :
+Domain::Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::Domain>, formalism::Repository> domain) :
     m_repository(std::move(repository)),
     m_domain(domain)
 {

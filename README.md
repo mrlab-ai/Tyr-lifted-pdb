@@ -60,7 +60,7 @@ The high level C++ planning interface aims to be as follows.
 ```cpp
 #include <tyr/tyr.hpp>
 
-auto parser = tyr::formalism::planning::Parser("domain.pddl");
+auto parser = tyr::formalism::Parser("domain.pddl");
 auto task = parser.parse_task("problem.pddl");
 
 // Ground the task
@@ -79,7 +79,7 @@ auto successor_nodes = initial_node.get_labeled_successor_nodes();
 ```cpp
 #include <tyr/tyr.hpp>
 
-auto parser = tyr::formalism::planning::Parser("domain.pddl");
+auto parser = tyr::formalism::Parser("domain.pddl");
 auto task = parser.parse_task("problem.pddl");
 
 // Get the initial node (state + metric value)

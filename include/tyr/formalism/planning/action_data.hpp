@@ -28,22 +28,22 @@ namespace tyr
 {
 
 template<>
-struct Data<formalism::planning::Action>
+struct Data<formalism::Action>
 {
-    using Tag = formalism::planning::Action;
+    using Tag = formalism::Action;
 
-    Index<formalism::planning::Action> index;
+    Index<formalism::Action> index;
     ::cista::offset::string name;
     uint_t original_arity;
     Index<formalism::ConjunctiveCondition> condition;
-    Index<formalism::planning::ConjunctiveEffect> effect;
+    Index<formalism::ConjunctiveEffect> effect;
 
     Data() = default;
-    Data(Index<formalism::planning::Action> index,
+    Data(Index<formalism::Action> index,
          ::cista::offset::string name,
          uint_t original_arity,
          Index<formalism::ConjunctiveCondition> condition,
-         Index<formalism::planning::ConjunctiveEffect> effect) :
+         Index<formalism::ConjunctiveEffect> effect) :
         index(index),
         name(std::move(name)),
         condition(condition),

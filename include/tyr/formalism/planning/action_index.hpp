@@ -25,12 +25,12 @@
 namespace tyr
 {
 template<>
-struct Index<formalism::planning::Action> : IndexMixin<Index<formalism::planning::Action>>
+struct Index<formalism::Action> : IndexMixin<Index<formalism::Action>>
 {
-    using Tag = formalism::planning::Action;
+    using Tag = formalism::Action;
 
     // Inherit constructors
-    using Base = IndexMixin<Index<formalism::planning::Action>>;
+    using Base = IndexMixin<Index<formalism::Action>>;
     using Base::Base;
 };
 

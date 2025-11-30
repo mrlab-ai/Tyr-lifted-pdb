@@ -29,20 +29,20 @@ namespace tyr
 {
 
 template<>
-struct Data<formalism::planning::GroundAction>
+struct Data<formalism::GroundAction>
 {
-    using Tag = formalism::planning::GroundAction;
+    using Tag = formalism::GroundAction;
 
-    Index<formalism::planning::GroundAction> index;
-    Index<formalism::planning::Action> action;
+    Index<formalism::GroundAction> index;
+    Index<formalism::Action> action;
     Index<formalism::GroundConjunctiveCondition> condition;
-    Index<formalism::planning::GroundConjunctiveEffect> effect;
+    Index<formalism::GroundConjunctiveEffect> effect;
 
     Data() = default;
-    Data(Index<formalism::planning::GroundAction> index,
-         Index<formalism::planning::Action> action,
+    Data(Index<formalism::GroundAction> index,
+         Index<formalism::Action> action,
          Index<formalism::GroundConjunctiveCondition> condition,
-         Index<formalism::planning::GroundConjunctiveEffect> effect) :
+         Index<formalism::GroundConjunctiveEffect> effect) :
         index(index),
         action(action),
         condition(condition),

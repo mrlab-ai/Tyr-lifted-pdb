@@ -29,16 +29,16 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<Index<formalism::planning::GroundAction>, C>
+class View<Index<formalism::GroundAction>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::planning::GroundAction> m_handle;
+    Index<formalism::GroundAction> m_handle;
 
 public:
-    using Tag = formalism::planning::GroundAction;
+    using Tag = formalism::GroundAction;
 
-    View(Index<formalism::planning::GroundAction> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::GroundAction> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

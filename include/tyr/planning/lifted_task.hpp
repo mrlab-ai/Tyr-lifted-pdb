@@ -32,15 +32,14 @@ public:
     LiftedTask(std::shared_ptr<Domain> domain,
                std::shared_ptr<formalism::Repository> repository,
                std::shared_ptr<formalism::ScopedRepository<formalism::Repository>> scoped_repository,
-               View<Index<formalism::planning::Task>, formalism::ScopedRepository<formalism::Repository>> task);
+               View<Index<formalism::Task>, formalism::ScopedRepository<formalism::Repository>> task);
 
-    std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<LiftedTask>>>
+    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<LiftedTask>>>
     get_labeled_successor_nodes_impl(const Node<LiftedTask>& node);
 
     void get_labeled_successor_nodes_impl(
         const Node<LiftedTask>& node,
-        std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<LiftedTask>>>&
-            out_nodes);
+        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<LiftedTask>>>& out_nodes);
 
     GroundTask get_ground_task();
 

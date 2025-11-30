@@ -28,20 +28,20 @@ namespace tyr
 {
 
 template<>
-struct Data<formalism::planning::ConjunctiveEffect>
+struct Data<formalism::ConjunctiveEffect>
 {
-    using Tag = formalism::planning::ConjunctiveEffect;
+    using Tag = formalism::ConjunctiveEffect;
 
-    Index<formalism::planning::ConjunctiveEffect> index;
+    Index<formalism::ConjunctiveEffect> index;
     IndexList<formalism::Literal<formalism::FluentTag>> literals;
-    IndexList<formalism::planning::NumericEffect<formalism::FluentTag>> numeric_effects;
-    ::cista::optional<Index<formalism::planning::NumericEffect<formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
+    IndexList<formalism::NumericEffect<formalism::FluentTag>> numeric_effects;
+    ::cista::optional<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
 
     Data() = default;
-    Data(Index<formalism::planning::ConjunctiveEffect> index,
+    Data(Index<formalism::ConjunctiveEffect> index,
          IndexList<formalism::Literal<formalism::FluentTag>> literals,
-         IndexList<formalism::planning::NumericEffect<formalism::FluentTag>> numeric_effects,
-         ::cista::optional<Index<formalism::planning::NumericEffect<formalism::AuxiliaryTag>>> auxiliary_numeric_effect) :
+         IndexList<formalism::NumericEffect<formalism::FluentTag>> numeric_effects,
+         ::cista::optional<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>> auxiliary_numeric_effect) :
         index(index),
         literals(std::move(literals)),
         numeric_effects(std::move(numeric_effects)),

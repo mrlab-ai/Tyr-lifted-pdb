@@ -28,18 +28,16 @@ namespace tyr
 {
 
 template<formalism::IsFactTag T>
-struct Data<formalism::planning::GroundNumericEffect<T>>
+struct Data<formalism::GroundNumericEffect<T>>
 {
-    using Tag = formalism::planning::GroundNumericEffect<T>;
+    using Tag = formalism::GroundNumericEffect<T>;
 
-    Index<formalism::planning::GroundNumericEffect<T>> index;
+    Index<formalism::GroundNumericEffect<T>> index;
     Index<formalism::GroundFunctionTerm<T>> fterm;
     Data<formalism::GroundFunctionExpression> fexpr;
 
     Data() = default;
-    Data(Index<formalism::planning::GroundNumericEffect<T>> index,
-         Index<formalism::GroundFunctionTerm<T>> fterm,
-         Data<formalism::GroundFunctionExpression> fexpr) :
+    Data(Index<formalism::GroundNumericEffect<T>> index, Index<formalism::GroundFunctionTerm<T>> fterm, Data<formalism::GroundFunctionExpression> fexpr) :
         index(index),
         fterm(fterm),
         fexpr(fexpr)

@@ -32,11 +32,11 @@ namespace tyr
 {
 
 template<>
-struct Data<formalism::planning::Domain>
+struct Data<formalism::Domain>
 {
-    using Tag = formalism::planning::Domain;
+    using Tag = formalism::Domain;
 
-    Index<formalism::planning::Domain> index;
+    Index<formalism::Domain> index;
     IndexList<formalism::Predicate<formalism::StaticTag>> static_predicates;
     IndexList<formalism::Predicate<formalism::FluentTag>> fluent_predicates;
     IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates;
@@ -44,11 +44,11 @@ struct Data<formalism::planning::Domain>
     IndexList<formalism::Function<formalism::FluentTag>> fluent_function;
     ::cista::optional<Index<formalism::Function<formalism::AuxiliaryTag>>> auxiliary_function;
     IndexList<formalism::Object> constants;
-    IndexList<formalism::planning::Action> actions;
-    IndexList<formalism::planning::Axiom> axioms;
+    IndexList<formalism::Action> actions;
+    IndexList<formalism::Axiom> axioms;
 
     Data() = default;
-    Data(Index<formalism::planning::Domain> index,
+    Data(Index<formalism::Domain> index,
          IndexList<formalism::Predicate<formalism::StaticTag>> static_predicates,
          IndexList<formalism::Predicate<formalism::FluentTag>> fluent_predicates,
          IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates,
@@ -56,8 +56,8 @@ struct Data<formalism::planning::Domain>
          IndexList<formalism::Function<formalism::FluentTag>> fluent_function,
          ::cista::optional<Index<formalism::Function<formalism::AuxiliaryTag>>> auxiliary_function,
          IndexList<formalism::Object> constants,
-         IndexList<formalism::planning::Action> actions,
-         IndexList<formalism::planning::Axiom> axioms) :
+         IndexList<formalism::Action> actions,
+         IndexList<formalism::Axiom> axioms) :
         index(index),
         static_predicates(std::move(static_predicates)),
         fluent_predicates(std::move(fluent_predicates)),

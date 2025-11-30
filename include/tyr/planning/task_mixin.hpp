@@ -108,7 +108,7 @@ public:
     TaskMixin(std::shared_ptr<Domain> domain,
               std::shared_ptr<formalism::Repository> repository,
               std::shared_ptr<formalism::ScopedRepository<formalism::Repository>> scoped_repository,
-              View<Index<formalism::planning::Task>, formalism::ScopedRepository<formalism::Repository>> task) :
+              View<Index<formalism::Task>, formalism::ScopedRepository<formalism::Repository>> task) :
         m_domain(std::move(domain)),
         m_repository(std::move(repository)),
         m_scoped_repository(std::move(scoped_repository)),
@@ -144,11 +144,11 @@ public:
         return m_packed_states.insert(PackedState<Task>(StateIndex(m_packed_states.size()), fluent_atoms, derived_atoms, numeric_variables));
     }
 
-    View<Index<formalism::planning::Task>, formalism::ScopedRepository<formalism::Repository>> get_task() const;
+    View<Index<formalism::Task>, formalism::ScopedRepository<formalism::Repository>> get_task() const;
 
     Node<Task> get_initial_node() { return m_initial_node; }
 
-    std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<Task>>>
+    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<Task>>>
     get_labeled_successor_nodes(const Node<Task>& node)
     {
         return self().get_labeled_successor_nodes_impl(node);
@@ -156,7 +156,7 @@ public:
 
     void get_labeled_successor_nodes(
         const Node<Task>& node,
-        std::vector<std::pair<View<Index<formalism::planning::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<Task>>>& out_nodes)
+        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::ScopedRepository<formalism::Repository>>, Node<Task>>>& out_nodes)
     {
         self().get_labeled_successor_nodes_impl(node, out_nodes);
     }
@@ -165,7 +165,7 @@ protected:
     std::shared_ptr<Domain> m_domain;
     std::shared_ptr<formalism::Repository> m_repository;
     std::shared_ptr<formalism::ScopedRepository<formalism::Repository>> m_scoped_repository;
-    View<Index<formalism::planning::Task>, formalism::ScopedRepository<formalism::Repository>> m_task;
+    View<Index<formalism::Task>, formalism::ScopedRepository<formalism::Repository>> m_task;
 
     // States
     valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> m_uint_nodes;

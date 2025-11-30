@@ -34,16 +34,16 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<Index<formalism::planning::Task>, C>
+class View<Index<formalism::Task>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::planning::Task> m_handle;
+    Index<formalism::Task> m_handle;
 
 public:
-    using Tag = formalism::planning::Task;
+    using Tag = formalism::Task;
 
-    View(Index<formalism::planning::Task> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::Task> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
@@ -52,6 +52,7 @@ public:
     auto get_index() const noexcept { return m_handle; }
     auto get_domain() const noexcept { return View(get_data().domain, *m_context); }
     auto get_derived_predicates() const noexcept { return View(get_data().derived_predicates, *m_context); }
+    auto get_objects() const noexcept { return View(get_data().objects, *m_context); }
     template<formalism::IsFactTag T>
     auto get_atoms() const noexcept
     {
@@ -63,7 +64,6 @@ public:
         return View(get_data().template get_fterm_values<T>(), *m_context);
     }
     auto get_auxiliary_fterm_value() const noexcept { return View(get_data().auxiliary_fterm_value, *m_context); }
-    auto get_objects() const noexcept { return View(get_data().objects, *m_context); }
     auto get_goal() const noexcept { return View(get_data().goal, *m_context); }
     auto get_axioms() const noexcept { return View(get_data().axioms, *m_context); }
 

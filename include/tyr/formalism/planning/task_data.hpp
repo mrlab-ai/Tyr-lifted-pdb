@@ -33,46 +33,43 @@ namespace tyr
 {
 
 template<>
-struct Data<formalism::planning::Task>
+struct Data<formalism::Task>
 {
-    using Tag = formalism::planning::Task;
+    using Tag = formalism::Task;
 
-    Index<formalism::planning::Task> index;
-    Index<formalism::planning::Domain> domain;
+    Index<formalism::Task> index;
+    Index<formalism::Domain> domain;
     IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates;
+    IndexList<formalism::Object> objects;
     IndexList<formalism::GroundAtom<formalism::StaticTag>> static_atoms;
     IndexList<formalism::GroundAtom<formalism::FluentTag>> fluent_atoms;
-    IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms;
     IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>> static_fterm_values;
     IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values;
     ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value;
-    IndexList<formalism::Object> objects;
     Index<formalism::GroundConjunctiveCondition> goal;
-    IndexList<formalism::planning::Axiom> axioms;
+    IndexList<formalism::Axiom> axioms;
 
     Data() = default;
-    Data(Index<formalism::planning::Task> index,
-         Index<formalism::planning::Domain> domain,
+    Data(Index<formalism::Task> index,
+         Index<formalism::Domain> domain,
          IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates,
+         IndexList<formalism::Object> objects,
          IndexList<formalism::GroundAtom<formalism::StaticTag>> static_atoms,
          IndexList<formalism::GroundAtom<formalism::FluentTag>> fluent_atoms,
-         IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms,
          IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>> static_fterm_values,
          IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values,
          ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value,
-         IndexList<formalism::Object> objects,
          Index<formalism::GroundConjunctiveCondition> goal,
-         IndexList<formalism::planning::Axiom> axioms) :
+         IndexList<formalism::Axiom> axioms) :
         index(index),
         domain(domain),
         derived_predicates(std::move(derived_predicates)),
+        objects(std::move(objects)),
         static_atoms(std::move(static_atoms)),
         fluent_atoms(std::move(fluent_atoms)),
-        derived_atoms(std::move(derived_atoms)),
         static_fterm_values(std::move(static_fterm_values)),
         fluent_fterm_values(std::move(fluent_fterm_values)),
         auxiliary_fterm_value(auxiliary_fterm_value),
-        objects(std::move(objects)),
         goal(goal),
         axioms(std::move(axioms))
     {
@@ -89,8 +86,6 @@ struct Data<formalism::planning::Task>
             return static_atoms;
         else if constexpr (std::same_as<T, formalism::FluentTag>)
             return fluent_atoms;
-        else if constexpr (std::same_as<T, formalism::DerivedTag>)
-            return derived_atoms;
         else
             static_assert(dependent_false<T>::value, "Missing case");
     }
@@ -111,13 +106,12 @@ struct Data<formalism::planning::Task>
         return std::tie(index,
                         domain,
                         derived_predicates,
+                        objects,
                         static_atoms,
                         fluent_atoms,
-                        derived_atoms,
                         static_fterm_values,
                         fluent_fterm_values,
                         auxiliary_fterm_value,
-                        objects,
                         goal,
                         axioms);
     }
@@ -125,13 +119,12 @@ struct Data<formalism::planning::Task>
     {
         return std::tie(domain,
                         derived_predicates,
+                        objects,
                         static_atoms,
                         fluent_atoms,
-                        derived_atoms,
                         static_fterm_values,
                         fluent_fterm_values,
                         auxiliary_fterm_value,
-                        objects,
                         goal,
                         axioms);
     }

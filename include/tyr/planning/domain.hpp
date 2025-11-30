@@ -27,11 +27,11 @@ namespace tyr::planning
 class Domain
 {
 public:
-    Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::planning::Domain>, formalism::Repository> domain);
+    Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::Domain>, formalism::Repository> domain);
 
 private:
     std::shared_ptr<formalism::Repository> m_repository;
-    View<Index<formalism::planning::Domain>, formalism::Repository> m_domain;
+    View<Index<formalism::Domain>, formalism::Repository> m_domain;
 };
 
 }

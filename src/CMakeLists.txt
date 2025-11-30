@@ -31,7 +31,8 @@ target_link_libraries(core
   PUBLIC
     Threads::Threads
     TBB::tbb
-    valla::core    
+    valla::core   
+    loki::parsers  
   PRIVATE
     fmt::fmt
 )

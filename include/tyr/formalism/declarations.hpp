@@ -203,8 +203,6 @@ struct Program
 {
 };
 
-namespace planning
-{
 struct OpAssign
 {
 };
@@ -269,7 +267,6 @@ struct Task
 struct Domain
 {
 };
-}
 
 /**
  * Context

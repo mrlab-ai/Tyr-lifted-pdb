@@ -31,16 +31,16 @@ namespace tyr
 {
 
 template<formalism::IsContext C>
-class View<Index<formalism::planning::GroundConjunctiveEffect>, C>
+class View<Index<formalism::GroundConjunctiveEffect>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::planning::GroundConjunctiveEffect> m_handle;
+    Index<formalism::GroundConjunctiveEffect> m_handle;
 
 public:
-    using Tag = formalism::planning::GroundConjunctiveEffect;
+    using Tag = formalism::GroundConjunctiveEffect;
 
-    View(Index<formalism::planning::GroundConjunctiveEffect> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::GroundConjunctiveEffect> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

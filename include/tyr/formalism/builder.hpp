@@ -55,6 +55,42 @@
 #include "tyr/formalism/multi_operator_index.hpp"
 #include "tyr/formalism/object_data.hpp"
 #include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/planning/action_data.hpp"
+#include "tyr/formalism/planning/action_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/axiom_data.hpp"
+#include "tyr/formalism/planning/axiom_index.hpp"
+#include "tyr/formalism/planning/axiom_view.hpp"
+#include "tyr/formalism/planning/conditional_effect_data.hpp"
+#include "tyr/formalism/planning/conditional_effect_index.hpp"
+#include "tyr/formalism/planning/conditional_effect_view.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_data.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_index.hpp"
+#include "tyr/formalism/planning/conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/domain_data.hpp"
+#include "tyr/formalism/planning/domain_index.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/ground_action_data.hpp"
+#include "tyr/formalism/planning/ground_action_index.hpp"
+#include "tyr/formalism/planning/ground_action_view.hpp"
+#include "tyr/formalism/planning/ground_axiom_data.hpp"
+#include "tyr/formalism/planning/ground_axiom_index.hpp"
+#include "tyr/formalism/planning/ground_axiom_view.hpp"
+#include "tyr/formalism/planning/ground_conditional_effect_data.hpp"
+#include "tyr/formalism/planning/ground_conditional_effect_index.hpp"
+#include "tyr/formalism/planning/ground_conditional_effect_view.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_effect_data.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_effect_index.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_effect_view.hpp"
+#include "tyr/formalism/planning/ground_numeric_effect_data.hpp"
+#include "tyr/formalism/planning/ground_numeric_effect_index.hpp"
+#include "tyr/formalism/planning/ground_numeric_effect_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_data.hpp"
+#include "tyr/formalism/planning/numeric_effect_index.hpp"
+#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/task_data.hpp"
+#include "tyr/formalism/planning/task_index.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
 #include "tyr/formalism/predicate_data.hpp"
 #include "tyr/formalism/predicate_index.hpp"
 #include "tyr/formalism/program_data.hpp"
@@ -74,6 +110,10 @@ namespace tyr::formalism
 struct Builder
 {
     Builder() = default;
+
+    /**
+     * Datalog
+     */
 
     // ----- Operators over FunctionExpression -----
     Data<UnaryOperator<OpSub, Data<FunctionExpression>>> unary_sub;
@@ -152,6 +192,37 @@ struct Builder
     Data<GroundRule> ground_rule;
 
     Data<Program> program;
+
+    /**
+     * Planning
+     */
+
+    Data<NumericEffect<StaticTag>> static_numeric_effect;
+    Data<NumericEffect<FluentTag>> fluent_numeric_effect;
+    Data<NumericEffect<AuxiliaryTag>> auxiliary_numeric_effect;
+
+    Data<GroundNumericEffect<StaticTag>> ground_static_numeric_effect;
+    Data<GroundNumericEffect<FluentTag>> ground_fluent_numeric_effect;
+    Data<GroundNumericEffect<AuxiliaryTag>> ground_auxiliary_numeric_effect;
+
+    Data<ConditionalEffect> cond_effect;
+    Data<GroundConditionalEffect> ground_cond_effect;
+
+    Data<ConjunctiveEffect> conj_effect;
+    Data<GroundConjunctiveEffect> ground_conj_effect;
+
+    Data<Action> action;
+    Data<GroundAction> ground_action;
+
+    Data<Axiom> axiom;
+    Data<GroundAxiom> ground_axiom;
+
+    Data<Task> task;
+    Data<Domain> domain;
+
+    /**
+     * Datalog
+     */
 
     // ================== Operators ==================
 
@@ -382,6 +453,51 @@ struct Builder
     auto& get_ground_rule() noexcept { return ground_rule; }
 
     auto& get_program() noexcept { return program; }
+
+    /**
+     * Planning
+     */
+
+    template<IsFactTag T>
+    auto& get_numeric_effect() noexcept
+    {
+        if constexpr (std::is_same_v<T, StaticTag>)
+            return static_numeric_effect;
+        else if constexpr (std::is_same_v<T, FluentTag>)
+            return fluent_numeric_effect;
+        else if constexpr (std::is_same_v<T, AuxiliaryTag>)
+            return auxiliary_numeric_effect;
+        else
+            static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
+    }
+
+    template<IsFactTag T>
+    auto& get_ground_numeric_effect() noexcept
+    {
+        if constexpr (std::is_same_v<T, StaticTag>)
+            return ground_static_numeric_effect;
+        else if constexpr (std::is_same_v<T, FluentTag>)
+            return ground_fluent_numeric_effect;
+        else if constexpr (std::is_same_v<T, AuxiliaryTag>)
+            return ground_auxiliary_numeric_effect;
+        else
+            static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
+    }
+
+    auto& get_cond_effect() noexcept { return cond_effect; }
+    auto& get_ground_cond_effect() noexcept { return ground_cond_effect; }
+
+    auto& get_conj_effect() noexcept { return conj_effect; }
+    auto& get_ground_conj_effect() noexcept { return ground_conj_effect; }
+
+    auto& get_action() noexcept { return action; }
+    auto& get_ground_action() noexcept { return ground_action; }
+
+    auto& get_axiom() noexcept { return axiom; }
+    auto& get_ground_axiom() noexcept { return ground_axiom; }
+
+    auto& get_task() noexcept { return task; }
+    auto& get_domain() noexcept { return domain; }
 };
 
 }

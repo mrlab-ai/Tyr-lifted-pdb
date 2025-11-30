@@ -25,12 +25,12 @@
 namespace tyr
 {
 template<>
-struct Index<formalism::planning::GroundAction> : IndexMixin<Index<formalism::planning::GroundAction>>
+struct Index<formalism::GroundAction> : IndexMixin<Index<formalism::GroundAction>>
 {
-    using Tag = formalism::planning::GroundAction;
+    using Tag = formalism::GroundAction;
 
     // Inherit constructors
-    using Base = IndexMixin<Index<formalism::planning::GroundAction>>;
+    using Base = IndexMixin<Index<formalism::GroundAction>>;
     using Base::Base;
 };
 
