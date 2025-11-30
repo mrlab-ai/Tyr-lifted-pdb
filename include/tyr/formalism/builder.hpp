@@ -85,6 +85,9 @@
 #include "tyr/formalism/planning/ground_numeric_effect_data.hpp"
 #include "tyr/formalism/planning/ground_numeric_effect_index.hpp"
 #include "tyr/formalism/planning/ground_numeric_effect_view.hpp"
+#include "tyr/formalism/planning/metric_data.hpp"
+#include "tyr/formalism/planning/metric_index.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/numeric_effect_data.hpp"
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
 #include "tyr/formalism/planning/numeric_effect_view.hpp"
@@ -216,6 +219,8 @@ struct Builder
 
     Data<Axiom> axiom;
     Data<GroundAxiom> ground_axiom;
+
+    Data<Metric> metric;
 
     Data<Task> task;
     Data<Domain> domain;
@@ -495,6 +500,8 @@ struct Builder
 
     auto& get_axiom() noexcept { return axiom; }
     auto& get_ground_axiom() noexcept { return ground_axiom; }
+
+    auto& get_metric() noexcept { return metric; }
 
     auto& get_task() noexcept { return task; }
     auto& get_domain() noexcept { return domain; }

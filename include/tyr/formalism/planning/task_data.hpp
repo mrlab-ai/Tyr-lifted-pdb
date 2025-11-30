@@ -26,6 +26,7 @@
 #include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/axiom_index.hpp"
 #include "tyr/formalism/planning/domain_index.hpp"
+#include "tyr/formalism/planning/metric_index.hpp"
 #include "tyr/formalism/planning/task_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
 
@@ -47,6 +48,7 @@ struct Data<formalism::Task>
     IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values;
     ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value;
     Index<formalism::GroundConjunctiveCondition> goal;
+    Index<formalism::Metric> metric;
     IndexList<formalism::Axiom> axioms;
 
     Data() = default;
@@ -60,6 +62,7 @@ struct Data<formalism::Task>
          IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values,
          ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value,
          Index<formalism::GroundConjunctiveCondition> goal,
+         Index<formalism::Metric> metric,
          IndexList<formalism::Axiom> axioms) :
         index(index),
         domain(domain),
@@ -71,6 +74,7 @@ struct Data<formalism::Task>
         fluent_fterm_values(std::move(fluent_fterm_values)),
         auxiliary_fterm_value(auxiliary_fterm_value),
         goal(goal),
+        metric(metric),
         axioms(std::move(axioms))
     {
     }
@@ -113,6 +117,7 @@ struct Data<formalism::Task>
                         fluent_fterm_values,
                         auxiliary_fterm_value,
                         goal,
+                        metric,
                         axioms);
     }
     auto identifying_members() const noexcept
@@ -126,6 +131,7 @@ struct Data<formalism::Task>
                         fluent_fterm_values,
                         auxiliary_fterm_value,
                         goal,
+                        metric,
                         axioms);
     }
 };

@@ -27,6 +27,7 @@
 #include "tyr/formalism/planning/axiom_view.hpp"
 #include "tyr/formalism/planning/domain_index.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/predicate_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
@@ -65,6 +66,7 @@ public:
     }
     auto get_auxiliary_fterm_value() const noexcept { return View(get_data().auxiliary_fterm_value, *m_context); }
     auto get_goal() const noexcept { return View(get_data().goal, *m_context); }
+    auto get_metric() const noexcept { return View(get_data().metric, *m_context); }
     auto get_axioms() const noexcept { return View(get_data().axioms, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }

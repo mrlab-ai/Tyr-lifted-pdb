@@ -47,6 +47,7 @@
 #include "tyr/formalism/planning/ground_conditional_effect_data.hpp"
 #include "tyr/formalism/planning/ground_conjunctive_effect_data.hpp"
 #include "tyr/formalism/planning/ground_numeric_effect_data.hpp"
+#include "tyr/formalism/planning/metric_data.hpp"
 #include "tyr/formalism/planning/numeric_effect_data.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
 #include "tyr/formalism/predicate_data.hpp"
@@ -247,6 +248,8 @@ inline bool is_canonical(const Data<GroundAction>& data) { return true; }
 inline bool is_canonical(const Data<Axiom>& data) { return true; }
 
 inline bool is_canonical(const Data<GroundAxiom>& data) { return true; }
+
+inline bool is_canonical(const Data<Metric>& data) { return true; }
 
 inline bool is_canonical(const Data<Task>& data)
 {
@@ -488,6 +491,8 @@ inline void canonicalize(Data<GroundAction>& data) {}
 inline void canonicalize(Data<Axiom>& data) {}
 
 inline void canonicalize(Data<GroundAxiom>& data) {}
+
+inline void canonicalize(Data<Metric>& data) {}
 
 inline void canonicalize(Data<Task>& data)
 {

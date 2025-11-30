@@ -75,6 +75,8 @@
 #include "tyr/formalism/planning/ground_conjunctive_effect_index.hpp"
 #include "tyr/formalism/planning/ground_numeric_effect_data.hpp"
 #include "tyr/formalism/planning/ground_numeric_effect_index.hpp"
+#include "tyr/formalism/planning/metric_data.hpp"
+#include "tyr/formalism/planning/metric_index.hpp"
 #include "tyr/formalism/planning/numeric_effect_data.hpp"
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
 #include "tyr/formalism/planning/task_data.hpp"
@@ -168,6 +170,7 @@ private:
                                             RepositoryEntry<GroundAction>,
                                             RepositoryEntry<Axiom>,
                                             RepositoryEntry<GroundAxiom>,
+                                            RepositoryEntry<Metric>,
                                             RepositoryEntry<Domain>,
                                             RepositoryEntry<Task>>;
 
