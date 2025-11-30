@@ -42,7 +42,7 @@ public:
 
     StateIndex get_index() const noexcept { return m_index; }
 
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     valla::Slot<uint_t> get_atoms() const noexcept
     {
         if constexpr (std::same_as<T, formalism::FluentTag>)

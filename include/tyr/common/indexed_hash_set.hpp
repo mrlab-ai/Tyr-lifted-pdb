@@ -30,7 +30,7 @@
 namespace tyr
 {
 
-template<typename T, IsIndex I, typename H = Hash<T>, typename E = EqualTo<T>>
+template<typename T, Indexable I, typename H = Hash<T>, typename E = EqualTo<T>>
 class IndexedHashSet
 {
 private:

@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::IsOp Op, typename T>
+template<formalism::OpKind Op, typename T>
 struct Data<formalism::MultiOperator<Op, T>>
 {
     using Tag = formalism::MultiOperator<Op, T>;

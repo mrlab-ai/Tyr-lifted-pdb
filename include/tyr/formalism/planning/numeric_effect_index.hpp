@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct Index<formalism::NumericEffect<T>> : IndexMixin<Index<formalism::NumericEffect<T>>>
 {
     using Tag = formalism::NumericEffect<T>;

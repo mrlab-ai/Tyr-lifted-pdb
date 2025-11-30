@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::IsOp Op, typename T>
+template<formalism::OpKind Op, typename T>
 struct Data<formalism::BinaryOperator<Op, T>>
 {
     using Tag = formalism::BinaryOperator<Op, T>;

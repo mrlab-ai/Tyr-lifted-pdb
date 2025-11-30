@@ -37,7 +37,7 @@ public:
 
     StateIndex get_index() const noexcept { return m_index; }
 
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     boost::dynamic_bitset<>& get_atoms() noexcept
     {
         if constexpr (std::same_as<T, formalism::FluentTag>)
@@ -48,7 +48,7 @@ public:
             static_assert(dependent_false<T>::value, "Missing case");
     }
 
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     const boost::dynamic_bitset<>& get_atoms() const noexcept
     {
         if constexpr (std::same_as<T, formalism::FluentTag>)

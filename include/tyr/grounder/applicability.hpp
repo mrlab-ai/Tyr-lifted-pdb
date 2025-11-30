@@ -23,25 +23,25 @@
 
 namespace tyr::grounder
 {
-template<formalism::IsContext C>
+template<formalism::Context C>
 auto evaluate(float_t element, const FactSets<C>& fact_sets)
 {
     return element;
 }
 
-template<formalism::IsArithmeticOp O, formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::ArithmeticOpKind O, formalism::Context C1, formalism::Context C2>
 auto evaluate(View<Index<formalism::UnaryOperator<O, Data<formalism::GroundFunctionExpression>>>, C1> element, const FactSets<C2>& fact_sets)
 {
     return formalism::apply(O {}, evaluate(element.get_arg(), fact_sets));
 }
 
-template<formalism::IsOp O, formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::OpKind O, formalism::Context C1, formalism::Context C2>
 auto evaluate(View<Index<formalism::BinaryOperator<O, Data<formalism::GroundFunctionExpression>>>, C1> element, const FactSets<C2>& fact_sets)
 {
     return formalism::apply(O {}, evaluate(element.get_lhs(), fact_sets), evaluate(element.get_rhs(), fact_sets));
 }
 
-template<formalism::IsArithmeticOp O, formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::ArithmeticOpKind O, formalism::Context C1, formalism::Context C2>
 auto evaluate(View<Index<formalism::MultiOperator<O, Data<formalism::GroundFunctionExpression>>>, C1> element, const FactSets<C2>& fact_sets)
 {
     const auto child_fexprs = element.get_args();
@@ -53,7 +53,7 @@ auto evaluate(View<Index<formalism::MultiOperator<O, Data<formalism::GroundFunct
                            { return formalism::apply(formalism::OpMul {}, value, evaluate(child_expr, fact_sets)); });
 }
 
-template<formalism::IsFactTag T, formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::FactKind T, formalism::Context C1, formalism::Context C2>
 auto evaluate(View<Index<formalism::GroundFunctionTerm<T>>, C1> element, const FactSets<C2>& fact_sets)
 {
     const auto& fact_set = fact_sets.template get<T>().function;
@@ -64,44 +64,44 @@ auto evaluate(View<Index<formalism::GroundFunctionTerm<T>>, C1> element, const F
     return fact_set[element.get_index()];
 }
 
-template<formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::Context C1, formalism::Context C2>
 auto evaluate(View<Data<formalism::GroundFunctionExpression>, C1> element, const FactSets<C2>& fact_sets)
 {
     return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
 }
 
-template<formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::Context C1, formalism::Context C2>
 auto evaluate(View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C2>> element,
               const FactSets<C1>& fact_sets)
 {
     return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
 }
 
-template<formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::Context C1, formalism::Context C2>
 auto evaluate(View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C1> element, const FactSets<C2>& fact_sets)
 {
     return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
 }
 
-template<formalism::IsFactTag T, formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::FactKind T, formalism::Context C1, formalism::Context C2>
 bool is_applicable(View<Index<formalism::GroundLiteral<T>>, C1> element, const FactSets<C2>& fact_sets)
 {
     return fact_sets.template get<T>().predicate.contains(element.get_atom().get_index()) == element.get_polarity();
 }
 
-template<formalism::IsFactTag T, formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::FactKind T, formalism::Context C1, formalism::Context C2>
 bool is_applicable(View<IndexList<formalism::GroundLiteral<T>>, C1> elements, const FactSets<C2>& fact_sets)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, fact_sets); });
 }
 
-template<formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::Context C1, formalism::Context C2>
 bool is_applicable(View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C1> elements, const FactSets<C2>& fact_sets)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return evaluate(arg, fact_sets); });
 }
 
-template<formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::Context C1, formalism::Context C2>
 bool is_applicable(View<Index<formalism::GroundConjunctiveCondition>, C1> element, const FactSets<C2>& fact_sets)
 {
     return is_applicable(element.template get_literals<formalism::StaticTag>(), fact_sets)     //
@@ -109,13 +109,13 @@ bool is_applicable(View<Index<formalism::GroundConjunctiveCondition>, C1> elemen
            && is_applicable(element.get_numeric_constraints(), fact_sets);
 }
 
-template<formalism::IsContext C1, formalism::IsContext C2>
+template<formalism::Context C1, formalism::Context C2>
 bool is_applicable(View<Index<formalism::GroundRule>, C1> element, const FactSets<C2>& fact_sets)
 {
     return is_applicable(element.get_body(), fact_sets);
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 bool nullary_conditions_hold(View<Index<formalism::ConjunctiveCondition>, C> condition, const FactSets<C>& fact_sets) noexcept
 {
     return is_applicable(condition.template get_nullary_literals<formalism::StaticTag>(), fact_sets)

@@ -29,7 +29,7 @@
 
 namespace tyr
 {
-template<formalism::IsContext C>
+template<formalism::Context C>
 class View<Index<formalism::ConjunctiveCondition>, C>
 {
 private:
@@ -47,7 +47,7 @@ public:
 
     auto get_index() const noexcept { return m_handle; }
     auto get_variables() const { return View<IndexList<formalism::Variable>, C>(get_data().variables, *m_context); }
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     auto get_literals() const
     {
         return View<IndexList<formalism::Literal<T>>, C>(get_data().template get_literals<T>(), *m_context);
@@ -56,7 +56,7 @@ public:
     {
         return View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(get_data().numeric_constraints, *m_context);
     }
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     auto get_nullary_literals() const
     {
         return View<IndexList<formalism::GroundLiteral<T>>, C>(get_data().template get_nullary_literals<T>(), *m_context);

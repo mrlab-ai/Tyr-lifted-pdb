@@ -98,7 +98,7 @@ struct PerfectAssignmentHash
     size_t size() const noexcept { return m_num_assignments * m_num_assignments; }
 };
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 class PredicateAssignmentSet
 {
 private:
@@ -108,7 +108,7 @@ private:
     boost::dynamic_bitset<> m_set;
 
 public:
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     PredicateAssignmentSet(View<Index<formalism::Predicate<T>>, C> predicate, const analysis::DomainListList& parameter_domains, size_t num_objects) :
         m_predicate(predicate.get_index()),
         m_hash(PerfectAssignmentHash(parameter_domains, num_objects)),
@@ -118,7 +118,7 @@ public:
 
     void reset() noexcept { m_set.reset(); }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(View<Index<formalism::GroundAtom<T>>, C> ground_atom)
     {
         const auto arity = ground_atom.get_predicate().get_arity();
@@ -152,7 +152,7 @@ public:
     size_t size() const noexcept { return m_set.size(); }
 };
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 class PredicateAssignmentSets
 {
 private:
@@ -161,7 +161,7 @@ private:
 public:
     PredicateAssignmentSets() = default;
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     PredicateAssignmentSets(View<IndexList<formalism::Predicate<T>>, C> predicates, const analysis::DomainListListList& predicate_domains, size_t num_objects) :
         m_sets()
     {
@@ -180,14 +180,14 @@ public:
             set.reset();
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(View<IndexList<formalism::GroundAtom<T>>, C> ground_atoms)
     {
         for (const auto ground_atom : ground_atoms)
             m_sets[ground_atom.get_predicate().get_index().get_value()].insert(ground_atom);
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(View<Index<formalism::GroundAtom<T>>, C> ground_atom)
     {
         m_sets[ground_atom.get_predicate().get_index().get_value()].insert(ground_atom);
@@ -201,7 +201,7 @@ public:
     }
 };
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 class FunctionAssignmentSet
 {
 private:
@@ -213,7 +213,7 @@ private:
 public:
     FunctionAssignmentSet() = default;
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     FunctionAssignmentSet(View<Index<formalism::Function<T>>, C> function, const analysis::DomainListList& parameter_domains, size_t num_objects) :
         m_function(function.get_index()),
         m_hash(PerfectAssignmentHash(parameter_domains, num_objects)),
@@ -223,7 +223,7 @@ public:
 
     void reset() noexcept { std::fill(m_set.begin(), m_set.end(), ClosedInterval<float_t>()); }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(View<Index<formalism::GroundFunctionTerm<T>>, C> function_term, float_t value)
     {
         const auto arity = function_term.get_function().get_arity();
@@ -257,7 +257,7 @@ public:
         }
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(View<Index<formalism::GroundFunctionTermValue<T>>, C> fterm_value)
     {
         insert(fterm_value.get_fterm(), fterm_value.get_value());
@@ -270,7 +270,7 @@ public:
     size_t size() const noexcept { return m_set.size(); }
 };
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 class FunctionAssignmentSets
 {
 private:
@@ -279,7 +279,7 @@ private:
 public:
     FunctionAssignmentSets() = default;
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     FunctionAssignmentSets(View<IndexList<formalism::Function<T>>, C> functions, const analysis::DomainListListList& function_domains, size_t num_objects) :
         m_sets()
     {
@@ -298,14 +298,14 @@ public:
             set.reset();
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(View<IndexList<formalism::GroundFunctionTerm<T>>, C> function_terms, const std::vector<float_t>& values)
     {
         for (size_t i = 0; i < function_terms.size(); ++i)
             m_sets[function_terms[i].get_fterm().get_function().get_index().get_value()].insert(function_terms[i], values[i]);
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> fterm_values)
     {
         for (size_t i = 0; i < fterm_values.size(); ++i)
@@ -320,7 +320,7 @@ public:
     }
 };
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct TaggedAssignmentSets
 {
     PredicateAssignmentSets<T> predicate;
@@ -328,7 +328,7 @@ struct TaggedAssignmentSets
 
     TaggedAssignmentSets() = default;
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     TaggedAssignmentSets(View<IndexList<formalism::Predicate<T>>, C> predicates,
                          View<IndexList<formalism::Function<T>>, C> functions,
                          const analysis::DomainListListList& predicate_domains,
@@ -339,7 +339,7 @@ struct TaggedAssignmentSets
     {
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(const TaggedFactSets<T, C>& fact_sets)
     {
         predicate.insert(fact_sets.predicate.get_facts());
@@ -358,7 +358,7 @@ struct AssignmentSets
     TaggedAssignmentSets<formalism::StaticTag> static_sets;
     TaggedAssignmentSets<formalism::FluentTag> fluent_sets;
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     AssignmentSets(View<Index<formalism::Program>, C> program, const analysis::VariableDomains& domains) :
         static_sets(program.template get_predicates<formalism::StaticTag>(),
                     program.template get_functions<formalism::StaticTag>(),
@@ -375,14 +375,14 @@ struct AssignmentSets
 
     void reset() { fluent_sets.reset(); }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     void insert(const FactSets<C>& fact_sets)
     {
         static_sets.insert(fact_sets.static_sets);
         fluent_sets.insert(fact_sets.fluent_sets);
     }
 
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     auto& get() const
     {
         if constexpr (std::is_same_v<T, formalism::StaticTag>)

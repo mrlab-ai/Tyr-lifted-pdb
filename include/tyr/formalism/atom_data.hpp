@@ -26,7 +26,7 @@
 
 namespace tyr
 {
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct Data<formalism::Atom<T>>
 {
     using Tag = formalism::Atom<T>;

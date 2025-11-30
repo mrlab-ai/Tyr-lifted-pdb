@@ -23,7 +23,7 @@
 
 namespace tyr::formalism
 {
-template<IsContext C>
+template<Context C>
 class ScopedRepository
 {
 private:
@@ -78,7 +78,7 @@ public:
 };
 
 /// @brief Make ScopedRepository a trivial context.
-template<IsContext C>
+template<Context C>
 inline const ScopedRepository<C>& get_repository(const ScopedRepository<C>& context) noexcept
 {
     return context;
@@ -86,11 +86,11 @@ inline const ScopedRepository<C>& get_repository(const ScopedRepository<C>& cont
 
 // Domain + Task
 static_assert(IsRepository<ScopedRepository<Repository>>);
-static_assert(IsContext<ScopedRepository<Repository>>);
+static_assert(Context<ScopedRepository<Repository>>);
 
 // Domain + Task + Worker threads
 static_assert(IsRepository<ScopedRepository<ScopedRepository<Repository>>>);
-static_assert(IsContext<ScopedRepository<ScopedRepository<Repository>>>);
+static_assert(Context<ScopedRepository<ScopedRepository<Repository>>>);
 
 }
 

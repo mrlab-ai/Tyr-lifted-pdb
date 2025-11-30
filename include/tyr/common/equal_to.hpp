@@ -254,7 +254,7 @@ struct EqualTo<std::span<T, Extent>>
     }
 };
 
-/// @brief EqualTo specialization for types T that satisfy `HasIdentifyingMembers`.
+/// @brief EqualTo specialization for types T that satisfy `Identifiable`.
 /// Dereferences the underlying pointer before forwarding the call to the std::equal_to
 /// specialization of `IdentifiableMemberView` of T to pairwise compare all members.
 /// @tparam T is the type.
@@ -267,7 +267,7 @@ struct EqualTo<ObserverPtr<T>>
 /// @brief EqualTo specialization for an `IdentifiableMembersView`
 /// that pairwise compares all members.
 /// @tparam ...Ts are the types of all members.
-template<HasIdentifyingMembers T>
+template<Identifiable T>
 struct EqualTo<T>
 {
     using is_transparent = void;  // <-- enables hetero lookup

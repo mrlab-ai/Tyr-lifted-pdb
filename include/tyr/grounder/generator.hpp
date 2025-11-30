@@ -26,7 +26,7 @@
 namespace tyr::grounder
 {
 
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 View<Index<formalism::GroundAtom<T>>, formalism::ScopedRepository<C>> ground(View<Index<formalism::Atom<T>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
@@ -68,7 +68,7 @@ View<Index<formalism::GroundAtom<T>>, formalism::ScopedRepository<C>> ground(Vie
     return repository.get_or_create(atom, buffer).first;
 }
 
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 View<Index<formalism::GroundLiteral<T>>, formalism::ScopedRepository<C>> ground(View<Index<formalism::Literal<T>>, C> element,
                                                                                 MutableRuleWorkspace<C>& workspace)
 {
@@ -87,7 +87,7 @@ View<Index<formalism::GroundLiteral<T>>, formalism::ScopedRepository<C>> ground(
     return repository.get_or_create(ground_literal, buffer).first;
 }
 
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 View<Index<formalism::GroundFunctionTerm<T>>, formalism::ScopedRepository<C>> ground(View<Index<formalism::FunctionTerm<T>>, C> element,
                                                                                      MutableRuleWorkspace<C>& workspace)
 {
@@ -130,7 +130,7 @@ View<Index<formalism::GroundFunctionTerm<T>>, formalism::ScopedRepository<C>> gr
     return repository.get_or_create(fterm, buffer).first;
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>> ground(View<Data<formalism::FunctionExpression>, C> element,
                                                                                        MutableRuleWorkspace<C>& workspace)
 {
@@ -166,7 +166,7 @@ View<Data<formalism::GroundFunctionExpression>, formalism::ScopedRepository<C>> 
         element.get_variant());
 }
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 View<Index<formalism::UnaryOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
 ground(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
@@ -184,7 +184,7 @@ ground(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression
     return repository.get_or_create(unary, buffer).first;
 }
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 View<Index<formalism::BinaryOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
 ground(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
@@ -203,7 +203,7 @@ ground(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpressio
     return repository.get_or_create(binary, buffer).first;
 }
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 View<Index<formalism::MultiOperator<O, Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
 ground(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
@@ -224,7 +224,7 @@ ground(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression
     return repository.get_or_create(multi, buffer).first;
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
 ground(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
@@ -238,7 +238,7 @@ ground(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>
         element.get_variant());
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, formalism::ScopedRepository<C>>
 ground(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element, MutableRuleWorkspace<C>& workspace)
 {
@@ -252,7 +252,7 @@ ground(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpressio
         element.get_variant());
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 View<Index<formalism::GroundConjunctiveCondition>, formalism::ScopedRepository<C>> ground(View<Index<formalism::ConjunctiveCondition>, C> element,
                                                                                           MutableRuleWorkspace<C>& workspace)
 {
@@ -285,7 +285,7 @@ View<Index<formalism::GroundConjunctiveCondition>, formalism::ScopedRepository<C
     return repository.get_or_create(conj_cond, buffer).first;
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 View<Index<formalism::GroundRule>, formalism::ScopedRepository<C>> ground(View<Index<formalism::Rule>, C> element, MutableRuleWorkspace<C>& workspace)
 {
     // Fetch and clear
@@ -305,7 +305,7 @@ View<Index<formalism::GroundRule>, formalism::ScopedRepository<C>> ground(View<I
     return repository.get_or_create(rule, buffer).first;
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void ground_nullary_case(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
 {
     mutable_workspace.binding.clear();
@@ -320,7 +320,7 @@ void ground_nullary_case(const ImmutableRuleWorkspace<C>& immutable_workspace, M
     }
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void ground_unary_case(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
 {
     mutable_workspace.binding.clear();
@@ -341,7 +341,7 @@ void ground_unary_case(const ImmutableRuleWorkspace<C>& immutable_workspace, Mut
     }
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void ground_general_case(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
 {
     kpkc::for_each_k_clique(immutable_workspace.consistency_graph,
@@ -367,7 +367,7 @@ void ground_general_case(const ImmutableRuleWorkspace<C>& immutable_workspace, M
                             });
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void ground(const ImmutableRuleWorkspace<C>& immutable_workspace, MutableRuleWorkspace<C>& mutable_workspace)
 {
     const auto rule = immutable_workspace.rule;

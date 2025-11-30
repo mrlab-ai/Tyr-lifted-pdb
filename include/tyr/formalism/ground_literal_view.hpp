@@ -27,7 +27,7 @@
 
 namespace tyr
 {
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 class View<Index<formalism::GroundLiteral<T>>, C>
 {
 private:

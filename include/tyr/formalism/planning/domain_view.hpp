@@ -32,7 +32,7 @@
 namespace tyr
 {
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 class View<Index<formalism::Domain>, C>
 {
 private:
@@ -49,12 +49,12 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     auto get_predicates() const noexcept
     {
         return View(get_data().template get_predicates<T>(), *m_context);
     }
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     auto get_functions() const noexcept
     {
         return View(get_data().template get_functions<T>(), *m_context);

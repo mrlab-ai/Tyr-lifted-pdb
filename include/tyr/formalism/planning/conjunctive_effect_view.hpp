@@ -30,7 +30,7 @@
 namespace tyr
 {
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 class View<Index<formalism::ConjunctiveEffect>, C>
 {
 private:

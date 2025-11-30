@@ -32,7 +32,7 @@ public:
 
     StateIndex get_index() const noexcept { return m_unpacked->get_index(); }
 
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     const boost::dynamic_bitset<>& get_atoms() const noexcept
     {
         return m_unpacked->template get_atoms<T>();

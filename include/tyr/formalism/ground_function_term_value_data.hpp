@@ -27,7 +27,7 @@
 namespace tyr
 {
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct Data<formalism::GroundFunctionTermValue<T>>
 {
     using Tag = formalism::GroundFunctionTermValue<T>;

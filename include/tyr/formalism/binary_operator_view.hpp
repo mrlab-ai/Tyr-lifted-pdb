@@ -25,7 +25,7 @@
 
 namespace tyr
 {
-template<formalism::IsOp Op, typename T, formalism::IsContext C>
+template<formalism::OpKind Op, typename T, formalism::Context C>
 class View<Index<formalism::BinaryOperator<Op, T>>, C>
 {
 private:
@@ -45,7 +45,7 @@ public:
     auto get_index() const noexcept { return m_handle; }
     auto get_lhs() const
     {
-        if constexpr (IsViewable<T, C>)
+        if constexpr (Viewable<T, C>)
         {
             return View<T, C>(get_data().lhs, *m_context);
         }
@@ -56,7 +56,7 @@ public:
     }
     auto get_rhs() const
     {
-        if constexpr (IsViewable<T, C>)
+        if constexpr (Viewable<T, C>)
         {
             return View<T, C>(get_data().rhs, *m_context);
         }

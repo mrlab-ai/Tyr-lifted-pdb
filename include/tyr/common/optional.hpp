@@ -26,13 +26,13 @@
 namespace tyr
 {
 
-template<typename Context, typename T>
-class View<::cista::optional<T>, Context>
+template<typename C, typename T>
+class View<::cista::optional<T>, C>
 {
 public:
     using Optional = ::cista::optional<T>;
 
-    View(const Optional& handle, const Context& context) : m_context(&context), m_handle(&handle) {}
+    View(const Optional& handle, const C& context) : m_context(&context), m_handle(&handle) {}
 
     const auto& get_data() const noexcept { return *m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
@@ -42,9 +42,9 @@ public:
 
     decltype(auto) value() const
     {
-        if constexpr (IsViewable<T, Context>)
+        if constexpr (Viewable<T, C>)
         {
-            return View<T, Context>(**m_handle, *m_context);
+            return View<T, C>(**m_handle, *m_context);
         }
         else
         {
@@ -56,11 +56,11 @@ public:
 
     auto operator->() const
     {
-        if constexpr (IsViewable<T, Context>)
+        if constexpr (Viewable<T, C>)
         {
-            static_assert(!IsViewable<T, Context>,
+            static_assert(!Viewable<T, C>,
                           "operator-> is not supported when T is viewable; "
-                          "call .value() first to get a View<T, Context>.");
+                          "call .value() first to get a View<T, C>.");
         }
         else
         {
@@ -69,7 +69,7 @@ public:
     }
 
 private:
-    const Context* m_context;
+    const C* m_context;
     const Optional* m_handle;
 };
 

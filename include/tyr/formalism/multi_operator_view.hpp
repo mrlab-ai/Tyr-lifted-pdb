@@ -26,7 +26,7 @@
 
 namespace tyr
 {
-template<formalism::IsOp Op, typename T, formalism::IsContext C>
+template<formalism::OpKind Op, typename T, formalism::Context C>
 class View<Index<formalism::MultiOperator<Op, T>>, C>
 {
 private:

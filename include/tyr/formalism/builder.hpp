@@ -226,7 +226,7 @@ struct Builder
 
     // ================== Operators ==================
 
-    template<IsOp O>
+    template<OpKind O>
     auto& get_unary() noexcept
     {
         if constexpr (std::is_same_v<O, OpSub>)
@@ -235,7 +235,7 @@ struct Builder
             static_assert(dependent_false<O>::value, "Missing Builder for the given types.");
     }
 
-    template<IsOp O>
+    template<OpKind O>
     auto& get_ground_unary() noexcept
     {
         if constexpr (std::is_same_v<O, OpSub>)
@@ -244,7 +244,7 @@ struct Builder
             static_assert(dependent_false<O>::value, "Missing Builder for the given types.");
     }
 
-    template<IsOp O>
+    template<OpKind O>
     auto& get_binary() noexcept
     {
         if constexpr (std::is_same_v<O, OpAdd>)
@@ -271,7 +271,7 @@ struct Builder
             static_assert(dependent_false<O>::value, "Missing Builder for the given types.");
     }
 
-    template<IsOp O>
+    template<OpKind O>
     auto& get_ground_binary() noexcept
     {
         if constexpr (std::is_same_v<O, OpAdd>)
@@ -298,7 +298,7 @@ struct Builder
             static_assert(dependent_false<O>::value, "Missing Builder for the given types.");
     }
 
-    template<IsOp O>
+    template<OpKind O>
     auto& get_multi() noexcept
     {
         if constexpr (std::is_same_v<O, OpAdd>)
@@ -309,7 +309,7 @@ struct Builder
             static_assert(dependent_false<O>::value, "Missing Builder for the given types.");
     }
 
-    template<IsOp O>
+    template<OpKind O>
     auto& get_ground_multi() noexcept
     {
         if constexpr (std::is_same_v<O, OpAdd>)
@@ -338,7 +338,7 @@ struct Builder
 
     // ================== Predicates / Atoms / Literals ==================
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_predicate() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -349,7 +349,7 @@ struct Builder
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_atom() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -360,7 +360,7 @@ struct Builder
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_ground_atom() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -371,7 +371,7 @@ struct Builder
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_literal() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -382,7 +382,7 @@ struct Builder
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_ground_literal() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -395,7 +395,7 @@ struct Builder
 
     // ================== Functions / Terms / Values ==================
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_function() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -406,7 +406,7 @@ struct Builder
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_fterm() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -417,7 +417,7 @@ struct Builder
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_ground_fterm() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -428,7 +428,7 @@ struct Builder
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_ground_fterm_value() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -458,7 +458,7 @@ struct Builder
      * Planning
      */
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_numeric_effect() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)
@@ -471,7 +471,7 @@ struct Builder
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<IsFactTag T>
+    template<FactKind T>
     auto& get_ground_numeric_effect() noexcept
     {
         if constexpr (std::is_same_v<T, StaticTag>)

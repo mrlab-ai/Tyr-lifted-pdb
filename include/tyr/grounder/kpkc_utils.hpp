@@ -35,7 +35,7 @@ namespace tyr::grounder::kpkc
 {
 
 /// @brief Helper to allocate a DenseKPartiteGraph from a given StaticConsistencyGraph.
-template<formalism::IsContext C>
+template<formalism::Context C>
 inline DenseKPartiteGraph allocate_dense_graph(const StaticConsistencyGraph<C>& sparse_graph)
 {
     auto graph = DenseKPartiteGraph();
@@ -62,7 +62,7 @@ inline DenseKPartiteGraph allocate_dense_graph(const StaticConsistencyGraph<C>& 
 }
 
 /// @brief Helper to allocate a Workspace from a given StaticConsistencyGraph.
-template<formalism::IsContext C>
+template<formalism::Context C>
 inline Workspace allocate_workspace(const StaticConsistencyGraph<C>& sparse_graph)
 {
     auto workspace = Workspace();
@@ -98,7 +98,7 @@ inline Workspace allocate_workspace(const StaticConsistencyGraph<C>& sparse_grap
     return workspace;
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 inline void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<C>& sparse_graph,
                                                  const AssignmentSets& assignment_sets,
                                                  DenseKPartiteGraph& ref_graph,

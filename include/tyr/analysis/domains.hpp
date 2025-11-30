@@ -63,7 +63,7 @@ inline DomainListListList to_list(const DomainSetListList& set)
     return vec;
 }
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 inline DomainSetListList initialize_predicate_domain_sets(View<Index<formalism::Program>, formalism::Repository> program)
 {
     const auto num_predicates = program.get_predicates<T>().size();
@@ -83,7 +83,7 @@ inline DomainSetListList initialize_predicate_domain_sets(View<Index<formalism::
     return predicate_domain_sets;
 }
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 inline DomainSetListList initialize_function_domain_sets(View<Index<formalism::Program>, formalism::Repository> program)
 {
     const auto num_functions = program.get_functions<T>().size();
@@ -141,14 +141,14 @@ void restrict_parameter_domain_from_static_atom(View<Index<formalism::Atom<forma
  * Restrict
  */
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets);
 
 void restrict_parameter_domain(float_t, DomainSetList&, const DomainSetListList&) {}
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 void restrict_parameter_domain(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
@@ -156,7 +156,7 @@ void restrict_parameter_domain(View<Index<formalism::UnaryOperator<O, Data<forma
     restrict_parameter_domain(element.get_arg(), parameter_domains, static_function_domain_sets);
 }
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 void restrict_parameter_domain(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
@@ -165,7 +165,7 @@ void restrict_parameter_domain(View<Index<formalism::BinaryOperator<O, Data<form
     restrict_parameter_domain(element.get_rhs(), parameter_domains, static_function_domain_sets);
 }
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 void restrict_parameter_domain(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
@@ -174,7 +174,7 @@ void restrict_parameter_domain(View<Index<formalism::MultiOperator<O, Data<forma
         restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets);
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void restrict_parameter_domain(View<Index<formalism::Atom<formalism::StaticTag>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_predicate_domain_sets)
@@ -208,7 +208,7 @@ void restrict_parameter_domain(View<Index<formalism::Atom<formalism::StaticTag>>
     }
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void restrict_parameter_domain(View<Index<formalism::FunctionTerm<formalism::StaticTag>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
@@ -242,14 +242,14 @@ void restrict_parameter_domain(View<Index<formalism::FunctionTerm<formalism::Sta
     }
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void restrict_parameter_domain(View<Index<formalism::FunctionTerm<formalism::FluentTag>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
 {
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
@@ -257,7 +257,7 @@ void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> elem
     visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get_variant());
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void restrict_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
@@ -265,7 +265,7 @@ void restrict_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<form
     visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, static_function_domain_sets); }, element.get_variant());
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void restrict_parameter_domain(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
@@ -277,14 +277,14 @@ void restrict_parameter_domain(View<Data<formalism::BooleanOperator<Data<formali
  * Lift
  */
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets);
 
 void lift_parameter_domain(float_t, const DomainSetList&, DomainSetListList&) {}
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 void lift_parameter_domain(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
@@ -292,7 +292,7 @@ void lift_parameter_domain(View<Index<formalism::UnaryOperator<O, Data<formalism
     lift_parameter_domain(element.get_arg(), parameter_domains, fluent_function_domain_sets);
 }
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 void lift_parameter_domain(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
@@ -301,7 +301,7 @@ void lift_parameter_domain(View<Index<formalism::BinaryOperator<O, Data<formalis
     lift_parameter_domain(element.get_rhs(), parameter_domains, fluent_function_domain_sets);
 }
 
-template<formalism::IsOp O, formalism::IsContext C>
+template<formalism::OpKind O, formalism::Context C>
 void lift_parameter_domain(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
@@ -310,7 +310,7 @@ void lift_parameter_domain(View<Index<formalism::MultiOperator<O, Data<formalism
         lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets);
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void lift_parameter_domain(View<Index<formalism::Atom<formalism::FluentTag>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_predicate_domain_sets)
@@ -344,7 +344,7 @@ void lift_parameter_domain(View<Index<formalism::Atom<formalism::FluentTag>>, C>
     }
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void lift_parameter_domain(View<Index<formalism::FunctionTerm<formalism::FluentTag>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
@@ -378,14 +378,14 @@ void lift_parameter_domain(View<Index<formalism::FunctionTerm<formalism::FluentT
     }
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void lift_parameter_domain(View<Index<formalism::FunctionTerm<formalism::StaticTag>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
 {
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
@@ -393,7 +393,7 @@ void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
     visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get_variant());
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void lift_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
@@ -401,7 +401,7 @@ void lift_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalis
     visit([&](auto&& arg) { lift_parameter_domain(arg, parameter_domains, fluent_function_domain_sets); }, element.get_variant());
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 void lift_parameter_domain(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)

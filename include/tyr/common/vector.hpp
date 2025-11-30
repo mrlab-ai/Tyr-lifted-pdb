@@ -28,22 +28,22 @@
 namespace tyr
 {
 
-template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator, typename Context>
-class View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, Context>
+template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator, typename C>
+class View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>
 {
 public:
     using Container = ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>;
 
-    View(const Container& handle, const Context& context) : m_context(&context), m_handle(&handle) {}
+    View(const Container& handle, const C& context) : m_context(&context), m_handle(&handle) {}
 
     size_t size() const noexcept { return get_data().size(); }
     bool empty() const noexcept { return get_data().empty(); }
 
     decltype(auto) operator[](size_t i) const
     {
-        if constexpr (IsViewable<T, Context>)
+        if constexpr (Viewable<T, C>)
         {
-            return View<T, Context>(get_data()[i], get_context());
+            return View<T, C>(get_data()[i], get_context());
         }
         else
         {
@@ -53,9 +53,9 @@ public:
 
     decltype(auto) front() const
     {
-        if constexpr (IsViewable<T, Context>)
+        if constexpr (Viewable<T, C>)
         {
-            return View<T, Context>(get_data().front(), get_context());
+            return View<T, C>(get_data().front(), get_context());
         }
         else
         {
@@ -65,22 +65,22 @@ public:
 
     struct const_iterator
     {
-        const Context* ctx;
+        const C* ctx;
         const T* ptr;
 
         using difference_type = std::ptrdiff_t;
-        using value_type = std::conditional_t<IsViewable<T, Context>, ::tyr::View<T, Context>, T>;
+        using value_type = std::conditional_t<Viewable<T, C>, ::tyr::View<T, C>, T>;
         using iterator_category = std::random_access_iterator_tag;
         using iterator_concept = std::random_access_iterator_tag;
 
         const_iterator() : ctx(nullptr), ptr(nullptr) {}
-        const_iterator(const T* ptr, const Context& ctx) : ctx(&ctx), ptr(ptr) {}
+        const_iterator(const T* ptr, const C& ctx) : ctx(&ctx), ptr(ptr) {}
 
         decltype(auto) operator*() const
         {
-            if constexpr (IsViewable<T, Context>)
+            if constexpr (Viewable<T, C>)
             {
-                return View<T, Context>(*ptr, *ctx);
+                return View<T, C>(*ptr, *ctx);
             }
             else
             {
@@ -151,8 +151,8 @@ public:
         // []
         auto operator[](difference_type n) const
         {
-            if constexpr (IsViewable<T, Context>)
-                return View<T, Context>(*(ptr + n), *ctx);
+            if constexpr (Viewable<T, C>)
+                return View<T, C>(*(ptr + n), *ctx);
             else
                 return *(ptr + n);
         }
@@ -180,7 +180,7 @@ public:
     const auto& get_handle() const { return m_handle; }
 
 private:
-    const Context* m_context;
+    const C* m_context;
     const Container* m_handle;
 };
 

@@ -27,7 +27,7 @@
 namespace tyr
 {
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct Data<formalism::NumericEffect<T>>
 {
     using Tag = formalism::NumericEffect<T>;

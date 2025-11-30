@@ -169,7 +169,7 @@ private:
                                             RepositoryEntry<Axiom>,
                                             RepositoryEntry<GroundAxiom>,
                                             RepositoryEntry<Domain>,
-                                            RepositoryEntry<Program>>;
+                                            RepositoryEntry<Task>>;
 
     HanaRepository m_repository;
 
@@ -237,7 +237,7 @@ inline const Repository& get_repository(const Repository& context) noexcept { re
 
 static_assert(IsRepository<Repository>);
 
-static_assert(IsContext<Repository>);
+static_assert(Context<Repository>);
 }
 
 #endif

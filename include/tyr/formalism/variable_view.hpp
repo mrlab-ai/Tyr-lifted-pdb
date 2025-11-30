@@ -25,7 +25,7 @@
 
 namespace tyr
 {
-template<formalism::IsContext C>
+template<formalism::Context C>
 class View<Index<formalism::Variable>, C>
 {
 private:

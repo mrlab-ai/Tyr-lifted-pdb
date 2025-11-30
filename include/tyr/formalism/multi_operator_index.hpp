@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::IsOp Op, typename T>
+template<formalism::OpKind Op, typename T>
 struct Index<formalism::MultiOperator<Op, T>> : IndexMixin<Index<formalism::MultiOperator<Op, T>>>
 {
     using Tag = formalism::MultiOperator<Op, T>;

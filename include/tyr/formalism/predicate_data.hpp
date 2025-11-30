@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct Data<formalism::Predicate<T>>
 {
     using Tag = formalism::Predicate<T>;

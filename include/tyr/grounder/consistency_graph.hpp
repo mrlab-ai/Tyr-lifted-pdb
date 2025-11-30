@@ -40,7 +40,7 @@ class Edge;
  * VertexIndexIterator
  */
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 class VertexAssignmentIterator
 {
 private:
@@ -108,7 +108,7 @@ public:
     bool operator!=(const VertexAssignmentIterator& other) const noexcept { return !(*this == other); }
 };
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 class VertexAssignmentRange
 {
 private:
@@ -128,7 +128,7 @@ public:
 ///
 /// It simultaneously iterates over vertices [x/o] and edges [x/o],[y/o'] with o < o'
 /// to avoid having iterating over literals or numeric constraints twice.
-template<formalism::IsContext C>
+template<formalism::Context C>
 class EdgeAssignmentIterator
 {
 private:
@@ -233,7 +233,7 @@ public:
     bool operator!=(const EdgeAssignmentIterator& other) const noexcept { return !(*this == other); }
 };
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 class EdgeAssignmentRange
 {
 private:
@@ -248,7 +248,7 @@ public:
     auto end() const noexcept { return EdgeAssignmentIterator<C>(m_terms, m_edge, false); }
 };
 
-template<typename StructureType, formalism::IsContext C>
+template<typename StructureType, formalism::Context C>
 bool is_satisfiable(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element,
                     const StructureType& graph_entity,
                     const AssignmentSets& assignment_sets) noexcept;
@@ -273,7 +273,7 @@ public:
     {
     }
 
-    template<formalism::IsFactTag T, formalism::IsContext C>
+    template<formalism::FactKind T, formalism::Context C>
     bool consistent_literals(View<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
     {
         for (const auto& literal : literals)
@@ -318,7 +318,7 @@ public:
         return true;
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     bool consistent_numeric_constraints(View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> numeric_constraints,
                                         const AssignmentSets& assignment_sets) const noexcept
     {
@@ -340,7 +340,7 @@ public:
         return true;
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, C> term) const noexcept
     {
         return visit(
@@ -386,7 +386,7 @@ private:
 public:
     Edge(Vertex src, Vertex dst) noexcept : m_src(std::move(src)), m_dst(std::move(dst)) {}
 
-    template<formalism::IsFactTag T, formalism::IsContext C>
+    template<formalism::FactKind T, formalism::Context C>
     bool consistent_literals(View<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
     {
         for (const auto& literal : literals)
@@ -433,7 +433,7 @@ public:
         return true;
     }
 
-    template<typename T, formalism::IsContext C>
+    template<typename T, formalism::Context C>
     bool consistent_numeric_constraints(View<DataList<formalism::BooleanOperator<T>>, C> numeric_constraints,
                                         const AssignmentSets& assignment_sets) const noexcept
     {
@@ -455,7 +455,7 @@ public:
         return true;
     }
 
-    template<formalism::IsContext C>
+    template<formalism::Context C>
     Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, C> term) const noexcept
     {
         return visit(
@@ -491,7 +491,7 @@ public:
 using Vertices = std::vector<Vertex>;
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 class StaticConsistencyGraph
 {
 private:
@@ -702,7 +702,7 @@ private:
 
 namespace details
 {
-template<std::ranges::forward_range Range, formalism::IsFactTag T>
+template<std::ranges::forward_range Range, formalism::FactKind T>
 ClosedInterval<float_t>
 compute_tightest_closed_interval_helper(ClosedInterval<float_t> bounds, const FunctionAssignmentSet<T>& sets, const Range& range) noexcept
 {
@@ -720,7 +720,7 @@ compute_tightest_closed_interval_helper(ClosedInterval<float_t> bounds, const Fu
     return bounds;
 }
 
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 ClosedInterval<float_t> compute_tightest_closed_interval(View<Index<formalism::FunctionTerm<T>>, C> function_term,
                                                          const Vertex& element,
                                                          const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
@@ -734,7 +734,7 @@ ClosedInterval<float_t> compute_tightest_closed_interval(View<Index<formalism::F
     return compute_tightest_closed_interval_helper(bounds, function_assignment_set, VertexAssignmentRange(terms, element));
 }
 
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 ClosedInterval<float_t> compute_tightest_closed_interval(View<Index<formalism::FunctionTerm<T>>, C> function_term,
                                                          const Edge& element,
                                                          const FunctionAssignmentSets<T>& function_skeleton_assignment_sets) noexcept
@@ -758,7 +758,7 @@ auto evaluate_partially(float_t element, const StructureType&, const AssignmentS
     return ClosedInterval<float_t>(element, element);
 }
 
-template<typename StructureType, formalism::IsArithmeticOp O, formalism::IsContext C>
+template<typename StructureType, formalism::ArithmeticOpKind O, formalism::Context C>
 auto evaluate_partially(View<Index<formalism::UnaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                         const StructureType& graph_entity,
                         const AssignmentSets& assignment_sets)
@@ -766,7 +766,7 @@ auto evaluate_partially(View<Index<formalism::UnaryOperator<O, Data<formalism::F
     return formalism::apply(O {}, evaluate_partially(element.get_arg(), graph_entity, assignment_sets));
 }
 
-template<typename StructureType, formalism::IsOp O, formalism::IsContext C>
+template<typename StructureType, formalism::OpKind O, formalism::Context C>
 auto evaluate_partially(View<Index<formalism::BinaryOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                         const StructureType& graph_entity,
                         const AssignmentSets& assignment_sets)
@@ -776,7 +776,7 @@ auto evaluate_partially(View<Index<formalism::BinaryOperator<O, Data<formalism::
                             evaluate_partially(element.get_rhs(), graph_entity, assignment_sets));
 }
 
-template<typename StructureType, formalism::IsArithmeticOp O, formalism::IsContext C>
+template<typename StructureType, formalism::ArithmeticOpKind O, formalism::Context C>
 auto evaluate_partially(View<Index<formalism::MultiOperator<O, Data<formalism::FunctionExpression>>>, C> element,
                         const StructureType& graph_entity,
                         const AssignmentSets& assignment_sets)
@@ -790,19 +790,19 @@ auto evaluate_partially(View<Index<formalism::MultiOperator<O, Data<formalism::F
                            { return formalism::apply(O {}, value, evaluate_partially(child_expr, graph_entity, assignment_sets)); });
 }
 
-template<typename StructureType, formalism::IsFactTag T, formalism::IsContext C>
+template<typename StructureType, formalism::FactKind T, formalism::Context C>
 auto evaluate_partially(View<Index<formalism::FunctionTerm<T>>, C> element, const StructureType& graph_entity, const AssignmentSets& assignment_sets)
 {
     return compute_tightest_closed_interval(element, graph_entity, assignment_sets.template get<T>().function);
 }
 
-template<typename StructureType, formalism::IsContext C>
+template<typename StructureType, formalism::Context C>
 auto evaluate_partially(View<Data<formalism::FunctionExpression>, C> element, const StructureType& graph_entity, const AssignmentSets& assignment_sets)
 {
     return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get_variant());
 }
 
-template<typename StructureType, formalism::IsContext C>
+template<typename StructureType, formalism::Context C>
 auto evaluate_partially(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
                         const StructureType& graph_entity,
                         const AssignmentSets& assignment_sets)
@@ -810,7 +810,7 @@ auto evaluate_partially(View<Data<formalism::ArithmeticOperator<Data<formalism::
     return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get_variant());
 }
 
-template<typename StructureType, formalism::IsContext C>
+template<typename StructureType, formalism::Context C>
 auto evaluate_partially(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element,
                         const StructureType& graph_entity,
                         const AssignmentSets& assignment_sets)
@@ -818,7 +818,7 @@ auto evaluate_partially(View<Data<formalism::BooleanOperator<Data<formalism::Fun
     return visit([&](auto&& arg) { return evaluate_partially(arg, graph_entity, assignment_sets); }, element.get_variant());
 }
 
-template<typename StructureType, formalism::IsContext C>
+template<typename StructureType, formalism::Context C>
 bool is_satisfiable(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> element,
                     const StructureType& graph_entity,
                     const AssignmentSets& assignment_sets) noexcept

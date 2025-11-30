@@ -26,7 +26,7 @@
 namespace tyr::grounder
 {
 
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 class PredicateFactSet
 {
 private:
@@ -71,7 +71,7 @@ public:
     auto get_facts() const noexcept { return View<IndexList<formalism::GroundAtom<T>>, C>(m_indices, m_context); }
 };
 
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 class FunctionFactSet
 {
 private:
@@ -124,7 +124,7 @@ public:
     auto get_facts() const noexcept { return View<IndexList<formalism::GroundFunctionTermValue<T>>, C>(m_indices, m_context); }
 };
 
-template<formalism::IsFactTag T, formalism::IsContext C>
+template<formalism::FactKind T, formalism::Context C>
 struct TaggedFactSets
 {
     PredicateFactSet<T, C> predicate;
@@ -137,7 +137,7 @@ struct TaggedFactSets
     }
 };
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 struct FactSets
 {
     TaggedFactSets<formalism::StaticTag, C> static_sets;
@@ -150,7 +150,7 @@ struct FactSets
     {
     }
 
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     auto& get() const
     {
         if constexpr (std::is_same_v<T, formalism::StaticTag>)

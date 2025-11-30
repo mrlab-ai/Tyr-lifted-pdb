@@ -26,7 +26,7 @@
 namespace tyr
 {
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 class View<Data<formalism::GroundFunctionExpression>, C>
 {
 private:

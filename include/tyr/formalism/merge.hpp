@@ -25,7 +25,7 @@
 
 namespace tyr::formalism
 {
-template<IsContext C_SRC, IsContext C_DST>
+template<Context C_SRC, Context C_DST>
 class MergeCache
 {
 private:
@@ -124,7 +124,7 @@ auto with_cache(View<Index<Tag>, C_SRC> element, MergeCache<C_SRC, C_DST>& cache
     return result;
 }
 
-template<IsContext C_SRC, IsContext C_DST>
+template<Context C_SRC, Context C_DST>
 auto merge(View<Index<Object>, C_SRC> element, Builder& builder, C_DST& destination, buffer::Buffer& buffer, MergeCache<C_SRC, C_DST>& cache)
 {
     return with_cache<Object>(element,
@@ -140,13 +140,13 @@ auto merge(View<Index<Object>, C_SRC> element, Builder& builder, C_DST& destinat
                               });
 }
 
-template<IsContext C_SRC, IsContext C_DST>
+template<Context C_SRC, Context C_DST>
 auto merge(float_t element, Builder&, C_DST&, buffer::Buffer&, MergeCache<C_SRC, C_DST>&)
 {
     return element;
 }
 
-template<IsOp O, IsContext C_SRC, IsContext C_DST>
+template<OpKind O, Context C_SRC, Context C_DST>
 auto merge(View<Index<UnaryOperator<O, Data<GroundFunctionExpression>>>, C_SRC> element,
            Builder& builder,
            C_DST& destination,
@@ -167,7 +167,7 @@ auto merge(View<Index<UnaryOperator<O, Data<GroundFunctionExpression>>>, C_SRC> 
                                                                         });
 }
 
-template<IsOp O, IsContext C_SRC, IsContext C_DST>
+template<OpKind O, Context C_SRC, Context C_DST>
 auto merge(View<Index<BinaryOperator<O, Data<GroundFunctionExpression>>>, C_SRC> element,
            Builder& builder,
            C_DST& destination,
@@ -190,7 +190,7 @@ auto merge(View<Index<BinaryOperator<O, Data<GroundFunctionExpression>>>, C_SRC>
                                                                          });
 }
 
-template<IsOp O, IsContext C_SRC, IsContext C_DST>
+template<OpKind O, Context C_SRC, Context C_DST>
 auto merge(View<Index<MultiOperator<O, Data<GroundFunctionExpression>>>, C_SRC> element,
            Builder& builder,
            C_DST& destination,
@@ -213,7 +213,7 @@ auto merge(View<Index<MultiOperator<O, Data<GroundFunctionExpression>>>, C_SRC> 
                                                                         });
 }
 
-template<IsFactTag T, IsContext C_SRC, IsContext C_DST>
+template<FactKind T, Context C_SRC, Context C_DST>
 auto merge(View<Index<Predicate<T>>, C_SRC> element, Builder& builder, C_DST& destination, buffer::Buffer& buffer, MergeCache<C_SRC, C_DST>& cache)
 {
     return with_cache<Predicate<T>>(element,
@@ -229,7 +229,7 @@ auto merge(View<Index<Predicate<T>>, C_SRC> element, Builder& builder, C_DST& de
                                     });
 }
 
-template<IsFactTag T, IsContext C_SRC, IsContext C_DST>
+template<FactKind T, Context C_SRC, Context C_DST>
 auto merge(View<Index<GroundAtom<T>>, C_SRC> element, Builder& builder, C_DST& destination, buffer::Buffer& buffer, MergeCache<C_SRC, C_DST>& cache)
 {
     return with_cache<GroundAtom<T>>(element,
@@ -248,7 +248,7 @@ auto merge(View<Index<GroundAtom<T>>, C_SRC> element, Builder& builder, C_DST& d
                                      });
 }
 
-template<IsFactTag T, IsContext C_SRC, IsContext C_DST>
+template<FactKind T, Context C_SRC, Context C_DST>
 auto merge(View<Index<GroundLiteral<T>>, C_SRC> element, Builder& builder, C_DST& destination, buffer::Buffer& buffer, MergeCache<C_SRC, C_DST>& cache)
 {
     return with_cache<GroundLiteral<T>>(element,
@@ -265,7 +265,7 @@ auto merge(View<Index<GroundLiteral<T>>, C_SRC> element, Builder& builder, C_DST
                                         });
 }
 
-template<IsFactTag T, IsContext C_SRC, IsContext C_DST>
+template<FactKind T, Context C_SRC, Context C_DST>
 auto merge(View<Index<Function<T>>, C_SRC> element, Builder& builder, C_DST& destination, buffer::Buffer& buffer, MergeCache<C_SRC, C_DST>& cache)
 {
     return with_cache<Function<T>>(element,
@@ -281,7 +281,7 @@ auto merge(View<Index<Function<T>>, C_SRC> element, Builder& builder, C_DST& des
                                    });
 }
 
-template<IsFactTag T, IsContext C_SRC, IsContext C_DST>
+template<FactKind T, Context C_SRC, Context C_DST>
 auto merge(View<Index<GroundFunctionTerm<T>>, C_SRC> element, Builder& builder, C_DST& destination, buffer::Buffer& buffer, MergeCache<C_SRC, C_DST>& cache)
 {
     return with_cache<GroundFunctionTerm<T>>(element,
@@ -300,7 +300,7 @@ auto merge(View<Index<GroundFunctionTerm<T>>, C_SRC> element, Builder& builder, 
                                              });
 }
 
-template<IsContext C_SRC, IsContext C_DST>
+template<Context C_SRC, Context C_DST>
 auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder, C_DST& destination, buffer::Buffer& buffer, MergeCache<C_SRC, C_DST>& cache)
 {
     return visit(
@@ -322,7 +322,7 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
         element.get_variant());
 }
 
-template<IsContext C_SRC, IsContext C_DST>
+template<Context C_SRC, Context C_DST>
 auto merge(View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_SRC> element,
            Builder& builder,
            C_DST& destination,
@@ -339,7 +339,7 @@ auto merge(View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_SRC>
         element.get_variant());
 }
 
-template<IsContext C_SRC, IsContext C_DST>
+template<Context C_SRC, Context C_DST>
 auto merge(View<Data<BooleanOperator<Data<GroundFunctionExpression>>>, C_SRC> element,
            Builder& builder,
            C_DST& destination,
@@ -356,7 +356,7 @@ auto merge(View<Data<BooleanOperator<Data<GroundFunctionExpression>>>, C_SRC> el
         element.get_variant());
 }
 
-template<IsContext C_SRC, IsContext C_DST>
+template<Context C_SRC, Context C_DST>
 auto merge(View<Index<GroundConjunctiveCondition>, C_SRC> element,
            Builder& builder,
            C_DST& destination,
@@ -389,7 +389,7 @@ auto merge(View<Index<GroundConjunctiveCondition>, C_SRC> element,
                                                   });
 }
 
-template<IsContext C_SRC, IsContext C_DST>
+template<Context C_SRC, Context C_DST>
 auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& destination, buffer::Buffer& buffer, MergeCache<C_SRC, C_DST>& cache)
 {
     return with_cache<GroundRule>(element,

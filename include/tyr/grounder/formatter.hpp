@@ -53,7 +53,7 @@ inline std::ostream& print(std::ostream& os, const grounder::details::Edge& el)
     return os;
 }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<C>& el)
 {
     fmt::print(
@@ -81,7 +81,7 @@ inline std::ostream& operator<<(std::ostream& os, const VertexAssignment& el) { 
 
 inline std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el) { return print(os, el); }
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<C>& el)
 {
     return print(os, el);

@@ -24,7 +24,7 @@
 namespace tyr::grounder
 {
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 struct ImmutableRuleWorkspace
 {
     // Fact infos
@@ -37,7 +37,7 @@ struct ImmutableRuleWorkspace
     const kpkc::DenseKPartiteGraph& consistency_graph;
 };
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 struct MutableRuleWorkspace
 {
     formalism::ScopedRepository<C>& repository;

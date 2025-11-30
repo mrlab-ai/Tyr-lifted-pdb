@@ -25,7 +25,7 @@
 
 namespace tyr
 {
-template<typename T, formalism::IsContext C>
+template<typename T, formalism::Context C>
 class View<Data<formalism::ArithmeticOperator<T>>, C>
 {
 private:

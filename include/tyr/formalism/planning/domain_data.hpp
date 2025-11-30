@@ -75,7 +75,7 @@ struct Data<formalism::Domain>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     const auto& get_predicates() const
     {
         if constexpr (std::same_as<T, formalism::StaticTag>)
@@ -88,7 +88,7 @@ struct Data<formalism::Domain>
             static_assert(dependent_false<T>::value, "Missing case");
     }
 
-    template<formalism::IsFactTag T>
+    template<formalism::FactKind T>
     const auto& get_functions() const
     {
         if constexpr (std::same_as<T, formalism::StaticTag>)

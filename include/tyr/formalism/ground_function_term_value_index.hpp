@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct Index<formalism::GroundFunctionTermValue<T>> : IndexMixin<Index<formalism::GroundFunctionTermValue<T>>>
 {
     using Tag = formalism::GroundFunctionTermValue<T>;

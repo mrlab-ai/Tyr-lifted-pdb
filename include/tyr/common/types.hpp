@@ -45,14 +45,14 @@ struct Index
 template<typename T>
 using IndexList = ::cista::offset::vector<Index<T>>;
 
-template<typename T, typename Context>
+template<typename T, typename C>
 struct View
 {
-    // View type is optional for recursing through data using the Context.
+    // View type is optional for recursing through data using the C.
 };
 
 template<typename T, typename C>
-concept IsViewable = requires(T type, const C& context) {
+concept Viewable = requires(T type, const C& context) {
     // Constructor
     View<T, C>(type, context);
     // Method to retrieve the underlying Data.
@@ -64,7 +64,7 @@ concept IsViewable = requires(T type, const C& context) {
 };
 
 template<typename T>
-concept IsIndex = requires(T a) {
+concept Indexable = requires(T a) {
     { a.get_value() } -> std::same_as<uint_t>;
 };
 

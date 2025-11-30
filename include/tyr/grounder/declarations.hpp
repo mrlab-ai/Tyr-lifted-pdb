@@ -22,21 +22,21 @@
 
 namespace tyr::grounder
 {
-template<formalism::IsContext C>
+template<formalism::Context C>
 struct FactSets;
 
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct TaggedAssignmentSets;
 
 struct AssignmentSets;
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 class StaticConsistencyGraph;
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 struct ImmutableRuleWorkspace;
 
-template<formalism::IsContext C>
+template<formalism::Context C>
 struct MutableRuleWorkspace;
 
 namespace kpkc

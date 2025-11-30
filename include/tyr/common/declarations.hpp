@@ -51,7 +51,7 @@ concept IsHanaMap = std::same_as<typename boost::hana::tag_of<T>::type, boost::h
 
 /// @brief Check whether T has a function that returns members that aims to identify the class.
 template<typename T>
-concept HasIdentifyingMembers = requires(const T a) {
+concept Identifiable = requires(const T a) {
     { a.identifying_members() };
 };
 

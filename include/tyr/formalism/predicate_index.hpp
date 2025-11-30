@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::IsFactTag T>
+template<formalism::FactKind T>
 struct Index<formalism::Predicate<T>> : IndexMixin<formalism::Predicate<T>>
 {
     using Tag = formalism::Predicate<T>;

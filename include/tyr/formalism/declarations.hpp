@@ -43,7 +43,7 @@ struct AuxiliaryTag
 };
 
 template<typename T>
-concept IsFactTag = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || std::same_as<T, DerivedTag> || std::same_as<T, AuxiliaryTag>;
+concept FactKind = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || std::same_as<T, DerivedTag> || std::same_as<T, AuxiliaryTag>;
 
 /**
  * Tags to dispatch operators
@@ -81,30 +81,30 @@ struct OpDiv
 };
 
 template<typename T>
-concept IsBooleanOp =
+concept BooleanOpKind =
     std::same_as<T, OpEq> || std::same_as<T, OpNe> || std::same_as<T, OpLe> || std::same_as<T, OpLt> || std::same_as<T, OpGe> || std::same_as<T, OpGt>;
 
 template<typename T>
-concept IsArithmeticOp = std::same_as<T, OpAdd> || std::same_as<T, OpMul> || std::same_as<T, OpDiv> || std::same_as<T, OpSub>;
+concept ArithmeticOpKind = std::same_as<T, OpAdd> || std::same_as<T, OpMul> || std::same_as<T, OpDiv> || std::same_as<T, OpSub>;
 
 template<typename T>
-concept IsOp = IsBooleanOp<T> || IsArithmeticOp<T>;
+concept OpKind = BooleanOpKind<T> || ArithmeticOpKind<T>;
 
 /**
  * Formalism tag
  */
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 struct UnaryOperator
 {
 };
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 struct BinaryOperator
 {
 };
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 struct MultiOperator
 {
 };
@@ -130,37 +130,37 @@ struct Term
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct Predicate
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct Atom
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct Literal
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct GroundAtom
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct GroundLiteral
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct Function
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct FunctionTerm
 {
 };
@@ -169,7 +169,7 @@ struct FunctionExpression
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct GroundFunctionTerm
 {
 };
@@ -178,7 +178,7 @@ struct GroundFunctionExpression
 {
 };
 
-template<IsFactTag T>
+template<FactKind T>
 struct GroundFunctionTermValue
 {
 };
@@ -220,14 +220,14 @@ struct OpScaleDown
 };
 
 template<typename T>
-concept IsNumericEffectOp =
+concept NumericEffectOpKind =
     std::same_as<T, OpAssign> || std::same_as<T, OpIncrease> || std::same_as<T, OpDecrease> || std::same_as<T, OpScaleUp> || std::same_as<T, OpScaleDown>;
 
-template<IsFactTag T>
+template<FactKind T>
 struct NumericEffect
 {
 };
-template<IsFactTag T>
+template<FactKind T>
 struct GroundNumericEffect
 {
 };
@@ -260,6 +260,20 @@ struct GroundAxiom
 {
 };
 
+struct Minimize
+{
+};
+struct Maximize
+{
+};
+
+template<typename T>
+concept ObjectiveKind = std::same_as<T, Minimize> || std::same_as<T, Maximize>;
+
+struct Metric
+{
+};
+
 struct Task
 {
 };
@@ -273,42 +287,35 @@ struct Domain
  */
 
 template<typename Repo, typename Tag>
-concept HasRepositoryAccessFor = requires(const Repo& r, Index<Tag> idx) {
+concept RepositoryAccess = requires(const Repo& r, Index<Tag> idx) {
     { r[idx] } -> std::same_as<const Data<Tag>&>;
 };
 
 template<typename T>
 concept IsRepository =
-    HasRepositoryAccessFor<T, Variable> && HasRepositoryAccessFor<T, Object> && HasRepositoryAccessFor<T, Predicate<StaticTag>>
-    && HasRepositoryAccessFor<T, Predicate<FluentTag>> && HasRepositoryAccessFor<T, Atom<StaticTag>> && HasRepositoryAccessFor<T, Atom<FluentTag>>
-    && HasRepositoryAccessFor<T, GroundAtom<StaticTag>> && HasRepositoryAccessFor<T, GroundAtom<FluentTag>> && HasRepositoryAccessFor<T, Literal<StaticTag>>
-    && HasRepositoryAccessFor<T, Literal<FluentTag>> && HasRepositoryAccessFor<T, GroundLiteral<StaticTag>>
-    && HasRepositoryAccessFor<T, GroundLiteral<FluentTag>> && HasRepositoryAccessFor<T, Function<StaticTag>> && HasRepositoryAccessFor<T, Function<FluentTag>>
-    && HasRepositoryAccessFor<T, FunctionTerm<StaticTag>> && HasRepositoryAccessFor<T, FunctionTerm<FluentTag>>
-    && HasRepositoryAccessFor<T, GroundFunctionTerm<StaticTag>> && HasRepositoryAccessFor<T, GroundFunctionTerm<FluentTag>>
-    && HasRepositoryAccessFor<T, GroundFunctionTermValue<StaticTag>> && HasRepositoryAccessFor<T, GroundFunctionTermValue<FluentTag>>
-    && HasRepositoryAccessFor<T, UnaryOperator<OpSub, Data<FunctionExpression>>> && HasRepositoryAccessFor<T, BinaryOperator<OpAdd, Data<FunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpSub, Data<FunctionExpression>>> && HasRepositoryAccessFor<T, BinaryOperator<OpMul, Data<FunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpDiv, Data<FunctionExpression>>> && HasRepositoryAccessFor<T, MultiOperator<OpAdd, Data<FunctionExpression>>>
-    && HasRepositoryAccessFor<T, MultiOperator<OpMul, Data<FunctionExpression>>> && HasRepositoryAccessFor<T, BinaryOperator<OpEq, Data<FunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpLe, Data<FunctionExpression>>> && HasRepositoryAccessFor<T, BinaryOperator<OpLt, Data<FunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpGe, Data<FunctionExpression>>> && HasRepositoryAccessFor<T, BinaryOperator<OpGt, Data<FunctionExpression>>>
-    && HasRepositoryAccessFor<T, UnaryOperator<OpSub, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpAdd, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpSub, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpMul, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpDiv, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, MultiOperator<OpAdd, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, MultiOperator<OpMul, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpEq, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpLe, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpLt, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpGe, Data<GroundFunctionExpression>>>
-    && HasRepositoryAccessFor<T, BinaryOperator<OpGt, Data<GroundFunctionExpression>>> && HasRepositoryAccessFor<T, Rule>
-    && HasRepositoryAccessFor<T, GroundRule> && HasRepositoryAccessFor<T, Program>;
+    RepositoryAccess<T, Variable> && RepositoryAccess<T, Object> && RepositoryAccess<T, Predicate<StaticTag>> && RepositoryAccess<T, Predicate<FluentTag>>
+    && RepositoryAccess<T, Atom<StaticTag>> && RepositoryAccess<T, Atom<FluentTag>> && RepositoryAccess<T, GroundAtom<StaticTag>>
+    && RepositoryAccess<T, GroundAtom<FluentTag>> && RepositoryAccess<T, Literal<StaticTag>> && RepositoryAccess<T, Literal<FluentTag>>
+    && RepositoryAccess<T, GroundLiteral<StaticTag>> && RepositoryAccess<T, GroundLiteral<FluentTag>> && RepositoryAccess<T, Function<StaticTag>>
+    && RepositoryAccess<T, Function<FluentTag>> && RepositoryAccess<T, FunctionTerm<StaticTag>> && RepositoryAccess<T, FunctionTerm<FluentTag>>
+    && RepositoryAccess<T, GroundFunctionTerm<StaticTag>> && RepositoryAccess<T, GroundFunctionTerm<FluentTag>>
+    && RepositoryAccess<T, GroundFunctionTermValue<StaticTag>> && RepositoryAccess<T, GroundFunctionTermValue<FluentTag>>
+    && RepositoryAccess<T, UnaryOperator<OpSub, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpAdd, Data<FunctionExpression>>>
+    && RepositoryAccess<T, BinaryOperator<OpSub, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpMul, Data<FunctionExpression>>>
+    && RepositoryAccess<T, BinaryOperator<OpDiv, Data<FunctionExpression>>> && RepositoryAccess<T, MultiOperator<OpAdd, Data<FunctionExpression>>>
+    && RepositoryAccess<T, MultiOperator<OpMul, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpEq, Data<FunctionExpression>>>
+    && RepositoryAccess<T, BinaryOperator<OpLe, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpLt, Data<FunctionExpression>>>
+    && RepositoryAccess<T, BinaryOperator<OpGe, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpGt, Data<FunctionExpression>>>
+    && RepositoryAccess<T, UnaryOperator<OpSub, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpAdd, Data<GroundFunctionExpression>>>
+    && RepositoryAccess<T, BinaryOperator<OpSub, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpMul, Data<GroundFunctionExpression>>>
+    && RepositoryAccess<T, BinaryOperator<OpDiv, Data<GroundFunctionExpression>>> && RepositoryAccess<T, MultiOperator<OpAdd, Data<GroundFunctionExpression>>>
+    && RepositoryAccess<T, MultiOperator<OpMul, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpEq, Data<GroundFunctionExpression>>>
+    && RepositoryAccess<T, BinaryOperator<OpLe, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpLt, Data<GroundFunctionExpression>>>
+    && RepositoryAccess<T, BinaryOperator<OpGe, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpGt, Data<GroundFunctionExpression>>>
+    && RepositoryAccess<T, Rule> && RepositoryAccess<T, GroundRule> && RepositoryAccess<T, Program>;
 
 template<typename T>
-concept IsContext = requires(const T& a) {
+concept Context = requires(const T& a) {
     { get_repository(a) } -> IsRepository;
 };
 

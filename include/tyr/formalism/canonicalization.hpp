@@ -77,13 +77,13 @@ bool is_canonical(const DataList<T>& list)
  * Datalog
  */
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 bool is_canonical(const Data<UnaryOperator<Op, T>>& data)
 {
     return true;
 }
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 bool is_canonical(const Data<BinaryOperator<Op, T>>& data)
 {
     return true;
@@ -101,7 +101,7 @@ bool is_canonical(const Data<BinaryOperator<OpMul, T>>& data)
     return data.lhs <= data.rhs;
 }
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 bool is_canonical(const Data<MultiOperator<Op, T>>& data)
 {
     return true;
@@ -137,43 +137,43 @@ inline bool is_canonical(const Data<Object>& data) { return true; }
 
 inline bool is_canonical(const Data<Term>& data) { return true; }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<Predicate<T>>& data)
 {
     return true;
 }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<Atom<T>>& data)
 {
     return true;
 }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<Literal<T>>& data)
 {
     return true;
 }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<GroundAtom<T>>& data)
 {
     return true;
 }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<GroundLiteral<T>>& data)
 {
     return true;
 }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<Function<T>>& data)
 {
     return true;
 }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<FunctionTerm<T>>& data)
 {
     return true;
@@ -181,7 +181,7 @@ bool is_canonical(const Data<FunctionTerm<T>>& data)
 
 inline bool is_canonical(const Data<FunctionExpression>& data) { return true; }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<GroundFunctionTerm<T>>& data)
 {
     return true;
@@ -189,7 +189,7 @@ bool is_canonical(const Data<GroundFunctionTerm<T>>& data)
 
 inline bool is_canonical(const Data<GroundFunctionExpression>& data) { return true; }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<GroundFunctionTermValue<T>>& data)
 {
     return true;
@@ -220,13 +220,13 @@ inline bool is_canonical(const Data<Program>& data)
  * Planning
  */
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<NumericEffect<T>>& data)
 {
     return true;
 }
 
-template<IsFactTag T>
+template<FactKind T>
 bool is_canonical(const Data<GroundNumericEffect<T>>& data)
 {
     return true;
@@ -279,13 +279,13 @@ void canonicalize(DataList<T>& list)
         std::sort(list.begin(), list.end());
 }
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 void canonicalize(Data<UnaryOperator<Op, T>>& data)
 {
     // Trivially canonical
 }
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 void canonicalize(Data<BinaryOperator<Op, T>>& data)
 {
     // Canonicalization for commutative operator in spezializations
@@ -305,7 +305,7 @@ void canonicalize(Data<BinaryOperator<OpMul, T>>& data)
         std::swap(data.lhs, data.rhs);
 }
 
-template<IsOp Op, typename T>
+template<OpKind Op, typename T>
 void canonicalize(Data<MultiOperator<Op, T>>& data)
 {
     // Canonicalization for commutative operator in spezializations
@@ -349,43 +349,43 @@ inline void canonicalize(Data<Term>& data)
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<Predicate<T>>& data)
 {
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<Atom<T>>& data)
 {
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<Literal<T>>& data)
 {
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<GroundAtom<T>>& data)
 {
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<GroundLiteral<T>>& data)
 {
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<Function<T>>& data)
 {
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<FunctionTerm<T>>& data)
 {
     // Trivially canonical
@@ -396,7 +396,7 @@ inline void canonicalize(Data<FunctionExpression>& data)
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<GroundFunctionTerm<T>>& data)
 {
     // Trivially canonical
@@ -407,7 +407,7 @@ inline void canonicalize(Data<GroundFunctionExpression>& data)
     // Trivially canonical
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<GroundFunctionTermValue<T>>& data)
 {
     // Trivially canonical
@@ -451,12 +451,12 @@ inline void canonicalize(Data<Program>& data)
     canonicalize(data.rules);
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<NumericEffect<T>>& data)
 {
 }
 
-template<IsFactTag T>
+template<FactKind T>
 void canonicalize(Data<GroundNumericEffect<T>>& data)
 {
 }

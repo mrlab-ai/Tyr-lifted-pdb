@@ -282,7 +282,7 @@ struct Hash<std::span<T, Extent>>
     size_t operator()(const std::span<T, Extent>& span) const { return hash_combine(span.data(), span.size()); }
 };
 
-/// @brief std::hash specialization for types T that satisfy `HasIdentifyingMembers`.
+/// @brief std::hash specialization for types T that satisfy `Identifiable`.
 /// Dereferences the underlying pointer before forwarding the call to the std::hash
 /// specialization of `IdentifiableMembersView` of T to compute a hash based on all members.
 /// @tparam T is the type.
@@ -295,7 +295,7 @@ struct Hash<ObserverPtr<T>>
 /// @brief std::hash specialization for an `IdentifiableMembersView`
 /// that computes a hash based on all members.
 /// @tparam ...Ts are the types of all members.
-template<HasIdentifyingMembers T>
+template<Identifiable T>
 struct Hash<T>
 {
     using is_transparent = void;  // <-- enables hetero lookup

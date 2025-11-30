@@ -27,17 +27,6 @@ namespace tyr::planning
 
 class LiftedTask;
 class GroundTask;
-
-template<typename T>
-concept IsNode = requires(T a) {
-    { a.get_labeled_successor_nodes() };
-};
-
-template<typename T>
-concept IsTask = requires(T a) {
-    { a.get_initial_node() };
-};
-
 class Domain;
 }
 
