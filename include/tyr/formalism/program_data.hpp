@@ -77,6 +77,20 @@ struct Data<formalism::Program>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept
+    {
+        static_predicates.clear();
+        fluent_predicates.clear();
+        static_functions.clear();
+        fluent_functions.clear();
+        objects.clear();
+        static_atoms.clear();
+        fluent_atoms.clear();
+        static_fterm_values.clear();
+        fluent_fterm_values.clear();
+        rules.clear();
+    }
+
     template<formalism::FactKind T>
     const auto& get_predicates() const
     {

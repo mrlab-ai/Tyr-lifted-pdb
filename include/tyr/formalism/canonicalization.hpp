@@ -74,6 +74,14 @@ bool is_canonical(const DataList<T>& list)
     return std::is_sorted(list.begin(), list.end());
 }
 
+template<typename T>
+bool is_canonical(const ::cista::optional<T>& element)
+{
+    if (!element.has_value())
+        return true;
+    return is_canonical(*element);
+}
+
 /**
  * Datalog
  */
@@ -260,7 +268,7 @@ inline bool is_canonical(const Data<Task>& data)
 inline bool is_canonical(const Data<Domain>& data)
 {
     return is_canonical(data.static_predicates) && is_canonical(data.fluent_predicates) && is_canonical(data.derived_predicates)
-           && is_canonical(data.static_function) && is_canonical(data.fluent_function) && is_canonical(data.constants) && is_canonical(data.actions)
+           && is_canonical(data.static_functions) && is_canonical(data.fluent_functions) && is_canonical(data.constants) && is_canonical(data.actions)
            && is_canonical(data.axioms);
 }
 
@@ -510,8 +518,8 @@ inline void canonicalize(Data<Domain>& data)
     canonicalize(data.static_predicates);
     canonicalize(data.fluent_predicates);
     canonicalize(data.derived_predicates);
-    canonicalize(data.static_function);
-    canonicalize(data.fluent_function);
+    canonicalize(data.static_functions);
+    canonicalize(data.fluent_functions);
     canonicalize(data.constants);
     canonicalize(data.actions);
     canonicalize(data.axioms);

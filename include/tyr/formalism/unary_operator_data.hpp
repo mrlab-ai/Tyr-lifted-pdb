@@ -40,6 +40,8 @@ struct Data<formalism::UnaryOperator<Op, T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept {}
+
     auto cista_members() const noexcept { return std::tie(index, arg); }
     auto identifying_members() const noexcept { return std::tie(arg); }
 };

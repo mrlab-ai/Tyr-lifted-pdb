@@ -38,6 +38,8 @@ struct Data<formalism::Term>
     Data() = default;
     Data(Variant value) : value(value) {}
 
+    void clear() noexcept {}
+
     friend bool operator==(const Data& lhs, const Data& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
     friend bool operator!=(const Data& lhs, const Data& rhs) { return lhs.value != rhs.value; }
     friend bool operator<=(const Data& lhs, const Data& rhs) { return lhs.value <= rhs.value; }

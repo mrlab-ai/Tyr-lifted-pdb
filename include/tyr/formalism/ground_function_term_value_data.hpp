@@ -48,6 +48,8 @@ struct Data<formalism::GroundFunctionTermValue<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept {}
+
     auto cista_members() const noexcept { return std::tie(index, fterm, value); }
     auto identifying_members() const noexcept { return std::tie(fterm, value); }
 };

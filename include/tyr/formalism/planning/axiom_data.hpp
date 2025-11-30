@@ -48,6 +48,8 @@ struct Data<formalism::Axiom>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept {}
+
     auto cista_members() const noexcept { return std::tie(index, body, head); }
     auto identifying_members() const noexcept { return std::tie(body, head); }
 };

@@ -40,8 +40,8 @@ struct Data<formalism::Domain>
     IndexList<formalism::Predicate<formalism::StaticTag>> static_predicates;
     IndexList<formalism::Predicate<formalism::FluentTag>> fluent_predicates;
     IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates;
-    IndexList<formalism::Function<formalism::StaticTag>> static_function;
-    IndexList<formalism::Function<formalism::FluentTag>> fluent_function;
+    IndexList<formalism::Function<formalism::StaticTag>> static_functions;
+    IndexList<formalism::Function<formalism::FluentTag>> fluent_functions;
     ::cista::optional<Index<formalism::Function<formalism::AuxiliaryTag>>> auxiliary_function;
     IndexList<formalism::Object> constants;
     IndexList<formalism::Action> actions;
@@ -52,8 +52,8 @@ struct Data<formalism::Domain>
          IndexList<formalism::Predicate<formalism::StaticTag>> static_predicates,
          IndexList<formalism::Predicate<formalism::FluentTag>> fluent_predicates,
          IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates,
-         IndexList<formalism::Function<formalism::StaticTag>> static_function,
-         IndexList<formalism::Function<formalism::FluentTag>> fluent_function,
+         IndexList<formalism::Function<formalism::StaticTag>> static_functions,
+         IndexList<formalism::Function<formalism::FluentTag>> fluent_functions,
          ::cista::optional<Index<formalism::Function<formalism::AuxiliaryTag>>> auxiliary_function,
          IndexList<formalism::Object> constants,
          IndexList<formalism::Action> actions,
@@ -62,8 +62,8 @@ struct Data<formalism::Domain>
         static_predicates(std::move(static_predicates)),
         fluent_predicates(std::move(fluent_predicates)),
         derived_predicates(std::move(derived_predicates)),
-        static_function(std::move(static_function)),
-        fluent_function(std::move(fluent_function)),
+        static_functions(std::move(static_functions)),
+        fluent_functions(std::move(fluent_functions)),
         auxiliary_function(auxiliary_function),
         constants(std::move(constants)),
         actions(std::move(actions)),
@@ -74,6 +74,18 @@ struct Data<formalism::Domain>
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
+
+    void clear() noexcept
+    {
+        static_predicates.clear();
+        fluent_predicates.clear();
+        derived_predicates.clear();
+        static_functions.clear();
+        fluent_functions.clear();
+        constants.clear();
+        actions.clear();
+        axioms.clear();
+    }
 
     template<formalism::FactKind T>
     const auto& get_predicates() const
@@ -92,9 +104,9 @@ struct Data<formalism::Domain>
     const auto& get_functions() const
     {
         if constexpr (std::same_as<T, formalism::StaticTag>)
-            return static_function;
+            return static_functions;
         else if constexpr (std::same_as<T, formalism::FluentTag>)
-            return fluent_function;
+            return fluent_functions;
         else
             static_assert(dependent_false<T>::value, "Missing case");
     }
@@ -105,8 +117,8 @@ struct Data<formalism::Domain>
                         static_predicates,
                         fluent_predicates,
                         derived_predicates,
-                        static_function,
-                        fluent_function,
+                        static_functions,
+                        fluent_functions,
                         auxiliary_function,
                         constants,
                         actions,
@@ -117,8 +129,8 @@ struct Data<formalism::Domain>
         return std::tie(static_predicates,
                         fluent_predicates,
                         derived_predicates,
-                        static_function,
-                        fluent_function,
+                        static_functions,
+                        fluent_functions,
                         auxiliary_function,
                         constants,
                         actions,

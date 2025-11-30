@@ -41,6 +41,8 @@ struct Data<formalism::Literal<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept {}
+
     auto cista_members() const noexcept { return std::tie(index, atom_index, polarity); }
     auto identifying_members() const noexcept { return std::tie(atom_index, polarity); }
 };

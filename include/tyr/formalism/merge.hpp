@@ -188,8 +188,8 @@ auto merge(View<Index<MultiOperator<O, Data<GroundFunctionExpression>>>, C_SRC> 
                                                                         [&]()
                                                                         {
                                                                             auto& multi = builder.template get_ground_multi<O>();
+                                                                            multi.clear();
 
-                                                                            multi.args.clear();
                                                                             for (const auto arg : element.get_args())
                                                                                 multi.args.push_back(merge(arg, builder, destination, cache).get_data());
 
@@ -222,9 +222,9 @@ auto merge(View<Index<GroundAtom<T>>, C_SRC> element, Builder& builder, C_DST& d
                                      [&]()
                                      {
                                          auto& atom = builder.template get_ground_atom<T>();
+                                         atom.clear();
 
                                          atom.predicate = merge(element.get_predicate(), builder, destination, cache).get_index();
-                                         atom.objects.clear();
                                          for (const auto object : element.get_objects())
                                              atom.objects.push_back(merge(object, builder, destination, cache).get_index());
 
@@ -274,9 +274,9 @@ auto merge(View<Index<GroundFunctionTerm<T>>, C_SRC> element, Builder& builder, 
                                              [&]()
                                              {
                                                  auto& fterm = builder.template get_ground_fterm<T>();
+                                                 fterm.clear();
 
                                                  fterm.function = merge(element.get_function(), builder, destination, cache).get_index();
-                                                 fterm.objects.clear();
                                                  for (const auto object : element.get_objects())
                                                      fterm.objects.push_back(merge(object, builder, destination, cache).get_index());
 
@@ -340,11 +340,7 @@ auto merge(View<Index<GroundConjunctiveCondition>, C_SRC> element, Builder& buil
                                                   [&]()
                                                   {
                                                       auto& conj_cond = builder.get_ground_conj_cond();
-
-                                                      conj_cond.objects.clear();
-                                                      conj_cond.static_literals.clear();
-                                                      conj_cond.fluent_literals.clear();
-                                                      conj_cond.numeric_constraints.clear();
+                                                      conj_cond.clear();
 
                                                       for (const auto object : element.get_objects())
                                                           conj_cond.objects.push_back(merge(object, builder, destination, cache).get_index());

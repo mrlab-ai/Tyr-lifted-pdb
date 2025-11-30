@@ -149,9 +149,9 @@ private:
     template<formalism::Context C>
     IndexFunctionVariant translate_common(loki::FunctionSkeleton element, formalism::Builder& builder, C& context)
     {
-        auto build_function = [&](auto tag_const) -> IndexFunctionVariant
+        auto build_function = [&](auto fact_tag) -> IndexFunctionVariant
         {
-            using Tag = std::decay_t<decltype(tag_const)>;
+            using Tag = std::decay_t<decltype(fact_tag)>;
 
             auto& function = builder.template get_function<Tag>();
             function.name = element->get_name();
@@ -186,9 +186,9 @@ private:
     template<formalism::Context C>
     IndexPredicateVariant translate_common(loki::Predicate element, formalism::Builder& builder, C& context)
     {
-        auto build_predicate = [&](auto tag_const) -> IndexPredicateVariant
+        auto build_predicate = [&](auto fact_tag) -> IndexPredicateVariant
         {
-            using Tag = std::decay_t<decltype(tag_const)>;
+            using Tag = std::decay_t<decltype(fact_tag)>;
 
             auto& predicate = builder.template get_predicate<Tag>();
             predicate.name = element->get_name();
@@ -251,11 +251,11 @@ private:
     template<formalism::Context C>
     IndexAtomVariant translate_lifted(loki::Atom element, formalism::Builder& builder, C& context)
     {
-        auto index_predicate_variant = translate_lifted(element->get_predicate(), builder, context);
+        auto index_predicate_variant = translate_common(element->get_predicate(), builder, context);
 
-        auto build_atom = [&](auto tag_const, auto predicate_index) -> IndexAtomVariant
+        auto build_atom = [&](auto fact_tag, auto predicate_index) -> IndexAtomVariant
         {
-            using Tag = std::decay_t<decltype(tag_const)>;
+            using Tag = std::decay_t<decltype(fact_tag)>;
 
             auto& atom = builder.template get_atom<Tag>();
             atom.predicate = predicate_index;
@@ -285,9 +285,9 @@ private:
     {
         auto index_atom_variant = translate_lifted(element->get_atom(), builder, context);
 
-        auto build_literal = [&](auto tag_const, auto atom_index) -> IndexLiteralVariant
+        auto build_literal = [&](auto fact_tag, auto atom_index) -> IndexLiteralVariant
         {
-            using Tag = std::decay_t<decltype(tag_const)>;
+            using Tag = std::decay_t<decltype(fact_tag)>;
 
             auto& literal = builder.template get_literal<Tag>();
             literal.atom = atom_index;
@@ -319,28 +319,89 @@ private:
     }
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionBinaryOperator element, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionBinaryOperator element, formalism::Builder& builder, C& context)
+    {
+        auto build_binary_op = [&](auto op_tag) -> Data<formalism::FunctionExpression>
+        {
+            using Tag = std::decay_t<decltype(op_tag)>;
+
+            auto& binary = builder.template get_binary<Tag>();
+            auto lhs_result = translate_lifted(element->get_left_function_expression(), builder, context);
+            auto rhs_result = translate_lifted(element->get_right_function_expression(), builder, context);
+            binary.lhs = lhs_result;
+            binary.rhs = rhs_result;
+            formalism::canonicalize(binary);
+            return context.get_or_create(binary, builder.get_buffer());
+        };
+
+        switch (element->get_binary_operator())
+        {
+            case loki::BinaryOperatorEnum::PLUS:
+                return build_binary_op(formalism::OpAdd {});
+            case loki::BinaryOperatorEnum::MINUS:
+                return build_binary_op(formalism::OpSub {});
+            case loki::BinaryOperatorEnum::MUL:
+                return build_binary_op(formalism::OpMul {});
+            case loki::BinaryOperatorEnum::DIV:
+                return build_binary_op(formalism::OpDiv {});
+            default:
+                throw std::runtime_error("Unexpected case");
+        }
+    }
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionMultiOperator element, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionMultiOperator element, formalism::Builder& builder, C& context)
+    {
+        auto build_multi_op = [&](auto op_tag) -> Data<formalism::FunctionExpression>
+        {
+            using Tag = std::decay_t<decltype(op_tag)>;
+
+            auto& multi = builder.template get_multi<Tag>();
+            multi.args = translate_lifted(element->get_function_expressions(), builder, context);
+            formalism::canonicalize(multi);
+            return context.get_or_create(multi, builder.get_buffer());
+        };
+
+        switch (element->get_multi_operator())
+        {
+            case loki::MultiOperatorEnum::PLUS:
+                return build_multi_op(formalism::OpAdd {});
+            case loki::MultiOperatorEnum::MUL:
+                return build_multi_op(formalism::OpMul {});
+            default:
+                throw std::runtime_error("Unexpected case");
+        }
+    }
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionMinus element, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionMinus element, formalism::Builder& builder, C& context)
+    {
+        auto& minus = builder.template get_unary<formalism::OpSub>();
+        minus.arg = translate_lifted(element->get_function_expression(), builder, context);
+        formalism::canonicalize(minus);
+        return context.get_or_create(minus, builder.get_buffer());
+    }
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionFunction element, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionFunction element, formalism::Builder& builder, C& context)
+    {
+        return translate_lifted(element->get_function(), builder, context);
+    }
 
     template<formalism::Context C>
-    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpression element, formalism::Builder& builder, C& context);
+    Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpression element, formalism::Builder& builder, C& context)
+    {
+        return std::visit([&](auto&& arg) { return translate_lifted(arg, builder, context); }, element->get_function_expression());
+    }
 
     template<formalism::Context C>
     IndexFunctionTermVariant translate_lifted(loki::Function element, formalism::Builder& builder, C& context)
     {
         auto index_function_variant = translate_common(element->get_function_skeleton(), builder, context);
 
-        auto build_function_term = [&](auto tag_const, auto function_index) -> IndexFunctionTermVariant
+        auto build_function_term = [&](auto fact_tag, auto function_index) -> IndexFunctionTermVariant
         {
-            using Tag = std::decay_t<decltype(tag_const)>;
+            using Tag = std::decay_t<decltype(fact_tag)>;
 
             auto& fterm = builder.template get_fterm<Tag>();
             fterm.function = function_index;
@@ -367,11 +428,44 @@ private:
 
     template<formalism::Context C>
     Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>
-    translate_lifted(loki::ConditionNumericConstraint element, formalism::Builder& builder, C& context);
+    translate_lifted(loki::ConditionNumericConstraint element, formalism::Builder& builder, C& context)
+    {
+        auto build_binary_op = [&](auto op_tag) -> Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>
+        {
+            using Tag = std::decay_t<decltype(op_tag)>;
+
+            auto& binary = builder.template get_binary<Tag>();
+            auto lhs_result = translate_lifted(element->get_left_function_expression(), builder, context);
+            auto rhs_result = translate_lifted(element->get_right_function_expression(), builder, context);
+            binary.lhs = lhs_result;
+            binary.rhs = rhs_result;
+            formalism::canonicalize(binary);
+            return context.get_or_create(binary, builder.get_buffer());
+        };
+
+        switch (element->get_binary_comparator())
+        {
+            case loki::BinaryComparatorEnum::EQUAL:
+                return build_binary_op(formalism::OpEq {});
+            case loki::BinaryComparatorEnum::LESS_EQUAL:
+                return build_binary_op(formalism::OpLe {});
+            case loki::BinaryComparatorEnum::LESS:
+                return build_binary_op(formalism::OpLt {});
+            case loki::BinaryComparatorEnum::GREATER_EQUAL:
+                return build_binary_op(formalism::OpGe {});
+            case loki::BinaryComparatorEnum::GREATER:
+                return build_binary_op(formalism::OpGt {});
+            default:
+                throw std::runtime_error("Unexpected case");
+        }
+    }
 
     template<formalism::Context C>
     Index<formalism::ConjunctiveCondition>
-    translate_lifted(loki::Condition element, const IndexList<formalism::Variable>& parameters, formalism::Builder& builder, C& context);
+    translate_lifted(loki::Condition element, const IndexList<formalism::Variable>& parameters, formalism::Builder& builder, C& context)
+    {
+        auto& conj_condition = builder.get_conj_cond();
+    }
 
     template<formalism::Context C>
     IndexList<formalism::ConditionalEffect>
@@ -398,13 +492,85 @@ private:
     }
 
     template<formalism::Context C>
-    Index<formalism::Object> translate_grounded(loki::Term element, formalism::Builder& builder, C& context);
+    Index<formalism::Object> translate_grounded(loki::Term element, formalism::Builder& builder, C& context)
+    {
+        return std::visit(
+            [&](auto&& arg) -> Data<formalism::Term>
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, loki::Object>)
+                    return Data<formalism::Term>(translate_common(arg, builder, context));
+                else if constexpr (std::is_same_v<T, loki::Variable>)
+                    throw std::runtime_error("Expected ground term.");
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            element->get_object_or_variable());
+    }
 
     template<formalism::Context C>
-    IndexGroundAtomVariant translate_grounded(loki::Atom element, formalism::Builder& builder, C& context);
+    IndexGroundAtomVariant translate_grounded(loki::Atom element, formalism::Builder& builder, C& context)
+    {
+        auto index_predicate_variant = translate_common(element->get_predicate(), builder, context);
+
+        auto build_atom = [&](auto fact_tag, auto predicate_index) -> IndexGroundAtomVariant
+        {
+            using Tag = std::decay_t<decltype(fact_tag)>;
+
+            auto& atom = builder.template get_ground_atom<Tag>();
+            atom.predicate = predicate_index;
+            atom.terms = this->translate_grounded(element->get_terms(), builder, context);
+            formalism::canonicalize(atom);
+            return context.get_or_create(atom, builder.get_buffer());
+        };
+
+        return std::visit(
+            [&](auto&& arg) -> IndexGroundAtomVariant
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::StaticTag>>>)
+                    return build_atom(formalism::StaticTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::FluentTag>>>)
+                    return build_atom(formalism::FluentTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::DerivedTag>>>)
+                    return build_atom(formalism::DerivedTag {}, arg);
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_predicate_variant);
+    }
 
     template<formalism::Context C>
-    IndexGroundLiteralVariant translate_grounded(loki::Literal element, formalism::Builder& builder, C& context);
+    IndexGroundLiteralVariant translate_grounded(loki::Literal element, formalism::Builder& builder, C& context)
+    {
+        auto index_atom_variant = translate_grounded(element->get_atom(), builder, context);
+
+        auto build_literal = [&](auto fact_tag, auto atom_index) -> IndexGroundLiteralVariant
+        {
+            using Tag = std::decay_t<decltype(fact_tag)>;
+
+            auto& literal = builder.template get_ground_literal<Tag>();
+            literal.atom = atom_index;
+            literal.polarity = element->get_polarity();
+            formalism::canonicalize(literal);
+            return context.get_or_create(literal, builder.get_buffer());
+        };
+
+        return std::visit(
+            [&](auto&& arg) -> IndexGroundLiteralVariant
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, Index<formalism::Atom<formalism::StaticTag>>>)
+                    return build_literal(formalism::StaticTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::Atom<formalism::FluentTag>>>)
+                    return build_literal(formalism::FluentTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::Atom<formalism::DerivedTag>>>)
+                    return build_literal(formalism::DerivedTag {}, arg);
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_atom_variant);
+    }
 
     template<formalism::Context C>
     Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionNumber element, formalism::Builder& builder, C& context)
@@ -413,22 +579,112 @@ private:
     }
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionBinaryOperator element, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionBinaryOperator element, formalism::Builder& builder, C& context)
+    {
+        auto build_binary_op = [&](auto op_tag) -> Data<formalism::GroundFunctionExpression>
+        {
+            using Tag = std::decay_t<decltype(op_tag)>;
+
+            auto& binary = builder.template get_ground_binary<Tag>();
+            auto lhs_result = translate_grounded(element->get_left_function_expression(), builder, context);
+            auto rhs_result = translate_grounded(element->get_right_function_expression(), builder, context);
+            binary.lhs = lhs_result;
+            binary.rhs = rhs_result;
+            formalism::canonicalize(binary);
+            return context.get_or_create(binary, builder.get_buffer());
+        };
+
+        switch (element->get_binary_operator())
+        {
+            case loki::BinaryOperatorEnum::PLUS:
+                return build_binary_op(formalism::OpAdd {});
+            case loki::BinaryOperatorEnum::MINUS:
+                return build_binary_op(formalism::OpSub {});
+            case loki::BinaryOperatorEnum::MUL:
+                return build_binary_op(formalism::OpMul {});
+            case loki::BinaryOperatorEnum::DIV:
+                return build_binary_op(formalism::OpDiv {});
+            default:
+                throw std::runtime_error("Unexpected case");
+        }
+    }
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionMultiOperator element, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionMultiOperator element, formalism::Builder& builder, C& context)
+    {
+        auto build_multi_op = [&](auto op_tag) -> Data<formalism::GroundFunctionExpression>
+        {
+            using Tag = std::decay_t<decltype(op_tag)>;
+
+            auto& multi = builder.template get_ground_multi<Tag>();
+            multi.args = translate_grounded(element->get_function_expressions(), builder, context);
+            formalism::canonicalize(multi);
+            return context.get_or_create(multi, builder.get_buffer());
+        };
+
+        switch (element->get_multi_operator())
+        {
+            case loki::MultiOperatorEnum::PLUS:
+                return build_multi_op(formalism::OpAdd {});
+            case loki::MultiOperatorEnum::MUL:
+                return build_multi_op(formalism::OpMul {});
+            default:
+                throw std::runtime_error("Unexpected case");
+        }
+    }
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionMinus element, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionMinus element, formalism::Builder& builder, C& context)
+    {
+        auto& minus = builder.template get_ground_unary<formalism::OpSub>();
+        minus.arg = translate_grounded(element->get_function_expression(), builder, context);
+        formalism::canonicalize(minus);
+        return context.get_or_create(minus, builder.get_buffer());
+    }
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionFunction element, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpressionFunction element, formalism::Builder& builder, C& context)
+    {
+        return translate_grounded(element->get_function(), builder, context);
+    }
 
     template<formalism::Context C>
-    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpression element, formalism::Builder& builder, C& context);
+    Data<formalism::GroundFunctionExpression> translate_grounded(loki::FunctionExpression element, formalism::Builder& builder, C& context)
+    {
+        return std::visit([&](auto&& arg) { return translate_grounded(arg, builder, context); }, element->get_function_expression());
+    }
 
     template<formalism::Context C>
-    IndexGroundFunctionTermVariant translate_grounded(loki::Function element, formalism::Builder& builder, C& context);
+    IndexGroundFunctionTermVariant translate_grounded(loki::Function element, formalism::Builder& builder, C& context)
+    {
+        auto index_function_variant = translate_common(element->get_function_skeleton(), builder, context);
+
+        auto build_function_term = [&](auto fact_tag, auto function_index) -> IndexGroundFunctionTermVariant
+        {
+            using Tag = std::decay_t<decltype(fact_tag)>;
+
+            auto& fterm = builder.template get_ground_fterm<Tag>();
+            fterm.function = function_index;
+            fterm.terms = this->translate_grounded(element->get_terms(), builder, context);
+            formalism::canonicalize(fterm);
+            return context.get_or_create(fterm, builder.get_buffer());
+        };
+
+        return std::visit(
+            [&](auto&& arg) -> IndexGroundFunctionTermVariant
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, Index<formalism::Function<formalism::StaticTag>>>)
+                    return build_function_term(formalism::StaticTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::Function<formalism::FluentTag>>>)
+                    return build_function_term(formalism::FluentTag {}, arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::Function<formalism::AuxiliaryTag>>>)
+                    return build_function_term(formalism::AuxiliaryTag {}, arg);
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_function_variant);
+    }
 
     template<formalism::Context C>
     IndexGroundFunctionTermValueVariant translate_grounded(loki::FunctionValue element, formalism::Builder& builder, C& context);

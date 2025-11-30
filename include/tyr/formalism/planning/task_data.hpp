@@ -83,6 +83,17 @@ struct Data<formalism::Task>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept
+    {
+        derived_predicates.clear();
+        objects.clear();
+        static_atoms.clear();
+        fluent_atoms.clear();
+        static_fterm_values.clear();
+        fluent_fterm_values.clear();
+        axioms.clear();
+    }
+
     template<formalism::FactKind T>
     const auto& get_atoms() const
     {

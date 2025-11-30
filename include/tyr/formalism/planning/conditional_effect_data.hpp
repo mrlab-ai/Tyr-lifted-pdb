@@ -48,6 +48,8 @@ struct Data<formalism::ConditionalEffect>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept {}
+
     auto cista_members() const noexcept { return std::tie(index, condition, effect); }
     auto identifying_members() const noexcept { return std::tie(condition, effect); }
 };

@@ -47,6 +47,8 @@ struct Data<formalism::FunctionTerm<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept { terms.clear(); }
+
     auto cista_members() const noexcept { return std::tie(index, function, terms); }
     auto identifying_members() const noexcept { return std::tie(function, terms); }
 };

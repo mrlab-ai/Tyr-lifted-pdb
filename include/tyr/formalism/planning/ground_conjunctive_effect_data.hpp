@@ -53,6 +53,12 @@ struct Data<formalism::GroundConjunctiveEffect>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept
+    {
+        literals.clear();
+        numeric_effects.clear();
+    }
+
     auto cista_members() const noexcept { return std::tie(index, literals, numeric_effects, auxiliary_numeric_effect); }
     auto identifying_members() const noexcept { return std::tie(literals, numeric_effects, auxiliary_numeric_effect); }
 };

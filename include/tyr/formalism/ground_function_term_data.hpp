@@ -47,6 +47,8 @@ struct Data<formalism::GroundFunctionTerm<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept { objects.clear(); }
+
     auto cista_members() const noexcept { return std::tie(index, function, objects); }
     auto identifying_members() const noexcept { return std::tie(function, objects); }
 };

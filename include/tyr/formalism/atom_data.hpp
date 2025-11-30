@@ -47,6 +47,8 @@ struct Data<formalism::Atom<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept { terms.clear(); }
+
     auto cista_members() const noexcept { return std::tie(index, predicate, terms); }
     auto identifying_members() const noexcept { return std::tie(predicate, terms); }
 };

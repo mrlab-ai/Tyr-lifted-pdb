@@ -40,6 +40,8 @@ struct Data<formalism::MultiOperator<Op, T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept { args.clear(); }
+
     auto cista_members() const noexcept { return std::tie(index, args); }
     auto identifying_members() const noexcept { return std::tie(args); }
 };

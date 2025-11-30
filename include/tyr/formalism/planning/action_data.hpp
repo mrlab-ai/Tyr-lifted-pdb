@@ -55,6 +55,8 @@ struct Data<formalism::Action>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
+    void clear() noexcept { effects.clear(); }
+
     auto cista_members() const noexcept { return std::tie(index, name, original_arity, condition, effects); }
     auto identifying_members() const noexcept { return std::tie(name, original_arity, condition, effects); }
 };
