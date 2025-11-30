@@ -39,6 +39,7 @@ struct Data<formalism::Task>
     using Tag = formalism::Task;
 
     Index<formalism::Task> index;
+    ::cista::offset::string name;
     Index<formalism::Domain> domain;
     IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates;
     IndexList<formalism::Object> objects;
@@ -53,6 +54,7 @@ struct Data<formalism::Task>
 
     Data() = default;
     Data(Index<formalism::Task> index,
+         ::cista::offset::string name,
          Index<formalism::Domain> domain,
          IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates,
          IndexList<formalism::Object> objects,
@@ -65,6 +67,7 @@ struct Data<formalism::Task>
          Index<formalism::Metric> metric,
          IndexList<formalism::Axiom> axioms) :
         index(index),
+        name(std::move(name)),
         domain(domain),
         derived_predicates(std::move(derived_predicates)),
         objects(std::move(objects)),
@@ -119,6 +122,7 @@ struct Data<formalism::Task>
     auto cista_members() const noexcept
     {
         return std::tie(index,
+                        name,
                         domain,
                         derived_predicates,
                         objects,
@@ -133,7 +137,8 @@ struct Data<formalism::Task>
     }
     auto identifying_members() const noexcept
     {
-        return std::tie(domain,
+        return std::tie(name,
+                        domain,
                         derived_predicates,
                         objects,
                         static_atoms,

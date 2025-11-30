@@ -31,11 +31,11 @@ struct Data<formalism::Literal<T>>
     using Tag = formalism::Literal<T>;
 
     Index<formalism::Literal<T>> index;
-    Index<formalism::Atom<T>> atom_index;
+    Index<formalism::Atom<T>> atom;
     bool polarity;
 
     Data() = default;
-    Data(Index<formalism::Literal<T>> index, Index<formalism::Atom<T>> atom_index, bool polarity) : index(index), atom_index(atom_index), polarity(polarity) {}
+    Data(Index<formalism::Literal<T>> index, Index<formalism::Atom<T>> atom, bool polarity) : index(index), atom(atom), polarity(polarity) {}
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
@@ -43,8 +43,8 @@ struct Data<formalism::Literal<T>>
 
     void clear() noexcept {}
 
-    auto cista_members() const noexcept { return std::tie(index, atom_index, polarity); }
-    auto identifying_members() const noexcept { return std::tie(atom_index, polarity); }
+    auto cista_members() const noexcept { return std::tie(index, atom, polarity); }
+    auto identifying_members() const noexcept { return std::tie(atom, polarity); }
 };
 
 }

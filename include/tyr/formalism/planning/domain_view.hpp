@@ -49,6 +49,7 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
+    const auto& get_name() const noexcept { return get_data().name; }
     template<formalism::FactKind T>
     auto get_predicates() const noexcept
     {

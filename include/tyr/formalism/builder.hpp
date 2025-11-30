@@ -160,25 +160,33 @@ struct Builder
     // ----- Predicates / Atoms / Literals -----
     Data<Predicate<StaticTag>> static_predicate;
     Data<Predicate<FluentTag>> fluent_predicate;
+    Data<Predicate<DerivedTag>> derived_predicate;
 
     Data<Atom<StaticTag>> static_atom;
     Data<Atom<FluentTag>> fluent_atom;
+    Data<Atom<DerivedTag>> derived_atom;
     Data<Literal<StaticTag>> static_literal;
     Data<Literal<FluentTag>> fluent_literal;
+    Data<Literal<DerivedTag>> derived_literal;
 
     Data<GroundAtom<StaticTag>> ground_static_atom;
     Data<GroundAtom<FluentTag>> ground_fluent_atom;
+    Data<GroundAtom<DerivedTag>> ground_derived_atom;
     Data<GroundLiteral<StaticTag>> ground_static_literal;
     Data<GroundLiteral<FluentTag>> ground_fluent_literal;
+    Data<GroundLiteral<DerivedTag>> ground_derived_literal;
 
     // ----- Functions / Function terms -----
     Data<Function<StaticTag>> static_function;
     Data<Function<FluentTag>> fluent_function;
+    Data<Function<AuxiliaryTag>> auxiliary_function;
 
     Data<FunctionTerm<StaticTag>> static_fterm;
     Data<FunctionTerm<FluentTag>> fluent_fterm;
+    Data<FunctionTerm<AuxiliaryTag>> auxiliary_fterm;
     Data<GroundFunctionTerm<StaticTag>> ground_static_fterm;
     Data<GroundFunctionTerm<FluentTag>> ground_fluent_fterm;
+    Data<GroundFunctionTerm<AuxiliaryTag>> ground_auxiliary_fterm;
 
     // ----- Function expressions -----
     Data<FunctionExpression> fexpr;
@@ -187,6 +195,7 @@ struct Builder
     // ----- Function term values -----
     Data<GroundFunctionTermValue<StaticTag>> ground_static_fterm_value;
     Data<GroundFunctionTermValue<FluentTag>> ground_fluent_fterm_value;
+    Data<GroundFunctionTermValue<AuxiliaryTag>> ground_auxiliary_fterm_value;
 
     // ----- Conditions, rules, program -----
     Data<ConjunctiveCondition> conj_cond;
@@ -353,6 +362,8 @@ struct Builder
             return static_predicate;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return fluent_predicate;
+        else if constexpr (std::is_same_v<T, DerivedTag>)
+            return derived_predicate;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
@@ -364,6 +375,8 @@ struct Builder
             return static_atom;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return fluent_atom;
+        else if constexpr (std::is_same_v<T, DerivedTag>)
+            return derived_atom;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
@@ -375,6 +388,8 @@ struct Builder
             return ground_static_atom;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return ground_fluent_atom;
+        else if constexpr (std::is_same_v<T, DerivedTag>)
+            return ground_derived_atom;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
@@ -386,6 +401,8 @@ struct Builder
             return static_literal;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return fluent_literal;
+        else if constexpr (std::is_same_v<T, DerivedTag>)
+            return derived_literal;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
@@ -397,6 +414,8 @@ struct Builder
             return ground_static_literal;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return ground_fluent_literal;
+        else if constexpr (std::is_same_v<T, DerivedTag>)
+            return ground_derived_literal;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
@@ -410,6 +429,8 @@ struct Builder
             return static_function;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return fluent_function;
+        else if constexpr (std::is_same_v<T, AuxiliaryTag>)
+            return auxiliary_function;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
@@ -421,6 +442,8 @@ struct Builder
             return static_fterm;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return fluent_fterm;
+        else if constexpr (std::is_same_v<T, AuxiliaryTag>)
+            return auxiliary_fterm;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
@@ -432,6 +455,8 @@ struct Builder
             return ground_static_fterm;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return ground_fluent_fterm;
+        else if constexpr (std::is_same_v<T, AuxiliaryTag>)
+            return ground_auxiliary_fterm;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
@@ -443,6 +468,8 @@ struct Builder
             return ground_static_fterm_value;
         else if constexpr (std::is_same_v<T, FluentTag>)
             return ground_fluent_fterm_value;
+        else if constexpr (std::is_same_v<T, AuxiliaryTag>)
+            return ground_auxiliary_fterm_value;
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }

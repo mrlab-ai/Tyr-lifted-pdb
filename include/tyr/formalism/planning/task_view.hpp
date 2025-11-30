@@ -51,6 +51,7 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
+    const auto& get_name() const noexcept { return get_data().name; }
     auto get_domain() const noexcept { return View(get_data().domain, *m_context); }
     auto get_derived_predicates() const noexcept { return View(get_data().derived_predicates, *m_context); }
     auto get_objects() const noexcept { return View(get_data().objects, *m_context); }

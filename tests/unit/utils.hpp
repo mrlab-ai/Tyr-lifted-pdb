@@ -357,7 +357,7 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
             }
             canonicalize(static_atom_builder);
             const auto atom_i = repository.get_or_create(static_atom_builder, buffer).first;
-            static_literal_builder.atom_index = atom_i.get_index();
+            static_literal_builder.atom = atom_i.get_index();
             static_literal_builder.polarity = polarity;
             canonicalize(static_literal_builder);
             const auto literal_i = repository.get_or_create(static_literal_builder, buffer).first;
@@ -380,7 +380,7 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
             }
             canonicalize(fluent_atom_builder);
             const auto atom_i = repository.get_or_create(fluent_atom_builder, buffer).first;
-            fluent_literal_builder.atom_index = atom_i.get_index();
+            fluent_literal_builder.atom = atom_i.get_index();
             fluent_literal_builder.polarity = polarity;
             canonicalize(fluent_literal_builder);
             const auto literal_i = repository.get_or_create(fluent_literal_builder, buffer).first;
@@ -452,7 +452,7 @@ inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
             }
             canonicalize(static_atom_builder);
             const auto atom_i = repository.get_or_create(static_atom_builder, buffer).first;
-            static_literal_builder.atom_index = atom_i.get_index();
+            static_literal_builder.atom = atom_i.get_index();
             static_literal_builder.polarity = polarity;
             canonicalize(static_literal_builder);
             const auto literal_i = repository.get_or_create(static_literal_builder, buffer).first;
@@ -477,7 +477,7 @@ inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
             }
             canonicalize(fluent_atom_builder);
             const auto atom_i = repository.get_or_create(fluent_atom_builder, buffer).first;
-            fluent_literal_builder.atom_index = atom_i.get_index();
+            fluent_literal_builder.atom = atom_i.get_index();
             fluent_literal_builder.polarity = polarity;
             canonicalize(fluent_literal_builder);
             const auto literal_i = repository.get_or_create(fluent_literal_builder, buffer).first;
@@ -550,7 +550,7 @@ inline Index<formalism::Rule> add_rule_drop(formalism::Repository& repository)
             }
             canonicalize(static_atom_builder);
             const auto atom_i = repository.get_or_create(static_atom_builder, buffer).first;
-            static_literal_builder.atom_index = atom_i.get_index();
+            static_literal_builder.atom = atom_i.get_index();
             static_literal_builder.polarity = polarity;
             canonicalize(static_literal_builder);
             const auto literal_i = repository.get_or_create(static_literal_builder, buffer).first;
@@ -574,7 +574,7 @@ inline Index<formalism::Rule> add_rule_drop(formalism::Repository& repository)
             }
             canonicalize(fluent_atom_builder);
             const auto atom_i = repository.get_or_create(fluent_atom_builder, buffer).first;
-            fluent_literal_builder.atom_index = atom_i.get_index();
+            fluent_literal_builder.atom = atom_i.get_index();
             fluent_literal_builder.polarity = polarity;
             canonicalize(fluent_literal_builder);
             const auto literal_i = repository.get_or_create(fluent_literal_builder, buffer).first;

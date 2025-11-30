@@ -37,6 +37,7 @@ struct Data<formalism::Domain>
     using Tag = formalism::Domain;
 
     Index<formalism::Domain> index;
+    ::cista::offset::string name;
     IndexList<formalism::Predicate<formalism::StaticTag>> static_predicates;
     IndexList<formalism::Predicate<formalism::FluentTag>> fluent_predicates;
     IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates;
@@ -49,6 +50,7 @@ struct Data<formalism::Domain>
 
     Data() = default;
     Data(Index<formalism::Domain> index,
+         ::cista::offset::string name,
          IndexList<formalism::Predicate<formalism::StaticTag>> static_predicates,
          IndexList<formalism::Predicate<formalism::FluentTag>> fluent_predicates,
          IndexList<formalism::Predicate<formalism::DerivedTag>> derived_predicates,
@@ -59,6 +61,7 @@ struct Data<formalism::Domain>
          IndexList<formalism::Action> actions,
          IndexList<formalism::Axiom> axioms) :
         index(index),
+        name(std::move(name)),
         static_predicates(std::move(static_predicates)),
         fluent_predicates(std::move(fluent_predicates)),
         derived_predicates(std::move(derived_predicates)),
@@ -114,6 +117,7 @@ struct Data<formalism::Domain>
     auto cista_members() const noexcept
     {
         return std::tie(index,
+                        name,
                         static_predicates,
                         fluent_predicates,
                         derived_predicates,
@@ -126,7 +130,8 @@ struct Data<formalism::Domain>
     }
     auto identifying_members() const noexcept
     {
-        return std::tie(static_predicates,
+        return std::tie(name,
+                        static_predicates,
                         fluent_predicates,
                         derived_predicates,
                         static_functions,

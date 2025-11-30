@@ -23,6 +23,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/views.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <loki/loki.hpp>
@@ -148,6 +149,19 @@ private:
 
     ParameterIndexMapping m_param_map;
 
+    template<typename T, formalism::Context C>
+    auto translate_common(const std::vector<const T*>& input, formalism::Builder& builder, C& context)
+    {
+        using ReturnType = decltype(this->translate_common(std::declval<const T*>(), builder, std::declval<C&>()));
+        auto output = ::cista::offset::vector<ReturnType> {};
+        output.reserve(input.size());
+        std::transform(std::begin(input),
+                       std::end(input),
+                       std::back_inserter(output),
+                       [&](auto&& arg) { return this->translate_common(arg, builder, context); });
+        return output;
+    }
+
     template<formalism::Context C>
     IndexFunctionVariant translate_common(loki::FunctionSkeleton element, formalism::Builder& builder, C& context)
     {
@@ -160,7 +174,7 @@ private:
             function.name = element->get_name();
             function.arity = element->get_parameters().size();
             formalism::canonicalize(function);
-            return context.get_or_create(function, builder.get_buffer());
+            return context.get_or_create(function, builder.get_buffer()).first.get_index();
         };
 
         if (element->get_name() == "total-cost")
@@ -178,7 +192,7 @@ private:
         object.clear();
         object.name = element->get_name();
         formalism::canonicalize(object);
-        return context.get_or_create(object, builder.get_buffer());
+        return context.get_or_create(object, builder.get_buffer()).first.get_index();
     }
 
     template<formalism::Context C>
@@ -199,7 +213,7 @@ private:
             predicate.name = element->get_name();
             predicate.arity = element->get_parameters().size();
             formalism::canonicalize(predicate);
-            return context.get_or_create(predicate, builder.get_buffer());
+            return context.get_or_create(predicate, builder.get_buffer()).first.get_index();
         };
 
         if (m_fluent_predicates.count(element->get_name()) && !m_derived_predicates.count(element->get_name()))
@@ -217,7 +231,7 @@ private:
         variable.clear();
         variable.name = element->get_name();
         formalism::canonicalize(variable);
-        return context.get_or_create(variable, builder.get_buffer());
+        return context.get_or_create(variable, builder.get_buffer()).first.get_index();
     }
 
     /**
@@ -268,7 +282,7 @@ private:
             atom.predicate = predicate_index;
             atom.terms = this->translate_lifted(element->get_terms(), builder, context);
             formalism::canonicalize(atom);
-            return context.get_or_create(atom, builder.get_buffer());
+            return context.get_or_create(atom, builder.get_buffer()).first.get_index();
         };
 
         return std::visit(
@@ -301,7 +315,7 @@ private:
             literal.atom = atom_index;
             literal.polarity = element->get_polarity();
             formalism::canonicalize(literal);
-            return context.get_or_create(literal, builder.get_buffer());
+            return context.get_or_create(literal, builder.get_buffer()).first.get_index();
         };
 
         return std::visit(
@@ -340,7 +354,7 @@ private:
             binary.lhs = lhs_result;
             binary.rhs = rhs_result;
             formalism::canonicalize(binary);
-            return context.get_or_create(binary, builder.get_buffer());
+            return Data<formalism::FunctionExpression>(context.get_or_create(binary, builder.get_buffer()).first.get_index());
         };
 
         switch (element->get_binary_operator())
@@ -369,7 +383,7 @@ private:
             multi.clear();
             multi.args = translate_lifted(element->get_function_expressions(), builder, context);
             formalism::canonicalize(multi);
-            return context.get_or_create(multi, builder.get_buffer());
+            return Data<formalism::FunctionExpression>(context.get_or_create(multi, builder.get_buffer()).first.get_index());
         };
 
         switch (element->get_multi_operator())
@@ -390,13 +404,29 @@ private:
         minus.clear();
         minus.arg = translate_lifted(element->get_function_expression(), builder, context);
         formalism::canonicalize(minus);
-        return context.get_or_create(minus, builder.get_buffer());
+        return Data<formalism::FunctionExpression>(context.get_or_create(minus, builder.get_buffer()).first.get_index());
     }
 
     template<formalism::Context C>
     Data<formalism::FunctionExpression> translate_lifted(loki::FunctionExpressionFunction element, formalism::Builder& builder, C& context)
     {
-        return translate_lifted(element->get_function(), builder, context);
+        const auto index_fterm_variant = translate_lifted(element->get_function(), builder, context);
+
+        return std::visit(
+            [&](auto&& arg) -> Data<formalism::FunctionExpression>
+            {
+                using T = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::StaticTag>>>)
+                    return Data<formalism::FunctionExpression>(arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::FluentTag>>>)
+                    return Data<formalism::FunctionExpression>(arg);
+                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::AuxiliaryTag>>>)
+                    throw std::runtime_error("Cannot create FunctionExpression over auxiliary function term.");
+                else
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+            },
+            index_fterm_variant);
     }
 
     template<formalism::Context C>
@@ -419,7 +449,7 @@ private:
             fterm.function = function_index;
             fterm.terms = this->translate_lifted(element->get_terms(), builder, context);
             formalism::canonicalize(fterm);
-            return context.get_or_create(fterm, builder.get_buffer());
+            return context.get_or_create(fterm, builder.get_buffer()).first.get_index();
         };
 
         return std::visit(
@@ -454,7 +484,7 @@ private:
             binary.lhs = lhs_result;
             binary.rhs = rhs_result;
             formalism::canonicalize(binary);
-            return context.get_or_create(binary, builder.get_buffer());
+            return Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>(context.get_or_create(binary, builder.get_buffer()).first.get_index());
         };
 
         switch (element->get_binary_comparator())
@@ -530,7 +560,7 @@ private:
             }
 
             formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer());
+            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
         }
         else if (const auto condition_literal = std::get_if<loki::ConditionLiteral>(&element->get_condition()))
         {
@@ -539,7 +569,7 @@ private:
             func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
 
             formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer());
+            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
         }
         else if (const auto condition_numeric_constraint = std::get_if<loki::ConditionNumericConstraint>(&element->get_condition()))
         {
@@ -548,7 +578,7 @@ private:
             conj_condition.numeric_constraints.push_back(numeric_constraint);
 
             formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer());
+            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
         }
 
         // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *condition_ptr) << std::endl;
@@ -570,7 +600,7 @@ private:
             numeric_effect.fterm = fterm_index;
             numeric_effect.fexpr = this->translate_lifted(element->get_function_expression(), builder, context);
             formalism::canonicalize(numeric_effect);
-            return context.get_or_create(numeric_effect, builder.get_buffer());
+            return context.get_or_create(numeric_effect, builder.get_buffer()).first.get_index();
         };
 
         return std::visit(
@@ -579,7 +609,7 @@ private:
                 using T = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::StaticTag>>>)
-                    return build_numeric_effect_term(formalism::StaticTag {}, arg);
+                    throw std::runtime_error("Cannot create NumericEffect over static function term.");
                 else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::FluentTag>>>)
                     return build_numeric_effect_term(formalism::FluentTag {}, arg);
                 else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::AuxiliaryTag>>>)
@@ -593,10 +623,10 @@ private:
     template<formalism::Context C>
     IndexList<formalism::ConditionalEffect> translate_lifted(loki::Effect element, formalism::Builder& builder, C& context)
     {
-        using ConditionalEffectData = std::unordered_map<Index<formalism::ConjunctiveCondition>,
-                                                         std::tuple<IndexList<formalism::Literal<formalism::FluentTag>>,
-                                                                    IndexList<formalism::NumericEffect<formalism::FluentTag>>,
-                                                                    ::cista::optional<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>>>;
+        using ConditionalEffectData = UnorderedMap<Index<formalism::ConjunctiveCondition>,
+                                                   std::tuple<IndexList<formalism::Literal<formalism::FluentTag>>,
+                                                              IndexList<formalism::NumericEffect<formalism::FluentTag>>,
+                                                              ::cista::optional<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>>>;
 
         const auto translate_effect_func = [&](loki::Effect effect, ConditionalEffectData& ref_conditional_effect_data)
         {
@@ -611,71 +641,71 @@ private:
                 tmp_effect = (*tmp_effect_forall)->get_effect();
             }
 
-            /* 2. Parse conditional part */
-            auto conjunctive_condition = Index<formalism::ConjunctiveCondition>::max();
-            if (const auto tmp_effect_when = std::get_if<loki::EffectCompositeWhen>(&tmp_effect->get_effect()))
+            ///---------- Push parameters and parse scope -------------
+            m_param_map.push_parameters(parameters);
             {
-                conjunctive_condition = translate_lifted((*tmp_effect_when)->get_condition(), parameters, builder, context);
-
-                tmp_effect = (*tmp_effect_when)->get_effect();
-            }
-            if (conjunctive_condition == Index<formalism::ConjunctiveCondition>::max())
-            {
-                // Create empty conjunctive condition for unconditional effects
-                auto& conj_cond = builder.get_conj_cond();
-                conj_cond.clear();
-                canonicalize(conj_cond);
-                conjunctive_condition = context.get_or_create(conj_cond, builder.get_buffer());
-            }
-
-            // Fetch container to store the effects
-            auto& effect_data = ref_conditional_effect_data[conjunctive_condition];
-            auto& data_fluent_literals = std::get<0>(effect_data);
-            auto& data_fluent_numeric_effects = std::get<1>(effect_data);
-            auto& data_auxiliary_numeric_effect = std::get<2>(effect_data);
-
-            /* 3. Parse effect part */
-            if (const auto& effect_literal = std::get_if<loki::EffectLiteral>(&tmp_effect->get_effect()))
-            {
-                const auto index_literal_variant = translate_lifted((*effect_literal)->get_literal(), builder, context);
-
-                if (std::get_if<Index<formalism::Literal<formalism::DerivedTag>>>(index_literal_variant))
+                /* 2. Parse conditional part */
+                auto conjunctive_condition = Index<formalism::ConjunctiveCondition>::max();
+                if (const auto tmp_effect_when = std::get_if<loki::EffectCompositeWhen>(&tmp_effect->get_effect()))
                 {
-                    throw std::runtime_error("Effect literal cannot be Derived!");
+                    conjunctive_condition = translate_lifted((*tmp_effect_when)->get_condition(), parameters, builder, context);
+
+                    tmp_effect = (*tmp_effect_when)->get_effect();
                 }
-                else if (std::get_if<Index<formalism::Literal<formalism::StaticTag>>>(index_literal_variant))
+                if (conjunctive_condition == Index<formalism::ConjunctiveCondition>::max())
                 {
-                    throw std::logic_error("Effect lieral cannot be Static!");
+                    // Create empty conjunctive condition for unconditional effects
+                    auto& conj_cond = builder.get_conj_cond();
+                    conj_cond.clear();
+                    canonicalize(conj_cond);
+                    conjunctive_condition = context.get_or_create(conj_cond, builder.get_buffer()).first.get_index();
                 }
 
-                data_fluent_literals.push_back(std::get<Index<formalism::Literal<formalism::FluentTag>>>(index_literal_variant));
-            }
-            else if (const auto& effect_numeric = std::get_if<loki::EffectNumeric>(&tmp_effect->get_effect()))
-            {
-                const auto index_numeric_effect_variant = translate_lifted((*effect_numeric), builder, context);
+                // Fetch container to store the effects
+                auto& effect_data = ref_conditional_effect_data[conjunctive_condition];
+                auto& data_fluent_literals = std::get<0>(effect_data);
+                auto& data_fluent_numeric_effects = std::get<1>(effect_data);
+                auto& data_auxiliary_numeric_effect = std::get<2>(effect_data);
 
-                if (std::get_if<Index<formalism::NumericEffect<formalism::StaticTag>>>(index_numeric_effect_variant))
+                /* 3. Parse effect part */
+                if (const auto& effect_literal = std::get_if<loki::EffectLiteral>(&tmp_effect->get_effect()))
                 {
-                    throw std::runtime_error("Numeric effect cannot be Static!");
-                }
-                else if (std::get_if<Index<formalism::NumericEffect<formalism::FluentTag>>>(index_numeric_effect_variant))
-                {
-                    data_fluent_numeric_effects.push_back(std::get<Index<formalism::NumericEffect<formalism::FluentTag>>>(index_numeric_effect_variant));
-                }
-                else if (std::get_if<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>(index_numeric_effect_variant))
-                {
-                    if (data_auxiliary_numeric_effect)
-                        throw std::runtime_error("Reassigning auxiliary effect would swallow the previous one. This error indicates a bug in the translation.");
+                    const auto index_literal_variant = translate_lifted((*effect_literal)->get_literal(), builder, context);
 
-                    data_auxiliary_numeric_effect = std::get<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>(index_numeric_effect_variant);
+                    if (std::get_if<Index<formalism::Literal<formalism::DerivedTag>>>(&index_literal_variant))
+                    {
+                        throw std::runtime_error("Effect literal cannot be Derived!");
+                    }
+                    else if (std::get_if<Index<formalism::Literal<formalism::StaticTag>>>(&index_literal_variant))
+                    {
+                        throw std::logic_error("Effect lieral cannot be Static!");
+                    }
+
+                    data_fluent_literals.push_back(std::get<Index<formalism::Literal<formalism::FluentTag>>>(index_literal_variant));
+                }
+                else if (const auto& effect_numeric = std::get_if<loki::EffectNumeric>(&tmp_effect->get_effect()))
+                {
+                    const auto index_numeric_effect_variant = translate_lifted((*effect_numeric), builder, context);
+
+                    if (std::get_if<Index<formalism::NumericEffect<formalism::FluentTag>>>(&index_numeric_effect_variant))
+                    {
+                        data_fluent_numeric_effects.push_back(std::get<Index<formalism::NumericEffect<formalism::FluentTag>>>(index_numeric_effect_variant));
+                    }
+                    else if (std::get_if<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>(&index_numeric_effect_variant))
+                    {
+                        assert(!data_auxiliary_numeric_effect);
+                        data_auxiliary_numeric_effect = std::get<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>(index_numeric_effect_variant);
+                    }
+                }
+                else
+                {
+                    // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *tmp_effect) << std::endl;
+
+                    throw std::logic_error("Unexpected effect type. This error indicates a bug in the translation.");
                 }
             }
-            else
-            {
-                // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *tmp_effect) << std::endl;
-
-                throw std::logic_error("Unexpected effect type. This error indicates a bug in the translation.");
-            }
+            ///---------- Pop parameters -------------
+            m_param_map.pop_parameters(parameters);
         };
 
         /* Parse the effect */
@@ -707,14 +737,14 @@ private:
             conj_effect.numeric_effects = cond_effect_fluent_numeric_effects;
             conj_effect.auxiliary_numeric_effect = cond_effect_auxiliary_numeric_effects;
             formalism::canonicalize(conj_effect);
-            const auto conj_effect_index = context.get_or_create(conj_effect, builder.get_buffer());
+            const auto conj_effect_index = context.get_or_create(conj_effect, builder.get_buffer()).first.get_index();
 
             auto& cond_effect = builder.get_cond_effect();
             cond_effect.clear();
             cond_effect.condition = cond_conjunctive_condition;
             cond_effect.effect = conj_effect_index;
             formalism::canonicalize(cond_effect);
-            const auto cond_effect_index = context.get_or_create(cond_effect, builder.get_buffer());
+            const auto cond_effect_index = context.get_or_create(cond_effect, builder.get_buffer()).first.get_index();
 
             conditional_effects.push_back(cond_effect_index);
         }
@@ -729,32 +759,39 @@ private:
         action.original_arity = element->get_original_arity();
 
         // 1. Translate conditions
-        auto conjunctive_condition = Index<formalism::ConjunctiveCondition>::max();
-        if (element->get_condition().has_value())
+        auto parameters = translate_common(element->get_parameters(), builder, context);
+        ///---------- Push parameters and parse scope -------------
+        m_param_map.push_parameters(parameters);
         {
-            conjunctive_condition = translate_lifted(element->get_condition().value(), builder, context);
-        }
-        else
-        {
-            // Create empty one
-            auto& conj_cond = builder.get_conj_cond();
-            conj_cond.clear();
-            canonicalize(conj_cond);
-            conjunctive_condition = context.get_or_create(conj_cond, builder.get_buffer());
-        }
-        action.condition = conjunctive_condition;
+            auto conjunctive_condition = Index<formalism::ConjunctiveCondition>::max();
+            if (element->get_condition().has_value())
+            {
+                conjunctive_condition = translate_lifted(element->get_condition().value(), parameters, builder, context);
+            }
+            else
+            {
+                // Create empty one
+                auto& conj_cond = builder.get_conj_cond();
+                conj_cond.clear();
+                canonicalize(conj_cond);
+                conjunctive_condition = context.get_or_create(conj_cond, builder.get_buffer()).first.get_index();
+            }
+            action.condition = conjunctive_condition;
 
-        // 2. Translate effects
-        auto conditional_effects = IndexList<formalism::ConditionalEffect> {};
-        if (element->get_effect().has_value())
-        {
-            const auto conditional_effects_ = translate_lifted(element->get_effect().value(), builder, context);
-            conditional_effects = conditional_effects_;
+            // 2. Translate effects
+            auto conditional_effects = IndexList<formalism::ConditionalEffect> {};
+            if (element->get_effect().has_value())
+            {
+                const auto conditional_effects_ = translate_lifted(element->get_effect().value(), builder, context);
+                conditional_effects = conditional_effects_;
+            }
+            action.effects = conditional_effects;
         }
-        action.effects = conditional_effects;
+        ///---------- Pop parameters -------------
+        m_param_map.pop_parameters(parameters);
 
         formalism::canonicalize(action);
-        return context.get_or_create(action, builder.get_buffer());
+        return context.get_or_create(action, builder.get_buffer()).first.get_index();
     }
 
     template<formalism::Context C>
@@ -763,27 +800,34 @@ private:
         auto& axiom = builder.get_axiom();
         axiom.clear();
 
-        axiom.body = translate_lifted(element->get_condition(), builder, context);
-        const auto index_literal_variant = translate_lifted(element->get_literal(), builder, context);
+        auto parameters = translate_common(element->get_parameters(), builder, context);
+        ///---------- Push parameters and parse scope -------------
+        m_param_map.push_parameters(parameters);
+        {
+            axiom.body = translate_lifted(element->get_condition(), parameters, builder, context);
+            const auto index_literal_variant = translate_lifted(element->get_literal(), builder, context);
 
-        return std::visit(
-            [&](auto&& arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
+            std::visit(
+                [&](auto&& arg)
                 {
-                    // We store atoms in the head, not literals
-                    axiom.head = View<Index<formalism::Literal<formalism::DerivedTag>>, formalism::Repository>(arg, context).get_atom().get_index();
-                }
-                else
-                {
-                    throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head.");
-                }
-            },
-            index_literal_variant);
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
+                    {
+                        // We store atoms in the head, not literals
+                        axiom.head = View<Index<formalism::Literal<formalism::DerivedTag>>, formalism::Repository>(arg, context).get_atom().get_index();
+                    }
+                    else
+                    {
+                        throw std::runtime_error("ToMimirStructures::translate_lifted: Expected Literal<DerivedTag> in axiom head.");
+                    }
+                },
+                index_literal_variant);
+        }
+        ///---------- Pop parameters -------------
+        m_param_map.pop_parameters(parameters);
 
         formalism::canonicalize(axiom);
-        return context.get_or_create(axiom, builder.get_buffer());
+        return context.get_or_create(axiom, builder.get_buffer()).first.get_index();
     }
 
     /**
@@ -831,7 +875,7 @@ private:
             atom.predicate = predicate_index;
             atom.terms = this->translate_grounded(element->get_terms(), builder, context);
             formalism::canonicalize(atom);
-            return context.get_or_create(atom, builder.get_buffer());
+            return context.get_or_create(atom, builder.get_buffer()).first.get_index();
         };
 
         return std::visit(
@@ -864,7 +908,7 @@ private:
             literal.atom = atom_index;
             literal.polarity = element->get_polarity();
             formalism::canonicalize(literal);
-            return context.get_or_create(literal, builder.get_buffer());
+            return context.get_or_create(literal, builder.get_buffer()).first.get_index();
         };
 
         return std::visit(
@@ -903,7 +947,7 @@ private:
             binary.lhs = lhs_result;
             binary.rhs = rhs_result;
             formalism::canonicalize(binary);
-            return context.get_or_create(binary, builder.get_buffer());
+            return context.get_or_create(binary, builder.get_buffer()).first.get_index();
         };
 
         switch (element->get_binary_operator())
@@ -932,7 +976,7 @@ private:
             multi.clear();
             multi.args = translate_grounded(element->get_function_expressions(), builder, context);
             formalism::canonicalize(multi);
-            return context.get_or_create(multi, builder.get_buffer());
+            return context.get_or_create(multi, builder.get_buffer()).first.get_index();
         };
 
         switch (element->get_multi_operator())
@@ -953,7 +997,7 @@ private:
         minus.clear();
         minus.arg = translate_grounded(element->get_function_expression(), builder, context);
         formalism::canonicalize(minus);
-        return context.get_or_create(minus, builder.get_buffer());
+        return context.get_or_create(minus, builder.get_buffer()).first.get_index();
     }
 
     template<formalism::Context C>
@@ -982,7 +1026,7 @@ private:
             fterm.function = function_index;
             fterm.terms = this->translate_grounded(element->get_terms(), builder, context);
             formalism::canonicalize(fterm);
-            return context.get_or_create(fterm, builder.get_buffer());
+            return context.get_or_create(fterm, builder.get_buffer()).first.get_index();
         };
 
         return std::visit(
@@ -1015,7 +1059,7 @@ private:
             fterm_value.fterm = fterm_index;
             fterm_value.value = element->get_number();
             formalism::canonicalize(fterm_value);
-            return context.get_or_create(fterm_value, builder.get_buffer());
+            return context.get_or_create(fterm_value, builder.get_buffer()).first.get_index();
         };
 
         return std::visit(
@@ -1049,7 +1093,7 @@ private:
             binary.lhs = lhs_result;
             binary.rhs = rhs_result;
             formalism::canonicalize(binary);
-            return context.get_or_create(binary, builder.get_buffer());
+            return context.get_or_create(binary, builder.get_buffer()).first.get_index();
         };
 
         switch (element->get_binary_comparator())
@@ -1122,7 +1166,7 @@ private:
             }
 
             formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer());
+            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
         }
         else if (const auto condition_literal = std::get_if<loki::ConditionLiteral>(&element->get_condition()))
         {
@@ -1131,7 +1175,7 @@ private:
             func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
 
             formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer());
+            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
         }
         else if (const auto condition_numeric_constraint = std::get_if<loki::ConditionNumericConstraint>(&element->get_condition()))
         {
@@ -1140,7 +1184,7 @@ private:
             conj_condition.numeric_constraints.push_back(numeric_constraint);
 
             formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer());
+            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
         }
 
         // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *condition_ptr) << std::endl;
@@ -1172,7 +1216,7 @@ private:
         }
 
         formalism::canonicalize(metric);
-        return context.get_or_create(metric, builder.get_buffer());
+        return context.get_or_create(metric, builder.get_buffer()).first.get_index();
     }
 
 public:
