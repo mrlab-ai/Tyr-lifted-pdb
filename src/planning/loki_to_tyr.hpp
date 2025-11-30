@@ -123,6 +123,29 @@ private:
      * Common translations.
      */
 
+    struct ParameterIndexMapping
+    {
+        ParameterIndexMapping() = default;
+
+        UnorderedMap<Index<formalism::Variable>, formalism::ParameterIndex> map;
+
+        void push_parameters(const IndexList<formalism::Variable>& parameters)
+        {
+            for (const auto parameter : parameters)
+                map.emplace(parameter, map.size());
+        }
+
+        void pop_parameters(const IndexList<formalism::Variable>& parameters)
+        {
+            for (const auto parameter : parameters)
+                map.erase(parameter);
+        }
+
+        formalism::ParameterIndex lookup_parameter_index(Index<formalism::Variable> variable) { return map.at(variable); }
+    };
+
+    ParameterIndexMapping m_param_map;
+
     template<formalism::Context C>
     IndexFunctionVariant translate_common(loki::FunctionSkeleton element, formalism::Builder& builder, C& context)
     {
@@ -213,7 +236,27 @@ private:
     }
 
     template<formalism::Context C>
-    Data<formalism::Term> translate_lifted(loki::Term element, formalism::Builder& builder, C& context);
+    Data<formalism::Term> translate_lifted(loki::Term element, formalism::Builder& builder, C& context)
+    {
+        return std::visit(
+            [&](auto&& arg) -> Data<formalism::Term>
+            {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, loki::Object>)
+                {
+                    return Data<formalism::Term>(translate_common(arg, builder, context));
+                }
+                else if constexpr (std::is_same_v<T, loki::Variable>)
+                {
+                    return Data<formalism::Term>(m_param_map.lookup_parameter_index(translate_common(arg, builder, context)));
+                }
+                else
+                {
+                    static_assert(dependent_false<T>::value, "Missing case for type");
+                }
+            },
+            element->get_object_or_variable());
+    }
 
     template<formalism::Context C>
     IndexAtomVariant translate_lifted(loki::Atom element, formalism::Builder& builder, C& context);
