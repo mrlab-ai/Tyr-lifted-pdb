@@ -354,7 +354,8 @@ private:
             binary.lhs = lhs_result;
             binary.rhs = rhs_result;
             formalism::canonicalize(binary);
-            return Data<formalism::FunctionExpression>(context.get_or_create(binary, builder.get_buffer()).first.get_index());
+            return Data<formalism::FunctionExpression>(Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>(
+                context.get_or_create(binary, builder.get_buffer()).first.get_index()));
         };
 
         switch (element->get_binary_operator())
@@ -383,7 +384,8 @@ private:
             multi.clear();
             multi.args = translate_lifted(element->get_function_expressions(), builder, context);
             formalism::canonicalize(multi);
-            return Data<formalism::FunctionExpression>(context.get_or_create(multi, builder.get_buffer()).first.get_index());
+            return Data<formalism::FunctionExpression>(
+                Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>(context.get_or_create(multi, builder.get_buffer()).first.get_index()));
         };
 
         switch (element->get_multi_operator())
@@ -404,7 +406,8 @@ private:
         minus.clear();
         minus.arg = translate_lifted(element->get_function_expression(), builder, context);
         formalism::canonicalize(minus);
-        return Data<formalism::FunctionExpression>(context.get_or_create(minus, builder.get_buffer()).first.get_index());
+        return Data<formalism::FunctionExpression>(
+            Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>(context.get_or_create(minus, builder.get_buffer()).first.get_index()));
     }
 
     template<formalism::Context C>
@@ -982,7 +985,8 @@ private:
             binary.lhs = lhs_result;
             binary.rhs = rhs_result;
             formalism::canonicalize(binary);
-            return Data<formalism::GroundFunctionExpression>(context.get_or_create(binary, builder.get_buffer()).first.get_index());
+            return Data<formalism::GroundFunctionExpression>(Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>(
+                context.get_or_create(binary, builder.get_buffer()).first.get_index()));
         };
 
         switch (element->get_binary_operator())
@@ -1011,7 +1015,8 @@ private:
             multi.clear();
             multi.args = translate_grounded(element->get_function_expressions(), builder, context);
             formalism::canonicalize(multi);
-            return Data<formalism::GroundFunctionExpression>(context.get_or_create(multi, builder.get_buffer()).first.get_index());
+            return Data<formalism::GroundFunctionExpression>(Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>(
+                context.get_or_create(multi, builder.get_buffer()).first.get_index()));
         };
 
         switch (element->get_multi_operator())
@@ -1032,7 +1037,8 @@ private:
         minus.clear();
         minus.arg = translate_grounded(element->get_function_expression(), builder, context);
         formalism::canonicalize(minus);
-        return Data<formalism::GroundFunctionExpression>(context.get_or_create(minus, builder.get_buffer()).first.get_index());
+        return Data<formalism::GroundFunctionExpression>(Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>(
+            context.get_or_create(minus, builder.get_buffer()).first.get_index()));
     }
 
     template<formalism::Context C>

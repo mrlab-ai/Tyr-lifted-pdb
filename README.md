@@ -46,13 +46,14 @@ const auto weighted = bool{true};
 auto solver = tyr::solver::Solver(program, static_facts);
 
 // Solution is a ground facts and rules annotated with achievers and cost
-auto solution = solver.solve(fluent_facts, goal_facts, annotated, weighted);
+auto solution = solver.solve(program, fluent_facts, goal_facts, annotated, weighted);
 
 ```
   
 
 ## 4 PDDL Interface
 
+Tyr compiles the task grounding and lifted successor generation problem into datalog to efficiently address those problems in parallel. 
 The high level C++ planning interface aims to be as follows. 
 
 ## 4.1 Grounded Planning

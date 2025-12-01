@@ -250,7 +250,7 @@ void restrict_parameter_domain(View<Index<formalism::FunctionTerm<formalism::Flu
 }
 
 template<formalism::Context C>
-void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
+void restrict_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
 {
@@ -258,7 +258,7 @@ void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> elem
 }
 
 template<formalism::Context C>
-void restrict_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
+void restrict_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& static_function_domain_sets)
 {
@@ -386,7 +386,7 @@ void lift_parameter_domain(View<Index<formalism::FunctionTerm<formalism::StaticT
 }
 
 template<formalism::Context C>
-void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
+void lift_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
 {
@@ -394,7 +394,7 @@ void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
 }
 
 template<formalism::Context C>
-void lift_parameter_domain(View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C> element,
+void lift_parameter_domain(View<Data<formalism::FunctionExpression>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& fluent_function_domain_sets)
 {

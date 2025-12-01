@@ -297,6 +297,11 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
             {
                 return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(merge(arg, builder, destination, cache)), destination);
             }
+            else if constexpr (std::is_same_v<Alternative, View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_SRC>>)
+            {
+                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(merge(arg, builder, destination, cache).get_data()),
+                                                                   destination);
+            }
             else
             {
                 return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(merge(arg, builder, destination, cache).get_index()),
@@ -313,7 +318,7 @@ auto merge(View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_SRC>
         [&](auto&& arg)
         {
             return View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_DST>(
-                Data<ArithmeticOperator<Data<GroundFunctionExpression>>>(merge(arg, builder, destination, builder.get_buffer(), cache).get_index()),
+                Data<ArithmeticOperator<Data<GroundFunctionExpression>>>(merge(arg, builder, destination, cache).get_index()),
                 destination);
         },
         element.get_variant());

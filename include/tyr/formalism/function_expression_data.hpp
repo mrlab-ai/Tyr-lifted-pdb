@@ -19,11 +19,9 @@
 #define TYR_FORMALISM_FUNCTION_EXPRESSION_DATA_HPP_
 
 #include "tyr/common/types.hpp"
-#include "tyr/formalism/binary_operator_index.hpp"
+#include "tyr/formalism/arithmetic_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_term_index.hpp"
-#include "tyr/formalism/multi_operator_index.hpp"
-#include "tyr/formalism/unary_operator_index.hpp"
 
 namespace tyr
 {
@@ -33,13 +31,7 @@ struct Data<formalism::FunctionExpression>
     using Tag = formalism::FunctionExpression;
 
     using Variant = ::cista::offset::variant<float_t,
-                                             Index<formalism::UnaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>,
-                                             Index<formalism::BinaryOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>,
-                                             Index<formalism::BinaryOperator<formalism::OpSub, Data<formalism::FunctionExpression>>>,
-                                             Index<formalism::BinaryOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>,
-                                             Index<formalism::BinaryOperator<formalism::OpDiv, Data<formalism::FunctionExpression>>>,
-                                             Index<formalism::MultiOperator<formalism::OpAdd, Data<formalism::FunctionExpression>>>,
-                                             Index<formalism::MultiOperator<formalism::OpMul, Data<formalism::FunctionExpression>>>,
+                                             Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>,
                                              Index<formalism::FunctionTerm<formalism::StaticTag>>,
                                              Index<formalism::FunctionTerm<formalism::FluentTag>>>;
 

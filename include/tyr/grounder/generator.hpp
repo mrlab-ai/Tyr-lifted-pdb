@@ -147,16 +147,10 @@ View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>>
                 return View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>>(Data<formalism::GroundFunctionExpression>(arg),
                                                                                                         workspace.repository);
             }
-            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::StaticTag>>, formalism::Repository>>)
+            else if constexpr (std::is_same_v<Alternative, View<Data<formalism::ArithmeticOperator<Data<formalism::FunctionExpression>>>, C>>)
             {
                 return View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>>(
-                    Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_index()),
-                    workspace.repository);
-            }
-            else if constexpr (std::is_same_v<Alternative, View<Index<formalism::FunctionTerm<formalism::FluentTag>>, formalism::Repository>>)
-            {
-                return View<Data<formalism::GroundFunctionExpression>, formalism::OverlayRepository<C>>(
-                    Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_index()),
+                    Data<formalism::GroundFunctionExpression>(ground(arg, workspace).get_data()),
                     workspace.repository);
             }
             else

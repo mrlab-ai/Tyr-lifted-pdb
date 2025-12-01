@@ -22,6 +22,7 @@
 #include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/multi_operator_index.hpp"
+#include "tyr/formalism/unary_operator_index.hpp"
 
 namespace tyr
 {
@@ -30,7 +31,8 @@ struct Data<formalism::ArithmeticOperator<T>>
 {
     using Tag = formalism::ArithmeticOperator<T>;
 
-    using Variant = ::cista::offset::variant<Index<formalism::BinaryOperator<formalism::OpAdd, T>>,
+    using Variant = ::cista::offset::variant<Index<formalism::UnaryOperator<formalism::OpSub, T>>,
+                                             Index<formalism::BinaryOperator<formalism::OpAdd, T>>,
                                              Index<formalism::BinaryOperator<formalism::OpSub, T>>,
                                              Index<formalism::BinaryOperator<formalism::OpMul, T>>,
                                              Index<formalism::BinaryOperator<formalism::OpDiv, T>>,
