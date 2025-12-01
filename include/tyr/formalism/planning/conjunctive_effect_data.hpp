@@ -22,7 +22,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
-#include "tyr/formalism/planning/numeric_effect_index.hpp"
+#include "tyr/formalism/planning/numeric_effect_operator_data.hpp"
 
 namespace tyr
 {
@@ -34,18 +34,18 @@ struct Data<formalism::ConjunctiveEffect>
 
     Index<formalism::ConjunctiveEffect> index;
     IndexList<formalism::Literal<formalism::FluentTag>> literals;
-    IndexList<formalism::NumericEffect<formalism::FluentTag>> numeric_effects;
-    ::cista::optional<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
+    DataList<formalism::NumericEffectOperator<formalism::FluentTag>> numeric_effects;
+    ::cista::optional<Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>> auxiliary_numeric_effect;  // :action-cost
 
     Data() = default;
     Data(Index<formalism::ConjunctiveEffect> index,
          IndexList<formalism::Literal<formalism::FluentTag>> literals,
-         IndexList<formalism::NumericEffect<formalism::FluentTag>> numeric_effects,
-         ::cista::optional<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>> auxiliary_numeric_effect) :
+         DataList<formalism::NumericEffectOperator<formalism::FluentTag>> numeric_effects,
+         ::cista::optional<Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>> auxiliary_numeric_effect) :
         index(index),
         literals(std::move(literals)),
         numeric_effects(std::move(numeric_effects)),
-        auxiliary_numeric_effect(auxiliary_numeric_effect)
+        auxiliary_numeric_effect(std::move(auxiliary_numeric_effect))
     {
     }
     Data(const Data& other) = delete;

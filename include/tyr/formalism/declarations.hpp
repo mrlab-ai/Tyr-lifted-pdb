@@ -249,18 +249,25 @@ struct OpScaleDown
     auto identifying_members() const noexcept { return std::tie(kind); }
 };
 
-using NumericEffectOpVariant = ::cista::offset::variant<OpAssign, OpIncrease, OpDecrease, OpScaleUp, OpScaleDown>;
-
 template<typename T>
 concept NumericEffectOpKind =
     std::same_as<T, OpAssign> || std::same_as<T, OpIncrease> || std::same_as<T, OpDecrease> || std::same_as<T, OpScaleUp> || std::same_as<T, OpScaleDown>;
 
-template<FactKind T>
+template<NumericEffectOpKind Op, FactKind T>
 struct NumericEffect
 {
 };
-template<FactKind T>
+template<NumericEffectOpKind Op, FactKind T>
 struct GroundNumericEffect
+{
+};
+
+template<FactKind T>
+struct NumericEffectOperator
+{
+};
+template<FactKind T>
+struct GroundNumericEffectOperator
 {
 };
 

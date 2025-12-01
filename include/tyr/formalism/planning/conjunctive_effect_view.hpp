@@ -24,7 +24,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
-#include "tyr/formalism/planning/numeric_effect_view.hpp"
+#include "tyr/formalism/planning/numeric_effect_operator_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
 namespace tyr

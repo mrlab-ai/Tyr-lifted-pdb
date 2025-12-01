@@ -68,7 +68,12 @@ using IndexGroundFunctionTermValueVariant = std::variant<Index<formalism::Ground
                                                          Index<formalism::GroundFunctionTermValue<formalism::FluentTag>>,
                                                          Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>;
 
-using IndexNumericEffectVariant = std::variant<Index<formalism::NumericEffect<formalism::FluentTag>>, Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>;
+using IndexNumericEffectVariant = std::variant<Index<formalism::NumericEffect<formalism::OpAssign, formalism::FluentTag>>,
+                                               Index<formalism::NumericEffect<formalism::OpIncrease, formalism::FluentTag>>,
+                                               Index<formalism::NumericEffect<formalism::OpDecrease, formalism::FluentTag>>,
+                                               Index<formalism::NumericEffect<formalism::OpScaleUp, formalism::FluentTag>>,
+                                               Index<formalism::NumericEffect<formalism::OpScaleDown, formalism::FluentTag>>,
+                                               Index<formalism::NumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>>;
 
 class LokiToTyrTranslator
 {
@@ -594,48 +599,61 @@ private:
     {
         auto index_fterm_variant = translate_lifted(element->get_function(), builder, context);
 
-        auto build_numeric_effect_term = [&](auto fact_tag, auto fterm_index) -> IndexNumericEffectVariant
+        auto build_numeric_effect_term_helper = [&](auto fact_tag, auto op_tag, auto fterm_index) -> IndexNumericEffectVariant
         {
             using Tag = std::decay_t<decltype(fact_tag)>;
+            using Op = std::decay_t<decltype(op_tag)>;
 
-            auto& numeric_effect = builder.get_numeric_effect<Tag>();
+            auto& numeric_effect = builder.get_numeric_effect<Op, Tag>();
             numeric_effect.clear();
-            switch (element->get_assign_operator())
-            {
-                case loki::AssignOperatorEnum::ASSIGN:
-                {
-                    numeric_effect.op = formalism::OpAssign {};
-                    break;
-                }
-                case loki::AssignOperatorEnum::INCREASE:
-                {
-                    numeric_effect.op = formalism::OpIncrease {};
-                    break;
-                }
-                case loki::AssignOperatorEnum::DECREASE:
-                {
-                    numeric_effect.op = formalism::OpDecrease {};
-                    break;
-                }
-                case loki::AssignOperatorEnum::SCALE_UP:
-                {
-                    numeric_effect.op = formalism::OpScaleUp {};
-                    break;
-                }
-                case loki::AssignOperatorEnum::SCALE_DOWN:
-                {
-                    numeric_effect.op = formalism::OpScaleDown {};
-                    break;
-                }
-                default:
-                {
-                    throw std::runtime_error("Unexpected case.");
-                }
-            }
+
             numeric_effect.fterm = fterm_index;
             numeric_effect.fexpr = this->translate_lifted(element->get_function_expression(), builder, context);
             formalism::canonicalize(numeric_effect);
             return context.get_or_create(numeric_effect, builder.get_buffer()).first.get_index();
+        };
+
+        auto build_numeric_effect_term = [&](auto fact_tag, auto fterm_index) -> IndexNumericEffectVariant
+        {
+            using Tag = std::decay_t<decltype(fact_tag)>;
+
+            if constexpr (std::is_same_v<Tag, formalism::AuxiliaryTag>)
+            {
+                if (element->get_assign_operator() != loki::AssignOperatorEnum::INCREASE)
+                    throw std::runtime_error("Auxiliary numeric effect must use INCREASE operator.");
+
+                return build_numeric_effect_term_helper(Tag {}, formalism::OpIncrease {}, fterm_index);
+            }
+            else
+            {
+                switch (element->get_assign_operator())
+                {
+                    case loki::AssignOperatorEnum::ASSIGN:
+                    {
+                        return build_numeric_effect_term_helper(Tag {}, formalism::OpAssign {}, fterm_index);
+                    }
+                    case loki::AssignOperatorEnum::INCREASE:
+                    {
+                        return build_numeric_effect_term_helper(Tag {}, formalism::OpIncrease {}, fterm_index);
+                    }
+                    case loki::AssignOperatorEnum::DECREASE:
+                    {
+                        return build_numeric_effect_term_helper(Tag {}, formalism::OpDecrease {}, fterm_index);
+                    }
+                    case loki::AssignOperatorEnum::SCALE_UP:
+                    {
+                        return build_numeric_effect_term_helper(Tag {}, formalism::OpScaleUp {}, fterm_index);
+                    }
+                    case loki::AssignOperatorEnum::SCALE_DOWN:
+                    {
+                        return build_numeric_effect_term_helper(Tag {}, formalism::OpScaleDown {}, fterm_index);
+                    }
+                    default:
+                    {
+                        throw std::runtime_error("Unexpected case.");
+                    }
+                }
+            }
         };
 
         return std::visit(
@@ -660,8 +678,8 @@ private:
     {
         using ConditionalEffectData = UnorderedMap<Index<formalism::ConjunctiveCondition>,
                                                    std::tuple<IndexList<formalism::Literal<formalism::FluentTag>>,
-                                                              IndexList<formalism::NumericEffect<formalism::FluentTag>>,
-                                                              ::cista::optional<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>>>;
+                                                              DataList<formalism::NumericEffectOperator<formalism::FluentTag>>,
+                                                              ::cista::optional<Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>>>>;
 
         const auto translate_effect_func = [&](loki::Effect effect, ConditionalEffectData& ref_conditional_effect_data)
         {
@@ -707,30 +725,50 @@ private:
                 {
                     const auto index_literal_variant = translate_lifted((*effect_literal)->get_literal(), builder, context);
 
-                    if (std::get_if<Index<formalism::Literal<formalism::DerivedTag>>>(&index_literal_variant))
-                    {
-                        throw std::runtime_error("Effect literal cannot be Derived!");
-                    }
-                    else if (std::get_if<Index<formalism::Literal<formalism::StaticTag>>>(&index_literal_variant))
-                    {
-                        throw std::logic_error("Effect lieral cannot be Static!");
-                    }
+                    std::visit(
+                        [&](auto&& arg)
+                        {
+                            using T = std::decay_t<decltype(arg)>;
 
-                    data_fluent_literals.push_back(std::get<Index<formalism::Literal<formalism::FluentTag>>>(index_literal_variant));
+                            if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::StaticTag>>>)
+                                throw std::logic_error("Effect lieral cannot be Static!");
+                            else if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::FluentTag>>>)
+                                data_fluent_literals.push_back(arg);
+                            else if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
+                                throw std::runtime_error("Effect literal cannot be Derived!");
+                            else
+                                static_assert(dependent_false<T>::value, "Unexpected case.");
+                        },
+                        index_literal_variant);
                 }
                 else if (const auto& effect_numeric = std::get_if<loki::EffectNumeric>(&tmp_effect->get_effect()))
                 {
                     const auto index_numeric_effect_variant = translate_lifted((*effect_numeric), builder, context);
 
-                    if (std::get_if<Index<formalism::NumericEffect<formalism::FluentTag>>>(&index_numeric_effect_variant))
-                    {
-                        data_fluent_numeric_effects.push_back(std::get<Index<formalism::NumericEffect<formalism::FluentTag>>>(index_numeric_effect_variant));
-                    }
-                    else if (std::get_if<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>(&index_numeric_effect_variant))
-                    {
-                        assert(!data_auxiliary_numeric_effect);
-                        data_auxiliary_numeric_effect = std::get<Index<formalism::NumericEffect<formalism::AuxiliaryTag>>>(index_numeric_effect_variant);
-                    }
+                    std::visit(
+                        [&](auto&& arg)
+                        {
+                            using T = std::decay_t<decltype(arg)>;
+
+                            if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpAssign, formalism::FluentTag>>>)
+                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
+                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpIncrease, formalism::FluentTag>>>)
+                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
+                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpDecrease, formalism::FluentTag>>>)
+                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
+                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpScaleUp, formalism::FluentTag>>>)
+                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
+                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpScaleDown, formalism::FluentTag>>>)
+                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
+                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>>)
+                            {
+                                assert(!data_auxiliary_numeric_effect);
+                                data_auxiliary_numeric_effect = Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>(arg);
+                            }
+                            else
+                                static_assert(dependent_false<T>::value, "Unexpected case.");
+                        },
+                        index_numeric_effect_variant);
                 }
                 else
                 {

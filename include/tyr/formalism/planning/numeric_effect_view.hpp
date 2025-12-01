@@ -29,17 +29,20 @@
 namespace tyr
 {
 
-template<formalism::FactKind T, formalism::Context C>
-class View<Index<formalism::NumericEffect<T>>, C>
+template<formalism::NumericEffectOpKind Op, formalism::FactKind T, formalism::Context C>
+class View<Index<formalism::NumericEffect<Op, T>>, C>
 {
+    static_assert(std::same_as<T, formalism::FluentTag> || (std::same_as<T, formalism::AuxiliaryTag> && std::same_as<Op, formalism::OpIncrease>),
+                  "Unsupported NumericEffect<Op, T> combination.");
+
 private:
     const C* m_context;
-    Index<formalism::NumericEffect<T>> m_handle;
+    Index<formalism::NumericEffect<Op, T>> m_handle;
 
 public:
-    using Tag = formalism::NumericEffect<T>;
+    using Tag = formalism::NumericEffect<Op, T>;
 
-    View(Index<formalism::NumericEffect<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::NumericEffect<Op, T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
@@ -52,6 +55,7 @@ public:
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
+
 }
 
 #endif

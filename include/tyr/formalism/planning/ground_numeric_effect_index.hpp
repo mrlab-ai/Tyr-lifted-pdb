@@ -24,13 +24,16 @@
 
 namespace tyr
 {
-template<formalism::FactKind T>
-struct Index<formalism::GroundNumericEffect<T>> : IndexMixin<Index<formalism::GroundNumericEffect<T>>>
+template<formalism::NumericEffectOpKind Op, formalism::FactKind T>
+struct Index<formalism::GroundNumericEffect<Op, T>> : IndexMixin<Index<formalism::GroundNumericEffect<Op, T>>>
 {
-    using Tag = formalism::GroundNumericEffect<T>;
+    static_assert(std::same_as<T, formalism::FluentTag> || (std::same_as<T, formalism::AuxiliaryTag> && std::same_as<Op, formalism::OpIncrease>),
+                  "Unsupported NumericEffect<Op, T> combination.");
+
+    using Tag = formalism::GroundNumericEffect<Op, T>;
 
     // Inherit constructors
-    using Base = IndexMixin<Index<formalism::GroundNumericEffect<T>>>;
+    using Base = IndexMixin<Index<formalism::GroundNumericEffect<Op, T>>>;
     using Base::Base;
 };
 

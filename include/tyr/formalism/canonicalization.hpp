@@ -229,14 +229,14 @@ inline bool is_canonical(const Data<Program>& data)
  * Planning
  */
 
-template<FactKind T>
-bool is_canonical(const Data<NumericEffect<T>>& data)
+template<NumericEffectOpKind Op, FactKind T>
+bool is_canonical(const Data<NumericEffect<Op, T>>& data)
 {
     return true;
 }
 
-template<FactKind T>
-bool is_canonical(const Data<GroundNumericEffect<T>>& data)
+template<NumericEffectOpKind Op, FactKind T>
+bool is_canonical(const Data<GroundNumericEffect<Op, T>>& data)
 {
     return true;
 }
@@ -462,13 +462,13 @@ inline void canonicalize(Data<Program>& data)
     canonicalize(data.rules);
 }
 
-template<FactKind T>
-void canonicalize(Data<NumericEffect<T>>& data)
+template<NumericEffectOpKind Op, FactKind T>
+void canonicalize(Data<NumericEffect<Op, T>>& data)
 {
 }
 
-template<FactKind T>
-void canonicalize(Data<GroundNumericEffect<T>>& data)
+template<NumericEffectOpKind Op, FactKind T>
+void canonicalize(Data<GroundNumericEffect<Op, T>>& data)
 {
 }
 

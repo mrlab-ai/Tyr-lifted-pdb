@@ -212,13 +212,19 @@ struct Builder
      * Planning
      */
 
-    Data<NumericEffect<StaticTag>> static_numeric_effect;
-    Data<NumericEffect<FluentTag>> fluent_numeric_effect;
-    Data<NumericEffect<AuxiliaryTag>> auxiliary_numeric_effect;
+    Data<NumericEffect<OpAssign, FluentTag>> fluent_assign_numeric_effect;
+    Data<NumericEffect<OpIncrease, FluentTag>> fluent_increase_numeric_effect;
+    Data<NumericEffect<OpDecrease, FluentTag>> fluent_decrease_numeric_effect;
+    Data<NumericEffect<OpScaleUp, FluentTag>> fluent_scale_up_numeric_effect;
+    Data<NumericEffect<OpScaleDown, FluentTag>> fluent_scale_down_numeric_effect;
+    Data<NumericEffect<OpIncrease, AuxiliaryTag>> auxiliary_numeric_effect;
 
-    Data<GroundNumericEffect<StaticTag>> ground_static_numeric_effect;
-    Data<GroundNumericEffect<FluentTag>> ground_fluent_numeric_effect;
-    Data<GroundNumericEffect<AuxiliaryTag>> ground_auxiliary_numeric_effect;
+    Data<GroundNumericEffect<OpAssign, FluentTag>> ground_fluent_assign_numeric_effect;
+    Data<GroundNumericEffect<OpIncrease, FluentTag>> ground_fluent_increase_numeric_effect;
+    Data<GroundNumericEffect<OpDecrease, FluentTag>> ground_fluent_decrease_numeric_effect;
+    Data<GroundNumericEffect<OpScaleUp, FluentTag>> ground_fluent_scale_up_numeric_effect;
+    Data<GroundNumericEffect<OpScaleDown, FluentTag>> ground_fluent_scale_down_numeric_effect;
+    Data<GroundNumericEffect<OpIncrease, AuxiliaryTag>> ground_auxiliary_numeric_effect;
 
     Data<ConditionalEffect> cond_effect;
     Data<GroundConditionalEffect> ground_cond_effect;
@@ -493,28 +499,52 @@ struct Builder
      * Planning
      */
 
-    template<FactKind T>
+    template<NumericEffectOpKind Op, FactKind T>
     auto& get_numeric_effect() noexcept
     {
-        if constexpr (std::is_same_v<T, StaticTag>)
-            return static_numeric_effect;
-        else if constexpr (std::is_same_v<T, FluentTag>)
-            return fluent_numeric_effect;
+        if constexpr (std::is_same_v<T, FluentTag>)
+            if constexpr (std::is_same_v<Op, OpAssign>)
+                return fluent_assign_numeric_effect;
+            else if constexpr (std::is_same_v<Op, OpIncrease>)
+                return fluent_increase_numeric_effect;
+            else if constexpr (std::is_same_v<Op, OpDecrease>)
+                return fluent_decrease_numeric_effect;
+            else if constexpr (std::is_same_v<Op, OpScaleUp>)
+                return fluent_scale_up_numeric_effect;
+            else if constexpr (std::is_same_v<Op, OpScaleDown>)
+                return fluent_scale_down_numeric_effect;
+            else
+                static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
         else if constexpr (std::is_same_v<T, AuxiliaryTag>)
-            return auxiliary_numeric_effect;
+            if constexpr (std::is_same_v<Op, OpIncrease>)
+                return auxiliary_numeric_effect;
+            else
+                static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }
 
-    template<FactKind T>
+    template<NumericEffectOpKind Op, FactKind T>
     auto& get_ground_numeric_effect() noexcept
     {
-        if constexpr (std::is_same_v<T, StaticTag>)
-            return ground_static_numeric_effect;
-        else if constexpr (std::is_same_v<T, FluentTag>)
-            return ground_fluent_numeric_effect;
+        if constexpr (std::is_same_v<T, FluentTag>)
+            if constexpr (std::is_same_v<Op, OpAssign>)
+                return ground_fluent_assign_numeric_effect;
+            else if constexpr (std::is_same_v<Op, OpIncrease>)
+                return ground_fluent_increase_numeric_effect;
+            else if constexpr (std::is_same_v<Op, OpDecrease>)
+                return ground_fluent_decrease_numeric_effect;
+            else if constexpr (std::is_same_v<Op, OpScaleUp>)
+                return ground_fluent_scale_up_numeric_effect;
+            else if constexpr (std::is_same_v<Op, OpScaleDown>)
+                return ground_fluent_scale_down_numeric_effect;
+            else
+                static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
         else if constexpr (std::is_same_v<T, AuxiliaryTag>)
-            return ground_auxiliary_numeric_effect;
+            if constexpr (std::is_same_v<Op, OpIncrease>)
+                return ground_auxiliary_numeric_effect;
+            else
+                static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
         else
             static_assert(dependent_false<T>::value, "Missing Builder for the given types.");
     }

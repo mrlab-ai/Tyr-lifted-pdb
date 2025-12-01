@@ -27,23 +27,21 @@
 namespace tyr
 {
 
-template<formalism::FactKind T>
-struct Data<formalism::GroundNumericEffect<T>>
+template<formalism::NumericEffectOpKind Op, formalism::FactKind T>
+struct Data<formalism::GroundNumericEffect<Op, T>>
 {
-    using Tag = formalism::GroundNumericEffect<T>;
+    static_assert(std::same_as<T, formalism::FluentTag> || (std::same_as<T, formalism::AuxiliaryTag> && std::same_as<Op, formalism::OpIncrease>),
+                  "Unsupported NumericEffect<Op, T> combination.");
 
-    Index<formalism::GroundNumericEffect<T>> index;
-    formalism::NumericEffectOpVariant op;
+    using Tag = formalism::GroundNumericEffect<Op, T>;
+
+    Index<formalism::GroundNumericEffect<Op, T>> index;
     Index<formalism::GroundFunctionTerm<T>> fterm;
     Data<formalism::GroundFunctionExpression> fexpr;
 
     Data() = default;
-    Data(Index<formalism::GroundNumericEffect<T>> index,
-         formalism::NumericEffectOpVariant op,
-         Index<formalism::GroundFunctionTerm<T>> fterm,
-         Data<formalism::GroundFunctionExpression> fexpr) :
+    Data(Index<formalism::GroundNumericEffect<Op, T>> index, Index<formalism::GroundFunctionTerm<T>> fterm, Data<formalism::GroundFunctionExpression> fexpr) :
         index(index),
-        op(op),
         fterm(fterm),
         fexpr(fexpr)
     {
@@ -55,8 +53,8 @@ struct Data<formalism::GroundNumericEffect<T>>
 
     void clear() noexcept {}
 
-    auto cista_members() const noexcept { return std::tie(index, op, fterm, fexpr); }
-    auto identifying_members() const noexcept { return std::tie(op, fterm, fexpr); }
+    auto cista_members() const noexcept { return std::tie(index, fterm, fexpr); }
+    auto identifying_members() const noexcept { return std::tie(fterm, fexpr); }
 };
 }
 
