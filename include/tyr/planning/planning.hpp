@@ -20,6 +20,7 @@
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"
+#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/node.hpp"

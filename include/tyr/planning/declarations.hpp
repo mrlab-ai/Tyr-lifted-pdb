@@ -24,13 +24,21 @@
 
 namespace tyr::planning
 {
-
 class LiftedTask;
 using LiftedTaskPtr = std::shared_ptr<LiftedTask>;
 class GroundTask;
 using GroundTaskPtr = std::shared_ptr<GroundTask>;
 class Domain;
 using DomainPtr = std::shared_ptr<Domain>;
+
+template<typename Task>
+class Node;
+template<typename Task>
+class PackedState;
+template<typename Task>
+class UnpackedState;
+template<typename Task>
+class State;
 }
 
 #endif

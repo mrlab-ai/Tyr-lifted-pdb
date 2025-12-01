@@ -81,25 +81,25 @@ std::ostream& operator<<(std::ostream& os, const std::variant<Ts...>& variant);
 template<IsHanaMap Map>
 std::ostream& operator<<(std::ostream& os, const Map& map);
 
-template<typename C, typename... Ts>
-    requires(sizeof...(Ts) > 0)
-inline std::ostream& operator<<(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el);
-
-template<typename C, typename T>
-inline std::ostream& operator<<(std::ostream& os, const View<::cista::optional<T>, C>& el);
-
 template<typename Derived>
 std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& mixin);
 
 template<typename Derived>
 std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& mixin);
 
+template<typename... Ts>
+    requires(sizeof...(Ts) > 0)
+std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& el);
+
+template<typename C, typename... Ts>
+    requires(sizeof...(Ts) > 0)
+inline std::ostream& print(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el);
+
 template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
 std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec);
 
-template<typename... Ts>
-    requires(sizeof...(Ts) > 0)
-std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& variant);
+template<typename C, typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& print(std::ostream& os, const View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>& vec);
 
 /**
  * ADL-enabled stream helper: finds operator<< in the type's namespace
@@ -120,7 +120,14 @@ std::string to_string(const T& element)
 {
     std::stringstream ss;
 
-    if constexpr (requires { *element; })
+    if constexpr (OptionalLike<T>)
+    {
+        if (element.has_value())
+            print(ss, *element);
+        else
+            ss << "<nullopt>";
+    }
+    else if constexpr (PointerLike<T>)
     {
         if (element)
             print(ss, *element);
@@ -266,21 +273,6 @@ std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& mixin)
     return os;
 }
 
-template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
-std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec)
-{
-    fmt::print(os, "[{}]", fmt::join(to_strings(vec), ", "));
-    return os;
-}
-
-template<typename C, typename... Ts>
-    requires(sizeof...(Ts) > 0)
-inline std::ostream& operator<<(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el)
-{
-    visit([&os](auto&& arg) { os << to_string(arg); }, el);
-    return os;
-}
-
 template<typename... Ts>
     requires(sizeof...(Ts) > 0)
 std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& variant)
@@ -289,13 +281,25 @@ std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& var
     return os;
 }
 
-template<typename C, typename T>
-inline std::ostream& operator<<(std::ostream& os, const View<::cista::optional<T>, C>& el)
+template<typename C, typename... Ts>
+    requires(sizeof...(Ts) > 0)
+inline std::ostream& print(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el)
 {
-    if (el)
-        os << to_string(*el);
-    else
-        os << "nullopt";
+    visit([&os](auto&& arg) { os << to_string(arg); }, el);
+    return os;
+}
+
+template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec)
+{
+    fmt::print(os, "[{}]", fmt::join(to_strings(vec), ", "));
+    return os;
+}
+
+template<typename C, typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& print(std::ostream& os, const View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>& vec)
+{
+    fmt::print(os, "[{}]", fmt::join(to_strings(vec), ", "));
     return os;
 }
 

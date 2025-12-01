@@ -144,7 +144,7 @@ public:
         return m_packed_states.insert(PackedState<Task>(StateIndex(m_packed_states.size()), fluent_atoms, derived_atoms, numeric_variables));
     }
 
-    View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> get_task() const;
+    View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> get_task() const { return m_task; }
 
     Node<Task> get_initial_node() { return m_initial_node; }
 

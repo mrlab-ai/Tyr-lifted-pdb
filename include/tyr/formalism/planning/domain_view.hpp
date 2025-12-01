@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_DOMAIN_VIEW_HPP_
 #define TYR_FORMALISM_PLANNING_DOMAIN_VIEW_HPP_
 
+#include "tyr/common/optional.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -53,17 +54,20 @@ public:
     template<formalism::FactKind T>
     auto get_predicates() const noexcept
     {
-        return View(get_data().template get_predicates<T>(), *m_context);
+        return View<IndexList<formalism::Predicate<T>>, C>(get_data().template get_predicates<T>(), *m_context);
     }
     template<formalism::FactKind T>
     auto get_functions() const noexcept
     {
-        return View(get_data().template get_functions<T>(), *m_context);
+        return View<IndexList<formalism::Function<T>>, C>(get_data().template get_functions<T>(), *m_context);
     }
-    auto get_auxiliary_function() const noexcept { return View(get_data().auxiliary_function, *m_context); }
-    auto get_constants() const noexcept { return View(get_data().constants, *m_context); }
-    auto get_actions() const noexcept { return View(get_data().actions, *m_context); }
-    auto get_axioms() const noexcept { return View(get_data().axioms, *m_context); }
+    auto get_auxiliary_function() const noexcept
+    {
+        return View<::cista::optional<Index<formalism::Function<formalism::AuxiliaryTag>>>, C>(get_data().auxiliary_function, *m_context);
+    }
+    auto get_constants() const noexcept { return View<IndexList<formalism::Object>, C>(get_data().constants, *m_context); }
+    auto get_actions() const noexcept { return View<IndexList<formalism::Action>, C>(get_data().actions, *m_context); }
+    auto get_axioms() const noexcept { return View<IndexList<formalism::Axiom>, C>(get_data().axioms, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

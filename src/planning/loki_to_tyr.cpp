@@ -310,8 +310,8 @@ DomainPtr LokiToTyrTranslator::translate(const loki::Domain& element, formalism:
     }
 
     /* Structures section */
-    const auto actions = translate_lifted(element->get_actions(), builder, *context);
-    const auto axioms = translate_lifted(element->get_axioms(), builder, *context);
+    domain.actions = translate_lifted(element->get_actions(), builder, *context);
+    domain.axioms = translate_lifted(element->get_axioms(), builder, *context);
 
     formalism::canonicalize(domain);
     return std::make_shared<Domain>(context, context->get_or_create(domain, builder.get_buffer()).first);

@@ -497,6 +497,278 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Program
     return os;
 }
 
+inline std::ostream& print(std::ostream& os, const formalism::OpAssign& el)
+{
+    fmt::print(os, "assign");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::OpIncrease& el)
+{
+    fmt::print(os, "increase");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::OpDecrease& el)
+{
+    fmt::print(os, "decrease");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::OpScaleUp& el)
+{
+    fmt::print(os, "scale-up");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::OpScaleDown& el)
+{
+    fmt::print(os, "scale-down");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::Minimize& el)
+{
+    fmt::print(os, "minimize");
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::Maximize& el)
+{
+    fmt::print(os, "maximize");
+    return os;
+}
+
+template<formalism::NumericEffectOpKind Op, formalism::FactKind T>
+std::ostream& print(std::ostream& os, const Data<formalism::NumericEffect<Op, T>>& el)
+{
+    return os;
+}
+
+template<formalism::NumericEffectOpKind Op, formalism::FactKind T, formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::NumericEffect<Op, T>>, C>& el)
+{
+    fmt::print(os, "({} {} {})", to_string(Op {}), to_string(el.get_fterm()), to_string(el.get_fexpr()));
+    return os;
+}
+
+template<formalism::NumericEffectOpKind Op, formalism::FactKind T>
+std::ostream& print(std::ostream& os, const Data<formalism::GroundNumericEffect<Op, T>>& el)
+{
+    return os;
+}
+
+template<formalism::NumericEffectOpKind Op, formalism::FactKind T, formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::GroundNumericEffect<Op, T>>, C>& el)
+{
+    fmt::print(os, "({} {} {})", to_string(Op {}), to_string(el.get_fterm()), to_string(el.get_fexpr()));
+    return os;
+}
+
+template<formalism::FactKind T>
+std::ostream& print(std::ostream& os, const Data<formalism::NumericEffectOperator<T>>& el)
+{
+    return os;
+}
+
+template<formalism::FactKind T, formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Data<formalism::NumericEffectOperator<T>>, C>& el)
+{
+    return tyr::print(os, el.get_variant());
+}
+
+template<formalism::FactKind T>
+std::ostream& print(std::ostream& os, const Data<formalism::GroundNumericEffectOperator<T>>& el)
+{
+    return os;
+}
+
+template<formalism::FactKind T, formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Data<formalism::GroundNumericEffectOperator<T>>, C>& el)
+{
+    return tyr::print(os, el.get_variant());
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::ConditionalEffect>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::ConditionalEffect>, C>& el)
+{
+    fmt::print(os,
+               "\nCondition: {}\n"
+               "Effect: {}",
+               to_string(el.get_condition()),
+               to_string(el.get_effect()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConditionalEffect>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConditionalEffect>, C>& el)
+{
+    fmt::print(os,
+               "\nCondition: {}\n"
+               "Effect: {}",
+               to_string(el.get_condition()),
+               to_string(el.get_effect()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveEffect>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::ConjunctiveEffect>, C>& el)
+{
+    fmt::print(os,
+               "\nFluent literals: {}\n"
+               "Fluent numeric effects: {}\n"
+               "Auxiliary numeric effect: {}",
+               to_string(el.get_literals()),
+               to_string(el.get_numeric_effects()),
+               to_string(el.get_auxiliary_numeric_effect()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConjunctiveEffect>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConjunctiveEffect>, C>& el)
+{
+    fmt::print(os,
+               "\nFluent literals: {}\n"
+               "Fluent numeric effects: {}\n"
+               "Auxiliary numeric effect: {}",
+               to_string(el.get_literals()),
+               to_string(el.get_numeric_effects()),
+               to_string(el.get_auxiliary_numeric_effect()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::Action>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::Action>, C>& el)
+{
+    fmt::print(os,
+               "\nName: {}\n"
+               "Condition: {}\n"
+               "Effect: {}",
+               to_string(el.get_name()),
+               to_string(el.get_condition()),
+               to_string(el.get_effects()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAction>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAction>, C>& el)
+{
+    fmt::print(os,
+               "\nName: {}\n"
+               "Condition: {}\n"
+               "Effect: {}",
+               to_string(el.get_name()),
+               to_string(el.get_condition()),
+               to_string(el.get_effects()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::Axiom>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::Axiom>, C>& el)
+{
+    fmt::print(os,
+               "\nBody: {}\n"
+               "Head: {}",
+               to_string(el.get_body()),
+               to_string(el.get_head()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAxiom>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAxiom>, C>& el)
+{
+    fmt::print(os,
+               "\nBody: {}\n"
+               "Head: {}",
+               to_string(el.get_body()),
+               to_string(el.get_head()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::Metric>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::Metric>, C>& el)
+{
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::Task>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::Task>, C>& el)
+{
+    fmt::print(os,
+               "\nName: {}\n"
+               "Derived predicates: {}\n"
+               "Objects: {}\n"
+               "Static atoms: {}\n"
+               "Fluent atoms: {}\n"
+               "Static function term values: {}\n"
+               "Fluent function term values: {}\n"
+               "Auxiliary function term value: {}\n"
+               "Goal: {}\n"
+               "Metric: {}\n"
+               "Axioms: {}",
+               to_string(el.get_name()),
+               to_string(el.template get_derived_predicates()),
+               to_string(el.get_objects()),
+               to_string(el.template get_atoms<formalism::StaticTag>()),
+               to_string(el.template get_atoms<formalism::FluentTag>()),
+               to_string(el.template get_fterm_values<formalism::StaticTag>()),
+               to_string(el.template get_fterm_values<formalism::FluentTag>()),
+               to_string(el.get_auxiliary_fterm_value()),
+               to_string(el.get_goal()),
+               to_string(el.get_metric()),
+               to_string(el.get_axioms()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::Domain>& el) { return os; }
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::Domain>, C>& el)
+{
+    fmt::print(os,
+               "\nName: {}\n"
+               "Static predicates: {}\n"
+               "Fluent predicates: {}\n"
+               "Derived predicates: {}\n"
+               "Static functions: {}\n"
+               "Fluent functions: {}\n"
+               "Auxiliary function: {}\n"
+               "Constants: {}\n"
+               "Actions: {}\n"
+               "Axioms: {}",
+               to_string(el.get_name()),
+               to_string(el.template get_predicates<formalism::StaticTag>()),
+               to_string(el.template get_predicates<formalism::FluentTag>()),
+               to_string(el.template get_predicates<formalism::DerivedTag>()),
+               to_string(el.template get_functions<formalism::StaticTag>()),
+               to_string(el.template get_functions<formalism::FluentTag>()),
+               to_string(el.get_auxiliary_function()),
+               to_string(el.get_constants()),
+               to_string(el.get_actions()),
+               to_string(el.get_axioms()));
+    return os;
+}
+
 namespace formalism
 {
 inline std::ostream& operator<<(std::ostream& os, const ParameterIndex& el) { return tyr::print(os, el); }
@@ -768,6 +1040,157 @@ inline std::ostream& operator<<(std::ostream& os, const View<Index<Program>, C>&
 {
     return tyr::print(os, el);
 }
+
+inline std::ostream& operator<<(std::ostream& os, const OpAssign& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const OpIncrease& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const OpDecrease& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const OpScaleUp& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const OpScaleDown& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const Minimize& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const Maximize& el) { return tyr::print(os, el); }
+
+template<NumericEffectOpKind Op, FactKind T>
+std::ostream& operator<<(std::ostream& os, const Data<NumericEffect<Op, T>>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<NumericEffectOpKind Op, FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<NumericEffect<Op, T>>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<NumericEffectOpKind Op, FactKind T>
+std::ostream& operator<<(std::ostream& os, const Data<GroundNumericEffect<Op, T>>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<NumericEffectOpKind Op, FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundNumericEffect<Op, T>>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<FactKind T>
+std::ostream& operator<<(std::ostream& os, const Data<NumericEffectOperator<T>>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Data<NumericEffectOperator<T>>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<FactKind T>
+std::ostream& operator<<(std::ostream& os, const Data<GroundNumericEffectOperator<T>>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Data<GroundNumericEffectOperator<T>>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<ConditionalEffect>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<ConditionalEffect>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConditionalEffect>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundConditionalEffect>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<ConjunctiveEffect>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<ConjunctiveEffect>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConjunctiveEffect>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundConjunctiveEffect>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Action>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Action>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundAction>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundAction>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Axiom>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Axiom>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundAxiom>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundAxiom>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Metric>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Metric>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Task>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Task>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Domain>& el) { return os; }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Domain>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
 }
 }
 #endif

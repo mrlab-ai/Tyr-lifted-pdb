@@ -40,6 +40,8 @@ public:
 
     bool has_value() const noexcept { return m_handle->has_value(); }
 
+    explicit operator bool() const noexcept { return m_handle->has_value(); }
+
     decltype(auto) value() const
     {
         if constexpr (Viewable<T, C>)

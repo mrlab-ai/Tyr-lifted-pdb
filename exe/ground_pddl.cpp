@@ -44,4 +44,8 @@ int main(int argc, char** argv)
     auto domain = parser.get_domain();
 
     auto lifted_task = parser.parse_task(problem_filepath);
+
+    std::cout << *domain << std::endl;
+
+    std::cout << *lifted_task << std::endl;
 }
