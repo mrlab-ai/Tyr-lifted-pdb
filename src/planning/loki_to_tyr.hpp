@@ -543,55 +543,72 @@ private:
                 index_literal_variant);
         };
 
-        if (const auto condition_and = std::get_if<loki::ConditionAnd>(&element->get_condition()))
-        {
-            for (const auto& part : (*condition_and)->get_conditions())
+        return std::visit(
+            [&](auto&& condition) -> Index<formalism::ConjunctiveCondition>
             {
-                if (const auto condition_literal = std::get_if<loki::ConditionLiteral>(&part->get_condition()))
+                using ConditionT = std::decay_t<decltype(condition)>;
+
+                if constexpr (std::is_same_v<ConditionT, loki::ConditionAnd>)
                 {
-                    const auto index_literal_variant = translate_lifted((*condition_literal)->get_literal(), builder, context);
+                    for (const auto& part : condition->get_conditions())
+                    {
+                        std::visit(
+                            [&](auto&& subcondition)
+                            {
+                                using SubConditionT = std::decay_t<decltype(subcondition)>;
+
+                                if constexpr (std::is_same_v<SubConditionT, loki::ConditionLiteral>)
+                                {
+                                    const auto index_literal_variant = translate_lifted(subcondition->get_literal(), builder, context);
+
+                                    func_insert_literal(index_literal_variant,
+                                                        conj_condition.static_literals,
+                                                        conj_condition.fluent_literals,
+                                                        conj_condition.derived_literals);
+                                }
+                                else if constexpr (std::is_same_v<SubConditionT, loki::ConditionNumericConstraint>)
+                                {
+                                    const auto numeric_constraint = translate_lifted(subcondition, builder, context);
+
+                                    conj_condition.numeric_constraints.push_back(numeric_constraint);
+                                }
+                                else
+                                {
+                                    // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *part) << std::endl;
+                                    throw std::logic_error("Unexpected condition.");
+                                }
+                            },
+                            part->get_condition());
+                    }
+
+                    formalism::canonicalize(conj_condition);
+                    return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
+                }
+                else if constexpr (std::is_same_v<ConditionT, loki::ConditionLiteral>)
+                {
+                    const auto index_literal_variant = translate_lifted(condition->get_literal(), builder, context);
 
                     func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
+
+                    formalism::canonicalize(conj_condition);
+                    return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
                 }
-                else if (const auto condition_numeric_constraint = std::get_if<loki::ConditionNumericConstraint>(&part->get_condition()))
+                else if constexpr (std::is_same_v<ConditionT, loki::ConditionNumericConstraint>)
                 {
-                    const auto numeric_constraint = translate_lifted((*condition_numeric_constraint), builder, context);
+                    const auto numeric_constraint = translate_lifted(condition, builder, context);
 
                     conj_condition.numeric_constraints.push_back(numeric_constraint);
+
+                    formalism::canonicalize(conj_condition);
+                    return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
                 }
                 else
                 {
                     // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *part) << std::endl;
-
-                    throw std::logic_error("Expected literal in conjunctive condition.");
+                    throw std::logic_error("Unexpected condition.");
                 }
-            }
-
-            formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
-        }
-        else if (const auto condition_literal = std::get_if<loki::ConditionLiteral>(&element->get_condition()))
-        {
-            const auto index_literal_variant = translate_lifted((*condition_literal)->get_literal(), builder, context);
-
-            func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
-
-            formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
-        }
-        else if (const auto condition_numeric_constraint = std::get_if<loki::ConditionNumericConstraint>(&element->get_condition()))
-        {
-            const auto numeric_constraint = translate_lifted((*condition_numeric_constraint), builder, context);
-
-            conj_condition.numeric_constraints.push_back(numeric_constraint);
-
-            formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
-        }
-
-        // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *condition_ptr) << std::endl;
-
-        throw std::logic_error("Expected conjunctive condition.");
+            },
+            element->get_condition());
     }
 
     template<formalism::Context C>
@@ -687,32 +704,48 @@ private:
 
             /* 1. Parse universal part. */
             auto parameters = IndexList<formalism::Variable> {};
-            if (const auto& tmp_effect_forall = std::get_if<loki::EffectCompositeForall>(&tmp_effect->get_effect()))
-            {
-                parameters = translate_common((*tmp_effect_forall)->get_parameters(), builder, context);
 
-                tmp_effect = (*tmp_effect_forall)->get_effect();
-            }
+            std::visit(
+                [&](auto&& subeffect)
+                {
+                    using SubEffectT = std::decay_t<decltype(subeffect)>;
+
+                    if constexpr (std::is_same_v<SubEffectT, loki::EffectCompositeForall>)
+                    {
+                        parameters = translate_common(subeffect->get_parameters(), builder, context);
+
+                        tmp_effect = subeffect->get_effect();
+                    }
+                },
+                tmp_effect->get_effect());
 
             ///---------- Push parameters and parse scope -------------
             m_param_map.push_parameters(parameters);
             {
                 /* 2. Parse conditional part */
-                auto conjunctive_condition = Index<formalism::ConjunctiveCondition>::max();
-                if (const auto tmp_effect_when = std::get_if<loki::EffectCompositeWhen>(&tmp_effect->get_effect()))
-                {
-                    conjunctive_condition = translate_lifted((*tmp_effect_when)->get_condition(), parameters, builder, context);
+                auto conjunctive_condition = std::visit(
+                    [&](auto&& subeffect)
+                    {
+                        using SubEffectT = std::decay_t<decltype(subeffect)>;
 
-                    tmp_effect = (*tmp_effect_when)->get_effect();
-                }
-                if (conjunctive_condition == Index<formalism::ConjunctiveCondition>::max())
-                {
-                    // Create empty conjunctive condition for unconditional effects
-                    auto& conj_cond = builder.get_conj_cond();
-                    conj_cond.clear();
-                    canonicalize(conj_cond);
-                    conjunctive_condition = context.get_or_create(conj_cond, builder.get_buffer()).first.get_index();
-                }
+                        if constexpr (std::is_same_v<SubEffectT, loki::EffectCompositeWhen>)
+                        {
+                            auto conjunctive_condition = translate_lifted(subeffect->get_condition(), parameters, builder, context);
+
+                            tmp_effect = subeffect->get_effect();
+
+                            return conjunctive_condition;
+                        }
+                        else
+                        {
+                            // Create empty conjunctive condition for unconditional effects
+                            auto& conj_cond = builder.get_conj_cond();
+                            conj_cond.clear();
+                            formalism::canonicalize(conj_cond);
+                            return context.get_or_create(conj_cond, builder.get_buffer()).first.get_index();
+                        }
+                    },
+                    tmp_effect->get_effect());
 
                 // Fetch container to store the effects
                 auto& effect_data = ref_conditional_effect_data[conjunctive_condition];
@@ -721,61 +754,71 @@ private:
                 auto& data_auxiliary_numeric_effect = std::get<2>(effect_data);
 
                 /* 3. Parse effect part */
-                if (const auto& effect_literal = std::get_if<loki::EffectLiteral>(&tmp_effect->get_effect()))
-                {
-                    const auto index_literal_variant = translate_lifted((*effect_literal)->get_literal(), builder, context);
+                std::visit(
+                    [&](auto&& subeffect)
+                    {
+                        using SubEffectT = std::decay_t<decltype(subeffect)>;
 
-                    std::visit(
-                        [&](auto&& arg)
+                        if constexpr (std::is_same_v<SubEffectT, loki::EffectLiteral>)
                         {
-                            using T = std::decay_t<decltype(arg)>;
+                            const auto index_literal_variant = translate_lifted(subeffect->get_literal(), builder, context);
 
-                            if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::StaticTag>>>)
-                                throw std::logic_error("Effect lieral cannot be Static!");
-                            else if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::FluentTag>>>)
-                                data_fluent_literals.push_back(arg);
-                            else if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
-                                throw std::runtime_error("Effect literal cannot be Derived!");
-                            else
-                                static_assert(dependent_false<T>::value, "Unexpected case.");
-                        },
-                        index_literal_variant);
-                }
-                else if (const auto& effect_numeric = std::get_if<loki::EffectNumeric>(&tmp_effect->get_effect()))
-                {
-                    const auto index_numeric_effect_variant = translate_lifted((*effect_numeric), builder, context);
+                            std::visit(
+                                [&](auto&& subsubeffect)
+                                {
+                                    using SubSubEffectT = std::decay_t<decltype(subsubeffect)>;
 
-                    std::visit(
-                        [&](auto&& arg)
+                                    if constexpr (std::is_same_v<SubSubEffectT, Index<formalism::Literal<formalism::StaticTag>>>)
+                                        throw std::logic_error("Effect lieral cannot be Static!");
+                                    else if constexpr (std::is_same_v<SubSubEffectT, Index<formalism::Literal<formalism::FluentTag>>>)
+                                        data_fluent_literals.push_back(subsubeffect);
+                                    else if constexpr (std::is_same_v<SubSubEffectT, Index<formalism::Literal<formalism::DerivedTag>>>)
+                                        throw std::runtime_error("Effect literal cannot be Derived!");
+                                    else
+                                        static_assert(dependent_false<SubSubEffectT>::value, "Unexpected case.");
+                                },
+                                index_literal_variant);
+                        }
+                        else if constexpr (std::is_same_v<SubEffectT, loki::EffectNumeric>)
                         {
-                            using T = std::decay_t<decltype(arg)>;
+                            const auto index_numeric_effect_variant = translate_lifted(subeffect, builder, context);
 
-                            if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpAssign, formalism::FluentTag>>>)
-                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
-                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpIncrease, formalism::FluentTag>>>)
-                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
-                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpDecrease, formalism::FluentTag>>>)
-                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
-                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpScaleUp, formalism::FluentTag>>>)
-                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
-                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpScaleDown, formalism::FluentTag>>>)
-                                data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(arg));
-                            else if constexpr (std::is_same_v<T, Index<formalism::NumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>>)
-                            {
-                                assert(!data_auxiliary_numeric_effect);
-                                data_auxiliary_numeric_effect = Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>(arg);
-                            }
-                            else
-                                static_assert(dependent_false<T>::value, "Unexpected case.");
-                        },
-                        index_numeric_effect_variant);
-                }
-                else
-                {
-                    // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *tmp_effect) << std::endl;
+                            std::visit(
+                                [&](auto&& subsubeffect)
+                                {
+                                    using SubSubEffectT = std::decay_t<decltype(subsubeffect)>;
 
-                    throw std::logic_error("Unexpected effect type. This error indicates a bug in the translation.");
-                }
+                                    if constexpr (std::is_same_v<SubSubEffectT, Index<formalism::NumericEffect<formalism::OpAssign, formalism::FluentTag>>>)
+                                        data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(subsubeffect));
+                                    else if constexpr (std::is_same_v<SubSubEffectT,
+                                                                      Index<formalism::NumericEffect<formalism::OpIncrease, formalism::FluentTag>>>)
+                                        data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(subsubeffect));
+                                    else if constexpr (std::is_same_v<SubSubEffectT,
+                                                                      Index<formalism::NumericEffect<formalism::OpDecrease, formalism::FluentTag>>>)
+                                        data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(subsubeffect));
+                                    else if constexpr (std::is_same_v<SubSubEffectT,
+                                                                      Index<formalism::NumericEffect<formalism::OpScaleUp, formalism::FluentTag>>>)
+                                        data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(subsubeffect));
+                                    else if constexpr (std::is_same_v<SubSubEffectT,
+                                                                      Index<formalism::NumericEffect<formalism::OpScaleDown, formalism::FluentTag>>>)
+                                        data_fluent_numeric_effects.push_back(Data<formalism::NumericEffectOperator<formalism::FluentTag>>(subsubeffect));
+                                    else if constexpr (std::is_same_v<SubSubEffectT,
+                                                                      Index<formalism::NumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>>)
+                                    {
+                                        assert(!data_auxiliary_numeric_effect);
+                                        data_auxiliary_numeric_effect = Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>(subsubeffect);
+                                    }
+                                    else
+                                        static_assert(dependent_false<SubSubEffectT>::value, "Unexpected case.");
+                                },
+                                index_numeric_effect_variant);
+                        }
+                        else
+                        {
+                            throw std::runtime_error("Unexpected effect");
+                        }
+                    },
+                    tmp_effect->get_effect());
             }
             ///---------- Pop parameters -------------
             m_param_map.pop_parameters(parameters);
@@ -784,18 +827,24 @@ private:
         /* Parse the effect */
         auto conditional_effect_data = ConditionalEffectData {};
         // Parse conjunctive part
-        if (const auto& effect_and = std::get_if<loki::EffectAnd>(&element->get_effect()))
-        {
-            for (const auto& nested_effect : (*effect_and)->get_effects())
+        std::visit(
+            [&](auto&& effect)
             {
-                translate_effect_func(nested_effect, conditional_effect_data);
-            }
-        }
-        else
-        {
-            // Parse non conjunctive
-            translate_effect_func(element, conditional_effect_data);
-        }
+                using EffectT = std::decay_t<decltype(effect)>;
+
+                if constexpr (std::is_same_v<EffectT, loki::EffectAnd>)
+                {
+                    for (const auto& nested_effect : effect->get_effects())
+                    {
+                        translate_effect_func(nested_effect, conditional_effect_data);
+                    }
+                }
+                else
+                {
+                    translate_effect_func(element, conditional_effect_data);
+                }
+            },
+            element->get_effect());
 
         /* Instantiate conditional effects. */
         auto conditional_effects = IndexList<formalism::ConditionalEffect> {};
@@ -846,7 +895,7 @@ private:
                 // Create empty one
                 auto& conj_cond = builder.get_conj_cond();
                 conj_cond.clear();
-                canonicalize(conj_cond);
+                formalism::canonicalize(conj_cond);
                 conjunctive_condition = context.get_or_create(conj_cond, builder.get_buffer()).first.get_index();
             }
             action.condition = conjunctive_condition;
@@ -1221,71 +1270,88 @@ private:
                                             IndexList<formalism::GroundLiteral<formalism::DerivedTag>>& derived_literals)
         {
             std::visit(
-                [&](auto&& arg)
+                [&](auto&& literal_index)
                 {
-                    using T = std::decay_t<decltype(arg)>;
+                    using T = std::decay_t<decltype(literal_index)>;
 
                     if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::StaticTag>>>)
-                        static_literals.push_back(arg);
+                        static_literals.push_back(literal_index);
                     else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::FluentTag>>>)
-                        fluent_literals.push_back(arg);
+                        fluent_literals.push_back(literal_index);
                     else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::DerivedTag>>>)
-                        derived_literals.push_back(arg);
+                        derived_literals.push_back(literal_index);
                     else
                         static_assert(dependent_false<T>::value, "Missing case for type");
                 },
                 index_literal_variant);
         };
 
-        if (const auto condition_and = std::get_if<loki::ConditionAnd>(&element->get_condition()))
-        {
-            for (const auto& part : (*condition_and)->get_conditions())
+        return std::visit(
+            [&](auto&& condition) -> Index<formalism::GroundConjunctiveCondition>
             {
-                if (const auto condition_literal = std::get_if<loki::ConditionLiteral>(&part->get_condition()))
+                using ConditionT = std::decay_t<decltype(condition)>;
+
+                if constexpr (std::is_same_v<ConditionT, loki::ConditionAnd>)
                 {
-                    const auto index_literal_variant = translate_grounded((*condition_literal)->get_literal(), builder, context);
+                    for (const auto& part : condition->get_conditions())
+                    {
+                        std::visit(
+                            [&](auto&& subcondition)
+                            {
+                                using SubConditionT = std::decay_t<decltype(subcondition)>;
+
+                                if constexpr (std::is_same_v<SubConditionT, loki::ConditionLiteral>)
+                                {
+                                    const auto index_literal_variant = translate_grounded(subcondition->get_literal(), builder, context);
+
+                                    func_insert_literal(index_literal_variant,
+                                                        conj_condition.static_literals,
+                                                        conj_condition.fluent_literals,
+                                                        conj_condition.derived_literals);
+                                }
+                                else if constexpr (std::is_same_v<SubConditionT, loki::ConditionNumericConstraint>)
+                                {
+                                    const auto numeric_constraint = translate_grounded(subcondition, builder, context);
+
+                                    conj_condition.numeric_constraints.push_back(numeric_constraint);
+                                }
+                                else
+                                {
+                                    // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *part) << std::endl;
+                                    throw std::logic_error("Unexpected condition.");
+                                }
+                            },
+                            part->get_condition());
+                    }
+
+                    formalism::canonicalize(conj_condition);
+                    return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
+                }
+                else if constexpr (std::is_same_v<ConditionT, loki::ConditionLiteral>)
+                {
+                    const auto index_literal_variant = translate_grounded(condition->get_literal(), builder, context);
 
                     func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
+
+                    formalism::canonicalize(conj_condition);
+                    return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
                 }
-                else if (const auto condition_numeric_constraint = std::get_if<loki::ConditionNumericConstraint>(&part->get_condition()))
+                else if constexpr (std::is_same_v<ConditionT, loki::ConditionNumericConstraint>)
                 {
-                    const auto numeric_constraint = translate_grounded((*condition_numeric_constraint), builder, context);
+                    const auto numeric_constraint = translate_grounded(condition, builder, context);
 
                     conj_condition.numeric_constraints.push_back(numeric_constraint);
+
+                    formalism::canonicalize(conj_condition);
+                    return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
                 }
                 else
                 {
-                    // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *part) << std::endl;
-
-                    throw std::logic_error("Expected literal in conjunctive condition.");
+                    // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *condition_ptr) << std::endl;
+                    throw std::logic_error("Unexpected condition.");
                 }
-            }
-
-            formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
-        }
-        else if (const auto condition_literal = std::get_if<loki::ConditionLiteral>(&element->get_condition()))
-        {
-            const auto index_literal_variant = translate_grounded((*condition_literal)->get_literal(), builder, context);
-
-            func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
-
-            formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
-        }
-        else if (const auto condition_numeric_constraint = std::get_if<loki::ConditionNumericConstraint>(&element->get_condition()))
-        {
-            const auto numeric_constraint = translate_grounded((*condition_numeric_constraint), builder, context);
-
-            conj_condition.numeric_constraints.push_back(numeric_constraint);
-
-            formalism::canonicalize(conj_condition);
-            return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
-        }
-
-        // std::cout << std::visit([](auto&& arg) { return arg.str(); }, *condition_ptr) << std::endl;
-
-        throw std::logic_error("Expected conjunctive condition.");
+            },
+            element->get_condition());
     }
 
     template<formalism::Context C>
