@@ -75,6 +75,99 @@ using IndexNumericEffectVariant = std::variant<Index<formalism::NumericEffect<fo
                                                Index<formalism::NumericEffect<formalism::OpScaleDown, formalism::FluentTag>>,
                                                Index<formalism::NumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>>;
 
+struct ArityVisitor
+{
+    loki::VariableSet variables;
+
+    void collect_variables(loki::Term term)
+    {
+        std::visit(
+            [&](auto&& arg)
+            {
+                using Variant = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Variant, loki::Object>) {}
+                else if constexpr (std::is_same_v<Variant, loki::Variable>)
+                    this->variables.insert(arg);
+                else
+                    static_assert(dependent_false<Variant>::value, "Missing case for type");
+            },
+            term->get_object_or_variable());
+    }
+
+    void collect_variables(loki::Function element)
+    {
+        for (const auto& term : element->get_terms())
+            collect_variables(term);
+    }
+    void collect_variables(loki::FunctionExpressionNumber element) {}
+    void collect_variables(loki::FunctionExpressionBinaryOperator element)
+    {
+        collect_variables(element->get_left_function_expression());
+        collect_variables(element->get_right_function_expression());
+    }
+    void collect_variables(loki::FunctionExpressionMultiOperator element)
+    {
+        for (const auto& fexpr : element->get_function_expressions())
+            collect_variables(fexpr);
+    }
+    void collect_variables(loki::FunctionExpressionMinus element) { collect_variables(element->get_function_expression()); }
+    void collect_variables(loki::FunctionExpressionFunction element) { collect_variables(element->get_function()); }
+    void collect_variables(loki::FunctionExpression element)
+    {
+        std::visit([this](auto&& arg) { this->collect_variables(arg); }, element->get_function_expression());
+    }
+
+    void collect_variables(loki::ConditionLiteral element)
+    {
+        for (const auto& term : element->get_literal()->get_atom()->get_terms())
+            collect_variables(term);
+    }
+    void collect_variables(loki::ConditionAnd element)
+    {
+        for (const auto& condition : element->get_conditions())
+            collect_variables(condition);
+    }
+    void collect_variables(loki::ConditionOr element)
+    {
+        for (const auto& condition : element->get_conditions())
+            collect_variables(condition);
+    }
+    void collect_variables(loki::ConditionNot element) { collect_variables(element->get_condition()); }
+    void collect_variables(loki::ConditionImply element)
+    {
+        collect_variables(element->get_left_condition());
+        collect_variables(element->get_right_condition());
+    }
+    void collect_variables(loki::ConditionExists element)
+    {
+        for (const auto& parameter : element->get_parameters())
+            variables.insert(parameter->get_variable());
+        collect_variables(element->get_condition());
+    }
+    void collect_variables(loki::ConditionForall element)
+    {
+        for (const auto& parameter : element->get_parameters())
+            variables.insert(parameter->get_variable());
+        collect_variables(element->get_condition());
+    }
+    void collect_variables(loki::ConditionNumericConstraint element)
+    {
+        collect_variables(element->get_left_function_expression());
+        collect_variables(element->get_right_function_expression());
+    }
+    void collect_variables(loki::Condition element)
+    {
+        std::visit([this](auto&& arg) { this->collect_variables(arg); }, element->get_condition());
+    }
+
+    size_t get(loki::Condition element)
+    {
+        collect_variables(element);
+        return variables.size();
+    }
+};
+
 class LokiToTyrTranslator
 {
 private:
@@ -573,12 +666,26 @@ private:
                                                         conj_condition.static_literals,
                                                         conj_condition.fluent_literals,
                                                         conj_condition.derived_literals);
+
+                                    if (ArityVisitor().get(part) == 0)
+                                    {
+                                        // TODO: ground
+                                        // func_insert_ground_nullary_literal(index_literal_variant,
+                                        //                                    conj_condition.static_nullary_literals,
+                                        //                                    conj_condition.fluent_nullary_literals,
+                                        //                                    conj_condition.derived_nullary_literals);
+                                    }
                                 }
                                 else if constexpr (std::is_same_v<SubConditionT, loki::ConditionNumericConstraint>)
                                 {
                                     const auto numeric_constraint = translate_lifted(subcondition, builder, context);
 
                                     conj_condition.numeric_constraints.push_back(numeric_constraint);
+
+                                    if (ArityVisitor().get(part) == 0)
+                                    {
+                                        // TODO: ground
+                                    }
                                 }
                                 else
                                 {
@@ -598,6 +705,15 @@ private:
 
                     func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
 
+                    if (ArityVisitor().get(element) == 0)
+                    {
+                        // TODO: ground
+                        //    func_insert_ground_nullary_literal(index_literal_variant,
+                        //                                       conj_condition.static_nullary_literals,
+                        //                                       conj_condition.fluent_nullary_literals,
+                        //                                       conj_condition.derived_nullary_literals);
+                    }
+
                     formalism::canonicalize(conj_condition);
                     return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
                 }
@@ -606,6 +722,11 @@ private:
                     const auto numeric_constraint = translate_lifted(condition, builder, context);
 
                     conj_condition.numeric_constraints.push_back(numeric_constraint);
+
+                    if (ArityVisitor().get(element) == 0)
+                    {
+                        // TODO: ground
+                    }
 
                     formalism::canonicalize(conj_condition);
                     return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
@@ -655,29 +776,17 @@ private:
                 switch (element->get_assign_operator())
                 {
                     case loki::AssignOperatorEnum::ASSIGN:
-                    {
                         return build_numeric_effect_term_helper(Tag {}, formalism::OpAssign {}, fterm_index);
-                    }
                     case loki::AssignOperatorEnum::INCREASE:
-                    {
                         return build_numeric_effect_term_helper(Tag {}, formalism::OpIncrease {}, fterm_index);
-                    }
                     case loki::AssignOperatorEnum::DECREASE:
-                    {
                         return build_numeric_effect_term_helper(Tag {}, formalism::OpDecrease {}, fterm_index);
-                    }
                     case loki::AssignOperatorEnum::SCALE_UP:
-                    {
                         return build_numeric_effect_term_helper(Tag {}, formalism::OpScaleUp {}, fterm_index);
-                    }
                     case loki::AssignOperatorEnum::SCALE_DOWN:
-                    {
                         return build_numeric_effect_term_helper(Tag {}, formalism::OpScaleDown {}, fterm_index);
-                    }
                     default:
-                    {
                         throw std::runtime_error("Unexpected case.");
-                    }
                 }
             }
         };
