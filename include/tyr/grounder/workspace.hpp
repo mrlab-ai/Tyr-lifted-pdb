@@ -18,6 +18,7 @@
 #ifndef TYR_GROUNDER_EXECUTION_CONTEXTS_HPP_
 #define TYR_GROUNDER_EXECUTION_CONTEXTS_HPP_
 
+#include "tyr/formalism/merge.hpp"
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/kpkc_utils.hpp"
@@ -105,8 +106,17 @@ struct ThreadExecutionContext
 {
     IndexList<formalism::Object> binding;
     formalism::Builder builder;
+    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::OverlayRepository<formalism::Repository>> local_merge_cache;
+    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> global_merge_cache;
 
     ThreadExecutionContext() = default;
+
+    void clear() noexcept
+    {
+        binding.clear();
+        local_merge_cache.clear();
+        global_merge_cache.clear();
+    }
 };
 
 }
