@@ -37,11 +37,20 @@ TEST(TyrTests, TyrGrounderGenerator)
 
     std::cout << program << std::endl;
 
-    // Once per program: Analyze variable domains to compress assignment sets
+    /**
+     * Preprocessing 1: Analyze variable domains
+     */
+
     auto domains = analysis::compute_variable_domains(program);
 
+    /**
+     * Initialization 1: Execution contexts
+     */
+
+    // Per fact set
     auto facts_execution_context = grounder::FactsExecutionContext(program, domains);
 
+    // Per rule
     auto rule_execution_contexts = std::vector<grounder::RuleExecutionContext> {};
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
@@ -51,7 +60,12 @@ TEST(TyrTests, TyrGrounderGenerator)
         rule_execution_contexts.emplace_back(rule, parameter_domains, facts_execution_context.assignment_sets.get<formalism::StaticTag>(), repository);
     }
 
+    // Per thread
     oneapi::tbb::enumerable_thread_specific<grounder::ThreadExecutionContext> thread_execution_contexts;
+
+    /**
+     * Parallelization 1: Lock-free rule grounding
+     */
 
     const uint_t num_rules = program.get_rules().size();
 
@@ -67,22 +81,9 @@ TEST(TyrTests, TyrGrounderGenerator)
                           grounder::ground(facts_execution_context, rule_execution_context, thread_execution_context);
                       });
 
-    // Merge the ScopeRepositories into the global one
-    // TODO: Use ontbb parallel for loop and merge in log_2(num rules) depth.
-
-    //    for (uint_t i = 0; i < program.get_rules().size(); ++i)
-    //    {
-    //        auto& rule_execution_context = rule_execution_contexts[i];
-    //
-    //        auto& thread_execution_context = thread_execution_contexts.local();
-    //
-    //        for (const auto ground_rule_index : rule_execution_context.ground_rules)
-    //        {
-    //            auto ground_rule =
-    //                View<Index<formalism::GroundRule>, formalism::OverlayRepository<Repository>>(ground_rule_index, rule_execution_context.repository);
-    //            formalism::merge(ground_rule, thread_execution_context.builder, repository, thread_execution_context.merge_cache);
-    //        }
-    //    }
+    /**
+     * Parallelization 2: Lock-free hierarchical merging into global
+     */
 
     auto hierarchical_merge_to_global_parallel = [&](std::vector<grounder::RuleExecutionContext>& recs, formalism::Repository& global_repo)
     {
