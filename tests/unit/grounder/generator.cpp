@@ -34,71 +34,21 @@ TEST(TyrTests, TyrGrounderGenerator)
 
     std::cout << program << std::endl;
 
-    // Once: Analyze variable domains to compress assignment sets
+    // Once per program: Analyze variable domains to compress assignment sets
     auto domains = analysis::compute_variable_domains(program);
 
-    // One: Allocate and create mutable sets of facts.
-    auto fact_sets = grounder::FactSets<Repository>(program);
+    auto facts_execution_context = grounder::FactsExecutionContext(program, domains);
 
-    // Once: Allocate reusable memory for AssignmentSets
-    auto assignment_sets = grounder::AssignmentSets(program, domains);
-
-    // Once: Insert facts into AssignmentSets
-    assignment_sets.insert(fact_sets);
-
-    // Once: Instantiate the static consistency graph for each rule
-    auto static_consistency_graphs = std::vector<grounder::StaticConsistencyGraph<Repository>> {};
-
+    auto rule_execution_contexts = std::vector<grounder::RuleExecutionContext> {};
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
         const auto rule = program.get_rules()[i];
         const auto& parameter_domains = domains.rule_domains[i];
 
-        static_consistency_graphs.emplace_back(grounder::StaticConsistencyGraph(rule.get_body(), parameter_domains, assignment_sets.static_sets));
+        rule_execution_contexts.emplace_back(rule, parameter_domains, facts_execution_context.assignment_sets.get<formalism::StaticTag>(), repository);
     }
 
-    // Once: Allocate reusable memory for kpkc
-    auto consistency_graphs = std::vector<grounder::kpkc::DenseKPartiteGraph> {};
-    auto kpkc_workspaces = std::vector<grounder::kpkc::Workspace> {};
-
-    for (const auto& static_consistency_graph : static_consistency_graphs)
-    {
-        consistency_graphs.emplace_back(grounder::kpkc::allocate_dense_graph(static_consistency_graph));
-        kpkc_workspaces.emplace_back(grounder::kpkc::allocate_workspace(static_consistency_graph));
-    }
-
-    // Per fact set: Remove inconsistent edges
-    for (uint_t i = 0; i < program.get_rules().size(); ++i)
-    {
-        const auto& static_consistency_graph = static_consistency_graphs[i];
-        auto& consistency_graph = consistency_graphs[i];
-        auto& kpkc_workspace = kpkc_workspaces[i];
-
-        grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
-    }
-
-    // Once: Create a repository for each rule
-    auto rule_repositories = std::vector<Repository> {};
-    for (uint_t i = 0; i < program.get_rules().size(); ++i)
-    {
-        rule_repositories.emplace_back(Repository());
-    }
-
-    // Once: Create a scoped repository for each rule
-    auto rule_scoped_repositories = std::vector<OverlayRepository<Repository>> {};
-    for (uint_t i = 0; i < program.get_rules().size(); ++i)
-    {
-        rule_scoped_repositories.emplace_back(OverlayRepository(repository, rule_repositories[i]));
-    }
-
-    // Once: Create temporary bindings
-    auto bindings = std::vector<IndexList<formalism::Object>>(program.get_rules().size());
-    // Once: Create builders
-    auto builders = std::vector<formalism::Builder>(program.get_rules().size());
-    // Once: Create buffers
-    auto buffers = std::vector<buffer::Buffer>(program.get_rules().size());
-    // Once: Create container for applicable ground rules
-    auto ground_rules = std::vector<IndexList<formalism::GroundRule>>(program.get_rules().size());
+    auto thread_execution_contexts = std::vector<grounder::ThreadExecutionContext>(1);  // Use 1 context for now
 
     // Per fact set: Create workspaces that wrap all the data for grounding, then call ground
     // TODO: Use onetbb parallel for loop.
@@ -107,27 +57,29 @@ TEST(TyrTests, TyrGrounderGenerator)
         std::cout << "r: " << program.get_rules()[i] << std::endl;
 
         // Combine all the data dependencies into workspaces.
-        auto immutable_workspace = grounder::ImmutableRuleWorkspace<Repository> { fact_sets,
-                                                                                  assignment_sets,
-                                                                                  program.get_rules()[i],
-                                                                                  static_consistency_graphs[i],
-                                                                                  consistency_graphs[i] };
-        auto mutable_workspace = grounder::MutableRuleWorkspace<Repository> {
-            rule_scoped_repositories[i], kpkc_workspaces[i], bindings[i], builders[i], buffers[i], ground_rules[i]
-        };
+        auto& rule_execution_context = rule_execution_contexts[i];
 
-        grounder::ground(immutable_workspace, mutable_workspace);
+        auto& thread_execution_context = thread_execution_contexts[0];
+
+        grounder::ground(facts_execution_context, rule_execution_context, thread_execution_context);
     }
 
     // Merge the ScopeRepositories into the global one
     // TODO: Use ontbb parallel for loop and merge in log_2(num rules) depth.
+
     auto merge_cache = formalism::MergeCache<formalism::OverlayRepository<Repository>, Repository> {};
+
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
-        for (const auto ground_rule_index : ground_rules[i])
+        auto& rule_execution_context = rule_execution_contexts[i];
+
+        auto& thread_execution_context = thread_execution_contexts[0];
+
+        for (const auto ground_rule_index : rule_execution_context.ground_rules)
         {
-            auto ground_rule = View<Index<formalism::GroundRule>, formalism::OverlayRepository<Repository>>(ground_rule_index, rule_scoped_repositories[i]);
-            formalism::merge(ground_rule, builders[i], repository, merge_cache);
+            auto ground_rule =
+                View<Index<formalism::GroundRule>, formalism::OverlayRepository<Repository>>(ground_rule_index, rule_execution_context.repository);
+            formalism::merge(ground_rule, thread_execution_context.builder, repository, merge_cache);
         }
     }
 }

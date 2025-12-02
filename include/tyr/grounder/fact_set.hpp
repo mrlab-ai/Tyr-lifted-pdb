@@ -135,6 +135,12 @@ struct TaggedFactSets
         function(function_terms)
     {
     }
+
+    void reset() noexcept
+    {
+        predicate.reset();
+        function.reset();
+    }
 };
 
 template<formalism::Context C>
@@ -143,15 +149,55 @@ struct FactSets
     TaggedFactSets<formalism::StaticTag, C> static_sets;
     TaggedFactSets<formalism::FluentTag, C> fluent_sets;
 
-    // Convenience constructor
     explicit FactSets(View<Index<formalism::Program>, C> program) :
         static_sets(program.template get_atoms<formalism::StaticTag>(), program.template get_fterm_values<formalism::StaticTag>()),
         fluent_sets(program.template get_atoms<formalism::FluentTag>(), program.template get_fterm_values<formalism::FluentTag>())
     {
     }
 
+    FactSets(View<Index<formalism::Program>, C> program, TaggedFactSets<formalism::FluentTag, C> fluent_facts) :
+        static_sets(program.template get_atoms<formalism::StaticTag>(), program.template get_fterm_values<formalism::StaticTag>()),
+        fluent_sets(std::move(fluent_facts))
+    {
+    }
+
     template<formalism::FactKind T>
-    auto& get() const
+    void reset() noexcept
+    {
+        get<T>().template reset();
+    }
+
+    void reset() noexcept
+    {
+        reset<formalism::StaticTag>();
+        reset<formalism::FluentTag>();
+    }
+
+    template<formalism::FactKind T>
+    void insert(View<IndexList<formalism::GroundAtom<T>>, C> view)
+    {
+        get<T>().predicate.insert(view);
+    }
+
+    template<formalism::FactKind T>
+    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
+    {
+        get<T>().function.insert(view);
+    }
+
+    template<formalism::FactKind T>
+    const auto& get() const
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_sets;
+        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
+            return fluent_sets;
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
+    }
+
+    template<formalism::FactKind T>
+    auto& get()
     {
         if constexpr (std::is_same_v<T, formalism::StaticTag>)
             return static_sets;

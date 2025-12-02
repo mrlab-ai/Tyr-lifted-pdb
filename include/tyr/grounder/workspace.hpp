@@ -15,39 +15,98 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_GROUNDER_WORKSPACE_HPP_
-#define TYR_GROUNDER_WORKSPACE_HPP_
+#ifndef TYR_GROUNDER_EXECUTION_CONTEXTS_HPP_
+#define TYR_GROUNDER_EXECUTION_CONTEXTS_HPP_
 
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/declarations.hpp"
+#include "tyr/grounder/kpkc_utils.hpp"
 
 namespace tyr::grounder
 {
-
-template<formalism::Context C>
-struct ImmutableRuleWorkspace
+struct FactsExecutionContext
 {
-    // Fact infos
-    const FactSets<C>& fact_sets;
-    const AssignmentSets& assignment_sets;
+    FactSets<formalism::Repository> fact_sets;
+    AssignmentSets assignment_sets;
 
-    // Rule infos
-    const View<Index<formalism::Rule>, C> rule;
-    const StaticConsistencyGraph<C> static_consistency_graph;
-    const kpkc::DenseKPartiteGraph& consistency_graph;
+    FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::VariableDomains& domains) :
+        fact_sets(program),
+        assignment_sets(program, domains, fact_sets)
+    {
+    }
+
+    FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
+                          TaggedFactSets<formalism::FluentTag, formalism::Repository> fluent_facts,
+                          const analysis::VariableDomains& domains) :
+        fact_sets(program, fluent_facts),
+        assignment_sets(program, domains, fact_sets)
+    {
+    }
+
+    template<formalism::FactKind T>
+    void reset() noexcept
+    {
+        fact_sets.template reset<T>();
+        assignment_sets.template reset<T>();
+    }
+
+    void reset() noexcept
+    {
+        fact_sets.reset();
+        assignment_sets.reset();
+    }
+
+    template<formalism::FactKind T>
+    void insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view)
+    {
+        fact_sets.insert(view);
+        assignment_sets.insert(fact_sets.template get<T>());
+    }
+
+    template<formalism::FactKind T>
+    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view)
+    {
+        fact_sets.insert(view);
+        assignment_sets.insert(fact_sets.template get<T>());
+    }
 };
 
-template<formalism::Context C>
-struct MutableRuleWorkspace
+struct RuleExecutionContext
 {
-    formalism::OverlayRepository<C>& repository;
-    kpkc::Workspace& kpkc_workspace;
+    const View<Index<formalism::Rule>, formalism::Repository> rule;
+    const StaticConsistencyGraph<formalism::Repository> static_consistency_graph;
 
-    IndexList<formalism::Object>& binding;
-    formalism::Builder& builder;
-    buffer::Buffer& buffer;
+    kpkc::DenseKPartiteGraph consistency_graph;
+    kpkc::Workspace kpkc_workspace;
+    std::shared_ptr<formalism::Repository> local;
+    formalism::OverlayRepository<formalism::Repository> repository;
+    IndexList<formalism::GroundRule> ground_rules;
 
-    IndexList<formalism::GroundRule>& ground_rules;
+    RuleExecutionContext(View<Index<formalism::Rule>, formalism::Repository> rule,
+                         const analysis::DomainListList& parameter_domains,
+                         const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
+                         const formalism::Repository& parent) :
+        rule(rule),
+        static_consistency_graph(rule.get_body(), parameter_domains, static_assignment_sets),
+        consistency_graph(grounder::kpkc::allocate_dense_graph(static_consistency_graph)),
+        kpkc_workspace(grounder::kpkc::allocate_workspace(static_consistency_graph)),
+        repository(parent, *local),
+        ground_rules()
+    {
+    }
+
+    void initialize(const AssignmentSets& assignment_sets)
+    {
+        grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
+    }
+};
+
+struct ThreadExecutionContext
+{
+    IndexList<formalism::Object> binding;
+    formalism::Builder builder;
+
+    ThreadExecutionContext() = default;
 };
 
 }
