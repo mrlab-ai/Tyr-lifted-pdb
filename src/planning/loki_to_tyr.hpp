@@ -21,6 +21,7 @@
 #include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/ground.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
@@ -173,39 +174,6 @@ struct ArityVisitor
         return variables.size();
     }
 };
-
-template<formalism::FactKind T, formalism::Context C>
-Index<formalism::GroundAtom<T>> ground_nullary(Index<formalism::Atom<T>> atom_index, formalism::Builder& builder, C& context)
-{
-    const auto& lifted_atom = context[atom_index];
-    assert(lifted_atom.terms.empty());
-
-    auto atom_ptr = builder.template get_builder<formalism::GroundAtom<T>>();
-    auto& atom = *atom_ptr;
-    atom.clear();
-
-    atom.predicate = lifted_atom.predicate;
-    // leave empty terms
-
-    formalism::canonicalize(atom);
-    return context.get_or_create(atom, builder.get_buffer()).first.get_index();
-}
-
-template<formalism::FactKind T, formalism::Context C>
-Index<formalism::GroundLiteral<T>> ground_nullary(Index<formalism::Literal<T>> literal_index, formalism::Builder& builder, C& context)
-{
-    const auto& lifted_literal = context[literal_index];
-
-    auto literal_ptr = builder.template get_builder<formalism::GroundLiteral<T>>();
-    auto& literal = *literal_ptr;
-    literal.clear();
-
-    literal.polarity = lifted_literal.polarity;
-    literal.atom = ground_nullary(lifted_literal.atom, builder, context);
-
-    formalism::canonicalize(literal);
-    return context.get_or_create(literal, builder.get_buffer()).first.get_index();
-}
 
 class LokiToTyrTranslator
 {
@@ -684,6 +652,7 @@ private:
         };
 
         const auto func_ground_and_insert_nullary_literal = [&](IndexLiteralVariant index_literal_variant,
+                                                                View<IndexList<formalism::Object>, C> binding,
                                                                 IndexList<formalism::GroundLiteral<formalism::StaticTag>>& static_literals,
                                                                 IndexList<formalism::GroundLiteral<formalism::FluentTag>>& fluent_literals,
                                                                 IndexList<formalism::GroundLiteral<formalism::DerivedTag>>& derived_literals)
@@ -694,11 +663,11 @@ private:
                     using T = std::decay_t<decltype(arg)>;
 
                     if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::StaticTag>>>)
-                        static_literals.push_back(ground_nullary(arg, builder, context));
+                        static_literals.push_back(formalism::ground(View<T, C>(arg, context), binding, builder, context).get_index());
                     else if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::FluentTag>>>)
-                        fluent_literals.push_back(ground_nullary(arg, builder, context));
+                        fluent_literals.push_back(formalism::ground(View<T, C>(arg, context), binding, builder, context).get_index());
                     else if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
-                        derived_literals.push_back(ground_nullary(arg, builder, context));
+                        derived_literals.push_back(formalism::ground(View<T, C>(arg, context), binding, builder, context).get_index());
                     else
                         static_assert(dependent_false<T>::value, "Missing case for type");
                 },
@@ -730,7 +699,10 @@ private:
 
                                     if (ArityVisitor().get(part) == 0)
                                     {
+                                        auto binding = IndexList<formalism::Object> {};
+                                        auto view = View<IndexList<formalism::Object>, C>(binding, context);
                                         func_ground_and_insert_nullary_literal(index_literal_variant,
+                                                                               view,
                                                                                conj_condition.static_nullary_literals,
                                                                                conj_condition.fluent_nullary_literals,
                                                                                conj_condition.derived_nullary_literals);
@@ -744,7 +716,12 @@ private:
 
                                     if (ArityVisitor().get(part) == 0)
                                     {
-                                        // TODO: ground
+                                        auto binding = IndexList<formalism::Object> {};
+                                        auto binding_view = View<IndexList<formalism::Object>, C>(binding, context);
+                                        auto numeric_constraint_view =
+                                            View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(numeric_constraint, context);
+                                        conj_condition.nullary_numeric_constraints.push_back(
+                                            formalism::ground(numeric_constraint_view, binding_view, builder, context).get_data());
                                     }
                                 }
                                 else
@@ -767,7 +744,10 @@ private:
 
                     if (ArityVisitor().get(element) == 0)
                     {
+                        auto binding = IndexList<formalism::Object> {};
+                        auto view = View<IndexList<formalism::Object>, C>(binding, context);
                         func_ground_and_insert_nullary_literal(index_literal_variant,
+                                                               view,
                                                                conj_condition.static_nullary_literals,
                                                                conj_condition.fluent_nullary_literals,
                                                                conj_condition.derived_nullary_literals);
@@ -784,7 +764,12 @@ private:
 
                     if (ArityVisitor().get(element) == 0)
                     {
-                        // TODO: ground
+                        auto binding = IndexList<formalism::Object> {};
+                        auto binding_view = View<IndexList<formalism::Object>, C>(binding, context);
+                        auto numeric_constraint_view =
+                            View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(numeric_constraint, context);
+                        conj_condition.nullary_numeric_constraints.push_back(
+                            formalism::ground(numeric_constraint_view, binding_view, builder, context).get_data());
                     }
 
                     formalism::canonicalize(conj_condition);
