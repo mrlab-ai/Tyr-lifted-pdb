@@ -38,6 +38,7 @@ extern std::ostream& print(std::ostream& os, const planning::GroundTask& el);
 template<typename Task>
 std::ostream& print(std::ostream& os, const planning::Node<Task>& el)
 {
+    fmt::print(os, "Node({}, metric={})", to_string(el.get_state()), el.get_state_metric());
     return os;
 }
 
@@ -56,6 +57,8 @@ std::ostream& print(std::ostream& os, const planning::UnpackedState<Task>& el)
 template<typename Task>
 std::ostream& print(std::ostream& os, const planning::State<Task>& el)
 {
+    const auto context = el.get_task().get_repository();
+
     return os;
 }
 

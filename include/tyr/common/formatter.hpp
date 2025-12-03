@@ -93,7 +93,7 @@ std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& el)
 
 template<typename C, typename... Ts>
     requires(sizeof...(Ts) > 0)
-inline std::ostream& print(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el);
+std::ostream& print(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el);
 
 template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
 std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec);
@@ -283,7 +283,7 @@ std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& var
 
 template<typename C, typename... Ts>
     requires(sizeof...(Ts) > 0)
-inline std::ostream& print(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el)
+std::ostream& print(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el)
 {
     visit([&os](auto&& arg) { os << to_string(arg); }, el);
     return os;

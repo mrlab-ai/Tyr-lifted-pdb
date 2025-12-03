@@ -74,7 +74,7 @@ create_atoms_slot(const boost::dynamic_bitset<>& atoms, std::vector<uint_t>& buf
     buffer.clear();
 
     const auto& bits = atoms;
-    for (uint_t i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
+    for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
         buffer.push_back(i);
 
     return valla::insert_sequence(buffer, uint_nodes);
@@ -153,8 +153,12 @@ public:
         auto& numeric_variables = unpacked_state.get_numeric_variables();
 
         for (const auto atom : m_task.get_atoms<formalism::FluentTag>())
-            fluent_atoms.push_back(atom.get_index().get_value());
-        std::sort(fluent_atoms.begin(), fluent_atoms.end());
+        {
+            const auto atom_index = atom.get_index().get_value();
+            if (atom_index >= fluent_atoms.size())
+                fluent_atoms.resize(atom_index + 1, false);
+            fluent_atoms.set(atom_index);
+        }
 
         for (const auto fterm_value : m_task.get_fterm_values<formalism::FluentTag>())
         {
@@ -167,7 +171,7 @@ public:
         const auto state_index = register_state(unpacked_state);
         const auto state_metric = float_t(0);  // TODO: evaluate metric
 
-        return Node<Task>(state_index, state_metric, *this);
+        return Node<Task>(state_index, state_metric, self());
     }
 
     std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<Task>>>
@@ -182,6 +186,8 @@ public:
     {
         self().get_labeled_successor_nodes_impl(node, out_nodes);
     }
+
+    auto get_repository() const { return m_scoped_repository; }
 
 protected:
     DomainPtr m_domain;

@@ -48,4 +48,6 @@ int main(int argc, char** argv)
     std::cout << *domain << std::endl;
 
     std::cout << *lifted_task << std::endl;
+
+    auto initial_node = lifted_task->get_initial_node();
 }

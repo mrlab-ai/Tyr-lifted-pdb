@@ -542,6 +542,7 @@ inline std::ostream& print(std::ostream& os, const formalism::Maximize& el)
 template<formalism::NumericEffectOpKind Op, formalism::FactKind T>
 std::ostream& print(std::ostream& os, const Data<formalism::NumericEffect<Op, T>>& el)
 {
+    fmt::print(os, "({} {} {})", to_string(Op {}), to_string(el.fterm), to_string(el.fexpr));
     return os;
 }
 
@@ -555,6 +556,7 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::NumericEffect<
 template<formalism::NumericEffectOpKind Op, formalism::FactKind T>
 std::ostream& print(std::ostream& os, const Data<formalism::GroundNumericEffect<Op, T>>& el)
 {
+    fmt::print(os, "({} {} {})", to_string(Op {}), to_string(el.fterm), to_string(el.fexpr));
     return os;
 }
 
@@ -568,7 +570,7 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::GroundNumericE
 template<formalism::FactKind T>
 std::ostream& print(std::ostream& os, const Data<formalism::NumericEffectOperator<T>>& el)
 {
-    return os;
+    return tyr::print(os, el.value);
 }
 
 template<formalism::FactKind T, formalism::Context C>
@@ -580,7 +582,7 @@ std::ostream& print(std::ostream& os, const View<Data<formalism::NumericEffectOp
 template<formalism::FactKind T>
 std::ostream& print(std::ostream& os, const Data<formalism::GroundNumericEffectOperator<T>>& el)
 {
-    return os;
+    return tyr::print(os, el.value);
 }
 
 template<formalism::FactKind T, formalism::Context C>
@@ -589,7 +591,15 @@ std::ostream& print(std::ostream& os, const View<Data<formalism::GroundNumericEf
     return tyr::print(os, el.get_variant());
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::ConditionalEffect>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::ConditionalEffect>& el)
+{
+    fmt::print(os,
+               "\nCondition: {}\n"
+               "Effect: {}",
+               to_string(el.condition),
+               to_string(el.effect));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::ConditionalEffect>, C>& el)
@@ -602,7 +612,15 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::ConditionalEff
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConditionalEffect>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConditionalEffect>& el)
+{
+    fmt::print(os,
+               "\nCondition: {}\n"
+               "Effect: {}",
+               to_string(el.condition),
+               to_string(el.effect));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConditionalEffect>, C>& el)
@@ -615,7 +633,17 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConditio
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveEffect>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveEffect>& el)
+{
+    fmt::print(os,
+               "\nFluent literals: {}\n"
+               "Fluent numeric effects: {}\n"
+               "Auxiliary numeric effect: {}",
+               to_string(el.literals),
+               to_string(el.numeric_effects),
+               to_string(el.auxiliary_numeric_effect));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::ConjunctiveEffect>, C>& el)
@@ -639,13 +667,30 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConjunct
                "\nFluent literals: {}\n"
                "Fluent numeric effects: {}\n"
                "Auxiliary numeric effect: {}",
+               to_string(el.literals),
+               to_string(el.numeric_effects),
+               to_string(el.auxiliary_numeric_effect));
+    fmt::print(os,
+               "\nFluent literals: {}\n"
+               "Fluent numeric effects: {}\n"
+               "Auxiliary numeric effect: {}",
                to_string(el.get_literals()),
                to_string(el.get_numeric_effects()),
                to_string(el.get_auxiliary_numeric_effect()));
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::Action>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::Action>& el)
+{
+    fmt::print(os,
+               "\nName: {}\n"
+               "Condition: {}\n"
+               "Effect: {}",
+               to_string(el.name),
+               to_string(el.condition),
+               to_string(el.effects));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Action>, C>& el)
@@ -660,22 +705,36 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Action>, C>& e
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAction>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAction>& el)
+{
+    fmt::print(os,
+               "\nCondition: {}\n"
+               "Effect: {}",
+               to_string(el.condition),
+               to_string(el.effects));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAction>, C>& el)
 {
     fmt::print(os,
-               "\nName: {}\n"
-               "Condition: {}\n"
+               "\nCondition: {}\n"
                "Effect: {}",
-               to_string(el.get_name()),
                to_string(el.get_condition()),
                to_string(el.get_effects()));
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::Axiom>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::Axiom>& el)
+{
+    fmt::print(os,
+               "\nBody: {}\n"
+               "Head: {}",
+               to_string(el.body),
+               to_string(el.head));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Axiom>, C>& el)
@@ -688,7 +747,15 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Axiom>, C>& el
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAxiom>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAxiom>& el)
+{
+    fmt::print(os,
+               "\nBody: {}\n"
+               "Head: {}",
+               to_string(el.body),
+               to_string(el.head));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAxiom>, C>& el)
@@ -701,7 +768,11 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAxiom>, 
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::Metric>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::Metric>& el)
+{
+    fmt::print(os, "({} {})", to_string(el.objective), to_string(el.fexpr));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Metric>, C>& el)
@@ -710,7 +781,33 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Metric>, C>& e
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::Task>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::Task>& el)
+{
+    fmt::print(os,
+               "\nName: {}\n"
+               "Derived predicates: {}\n"
+               "Objects: {}\n"
+               "Static atoms: {}\n"
+               "Fluent atoms: {}\n"
+               "Static function term values: {}\n"
+               "Fluent function term values: {}\n"
+               "Auxiliary function term value: {}\n"
+               "Goal: {}\n"
+               "Metric: {}\n"
+               "Axioms: {}",
+               to_string(el.name),
+               to_string(el.derived_predicates),
+               to_string(el.objects),
+               to_string(el.static_atoms),
+               to_string(el.fluent_atoms),
+               to_string(el.static_fterm_values),
+               to_string(el.fluent_fterm_values),
+               to_string(el.auxiliary_fterm_value),
+               to_string(el.goal),
+               to_string(el.metric),
+               to_string(el.axioms));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Task>, C>& el)
@@ -741,7 +838,31 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Task>, C>& el)
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::Domain>& el) { return os; }
+inline std::ostream& print(std::ostream& os, const Data<formalism::Domain>& el)
+{
+    fmt::print(os,
+               "\nName: {}\n"
+               "Static predicates: {}\n"
+               "Fluent predicates: {}\n"
+               "Derived predicates: {}\n"
+               "Static functions: {}\n"
+               "Fluent functions: {}\n"
+               "Auxiliary function: {}\n"
+               "Constants: {}\n"
+               "Actions: {}\n"
+               "Axioms: {}",
+               to_string(el.name),
+               to_string(el.static_predicates),
+               to_string(el.fluent_predicates),
+               to_string(el.derived_predicates),
+               to_string(el.static_functions),
+               to_string(el.fluent_functions),
+               to_string(el.auxiliary_function),
+               to_string(el.constants),
+               to_string(el.actions),
+               to_string(el.axioms));
+    return os;
+}
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Domain>, C>& el)
