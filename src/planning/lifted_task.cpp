@@ -86,6 +86,7 @@ static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& num
 
     /// --- Initialize FactSets
     for (uint_t i = 0; i < numeric_variables.size(); ++i)
+    {
         if (numeric_variables[i] != std::numeric_limits<float_t>::quiet_NaN())
             fluent_function_fact_sets.insert(
                 merge(View<Index<GroundFunctionTerm<FluentTag>>, OverlayRepository<Repository>>(Index<GroundFunctionTerm<FluentTag>>(i),
@@ -94,6 +95,7 @@ static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& num
                       destination,
                       task_to_program_merge_cache),
                 numeric_variables[i]);
+    }
 }
 
 static void insert_fact_sets_into_assignment_sets(ProgramExecutionContext& program_context)
@@ -102,7 +104,7 @@ static void insert_fact_sets_into_assignment_sets(ProgramExecutionContext& progr
     auto& fluent_predicate_assignment_sets = program_context.facts_execution_context.assignment_sets.get<FluentTag>().predicate;
 
     auto& fluent_function_fact_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().function;
-    auto& fluent_function_assignment_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().function;
+    auto& fluent_function_assignment_sets = program_context.facts_execution_context.assignment_sets.get<FluentTag>().function;
 
     /// --- Initialize AssignmentSets
     fluent_predicate_assignment_sets.insert(fluent_predicate_fact_sets.get_facts());
