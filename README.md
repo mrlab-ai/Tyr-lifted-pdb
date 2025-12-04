@@ -65,10 +65,10 @@ We obtain a lifted task by parsing the PDDL. We can then iteratively expand the 
 auto parser = tyr::formalism::Parser("domain.pddl");
 auto task = parser.parse_task("problem.pddl");
 
-// Get the initial node (state + metric value)
+// Get the initial node (sparse state + metric value)
 auto initial_node = task.get_initial_node();
 
-// Get the labeled successor nodes (pairs of ground action and successor node)
+// Get the labeled successor nodes (sequence of ground action + node)
 auto successor_nodes = initial_node.get_labeled_successor_nodes();
 
 ```
@@ -87,10 +87,10 @@ auto task = parser.parse_task("problem.pddl");
 // Ground the task
 auto ground_task = task.get_ground_task();
 
-// Get the initial node (state + metric value)
+// Get the initial node (FDR state + metric value)
 auto initial_node = ground_task.get_initial_node();
 
-// Get the labeled successor nodes (pairs of ground action and successor node)
+// Get the labeled successor nodes (sequence of ground action + node)
 auto successor_nodes = initial_node.get_labeled_successor_nodes();
 
 ```
