@@ -19,73 +19,34 @@
 #define TYR_GROUNDER_FORMATTER_HPP_
 
 #include "tyr/common/formatter.hpp"
-#include "tyr/grounder/assignment.hpp"
-#include "tyr/grounder/consistency_graph.hpp"
-
-#include <fmt/core.h>
-#include <fmt/ostream.h>
-#include <fmt/ranges.h>
-#include <ostream>
+#include "tyr/grounder/declarations.hpp"
 
 namespace tyr
 {
-inline std::ostream& print(std::ostream& os, const grounder::VertexAssignment& el)
-{
-    fmt::print(os, "[{}/{}]", to_string(el.index), to_string(el.object));
-    return os;
-}
+extern std::ostream& print(std::ostream& os, const grounder::VertexAssignment& el);
 
-inline std::ostream& print(std::ostream& os, const grounder::EdgeAssignment& el)
-{
-    fmt::print(os, "[{}/{}, {}/{}]", to_string(el.first_index), to_string(el.first_object), to_string(el.second_index), to_string(el.second_object));
-    return os;
-}
+extern std::ostream& print(std::ostream& os, const grounder::EdgeAssignment& el);
 
-inline std::ostream& print(std::ostream& os, const grounder::details::Vertex& el)
-{
-    fmt::print(os, "[{}/{}]", to_string(el.get_parameter_index()), to_string(el.get_object_index()));
-    return os;
-}
+extern std::ostream& print(std::ostream& os, const grounder::details::Vertex& el);
 
-inline std::ostream& print(std::ostream& os, const grounder::details::Edge& el)
-{
-    fmt::print(os, "[{}, {}]", to_string(el.get_src()), to_string(el.get_dst()));
-    return os;
-}
+extern std::ostream& print(std::ostream& os, const grounder::details::Edge& el);
 
-template<formalism::Context C>
-std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<C>& el)
-{
-    fmt::print(
-        os,
-        "graph Tree {{\n\n{}\n\n{}\n}}",
-        fmt::join(el.get_vertices() | std::views::transform([&](auto&& arg) { return fmt::format("n{} [label=\"{}\"];", arg.get_index(), to_string(arg)); }),
-                  "\n"),
-        fmt::join(el.get_edges()
-                      | std::views::transform([&](auto&& arg) { return fmt::format("n{} -- n{};", arg.get_src().get_index(), arg.get_dst().get_index()); }),
-                  "\n"));
-
-    return os;
-}
+extern std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph& el);
 
 namespace grounder
 {
 namespace details
 {
-inline std::ostream& operator<<(std::ostream& os, const Vertex& el) { return print(os, el); }
+extern std::ostream& operator<<(std::ostream& os, const Vertex& el);
 
-inline std::ostream& operator<<(std::ostream& os, const Edge& el) { return print(os, el); }
+extern std::ostream& operator<<(std::ostream& os, const Edge& el);
 }  // end namespace details
 
-inline std::ostream& operator<<(std::ostream& os, const VertexAssignment& el) { return print(os, el); }
+extern std::ostream& operator<<(std::ostream& os, const VertexAssignment& el);
 
-inline std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el) { return print(os, el); }
+extern std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el);
 
-template<formalism::Context C>
-std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<C>& el)
-{
-    return print(os, el);
-}
+extern std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph& el);
 }  // end namespace grounder
 }
 

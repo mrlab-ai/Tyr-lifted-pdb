@@ -19,7 +19,7 @@
 #define TYR_GROUNDER_EXECUTION_CONTEXTS_HPP_
 
 #include "tyr/analysis/analysis.hpp"
-#include "tyr/formalism/merge.hpp"
+#include "tyr/formalism/formalism.hpp"
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/kpkc_utils.hpp"
@@ -28,55 +28,31 @@ namespace tyr::grounder
 {
 struct FactsExecutionContext
 {
-    FactSets<formalism::Repository> fact_sets;
+    FactSets fact_sets;
     AssignmentSets assignment_sets;
 
-    FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::VariableDomains& domains) :
-        fact_sets(program),
-        assignment_sets(program, domains, fact_sets)
-    {
-    }
+    FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::VariableDomains& domains);
 
     FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
-                          TaggedFactSets<formalism::FluentTag, formalism::Repository> fluent_facts,
-                          const analysis::VariableDomains& domains) :
-        fact_sets(program, fluent_facts),
-        assignment_sets(program, domains, fact_sets)
-    {
-    }
+                          TaggedFactSets<formalism::FluentTag> fluent_facts,
+                          const analysis::VariableDomains& domains);
 
     template<formalism::FactKind T>
-    void reset() noexcept
-    {
-        fact_sets.template reset<T>();
-        assignment_sets.template reset<T>();
-    }
+    void reset() noexcept;
 
-    void reset() noexcept
-    {
-        fact_sets.reset();
-        assignment_sets.reset();
-    }
+    void reset() noexcept;
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view)
-    {
-        fact_sets.insert(view);
-        assignment_sets.insert(fact_sets.template get<T>());
-    }
+    void insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view);
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view)
-    {
-        fact_sets.insert(view);
-        assignment_sets.insert(fact_sets.template get<T>());
-    }
+    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
 };
 
 struct RuleExecutionContext
 {
     const View<Index<formalism::Rule>, formalism::Repository> rule;
-    const StaticConsistencyGraph<formalism::Repository> static_consistency_graph;
+    const StaticConsistencyGraph static_consistency_graph;
 
     kpkc::DenseKPartiteGraph consistency_graph;
     kpkc::Workspace kpkc_workspace;
@@ -87,21 +63,9 @@ struct RuleExecutionContext
     RuleExecutionContext(View<Index<formalism::Rule>, formalism::Repository> rule,
                          const analysis::DomainListList& parameter_domains,
                          const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
-                         const formalism::Repository& parent) :
-        rule(rule),
-        static_consistency_graph(rule.get_body(), parameter_domains, static_assignment_sets),
-        consistency_graph(grounder::kpkc::allocate_dense_graph(static_consistency_graph)),
-        kpkc_workspace(grounder::kpkc::allocate_workspace(static_consistency_graph)),
-        local(std::make_shared<formalism::Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
-        repository(parent, *local),
-        ground_rules()
-    {
-    }
+                         const formalism::Repository& parent);
 
-    void initialize(const AssignmentSets& assignment_sets)
-    {
-        grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
-    }
+    void initialize(const AssignmentSets& assignment_sets);
 };
 
 struct ProgramExecutionContext
@@ -117,24 +81,7 @@ struct ProgramExecutionContext
 
     std::vector<RuleExecutionContext> rule_execution_contexts;
 
-    ProgramExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, formalism::RepositoryPtr repository) :
-        program(program),
-        repository(repository),
-        domains(analysis::compute_variable_domains(program)),
-        strata(analysis::compute_rule_stratification(program)),
-        listeners(analysis::compute_listeners(strata)),
-        facts_execution_context(program, domains),
-        rule_execution_contexts()
-    {
-        for (uint_t i = 0; i < program.get_rules().size(); ++i)
-        {
-            rule_execution_contexts.emplace_back(program.get_rules()[i],
-                                                 domains.rule_domains[i],
-                                                 facts_execution_context.assignment_sets.static_sets,
-                                                 *repository);
-            rule_execution_contexts.back().initialize(facts_execution_context.assignment_sets);
-        }
-    }
+    ProgramExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, formalism::RepositoryPtr repository);
 };
 
 struct ThreadExecutionContext
@@ -146,12 +93,7 @@ struct ThreadExecutionContext
 
     ThreadExecutionContext() = default;
 
-    void clear() noexcept
-    {
-        binding.clear();
-        local_merge_cache.clear();
-        global_merge_cache.clear();
-    }
+    void clear() noexcept;
 };
 
 }

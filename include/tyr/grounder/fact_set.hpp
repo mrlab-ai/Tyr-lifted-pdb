@@ -18,194 +18,99 @@
 #ifndef TYR_GROUNDER_FACT_SET_HPP_
 #define TYR_GROUNDER_FACT_SET_HPP_
 
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/formalism.hpp"
 
 #include <boost/dynamic_bitset.hpp>
-#include <limits>
 
 namespace tyr::grounder
 {
 
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 class PredicateFactSet
 {
 private:
-    const C& m_context;
+    const formalism::Repository& m_context;
     IndexList<formalism::GroundAtom<T>> m_indices;
 
     boost::dynamic_bitset<> m_bitset;
 
 public:
-    explicit PredicateFactSet(View<IndexList<formalism::GroundAtom<T>>, C> view) : m_context(view.get_context()), m_indices() { insert(view); }
+    explicit PredicateFactSet(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view);
 
-    void reset()
-    {
-        m_indices.clear();
-        m_bitset.reset();
-    }
+    void reset();
 
-    void insert(View<Index<formalism::GroundAtom<T>>, C> view)
-    {
-        if (&m_context != &view.get_context())
-            throw std::runtime_error("Incompatible contexts.");
+    void insert(View<Index<formalism::GroundAtom<T>>, formalism::Repository> view);
 
-        const auto index = view.get_index();
+    void insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view);
 
-        if (index.get_value() >= m_bitset.size())
-            m_bitset.resize(index.get_value() + 1, false);
+    bool contains(Index<formalism::GroundAtom<T>> index) const noexcept;
 
-        if (!m_bitset.test(index.get_value()))
-            m_indices.push_back(index);
-
-        m_bitset.set(index.get_value());
-    }
-
-    void insert(View<IndexList<formalism::GroundAtom<T>>, C> view)
-    {
-        for (const auto atom : view)
-            insert(atom);
-    }
-
-    bool contains(Index<formalism::GroundAtom<T>> index) const noexcept { return m_bitset.test(index.get_value()); }
-
-    auto get_facts() const noexcept { return View<IndexList<formalism::GroundAtom<T>>, C>(m_indices, m_context); }
+    View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> get_facts() const noexcept;
 };
 
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 class FunctionFactSet
 {
 private:
-    const C& m_context;
+    const formalism::Repository& m_context;
     IndexList<formalism::GroundFunctionTermValue<T>> m_indices;
     UnorderedSet<Index<formalism::GroundFunctionTerm<T>>> m_unique;
 
     std::vector<float_t> m_vector;
 
 public:
-    explicit FunctionFactSet(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> view) : m_context(view.get_context()), m_indices(), m_unique()
-    {
-        insert(view);
-    }
+    explicit FunctionFactSet(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
 
-    void reset()
-    {
-        m_indices.clear();
-        m_unique.clear();
-        std::fill(m_vector.begin(), m_vector.end(), std::numeric_limits<float_t>::quiet_NaN());
-    }
+    void reset();
 
-    void insert(View<Index<formalism::GroundFunctionTermValue<T>>, C> view)
-    {
-        if (&m_context != &view.get_context())
-            throw std::runtime_error("Incompatible contexts.");
+    void insert(View<Index<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
 
-        const auto fterm_index = view.get_fterm().get_index();
+    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
 
-        if (m_unique.contains(fterm_index))
-            throw std::runtime_error("Multiple value assignments to a ground function term.");
+    bool contains(Index<formalism::GroundFunctionTerm<T>> index) const noexcept;
 
-        m_indices.push_back(view.get_index());
-        m_unique.insert(fterm_index);
-        if (fterm_index.get_value() >= m_vector.size())
-            m_vector.resize(fterm_index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
-        m_vector[fterm_index.get_value()] = view.get_value();
-    }
+    float_t operator[](Index<formalism::GroundFunctionTerm<T>> index) const noexcept;
 
-    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
-    {
-        for (const auto fterm_value : view)
-            insert(fterm_value);
-    }
-
-    bool contains(Index<formalism::GroundFunctionTerm<T>> index) const noexcept { return m_unique.contains(index); }
-
-    float_t operator[](Index<formalism::GroundFunctionTerm<T>> index) const noexcept { return m_vector[index.get_value()]; }
-
-    auto get_facts() const noexcept { return View<IndexList<formalism::GroundFunctionTermValue<T>>, C>(m_indices, m_context); }
+    View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> get_facts() const noexcept;
 };
 
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 struct TaggedFactSets
 {
-    PredicateFactSet<T, C> predicate;
-    FunctionFactSet<T, C> function;
+    PredicateFactSet<T> predicate;
+    FunctionFactSet<T> function;
 
-    TaggedFactSets(View<IndexList<formalism::GroundAtom<T>>, C> atoms, View<IndexList<formalism::GroundFunctionTermValue<T>>, C> function_terms) :
-        predicate(atoms),
-        function(function_terms)
-    {
-    }
+    TaggedFactSets(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> atoms,
+                   View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> function_terms);
 
-    void reset() noexcept
-    {
-        predicate.reset();
-        function.reset();
-    }
+    void reset() noexcept;
 };
 
-template<formalism::Context C>
 struct FactSets
 {
-    TaggedFactSets<formalism::StaticTag, C> static_sets;
-    TaggedFactSets<formalism::FluentTag, C> fluent_sets;
+    TaggedFactSets<formalism::StaticTag> static_sets;
+    TaggedFactSets<formalism::FluentTag> fluent_sets;
 
-    explicit FactSets(View<Index<formalism::Program>, C> program) :
-        static_sets(program.template get_atoms<formalism::StaticTag>(), program.template get_fterm_values<formalism::StaticTag>()),
-        fluent_sets(program.template get_atoms<formalism::FluentTag>(), program.template get_fterm_values<formalism::FluentTag>())
-    {
-    }
+    explicit FactSets(View<Index<formalism::Program>, formalism::Repository> program);
 
-    FactSets(View<Index<formalism::Program>, C> program, TaggedFactSets<formalism::FluentTag, C> fluent_facts) :
-        static_sets(program.template get_atoms<formalism::StaticTag>(), program.template get_fterm_values<formalism::StaticTag>()),
-        fluent_sets(std::move(fluent_facts))
-    {
-    }
+    FactSets(View<Index<formalism::Program>, formalism::Repository> program, TaggedFactSets<formalism::FluentTag> fluent_facts);
 
     template<formalism::FactKind T>
-    void reset() noexcept
-    {
-        get<T>().template reset();
-    }
+    void reset() noexcept;
 
-    void reset() noexcept
-    {
-        reset<formalism::StaticTag>();
-        reset<formalism::FluentTag>();
-    }
+    void reset() noexcept;
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundAtom<T>>, C> view)
-    {
-        get<T>().predicate.insert(view);
-    }
+    void insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view);
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
-    {
-        get<T>().function.insert(view);
-    }
+    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
 
     template<formalism::FactKind T>
-    const auto& get() const
-    {
-        if constexpr (std::is_same_v<T, formalism::StaticTag>)
-            return static_sets;
-        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-            return fluent_sets;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
+    const TaggedFactSets<T>& get() const;
 
     template<formalism::FactKind T>
-    auto& get()
-    {
-        if constexpr (std::is_same_v<T, formalism::StaticTag>)
-            return static_sets;
-        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-            return fluent_sets;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
+    TaggedFactSets<T>& get();
 };
 }
 

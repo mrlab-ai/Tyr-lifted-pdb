@@ -23,6 +23,7 @@
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_view.hpp"
+#include "tyr/formalism/ground_function_term_value_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/action_view.hpp"

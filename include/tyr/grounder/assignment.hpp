@@ -20,6 +20,7 @@
 
 #include "tyr/common/config.hpp"
 #include "tyr/common/declarations.hpp"
+#include "tyr/formalism/formalism.hpp"
 
 #include <limits>
 

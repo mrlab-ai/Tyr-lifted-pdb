@@ -18,6 +18,7 @@
 #ifndef TYR_BUFFER_DECLARATIONS_HPP_
 #define TYR_BUFFER_DECLARATIONS_HPP_
 
+#include "cista/serialization.h"
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/types.hpp"
 
