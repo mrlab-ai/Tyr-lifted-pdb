@@ -92,8 +92,6 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
         /// --- Copy the result into the program's repository
 
         stage_to_program_merge_cache.clear();
-        program_merge_rules.clear();
-        program_merge_atoms.clear();
 
         auto discovered_new_fact = bool { false };
 
@@ -102,14 +100,14 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
             const auto merge_rule = merge(rule, builder, program_repository, stage_to_program_merge_cache);
             const auto merge_head = merge_rule.get_head();
 
-            // Re-insert fact
+            // Inser new fact
             if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(merge_head))
             {
-                program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge_head);
-                program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(merge_head);
-
                 program_merge_rules.insert(merge_rule);
                 program_merge_atoms.insert(merge_head);
+
+                program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge_head);
+                program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(merge_head);
 
                 discovered_new_fact = true;
             }
@@ -133,6 +131,12 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
 void solve_bottom_up(grounder::ProgramExecutionContext& program_execution_context)
 {
+    auto& program_merge_rules = program_execution_context.program_merge_rules;
+    auto& program_merge_atoms = program_execution_context.program_merge_atoms;
+
+    program_merge_rules.clear();
+    program_merge_atoms.clear();
+
     for (const auto& stratum : program_execution_context.strata.strata)
     {
         solve_bottom_up_for_stratum(program_execution_context, stratum);
