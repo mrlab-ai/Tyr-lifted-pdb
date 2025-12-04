@@ -106,18 +106,24 @@ struct ProgramExecutionContext
 
     oneapi::tbb::enumerable_thread_specific<grounder::ThreadExecutionContext> thread_execution_contexts;
 
-    // Merge
-    formalism::RepositoryPtr merge_repository;
     formalism::Builder builder;
-    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::OverlayRepository<formalism::Repository>> local_merge_cache;
-    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> global_merge_cache;
-    formalism::MergeCache<formalism::Repository, formalism::Repository> merge_cache;
-    UnorderedSet<View<Index<formalism::GroundRule>, formalism::Repository>> tmp_merge_rules;
-    UnorderedSet<View<Index<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository>> tmp_merge_atoms;
+
+    // Stage
+    formalism::RepositoryPtr stage_repository;
+    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> stage_merge_cache;
+    UnorderedSet<View<Index<formalism::GroundRule>, formalism::Repository>> stage_merge_rules;
+    UnorderedSet<View<Index<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository>> stage_merge_atoms;
+
+    // Stage to program
+    formalism::MergeCache<formalism::Repository, formalism::Repository> stage_to_program_merge_cache;
+
+    // Program to task
+    formalism::MergeCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> program_to_task_merge_cache;
+    formalism::CompileCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> program_to_task_compile_cache;
 
     // Results
-    UnorderedSet<View<Index<formalism::GroundRule>, formalism::Repository>> merge_rules;
-    UnorderedSet<View<Index<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository>> merge_atoms;
+    UnorderedSet<View<Index<formalism::GroundRule>, formalism::Repository>> program_merge_rules;
+    UnorderedSet<View<Index<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository>> program_merge_atoms;
 
     ProgramExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, formalism::RepositoryPtr repository);
 };

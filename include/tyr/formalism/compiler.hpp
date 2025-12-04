@@ -42,7 +42,16 @@ private:
                                      MapEntryType<Function<AuxiliaryTag>, Function<FluentTag>>,
                                      MapEntryType<FunctionTerm<AuxiliaryTag>, FunctionTerm<FluentTag>>,
                                      MapEntryType<GroundFunctionTerm<AuxiliaryTag>, GroundFunctionTerm<FluentTag>>,
-                                     MapEntryType<GroundFunctionTermValue<AuxiliaryTag>, GroundFunctionTermValue<FluentTag>>>;
+                                     MapEntryType<GroundFunctionTermValue<AuxiliaryTag>, GroundFunctionTermValue<FluentTag>>,
+                                     MapEntryType<Predicate<FluentTag>, Predicate<DerivedTag>>,
+                                     MapEntryType<Atom<FluentTag>, Atom<DerivedTag>>,
+                                     MapEntryType<GroundAtom<FluentTag>, GroundAtom<DerivedTag>>,
+                                     MapEntryType<Literal<FluentTag>, Literal<DerivedTag>>,
+                                     MapEntryType<GroundLiteral<FluentTag>, GroundLiteral<DerivedTag>>,
+                                     MapEntryType<Function<FluentTag>, Function<AuxiliaryTag>>,
+                                     MapEntryType<FunctionTerm<FluentTag>, FunctionTerm<AuxiliaryTag>>,
+                                     MapEntryType<GroundFunctionTerm<FluentTag>, GroundFunctionTerm<AuxiliaryTag>>,
+                                     MapEntryType<GroundFunctionTermValue<FluentTag>, GroundFunctionTermValue<AuxiliaryTag>>>;
 
     HanaMap maps;
 

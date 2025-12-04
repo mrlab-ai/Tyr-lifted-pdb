@@ -28,22 +28,33 @@
 
 namespace tyr::solver
 {
-static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& program_execution_context,
-                                        const analysis::RuleStratum& stratum,
-                                        GroundAtomsPerPredicate& out_facts)
+static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& program_execution_context, const analysis::RuleStratum& stratum)
 {
+    auto& builder = program_execution_context.builder;
+    auto& stage_merge_cache = program_execution_context.stage_merge_cache;
+    auto& stage_repository = *program_execution_context.stage_repository;
+    auto& stage_merge_rules = program_execution_context.stage_merge_rules;
+    auto& stage_merge_atoms = program_execution_context.stage_merge_atoms;
+    auto& stage_to_program_merge_cache = program_execution_context.stage_to_program_merge_cache;
+    auto& program_merge_rules = program_execution_context.program_merge_rules;
+    auto& program_merge_atoms = program_execution_context.program_merge_atoms;
+
+    auto num_atoms_before = size_t(0);
+
     while (true)
     {
         /**
          * Parallel evaluation.
          */
 
-        const uint_t num_rules = program_execution_context.program.get_rules().size();
+        const uint_t num_rules = stratum.size();
 
         tbb::parallel_for(uint_t { 0 },
                           num_rules,
-                          [&](uint_t i)
+                          [&](uint_t j)
                           {
+                              const auto i = stratum[j].get_index().get_value();
+
                               auto& facts_execution_context = program_execution_context.facts_execution_context;
                               auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
                               auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();  // thread-local
@@ -57,34 +68,70 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
          */
 
         /// --- Sequentially combine results into a temporary top-level repository to prevent modying the program's repository
-        auto& builder = program_execution_context.builder;
-        auto& global_merge_cache = program_execution_context.global_merge_cache;
-        auto& merge_repository = *program_execution_context.merge_repository;
-        auto& tmp_merge_rules = program_execution_context.tmp_merge_rules;
-        merge_repository.clear();
-        global_merge_cache.clear();
-        tmp_merge_rules.clear();
+        stage_repository.clear();
+        stage_merge_cache.clear();
+        stage_merge_rules.clear();
+        stage_merge_atoms.clear();
 
-        for (const auto& rule_execution_context : program_execution_context.rule_execution_contexts)
+        for (uint_t j = 0; j < stratum.size(); ++j)
+        {
+            const auto i = stratum[j].get_index().get_value();
+
+            const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
+
             for (const auto rule : rule_execution_context.ground_rules)
-                tmp_merge_rules.insert(merge(rule, builder, merge_repository, global_merge_cache));
+            {
+                const auto merge_rule = merge(rule, builder, stage_repository, stage_merge_cache);
+                const auto merge_head = merge_rule.get_head();
+
+                stage_merge_rules.insert(merge_rule);
+                stage_merge_atoms.insert(merge_head);
+            }
+        }
 
         /// --- Copy the result into the program's repository
-        auto& merge_cache = program_execution_context.merge_cache;
-        auto& merge_rules = program_execution_context.merge_rules;
-        merge_cache.clear();
-        merge_rules.clear();
 
-        for (const auto rule : tmp_merge_rules)
-            merge_rules.insert(merge(rule, builder, *program_execution_context.repository, merge_cache));
+        stage_to_program_merge_cache.clear();
+        program_merge_rules.clear();
+        program_merge_atoms.clear();
+
+        for (const auto rule : stage_merge_rules)
+        {
+            const auto merge_rule = merge(rule, builder, *program_execution_context.repository, stage_to_program_merge_cache);
+            const auto merge_head = merge_rule.get_head();
+
+            program_merge_rules.insert(merge_rule);
+            program_merge_atoms.insert(merge_head);
+
+            // Re-insert fact
+            program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge_head);
+            program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(merge_head);
+        }
+
+        const auto num_atoms_after = program_merge_atoms.size();
+
+        if (num_atoms_before == num_atoms_after)
+            break;  /// Reached fixed point for stratum
+
+        num_atoms_before = num_atoms_after;
+
+        // Re-initialize RuleExecutionContext with new fact set.
+        for (uint_t j = 0; j < stratum.size(); ++j)
+        {
+            const auto i = stratum[j].get_index().get_value();
+
+            auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
+
+            rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
+        }
     }
 }
 
-void solve_bottom_up(grounder::ProgramExecutionContext& context, GroundAtomsPerPredicate& out_facts)
+void solve_bottom_up(grounder::ProgramExecutionContext& program_execution_context)
 {
-    for (const auto& stratum : context.strata.strata)
+    for (const auto& stratum : program_execution_context.strata.strata)
     {
-        solve_bottom_up_for_stratum(context, stratum, out_facts);
+        solve_bottom_up_for_stratum(program_execution_context, stratum);
     }
 }
 }

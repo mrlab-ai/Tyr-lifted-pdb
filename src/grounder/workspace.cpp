@@ -101,6 +101,7 @@ RuleExecutionContext::RuleExecutionContext(View<Index<formalism::Rule>, formalis
 
 void RuleExecutionContext::initialize(const AssignmentSets& assignment_sets)
 {
+    local->clear();
     grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
 }
 
@@ -128,15 +129,16 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<formalism::Program>,
     facts_execution_context(program, domains),
     rule_execution_contexts(),
     thread_execution_contexts(),
-    merge_repository(std::make_shared<formalism::Repository>()),
     builder(),
-    local_merge_cache(),
-    global_merge_cache(),
-    merge_cache(),
-    tmp_merge_rules(),
-    tmp_merge_atoms(),
-    merge_rules(),
-    merge_atoms()
+    stage_repository(std::make_shared<formalism::Repository>()),
+    stage_merge_cache(),
+    stage_merge_rules(),
+    stage_merge_atoms(),
+    stage_to_program_merge_cache(),
+    program_to_task_merge_cache(),
+    program_to_task_compile_cache(),
+    program_merge_rules(),
+    program_merge_atoms()
 {
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
@@ -144,5 +146,4 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<formalism::Program>,
         rule_execution_contexts.back().initialize(facts_execution_context.assignment_sets);
     }
 }
-
 }

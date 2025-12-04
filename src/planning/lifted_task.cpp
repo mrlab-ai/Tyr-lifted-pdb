@@ -17,19 +17,22 @@
 
 #include "tyr/planning/lifted_task.hpp"
 
+#include "tyr/formalism/compiler.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/merge.hpp"
 #include "tyr/grounder/generator.hpp"
+#include "tyr/solver/bottom_up.hpp"
 
 using namespace tyr::formalism;
 using namespace tyr::grounder;
+using namespace tyr::solver;
 
 namespace tyr::planning
 {
 
-static void insert_fluent_atoms(const boost::dynamic_bitset<>& fluent_atoms,
-                                const OverlayRepository<Repository>& fluent_atoms_context,
-                                ProgramExecutionContext& axiom_context)
+static void insert_fluent_atoms_to_context(const boost::dynamic_bitset<>& fluent_atoms,
+                                           const OverlayRepository<Repository>& fluent_atoms_context,
+                                           ProgramExecutionContext& axiom_context)
 {
     auto& destination = *axiom_context.repository;
     auto& fact_context = axiom_context.facts_execution_context;
@@ -57,53 +60,25 @@ static void insert_fluent_atoms(const boost::dynamic_bitset<>& fluent_atoms,
         rule_context.initialize(fact_context.assignment_sets);
 }
 
-static void evaluate_axiom_program(ProgramExecutionContext& axiom_context, UnpackedState<LiftedTask>& unextended_state)
+static void
+read_derived_atoms_from_context(boost::dynamic_bitset<>& derived_atoms, OverlayRepository<Repository>& task_repository, ProgramExecutionContext& axiom_context)
 {
-    /**
-     * Parallel evaluation.
-     */
-
-    const uint_t num_rules = axiom_context.program.get_rules().size();
-
-    tbb::parallel_for(uint_t { 0 },
-                      num_rules,
-                      [&](uint_t i)
-                      {
-                          auto& facts_execution_context = axiom_context.facts_execution_context;
-                          auto& rule_execution_context = axiom_context.rule_execution_contexts[i];
-                          auto& thread_execution_context = axiom_context.thread_execution_contexts.local();  // thread-local
-                          thread_execution_context.clear();
-
-                          ground(facts_execution_context, rule_execution_context, thread_execution_context);
-                      });
-
-    /**
-     * Sequential merge.
-     */
-
-    /// --- Sequentially combine results into a temporary top-level repository to prevent modying the program's repository
+    auto& program_to_task_merge_cache = axiom_context.program_to_task_merge_cache;
+    auto& program_to_task_compile_cache = axiom_context.program_to_task_compile_cache;
     auto& builder = axiom_context.builder;
-    auto& global_merge_cache = axiom_context.global_merge_cache;
-    auto& merge_repository = *axiom_context.merge_repository;
-    auto& tmp_merge_rules = axiom_context.tmp_merge_rules;
-    merge_repository.clear();
-    global_merge_cache.clear();
-    tmp_merge_rules.clear();
+    program_to_task_merge_cache.clear();
+    program_to_task_compile_cache.clear();
 
-    for (const auto& rule_execution_context : axiom_context.rule_execution_contexts)
-        for (const auto rule : rule_execution_context.ground_rules)
-            tmp_merge_rules.insert(merge(rule, builder, merge_repository, global_merge_cache));
+    for (const auto fluent_atom : axiom_context.program_merge_atoms)
+    {
+        const auto derived_atom =
+            compile<FluentTag, DerivedTag>(fluent_atom, builder, task_repository, program_to_task_compile_cache, program_to_task_merge_cache);
 
-    /// --- Copy the result into the program's repository
-    auto& merge_cache = axiom_context.merge_cache;
-    auto& merge_rules = axiom_context.merge_rules;
-    merge_cache.clear();
-    merge_rules.clear();
-
-    for (const auto rule : tmp_merge_rules)
-        merge_rules.insert(merge(rule, builder, *axiom_context.repository, merge_cache));
-
-    std::cout << merge_rules << std::endl;
+        const auto derived_atom_index = derived_atom.get_index().get_value();
+        if (derived_atom_index >= derived_atoms.size())
+            derived_atoms.resize(derived_atom_index + 1);
+        derived_atoms.set(derived_atom_index);
+    }
 }
 
 LiftedTask::LiftedTask(DomainPtr domain,
@@ -145,8 +120,11 @@ Node<LiftedTask> LiftedTask::get_initial_node_impl()
         numeric_variables[fterm_index] = fterm_value.get_value();
     }
 
-    insert_fluent_atoms(fluent_atoms, *this->m_overlay_repository, m_axiom_context);
-    evaluate_axiom_program(m_axiom_context, unpacked_state);
+    insert_fluent_atoms_to_context(fluent_atoms, *this->m_overlay_repository, m_axiom_context);
+    solve_bottom_up(m_axiom_context);
+    read_derived_atoms_from_context(derived_atoms, *this->m_overlay_repository, m_axiom_context);
+
+    std::cout << to_string(m_axiom_context.program_merge_atoms) << std::endl;
 
     const auto state_index = register_state(unpacked_state);
     const auto state_metric = float_t(0);  // TODO: evaluate metric

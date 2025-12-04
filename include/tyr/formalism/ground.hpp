@@ -52,8 +52,6 @@ View<Index<GroundAtom<T>>, C_DST> ground(View<Index<Atom<T>>, C_SRC> element, Vi
             term.get_variant());
     }
 
-    std::cout << to_string(atom.objects) << std::endl;
-
     // Canonicalize and Serialize
     canonicalize(atom);
     return destination.get_or_create(atom, builder.get_buffer()).first;

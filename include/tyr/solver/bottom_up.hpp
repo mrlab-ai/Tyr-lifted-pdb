@@ -25,10 +25,8 @@
 
 namespace tyr::solver
 {
-using GroundAtomsPerPredicate = UnorderedMap<View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository>,
-                                             UnorderedSet<View<formalism::GroundAtom<formalism::FluentTag>, formalism::Repository>>>;
 
-extern void solve_bottom_up(grounder::ProgramExecutionContext& context, GroundAtomsPerPredicate& out_facts);
+extern void solve_bottom_up(grounder::ProgramExecutionContext& context);
 
 }
 
