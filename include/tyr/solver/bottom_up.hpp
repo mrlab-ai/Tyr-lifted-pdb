@@ -19,6 +19,7 @@
 #define TYR_SOLVER_BOTTOM_UP_HPP_
 
 #include "tyr/analysis/analysis.hpp"
+#include "tyr/common/common.hpp"
 #include "tyr/formalism/formalism.hpp"
 #include "tyr/grounder/grounder.hpp"
 

@@ -39,6 +39,7 @@ int main(int argc, char** argv)
 
     auto domain_filepath = program.get<std::string>("--domain-filepath");
     auto problem_filepath = program.get<std::string>("--problem-filepath");
+    // oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, 1);
 
     auto parser = planning::Parser(domain_filepath);
     auto domain = parser.get_domain();
