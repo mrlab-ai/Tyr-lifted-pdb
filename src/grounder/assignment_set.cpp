@@ -317,6 +317,12 @@ void FunctionAssignmentSets<T>::reset() noexcept
 }
 
 template<formalism::FactKind T>
+void FunctionAssignmentSets<T>::insert(View<Index<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_term, float_t value)
+{
+    m_sets[function_term.get_function().get_index().get_value()].insert(function_term, value);
+}
+
+template<formalism::FactKind T>
 void FunctionAssignmentSets<T>::insert(View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_terms,
                                        const std::vector<float_t>& values)
 {
@@ -361,7 +367,7 @@ template<formalism::FactKind T>
 void TaggedAssignmentSets<T>::insert(const TaggedFactSets<T>& fact_sets)
 {
     predicate.insert(fact_sets.predicate.get_facts());
-    function.insert(fact_sets.function.get_facts());
+    function.insert(fact_sets.function.get_fterms(), fact_sets.function.get_values());
 }
 
 template<formalism::FactKind T>

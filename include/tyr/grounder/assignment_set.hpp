@@ -141,6 +141,8 @@ public:
 
     void reset() noexcept;
 
+    void insert(View<Index<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_term, float_t value);
+
     void insert(View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_terms, const std::vector<float_t>& values);
 
     void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> fterm_values);

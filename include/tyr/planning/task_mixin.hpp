@@ -126,7 +126,7 @@ public:
         fill_atoms(packed_state.template get_atoms<formalism::DerivedTag>(), m_uint_nodes, buffer, unpacked_state->template get_atoms<formalism::DerivedTag>());
         fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, buffer, unpacked_state->get_numeric_variables());
 
-        return State(*this, std::move(unpacked_state));
+        return State<Task>(self(), std::move(unpacked_state));
     }
 
     StateIndex register_state(const UnpackedState<Task>& state)

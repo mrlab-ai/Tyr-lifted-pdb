@@ -53,7 +53,7 @@ class FunctionFactSet
 {
 private:
     const formalism::Repository& m_context;
-    IndexList<formalism::GroundFunctionTermValue<T>> m_indices;
+    IndexList<formalism::GroundFunctionTerm<T>> m_indices;
     UnorderedSet<Index<formalism::GroundFunctionTerm<T>>> m_unique;
 
     std::vector<float_t> m_vector;
@@ -63,6 +63,10 @@ public:
 
     void reset();
 
+    void insert(View<Index<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_term, float_t value);
+
+    void insert(View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_terms, const std::vector<float_t>& values);
+
     void insert(View<Index<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
 
     void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
@@ -71,7 +75,8 @@ public:
 
     float_t operator[](Index<formalism::GroundFunctionTerm<T>> index) const noexcept;
 
-    View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> get_facts() const noexcept;
+    View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository> get_fterms() const noexcept;
+    const std::vector<float_t>& get_values() const noexcept;
 };
 
 template<formalism::FactKind T>

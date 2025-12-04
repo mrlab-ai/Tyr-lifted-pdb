@@ -103,21 +103,33 @@ void FunctionFactSet<T>::reset()
 }
 
 template<formalism::FactKind T>
-void FunctionFactSet<T>::insert(View<Index<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view)
+void FunctionFactSet<T>::insert(View<Index<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_term, float_t value)
 {
-    if (&m_context != &view.get_context())
-        throw std::runtime_error("Incompatible contexts.");
-
-    const auto fterm_index = view.get_fterm().get_index();
+    const auto fterm_index = function_term.get_index();
 
     if (m_unique.contains(fterm_index))
         throw std::runtime_error("Multiple value assignments to a ground function term.");
 
-    m_indices.push_back(view.get_index());
+    m_indices.push_back(fterm_index);
     m_unique.insert(fterm_index);
     if (fterm_index.get_value() >= m_vector.size())
         m_vector.resize(fterm_index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
-    m_vector[fterm_index.get_value()] = view.get_value();
+    m_vector[fterm_index.get_value()] = value;
+}
+
+template<formalism::FactKind T>
+void FunctionFactSet<T>::insert(View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_terms, const std::vector<float_t>& values)
+{
+    assert(function_terms.size() == values.size());
+
+    for (uint_t i = 0; i < function_terms.size(); ++i)
+        insert(function_terms[i], values[i]);
+}
+
+template<formalism::FactKind T>
+void FunctionFactSet<T>::insert(View<Index<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view)
+{
+    insert(view.get_fterm(), view.get_value());
 }
 
 template<formalism::FactKind T>
@@ -140,9 +152,15 @@ float_t FunctionFactSet<T>::operator[](Index<formalism::GroundFunctionTerm<T>> i
 }
 
 template<formalism::FactKind T>
-View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> FunctionFactSet<T>::get_facts() const noexcept
+View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository> FunctionFactSet<T>::get_fterms() const noexcept
 {
-    return View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository>(m_indices, m_context);
+    return View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository>(m_indices, m_context);
+}
+
+template<formalism::FactKind T>
+const std::vector<float_t>& FunctionFactSet<T>::get_values() const noexcept
+{
+    return m_vector;
 }
 
 template class FunctionFactSet<formalism::StaticTag>;

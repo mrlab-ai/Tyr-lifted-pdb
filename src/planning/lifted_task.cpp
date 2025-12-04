@@ -37,12 +37,9 @@ static void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluen
     auto& destination = *axiom_context.repository;
     auto& fact_context = axiom_context.facts_execution_context;
     auto& fluent_predicate_fact_sets = fact_context.fact_sets.get<FluentTag>().predicate;
-    auto& fluent_predicate_assignment_sets = fact_context.assignment_sets.get<FluentTag>().predicate;
     auto& task_to_program_merge_cache = axiom_context.task_to_program_merge_cache;
     auto& builder = axiom_context.builder;
     task_to_program_merge_cache.clear();
-    fluent_predicate_fact_sets.reset();
-    fluent_predicate_assignment_sets.reset();
 
     /// --- Initialize FactSets
     for (auto i = fluent_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = fluent_atoms.find_next(i))
@@ -60,14 +57,11 @@ static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& deri
     auto& destination = *axiom_context.repository;
     auto& fact_context = axiom_context.facts_execution_context;
     auto& fluent_predicate_fact_sets = fact_context.fact_sets.get<FluentTag>().predicate;
-    auto& fluent_predicate_assignment_sets = fact_context.assignment_sets.get<FluentTag>().predicate;
     auto& task_to_program_merge_cache = axiom_context.task_to_program_merge_cache;
     auto& task_to_program_compile_cache = axiom_context.task_to_program_compile_cache;
     auto& builder = axiom_context.builder;
     task_to_program_merge_cache.clear();
     task_to_program_compile_cache.clear();
-    fluent_predicate_fact_sets.reset();
-    fluent_predicate_assignment_sets.reset();
 
     /// --- Initialize FactSets
     for (auto i = derived_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = derived_atoms.find_next(i))
@@ -79,18 +73,40 @@ static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& deri
             task_to_program_merge_cache));
 }
 
+static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& numeric_variables,
+                                                 const OverlayRepository<Repository>& numeric_variables_context,
+                                                 ProgramExecutionContext& axiom_context)
+{
+    auto& destination = *axiom_context.repository;
+    auto& fact_context = axiom_context.facts_execution_context;
+    auto& fluent_function_fact_sets = fact_context.fact_sets.get<FluentTag>().function;
+    auto& task_to_program_merge_cache = axiom_context.task_to_program_merge_cache;
+    auto& builder = axiom_context.builder;
+    task_to_program_merge_cache.clear();
+
+    /// --- Initialize FactSets
+    for (uint_t i = 0; i < numeric_variables.size(); ++i)
+        if (numeric_variables[i] != std::numeric_limits<float_t>::quiet_NaN())
+            fluent_function_fact_sets.insert(
+                merge(View<Index<GroundFunctionTerm<FluentTag>>, OverlayRepository<Repository>>(Index<GroundFunctionTerm<FluentTag>>(i),
+                                                                                                numeric_variables_context),
+                      builder,
+                      destination,
+                      task_to_program_merge_cache),
+                numeric_variables[i]);
+}
+
 static void insert_fact_sets_into_assignment_sets(ProgramExecutionContext& program_context)
 {
     auto& fluent_predicate_fact_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().predicate;
     auto& fluent_predicate_assignment_sets = program_context.facts_execution_context.assignment_sets.get<FluentTag>().predicate;
 
-    // TODO fix the functional part
-    // auto& fluent_function_fact_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().function;
-    // auto& fluent_function_assignment_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().function;
+    auto& fluent_function_fact_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().function;
+    auto& fluent_function_assignment_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().function;
 
     /// --- Initialize AssignmentSets
     fluent_predicate_assignment_sets.insert(fluent_predicate_fact_sets.get_facts());
-    // fluent_function_assignment_sets.insert(fluent_function_fact_sets.get_facts());
+    fluent_function_assignment_sets.insert(fluent_function_fact_sets.get_fterms(), fluent_function_fact_sets.get_values());
 
     /// --- Initialize RuleExecutionContext
     for (auto& rule_context : program_context.rule_execution_contexts)
@@ -159,6 +175,10 @@ Node<LiftedTask> LiftedTask::get_initial_node_impl()
         numeric_variables[fterm_index] = fterm_value.get_value();
     }
 
+    // TODO: add clear to execution contexts
+    m_axiom_context.facts_execution_context.fact_sets.reset<formalism::FluentTag>();
+    m_axiom_context.facts_execution_context.assignment_sets.reset<formalism::FluentTag>();
+
     insert_fluent_atoms_to_fact_set(fluent_atoms, *this->m_overlay_repository, m_axiom_context);
     insert_fact_sets_into_assignment_sets(m_axiom_context);
     solve_bottom_up(m_axiom_context);
@@ -182,9 +202,17 @@ LiftedTask::get_labeled_successor_nodes_impl(const Node<LiftedTask>& node)
     const auto& derived_atoms = state.get_atoms<FluentTag>();
     const auto& numeric_variables = state.get_numeric_variables();
 
+    // TODO: add clear to execution contexts
+    m_action_context.facts_execution_context.fact_sets.reset<formalism::FluentTag>();
+    m_action_context.facts_execution_context.assignment_sets.reset<formalism::FluentTag>();
+
     insert_fluent_atoms_to_fact_set(fluent_atoms, *this->m_overlay_repository, m_action_context);
-    insert_derived_atoms_to_fact_set(fluent_atoms, *this->m_overlay_repository, m_action_context);
-    insert_fact_sets_into_assignment_sets(m_axiom_context);
+    insert_derived_atoms_to_fact_set(derived_atoms, *this->m_overlay_repository, m_action_context);
+    insert_numeric_variables_to_fact_set(numeric_variables, *this->m_overlay_repository, m_action_context);
+    insert_fact_sets_into_assignment_sets(m_action_context);
+    solve_bottom_up(m_action_context);
+
+    std::cout << to_string(m_action_context.program_merge_atoms) << std::endl;
 
     return result;
 }
