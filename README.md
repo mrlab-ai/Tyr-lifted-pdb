@@ -35,18 +35,19 @@ The high level C++ datalog interface aims to be as follows
 auto parser = tyr::formalism::Parser("program.dl");
 
 auto program = parser.get_program();
-auto static_facts = parser.parse_static_facts("static_facts.dl")
+// Fluent facts can optionally be parsed to override the ones in the program
 auto fluent_facts = parser.parse_fluent_facts("fluent_facts.dl");
+// Goal facts can optionally be parsed to trigger early termination
 auto goal_facts = parser.parse_goal("goal_facts.dl");
+
+// Re-initialization with new fluent and goal facts is possible 
+auto execuction_context = tyr::grounder::ProgramExecutionContext(program, fluent_facts, goal_facts);
 
 const auto annotated = bool{true};
 const auto weighted = bool{true};
 
-// Solver can be reused for different sets of fluent facts
-auto solver = tyr::solver::Solver(program, static_facts);
-
-// Solution is a ground facts and rules annotated with achievers and cost
-auto solution = solver.solve(program, fluent_facts, goal_facts, annotated, weighted);
+// Solution is a set of ground facts and rules annotated with achievers and cost
+auto solution = tyr::solver::solve_bottomup(execuction_context, annotated, weighted);
 
 ```
   
