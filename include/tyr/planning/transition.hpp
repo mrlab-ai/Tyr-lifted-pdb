@@ -15,10 +15,19 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted_transition.hpp"
+#ifndef TYR_PLANNING_TRANSITION_HPP_
+#define TYR_PLANNING_TRANSITION_HPP_
+
+#include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/node.hpp"
 
 namespace tyr::planning
 {
-
-Node<LiftedTask> apply_action(Node<LiftedTask> state, View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action) {}
+template<typename Task>
+Node<Task> apply_action(Node<Task> state, View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action)
+{
 }
+}
+
+#endif

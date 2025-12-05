@@ -23,7 +23,6 @@
 #include "tyr/planning/formatter.hpp"
 #include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/lifted_task.hpp"
-#include "tyr/planning/lifted_transition.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/packed_state.hpp"
 #include "tyr/planning/parser.hpp"
@@ -32,6 +31,7 @@
 #include "tyr/planning/programs/ground.hpp"
 #include "tyr/planning/state.hpp"
 #include "tyr/planning/state_index.hpp"
+#include "tyr/planning/transition.hpp"
 #include "tyr/planning/unpacked_state.hpp"
 
 #endif
