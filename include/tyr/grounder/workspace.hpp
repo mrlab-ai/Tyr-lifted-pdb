@@ -67,6 +67,8 @@ struct RuleExecutionContext
                          const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                          const formalism::Repository& parent);
 
+    void clear() noexcept;
+
     void initialize(const AssignmentSets& assignment_sets);
 };
 
@@ -110,20 +112,30 @@ struct ProgramExecutionContext
     UnorderedSet<View<Index<formalism::GroundRule>, formalism::Repository>> stage_merge_rules;
     UnorderedSet<View<Index<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository>> stage_merge_atoms;
 
+    void clear_stage() noexcept;
+
     // Stage to program
     formalism::MergeCache<formalism::Repository, formalism::Repository> stage_to_program_merge_cache;
+
+    void clear_stage_to_program() noexcept;
 
     // Program to task
     formalism::MergeCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> program_to_task_merge_cache;
     formalism::CompileCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> program_to_task_compile_cache;
 
+    void clear_program_to_task() noexcept;
+
     // Task to program
     formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> task_to_program_merge_cache;
     formalism::CompileCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> task_to_program_compile_cache;
 
+    void clear_task_to_program() noexcept;
+
     // Results
     UnorderedSet<View<Index<formalism::GroundRule>, formalism::Repository>> program_merge_rules;
     UnorderedSet<View<Index<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository>> program_merge_atoms;
+
+    void clear_results() noexcept;
 
     ProgramExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, formalism::RepositoryPtr repository);
 };

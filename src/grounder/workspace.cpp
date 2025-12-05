@@ -93,9 +93,10 @@ RuleExecutionContext::RuleExecutionContext(View<Index<formalism::Rule>, formalis
 {
 }
 
+void RuleExecutionContext::clear() noexcept { local->clear(); }
+
 void RuleExecutionContext::initialize(const AssignmentSets& assignment_sets)
 {
-    local->clear();
     grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
 }
 
@@ -140,4 +141,33 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<formalism::Program>,
         rule_execution_contexts.back().initialize(facts_execution_context.assignment_sets);
     }
 }
+
+void ProgramExecutionContext::clear_stage() noexcept
+{
+    stage_repository->clear();
+    stage_merge_cache.clear();
+    stage_merge_rules.clear();
+    stage_merge_atoms.clear();
+}
+
+void ProgramExecutionContext::clear_stage_to_program() noexcept { stage_to_program_merge_cache.clear(); }
+
+void ProgramExecutionContext::clear_program_to_task() noexcept
+{
+    program_to_task_merge_cache.clear();
+    program_to_task_compile_cache.clear();
+}
+
+void ProgramExecutionContext::clear_task_to_program() noexcept
+{
+    task_to_program_merge_cache.clear();
+    task_to_program_compile_cache.clear();
+}
+
+void ProgramExecutionContext::clear_results() noexcept
+{
+    program_merge_rules.clear();
+    program_merge_atoms.clear();
+}
+
 }

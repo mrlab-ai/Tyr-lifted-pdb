@@ -34,8 +34,7 @@ static void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluen
                                             const OverlayRepository<Repository>& fluent_atoms_context,
                                             ProgramExecutionContext& axiom_context)
 {
-    auto& task_to_program_merge_cache = axiom_context.task_to_program_merge_cache;
-    task_to_program_merge_cache.clear();
+    axiom_context.clear_task_to_program();
 
     /// --- Initialize FactSets
     for (auto i = fluent_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = fluent_atoms.find_next(i))
@@ -43,17 +42,14 @@ static void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluen
             merge(View<Index<GroundAtom<FluentTag>>, OverlayRepository<Repository>>(Index<GroundAtom<FluentTag>>(i), fluent_atoms_context),
                   axiom_context.builder,
                   *axiom_context.repository,
-                  task_to_program_merge_cache));
+                  axiom_context.task_to_program_merge_cache));
 }
 
 static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& derived_atoms,
                                              const OverlayRepository<Repository>& derived_atoms_context,
                                              ProgramExecutionContext& axiom_context)
 {
-    auto& task_to_program_merge_cache = axiom_context.task_to_program_merge_cache;
-    auto& task_to_program_compile_cache = axiom_context.task_to_program_compile_cache;
-    task_to_program_merge_cache.clear();
-    task_to_program_compile_cache.clear();
+    axiom_context.clear_task_to_program();
 
     /// --- Initialize FactSets
     for (auto i = derived_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = derived_atoms.find_next(i))
@@ -61,16 +57,15 @@ static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& deri
             View<Index<GroundAtom<DerivedTag>>, OverlayRepository<Repository>>(Index<GroundAtom<DerivedTag>>(i), derived_atoms_context),
             axiom_context.builder,
             *axiom_context.repository,
-            task_to_program_compile_cache,
-            task_to_program_merge_cache));
+            axiom_context.task_to_program_compile_cache,
+            axiom_context.task_to_program_merge_cache));
 }
 
 static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& numeric_variables,
                                                  const OverlayRepository<Repository>& numeric_variables_context,
                                                  ProgramExecutionContext& axiom_context)
 {
-    auto& task_to_program_merge_cache = axiom_context.task_to_program_merge_cache;
-    task_to_program_merge_cache.clear();
+    axiom_context.clear_task_to_program();
 
     /// --- Initialize FactSets
     for (uint_t i = 0; i < numeric_variables.size(); ++i)
@@ -81,7 +76,7 @@ static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& num
                                                                                                 numeric_variables_context),
                       axiom_context.builder,
                       *axiom_context.repository,
-                      task_to_program_merge_cache),
+                      axiom_context.task_to_program_merge_cache),
                 numeric_variables[i]);
     }
 }
@@ -107,16 +102,16 @@ static void read_derived_atoms_from_program_context(boost::dynamic_bitset<>& der
                                                     OverlayRepository<Repository>& task_repository,
                                                     ProgramExecutionContext& axiom_context)
 {
-    auto& program_to_task_merge_cache = axiom_context.program_to_task_merge_cache;
-    auto& program_to_task_compile_cache = axiom_context.program_to_task_compile_cache;
-    program_to_task_merge_cache.clear();
-    program_to_task_compile_cache.clear();
+    axiom_context.clear_program_to_task();
 
     /// --- Initialized derived atoms in unpacked state
     for (const auto atom : axiom_context.program_merge_atoms)
     {
-        const auto derived_atom =
-            compile<FluentTag, DerivedTag>(atom, axiom_context.builder, task_repository, program_to_task_compile_cache, program_to_task_merge_cache);
+        const auto derived_atom = compile<FluentTag, DerivedTag>(atom,
+                                                                 axiom_context.builder,
+                                                                 task_repository,
+                                                                 axiom_context.program_to_task_compile_cache,
+                                                                 axiom_context.program_to_task_merge_cache);
 
         const auto derived_atom_index = derived_atom.get_index().get_value();
         if (derived_atom_index >= derived_atoms.size())
@@ -164,9 +159,7 @@ Node<LiftedTask> LiftedTask::get_initial_node_impl()
         numeric_variables[fterm_index] = fterm_value.get_value();
     }
 
-    // TODO: add clear to execution contexts
-    m_axiom_context.facts_execution_context.fact_sets.reset<formalism::FluentTag>();
-    m_axiom_context.facts_execution_context.assignment_sets.reset<formalism::FluentTag>();
+    m_axiom_context.facts_execution_context.reset<formalism::FluentTag>();
 
     insert_fluent_atoms_to_fact_set(fluent_atoms, *this->m_overlay_repository, m_axiom_context);
     insert_fact_sets_into_assignment_sets(m_axiom_context);
@@ -191,9 +184,7 @@ LiftedTask::get_labeled_successor_nodes_impl(const Node<LiftedTask>& node)
     const auto& derived_atoms = state.get_atoms<DerivedTag>();
     const auto& numeric_variables = state.get_numeric_variables();
 
-    // TODO: add clear to execution contexts
-    m_action_context.facts_execution_context.fact_sets.reset<formalism::FluentTag>();
-    m_action_context.facts_execution_context.assignment_sets.reset<formalism::FluentTag>();
+    m_action_context.facts_execution_context.reset<formalism::FluentTag>();
 
     insert_fluent_atoms_to_fact_set(fluent_atoms, *this->m_overlay_repository, m_action_context);
     insert_derived_atoms_to_fact_set(derived_atoms, *this->m_overlay_repository, m_action_context);

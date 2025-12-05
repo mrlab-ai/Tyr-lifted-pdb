@@ -43,7 +43,7 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
     while (true)
     {
         /**
-         * Parallel evaluation.
+         * Embarassingly parallel evaluation.
          */
 
         const uint_t num_rules = stratum.size();
@@ -57,6 +57,9 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                               auto& facts_execution_context = program_execution_context.facts_execution_context;
                               auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
                               auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();  // thread-local
+
+                              rule_execution_context.clear();
+                              rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
                               thread_execution_context.clear();
 
                               ground(facts_execution_context, rule_execution_context, thread_execution_context);
@@ -68,10 +71,7 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
         /// --- Sequentially combine results into a temporary staging repository to prevent modying the program's repository
 
-        stage_repository.clear();
-        stage_merge_cache.clear();
-        stage_merge_rules.clear();
-        stage_merge_atoms.clear();
+        program_execution_context.clear_stage();
 
         for (uint_t j = 0; j < stratum.size(); ++j)
         {
@@ -91,7 +91,7 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
         /// --- Copy the result into the program's repository
 
-        stage_to_program_merge_cache.clear();
+        program_execution_context.clear_stage_to_program();
 
         auto discovered_new_fact = bool { false };
 
@@ -115,27 +115,12 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
         if (!discovered_new_fact)
             break;  ///< Reached fixed point
-
-        /// --- Re-initialize RuleExecutionContext with new fact set.
-
-        for (uint_t j = 0; j < stratum.size(); ++j)
-        {
-            const auto i = stratum[j].get_index().get_value();
-
-            auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
-
-            rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
-        }
     }
 }
 
 void solve_bottom_up(grounder::ProgramExecutionContext& program_execution_context)
 {
-    auto& program_merge_rules = program_execution_context.program_merge_rules;
-    auto& program_merge_atoms = program_execution_context.program_merge_atoms;
-
-    program_merge_rules.clear();
-    program_merge_atoms.clear();
+    program_execution_context.clear_results();
 
     for (const auto& stratum : program_execution_context.strata.strata)
     {

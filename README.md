@@ -43,6 +43,7 @@ auto goal_facts = parser.parse_goal("goal_facts.dl");
 // Re-initialization with new fluent and goal facts is possible 
 auto execuction_context = tyr::grounder::ProgramExecutionContext(program, fluent_facts, goal_facts);
 
+// Execution modes
 const auto annotated = bool{true};
 const auto weighted = bool{true};
 
