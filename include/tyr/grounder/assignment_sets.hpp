@@ -75,7 +75,7 @@ template<formalism::FactKind T, formalism::Context C>
 class PredicateAssignmentSets
 {
 private:
-    std::vector<PredicateAssignmentSet<T>> m_sets;
+    std::vector<PredicateAssignmentSet<T, C>> m_sets;
 
 public:
     PredicateAssignmentSets() = default;
@@ -124,7 +124,7 @@ template<formalism::FactKind T, formalism::Context C>
 class FunctionAssignmentSets
 {
 private:
-    std::vector<FunctionAssignmentSet<T>> m_sets;
+    std::vector<FunctionAssignmentSet<T, C>> m_sets;
 
 public:
     FunctionAssignmentSets() = default;
@@ -147,8 +147,8 @@ public:
 template<formalism::FactKind T, formalism::Context C>
 struct TaggedAssignmentSets
 {
-    PredicateAssignmentSets<T> predicate;
-    FunctionAssignmentSets<T> function;
+    PredicateAssignmentSets<T, C> predicate;
+    FunctionAssignmentSets<T, C> function;
 
     TaggedAssignmentSets() = default;
 

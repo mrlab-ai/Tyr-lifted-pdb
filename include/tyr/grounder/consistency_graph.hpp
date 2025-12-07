@@ -155,7 +155,7 @@ public:
                | std::views::filter(
                    [this, &assignment_sets](auto&& vertex)
                    {
-                       return vertex.consistent_literals(m_condition.get_literals<formalism::FluentTag>(), assignment_sets.fluent_sets.predicate)
+                       return vertex.consistent_literals(m_condition.template get_literals<formalism::FluentTag>(), assignment_sets.fluent_sets.predicate)
                               && vertex.consistent_numeric_constraints(m_condition.get_numeric_constraints(), assignment_sets);
                    });
     }
@@ -167,7 +167,7 @@ public:
                    [this, &consistent_vertices, &assignment_sets](auto&& edge)
                    {
                        return consistent_vertices.test(edge.get_src().get_index()) && consistent_vertices.test(edge.get_dst().get_index())
-                              && edge.consistent_literals(m_condition.get_literals<formalism::FluentTag>(), assignment_sets.fluent_sets.predicate)
+                              && edge.consistent_literals(m_condition.template get_literals<formalism::FluentTag>(), assignment_sets.fluent_sets.predicate)
                               && edge.consistent_numeric_constraints(m_condition.get_numeric_constraints(), assignment_sets);
                    });
     }

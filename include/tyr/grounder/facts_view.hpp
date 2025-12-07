@@ -56,7 +56,8 @@ struct FactsView
     {
     }
 
-    FactsView(const FactSets& fact_sets) :
+    template<formalism::Context C>
+    FactsView(const FactSets<C>& fact_sets) :
         FactsView(fact_sets.static_sets.predicate.get_bitset(),
                   fact_sets.fluent_sets.predicate.get_bitset(),
                   empty_derived_atoms,

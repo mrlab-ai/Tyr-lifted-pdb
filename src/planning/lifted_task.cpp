@@ -165,17 +165,22 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_axiom_context(m_axiom_program.get_program(), m_axiom_program.get_repository()),
     parameter_domains_per_cond_effect_per_action()
 {
-    auto static_fact_sets = TaggedFactSets<StaticTag>(task.get_atoms<StaticTag>(), task.get_fterm_values<StaticTag>());
-    auto static_assignment_sets = TaggedAssignmentSets<StaticTag>(static_fact_sets);
+    const auto num_objects = task.get_domain().get_constants().size() + task.get_objects().size();
+    const auto variable_domains = analysis::compute_variable_domains(m_action_program.get_program());
+
+    const auto static_fact_sets = TaggedFactSets(task.get_atoms<StaticTag>(), task.get_fterm_values<StaticTag>());
+    const auto static_assignment_sets = TaggedAssignmentSets(task.get_domain().get_predicates<FluentTag>(),
+                                                             task.get_domain().get_functions<FluentTag>(),
+                                                             variable_domains.fluent_predicate_domains,
+                                                             variable_domains.fluent_function_domains,
+                                                             num_objects);
 
     for (const auto action : task.get_domain().get_actions())
     {
         auto parameter_domains_per_cond_effect = DomainListList {};
         for (const auto cond_effect : action.get_effects())
         {
-            auto static_consistency_graph = StaticConsistencyGraph(cond_effect.get_condition(),
-                                                                   task.get_domain().get_constants().size() + task.get_objects().size(),
-                                                                   static_assignment_sets);
+            auto static_consistency_graph = StaticConsistencyGraph(cond_effect.get_condition(), num_objects, static_assignment_sets);
 
             auto parameter_domains = DomainList {};
             for (const auto& partition : static_consistency_graph.get_partitions())
