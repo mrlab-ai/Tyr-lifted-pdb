@@ -46,8 +46,8 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_body() const noexcept { return View(get_data().body, *m_context); }
-    auto get_head() const noexcept { return View(get_data().head, *m_context); }
+    auto get_body() const noexcept { return View<Index<formalism::GroundConjunctiveCondition>, C>(get_data().body, *m_context); }
+    auto get_head() const noexcept { return View<Index<formalism::GroundAtom<formalism::DerivedTag>>, C>(get_data().head, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

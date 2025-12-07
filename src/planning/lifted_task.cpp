@@ -21,6 +21,7 @@
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/merge.hpp"
 #include "tyr/grounder/generator.hpp"
+#include "tyr/planning/applicability.hpp"
 #include "tyr/solver/bottom_up.hpp"
 
 using namespace tyr::formalism;
@@ -29,6 +30,18 @@ using namespace tyr::solver;
 
 namespace tyr::planning
 {
+
+template<typename Task>
+float_t compute_state_metric_value(const State<Task>& state, const tyr::grounder::FactsView& facts_view)
+{
+    if (state.get_task()->get_task().get_auxiliary_fterm_value().has_value())
+    {
+        return state.get_task()->get_tak().get_auxiliary_fterm_value().value()->get_value();
+    }
+
+    return state.get_task()->get_task().get_metric().has_value() ? evaluate(state.get_task()->get_task().get_metric()->get_function_expression(), facts_view) :
+                                                                   0.;
+}
 
 static void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluent_atoms,
                                             const OverlayRepository<Repository>& atoms_context,

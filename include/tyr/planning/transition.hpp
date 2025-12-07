@@ -19,6 +19,7 @@
 #define TYR_PLANNING_TRANSITION_HPP_
 
 #include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/grounder/applicability.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/facts_view.hpp"
@@ -28,10 +29,21 @@
 namespace tyr::planning
 {
 
-inline void
-collect_positive_and_negative_propositional_effects(View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
-                                                    const grounder::FactSets& state_fact_sets)
+inline void collect_effects(View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+                            const tyr::grounder::FactsView& facts_view,
+                            boost::dynamic_bitset<>& positive_effects,
+                            boost::dynamic_bitset<>& negative_effects,
+                            std::vector<float_t>& numeric_variables)
 {
+    // TODO: collect add/delete and numeric effects
+
+    for (const auto cond_effect : action.get_effects())
+    {
+        if (is_applicable(cond_effect.get_condition(), facts_view))
+        {
+            // TODO: collect add/delete and numeric effects
+        }
+    }
 }
 
 /// @brief Apply the action in the given node to apply its successor node.
@@ -58,7 +70,17 @@ Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, fo
     auto& succ_unpacked_state = *succ_unpacked_state_ptr;
     succ_unpacked_state.clear();
 
+    // Copy state into mutable buffer
+    succ_unpacked_state = state.get_unpacked_state();
+
     // TODO: collect positive and negative effects
+    auto positive_effects = boost::dynamic_bitset<>();
+    auto negative_effects = boost::dynamic_bitset<>();
+
+    collect_effects(action, facts_view, positive_effects, negative_effects, succ_unpacked_state.get_numeric_variables());
+
+    succ_unpacked_state.template get_atoms<formalism::FluentTag>() |= positive_effects;
+    succ_unpacked_state.template get_atoms<formalism::FluentTag>() -= negative_effects;
 
     // TODO: add positive effects to state, then delete negative ones
 

@@ -23,7 +23,8 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_conjunctive_condition_view.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/planning/action_index.hpp"
+#include "tyr/formalism/planning/action_view.hpp"
+#include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/formalism/planning/ground_conditional_effect_view.hpp"
 #include "tyr/formalism/repository.hpp"
 
@@ -47,9 +48,9 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_action() const noexcept { return View(get_data().action, *m_context); }
-    auto get_condition() const noexcept { return View(get_data().condition, *m_context); }
-    auto get_effects() const noexcept { return View(get_data().effects, *m_context); }
+    auto get_action() const noexcept { return View<Index<formalism::Action>, C>(get_data().action, *m_context); }
+    auto get_condition() const noexcept { return View<Index<formalism::GroundConjunctiveCondition>, C>(get_data().condition, *m_context); }
+    auto get_effects() const noexcept { return View<IndexList<formalism::GroundConditionalEffect>, C>(get_data().effects, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
