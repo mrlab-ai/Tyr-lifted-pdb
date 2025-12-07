@@ -176,9 +176,9 @@ struct AssignmentSets
     TaggedAssignmentSets<formalism::StaticTag> static_sets;
     TaggedAssignmentSets<formalism::FluentTag> fluent_sets;
 
-    AssignmentSets(View<Index<formalism::Program>, formalism::Repository> program, const analysis::VariableDomains& domains);
+    AssignmentSets(View<Index<formalism::Program>, formalism::Repository> program, const analysis::ProgramVariableDomains& domains);
 
-    AssignmentSets(View<Index<formalism::Program>, formalism::Repository> program, const analysis::VariableDomains& domains, const FactSets& fact_sets);
+    AssignmentSets(View<Index<formalism::Program>, formalism::Repository> program, const analysis::ProgramVariableDomains& domains, const FactSets& fact_sets);
 
     template<formalism::FactKind T>
     void reset() noexcept;

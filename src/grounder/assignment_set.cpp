@@ -379,7 +379,7 @@ void TaggedAssignmentSets<T>::reset()
 template class TaggedAssignmentSets<formalism::StaticTag>;
 template class TaggedAssignmentSets<formalism::FluentTag>;
 
-AssignmentSets::AssignmentSets(View<Index<formalism::Program>, formalism::Repository> program, const analysis::VariableDomains& domains) :
+AssignmentSets::AssignmentSets(View<Index<formalism::Program>, formalism::Repository> program, const analysis::ProgramVariableDomains& domains) :
     static_sets(program.template get_predicates<formalism::StaticTag>(),
                 program.template get_functions<formalism::StaticTag>(),
                 domains.static_predicate_domains,
@@ -394,7 +394,7 @@ AssignmentSets::AssignmentSets(View<Index<formalism::Program>, formalism::Reposi
 }
 
 AssignmentSets::AssignmentSets(View<Index<formalism::Program>, formalism::Repository> program,
-                               const analysis::VariableDomains& domains,
+                               const analysis::ProgramVariableDomains& domains,
                                const FactSets& fact_sets) :
     static_sets(program.template get_predicates<formalism::StaticTag>(),
                 program.template get_functions<formalism::StaticTag>(),

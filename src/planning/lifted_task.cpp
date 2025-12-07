@@ -20,8 +20,9 @@
 #include "tyr/formalism/compiler.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/merge.hpp"
+#include "tyr/grounder/applicability.hpp"
+#include "tyr/grounder/facts_view.hpp"
 #include "tyr/grounder/generator.hpp"
-#include "tyr/planning/applicability.hpp"
 #include "tyr/solver/bottom_up.hpp"
 
 using namespace tyr::formalism;
@@ -31,16 +32,13 @@ using namespace tyr::solver;
 namespace tyr::planning
 {
 
-template<typename Task>
-float_t compute_state_metric_value(const State<Task>& state, const tyr::grounder::FactsView& facts_view)
+float_t evaluate_metric(View<Index<Task>, OverlayRepository<Repository>> task_view, const tyr::grounder::FactsView& facts_view)
 {
-    if (state.get_task()->get_task().get_auxiliary_fterm_value().has_value())
-    {
-        return state.get_task()->get_tak().get_auxiliary_fterm_value().value()->get_value();
-    }
+    if (task_view.get_auxiliary_fterm_value())
+        return task_view.get_auxiliary_fterm_value().value().get_value();
 
-    return state.get_task()->get_task().get_metric().has_value() ? evaluate(state.get_task()->get_task().get_metric()->get_function_expression(), facts_view) :
-                                                                   0.;
+    // TODO: what is a sensible default for no metric at all? probably +infinity
+    return task_view.get_metric() ? evaluate(task_view.get_metric().value().get_fexpr(), facts_view) : 0.;
 }
 
 static void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluent_atoms,
@@ -202,7 +200,10 @@ Node<LiftedTask> LiftedTask::get_initial_node_impl()
     std::cout << to_string(m_axiom_context.program_merge_atoms) << std::endl;
 
     const auto state_index = register_state(unpacked_state);
-    const auto state_metric = float_t(0);  // TODO: evaluate metric
+
+    const auto facts_view = grounder::FactsView(this->m_static_atoms_bitset, fluent_atoms, derived_atoms, this->m_static_numeric_variables, numeric_variables);
+
+    const auto state_metric = evaluate_metric(this->get_task(), facts_view);
 
     return Node<LiftedTask>(state_index, state_metric, *this);
 }
@@ -220,6 +221,10 @@ LiftedTask::get_labeled_successor_nodes_impl(const Node<LiftedTask>& node)
     insert_extended_state(fluent_atoms, derived_atoms, numeric_variables, *this->m_overlay_repository, m_action_context);
 
     solve_bottom_up(m_action_context);
+
+    // TODO: read facts, ground corresponding actions
+
+    // TODO: compute successor state and its metric value
 
     std::cout << to_string(m_action_context.program_merge_atoms) << std::endl;
 

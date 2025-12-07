@@ -257,6 +257,41 @@ View<Index<GroundRule>, C_DST> ground(View<Index<Rule>, C_SRC> element, View<Ind
     return destination.get_or_create(rule, builder.get_buffer()).first;
 }
 
+template<formalism::NumericEffectOpKind Op, formalism::FactKind T, Context C_SRC, Context C_DST>
+View<Index<GroundNumericEffect<Op, T>>, C_DST>
+ground(View<Index<NumericEffect<Op, T>>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
+{
+}
+
+template<formalism::FactKind T, Context C_SRC, Context C_DST>
+View<Data<GroundNumericEffectOperator<T>>, C_DST>
+ground(View<Data<NumericEffectOperator<T>>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
+{
+}
+
+template<Context C_SRC, Context C_DST>
+View<Index<GroundConjunctiveEffect>, C_DST>
+ground(View<Index<ConjunctiveEffect>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
+{
+}
+
+template<Context C_SRC, Context C_DST>
+View<Index<GroundConditionalEffect>, C_DST>
+ground(View<Index<ConditionalEffect>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
+{
+    // TODO: we need access to the domains of the universally-quantified variables
+}
+
+template<Context C_SRC, Context C_DST>
+View<Index<GroundAction>, C_DST> ground(View<Index<Action>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
+{
+}
+
+template<Context C_SRC, Context C_DST>
+View<Index<GroundAxiom>, C_DST> ground(View<Index<Axiom>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
+{
+}
+
 }
 
 #endif

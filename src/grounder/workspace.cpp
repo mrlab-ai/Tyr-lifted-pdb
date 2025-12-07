@@ -25,7 +25,7 @@ namespace tyr::grounder
  * FactsExecutionContext
  */
 
-FactsExecutionContext::FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::VariableDomains& domains) :
+FactsExecutionContext::FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::ProgramVariableDomains& domains) :
     fact_sets(program),
     assignment_sets(program, domains, fact_sets)
 {
@@ -33,7 +33,7 @@ FactsExecutionContext::FactsExecutionContext(View<Index<formalism::Program>, for
 
 FactsExecutionContext::FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
                                              TaggedFactSets<formalism::FluentTag> fluent_facts,
-                                             const analysis::VariableDomains& domains) :
+                                             const analysis::ProgramVariableDomains& domains) :
     fact_sets(program, fluent_facts),
     assignment_sets(program, domains, fact_sets)
 {

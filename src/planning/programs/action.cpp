@@ -25,8 +25,10 @@
 
 namespace tyr::planning
 {
-static View<Index<formalism::Program>, formalism::Repository>
-create(const LiftedTask& task, ApplicableActionProgram::PredicateToActionsMapping& mapping, formalism::Repository& repository)
+static View<Index<formalism::Program>, formalism::Repository> create(const LiftedTask& task,
+                                                                     ApplicableActionProgram::ObjectToObjectMapping& object_to_object_mapping,
+                                                                     ApplicableActionProgram::PredicateToActionsMapping& predicate_to_actions_mapping,
+                                                                     formalism::Repository& repository)
 {
     auto merge_cache = formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>();
     auto compile_cache = formalism::CompileCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>();
@@ -71,11 +73,19 @@ create(const LiftedTask& task, ApplicableActionProgram::PredicateToActionsMappin
 
     for (const auto object : task.get_task().get_domain().get_constants())
     {
-        program.objects.push_back(formalism::merge(object, builder, repository, merge_cache).get_index());
+        const auto new_object = formalism::merge(object, builder, repository, merge_cache);
+
+        object_to_object_mapping.emplace(new_object, object);
+
+        program.objects.push_back(new_object.get_index());
     }
     for (const auto object : task.get_task().get_objects())
     {
-        program.objects.push_back(formalism::merge(object, builder, repository, merge_cache).get_index());
+        const auto new_object = formalism::merge(object, builder, repository, merge_cache);
+
+        object_to_object_mapping.emplace(new_object, object);
+
+        program.objects.push_back(new_object.get_index());
     }
 
     for (const auto atom : task.get_task().get_atoms<formalism::StaticTag>())
@@ -107,7 +117,7 @@ create(const LiftedTask& task, ApplicableActionProgram::PredicateToActionsMappin
 
         if (std::find(program.fluent_predicates.begin(), program.fluent_predicates.end(), new_predicate.get_index()) == program.fluent_predicates.end())
             program.fluent_predicates.push_back(new_predicate.get_index());
-        mapping[new_predicate].push_back(action);
+        predicate_to_actions_mapping[new_predicate].push_back(action);
 
         auto rule_ptr = builder.get_builder<formalism::Rule>();
         auto& rule = *rule_ptr;
@@ -191,13 +201,18 @@ create(const LiftedTask& task, ApplicableActionProgram::PredicateToActionsMappin
 
 ApplicableActionProgram::ApplicableActionProgram(const LiftedTask& task) :
     m_predicate_to_actions(),
+    m_object_to_object(),
     m_repository(std::make_shared<formalism::Repository>()),
-    m_program(create(task, m_predicate_to_actions, *m_repository))
+    m_program(create(task, m_object_to_object_mapping, m_predicate_to_actions, *m_repository))
 {
 }
 
-View<Index<formalism::Program>, formalism::Repository> ApplicableActionProgram::get_program() const { return m_program; }
+const PredicateToActionsMapping& ApplicableActionProgram::get_predicate_to_actions_mapping() const noexcept { return m_predicate_to_actions; }
 
-const formalism::RepositoryPtr& ApplicableActionProgram::get_repository() const { return m_repository; }
+const ObjectToObjectMapping& ApplicableActionProgram::get_object_to_object_mapping() const noexcept { return m_object_to_object; }
+
+View<Index<formalism::Program>, formalism::Repository> ApplicableActionProgram::get_program() const noexcept { return m_program; }
+
+const formalism::RepositoryPtr& ApplicableActionProgram::get_repository() const noexcept { return m_repository; }
 
 }

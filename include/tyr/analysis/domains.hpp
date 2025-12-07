@@ -35,7 +35,7 @@ using DomainList = std::vector<Index<formalism::Object>>;
 using DomainListList = std::vector<DomainList>;
 using DomainListListList = std::vector<DomainListList>;
 
-struct VariableDomains
+struct ProgramVariableDomains
 {
     DomainListListList static_predicate_domains;
     DomainListListList fluent_predicate_domains;
@@ -44,7 +44,20 @@ struct VariableDomains
     DomainListListList rule_domains;
 };
 
-extern VariableDomains compute_variable_domains(View<Index<formalism::Program>, formalism::Repository> program);
+struct TaskVariableDomains
+{
+    DomainListListList static_predicate_domains;
+    DomainListListList fluent_predicate_domains;
+    DomainListListList derived_predicate_domains;
+    DomainListListList static_function_domains;
+    DomainListListList fluent_function_domains;
+    std::vector<std::pair<DomainListList, DomainListListList>> action_domains;
+    DomainListListList axiom_domains;
+};
+
+extern ProgramVariableDomains compute_variable_domains(View<Index<formalism::Program>, formalism::Repository> program);
+
+extern TaskVariableDomains compute_variable_domains(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task);
 }
 
 #endif

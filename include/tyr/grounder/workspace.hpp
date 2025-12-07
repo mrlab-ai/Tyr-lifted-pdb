@@ -33,11 +33,11 @@ struct FactsExecutionContext
     FactSets fact_sets;
     AssignmentSets assignment_sets;
 
-    FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::VariableDomains& domains);
+    FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::ProgramVariableDomains& domains);
 
     FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
                           TaggedFactSets<formalism::FluentTag> fluent_facts,
-                          const analysis::VariableDomains& domains);
+                          const analysis::ProgramVariableDomains& domains);
 
     template<formalism::FactKind T>
     void reset() noexcept;
@@ -94,7 +94,7 @@ struct ProgramExecutionContext
     const View<Index<formalism::Program>, formalism::Repository> program;
     const formalism::RepositoryPtr repository;
 
-    analysis::VariableDomains domains;
+    analysis::ProgramVariableDomains domains;
     analysis::RuleStrata strata;
     analysis::Listeners listeners;
 
