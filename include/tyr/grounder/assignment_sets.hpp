@@ -156,11 +156,23 @@ struct TaggedAssignmentSets
                          View<IndexList<formalism::Function<T>>, C> functions,
                          const analysis::DomainListListList& predicate_domains,
                          const analysis::DomainListListList& function_domains,
-                         size_t num_objects);
+                         size_t num_objects) :
+        predicate(predicates, predicate_domains, num_objects),
+        function(functions, function_domains, num_objects)
+    {
+    }
 
-    void insert(const TaggedFactSets<T, C>& fact_sets);
+    void insert(const TaggedFactSets<T, C>& fact_sets)
+    {
+        predicate.insert(fact_sets.predicate.get_facts());
+        function.insert(fact_sets.function.get_fterms(), fact_sets.function.get_values())
+    }
 
-    void reset();
+    void reset()
+    {
+        predicate.reset();
+        function.reset();
+    }
 };
 
 template<formalism::Context C>

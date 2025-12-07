@@ -362,35 +362,9 @@ template class FunctionAssignmentSets<formalism::FluentTag, formalism::Repositor
 template class FunctionAssignmentSets<formalism::StaticTag, formalism::OverlayRepository<formalism::Repository>>;
 template class FunctionAssignmentSets<formalism::FluentTag, formalism::OverlayRepository<formalism::Repository>>;
 
-template<formalism::FactKind T, formalism::Context C>
-TaggedAssignmentSets<T, C>::TaggedAssignmentSets(View<IndexList<formalism::Predicate<T>>, C> predicates,
-                                                 View<IndexList<formalism::Function<T>>, C> functions,
-                                                 const analysis::DomainListListList& predicate_domains,
-                                                 const analysis::DomainListListList& function_domains,
-                                                 size_t num_objects) :
-    predicate(predicates, predicate_domains, num_objects),
-    function(functions, function_domains, num_objects)
-{
-}
-
-template<formalism::FactKind T, formalism::Context C>
-void TaggedAssignmentSets<T, C>::insert(const TaggedFactSets<T, C>& fact_sets)
-{
-    predicate.insert(fact_sets.predicate.get_facts());
-    function.insert(fact_sets.function.get_fterms(), fact_sets.function.get_values());
-}
-
-template<formalism::FactKind T, formalism::Context C>
-void TaggedAssignmentSets<T, C>::reset()
-{
-    predicate.reset();
-    function.reset();
-}
-
-template class TaggedAssignmentSets<formalism::StaticTag, formalism::Repository>;
-template class TaggedAssignmentSets<formalism::FluentTag, formalism::Repository>;
-template class TaggedAssignmentSets<formalism::StaticTag, formalism::OverlayRepository<formalism::Repository>>;
-template class TaggedAssignmentSets<formalism::FluentTag, formalism::OverlayRepository<formalism::Repository>>;
+/**
+ * AssignmentSets
+ */
 
 template<formalism::Context C>
 AssignmentSets<C>::AssignmentSets(View<Index<formalism::Program>, C> program, const analysis::ProgramVariableDomains& domains) :

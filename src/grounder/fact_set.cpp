@@ -188,30 +188,6 @@ template class FunctionFactSet<formalism::StaticTag, formalism::OverlayRepositor
 template class FunctionFactSet<formalism::FluentTag, formalism::OverlayRepository<formalism::Repository>>;
 
 /**
- * TaggedFactSets
- */
-
-template<formalism::FactKind T, formalism::Context C>
-TaggedFactSets<T, C>::TaggedFactSets(View<IndexList<formalism::GroundAtom<T>>, C> atoms,
-                                     View<IndexList<formalism::GroundFunctionTermValue<T>>, C> function_terms) :
-    predicate(atoms),
-    function(function_terms)
-{
-}
-
-template<formalism::FactKind T, formalism::Context C>
-void TaggedFactSets<T, C>::reset() noexcept
-{
-    predicate.reset();
-    function.reset();
-}
-
-template class TaggedFactSets<formalism::StaticTag, formalism::Repository>;
-template class TaggedFactSets<formalism::FluentTag, formalism::Repository>;
-template class TaggedFactSets<formalism::StaticTag, formalism::OverlayRepository<formalism::Repository>>;
-template class TaggedFactSets<formalism::FluentTag, formalism::OverlayRepository<formalism::Repository>>;
-
-/**
  * FactSets
  */
 

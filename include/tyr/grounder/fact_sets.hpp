@@ -93,9 +93,17 @@ struct TaggedFactSets
     PredicateFactSet<T, C> predicate;
     FunctionFactSet<T, C> function;
 
-    TaggedFactSets(View<IndexList<formalism::GroundAtom<T>>, C> atoms, View<IndexList<formalism::GroundFunctionTermValue<T>>, C> function_terms);
+    TaggedFactSets(View<IndexList<formalism::GroundAtom<T>>, C> atoms, View<IndexList<formalism::GroundFunctionTermValue<T>>, C> function_terms) :
+        predicate(atoms),
+        function(function_terms)
+    {
+    }
 
-    void reset() noexcept;
+    void reset() noexcept
+    {
+        predicate.reset();
+        function.reset();
+    }
 };
 
 template<formalism::Context C>
