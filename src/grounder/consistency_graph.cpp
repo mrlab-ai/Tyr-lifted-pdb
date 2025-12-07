@@ -139,7 +139,7 @@ public:
     using iterator_category = std::forward_iterator_tag;
 
     VertexAssignmentIterator() : m_terms(nullptr), m_vertex(nullptr), m_pos(0), m_assignment() {}
-    VertexAssignmentIterator(const View<DataList<formalism::Term>, C>& terms, const Vertex& vertex, bool begin) noexcept :
+    VertexAssignmentIterator(const View<DataList<formalism::Term>, C>& terms, const Vertex<C>& vertex, bool begin) noexcept :
         m_terms(&terms),
         m_vertex(&vertex),
         m_pos(begin ? 0 : std::numeric_limits<uint_t>::max()),
@@ -611,7 +611,7 @@ template class Edge<formalism::OverlayRepository<formalism::Repository>>;
 template<formalism::Context C>
 std::pair<details::Vertices<C>, std::vector<std::vector<uint_t>>>
 StaticConsistencyGraph<C>::compute_vertices(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                                            uint_t num_objects,
+                                            const analysis::DomainListList& parameter_domains,
                                             const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets)
 {
     auto vertices = details::Vertices<C> {};
@@ -620,9 +620,11 @@ StaticConsistencyGraph<C>::compute_vertices(View<Index<formalism::ConjunctiveCon
 
     for (uint_t parameter_index = 0; parameter_index < condition.get_arity(); ++parameter_index)
     {
+        auto& parameter_domain = parameter_domains[parameter_index];
+
         auto partition = std::vector<uint_t> {};
 
-        for (uint_t object_index = 0; object_index < num_objects; ++object_index)
+        for (const auto object_index : parameter_domain)
         {
             const auto vertex_index = static_cast<uint_t>(vertices.size());
 
@@ -646,7 +648,6 @@ StaticConsistencyGraph<C>::compute_vertices(View<Index<formalism::ConjunctiveCon
 template<formalism::Context C>
 std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
 StaticConsistencyGraph<C>::compute_edges(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                                         uint_t num_objects,
                                          const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets,
                                          const details::Vertices<C>& vertices)
 {
@@ -690,16 +691,15 @@ StaticConsistencyGraph<C>::compute_edges(View<Index<formalism::ConjunctiveCondit
 
 template<formalism::Context C>
 StaticConsistencyGraph<C>::StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                                                  uint_t num_objects,
+                                                  const analysis::DomainListList& parameter_domains,
                                                   const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets) :
-    m_condition(condition),
-    m_num_objects(num_objects)
+    m_condition(condition)
 {
-    auto [vertices_, partitions_] = compute_vertices(condition, num_objects, static_assignment_sets);
+    auto [vertices_, partitions_] = compute_vertices(condition, parameter_domains, static_assignment_sets);
     m_vertices = std::move(vertices_);
     m_partitions = std::move(partitions_);
 
-    auto [sources_, target_offsets_, targets_] = compute_edges(condition, num_objects, static_assignment_sets, m_vertices);
+    auto [sources_, target_offsets_, targets_] = compute_edges(condition, static_assignment_sets, m_vertices);
 
     m_sources = std::move(sources_);
     m_target_offsets = std::move(target_offsets_);
@@ -728,12 +728,6 @@ template<formalism::Context C>
 View<Index<formalism::ConjunctiveCondition>, C> StaticConsistencyGraph<C>::get_condition() const noexcept
 {
     return m_condition;
-}
-
-template<formalism::Context C>
-uint_t StaticConsistencyGraph<C>::get_num_objects() const noexcept
-{
-    return m_num_objects;
 }
 
 template<formalism::Context C>

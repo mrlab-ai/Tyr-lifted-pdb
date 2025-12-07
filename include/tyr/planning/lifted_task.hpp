@@ -66,7 +66,7 @@ private:
     using DomainListList = std::vector<DomainList>;
     using DomainListListList = std::vector<DomainListList>;
 
-    std::vector<DomainListListList> parameter_domains_per_cond_effect_per_action;
+    DomainListListList parameter_domains_per_cond_effect_per_action;
 };
 
 }

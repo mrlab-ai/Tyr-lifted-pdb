@@ -109,21 +109,50 @@ struct FactSets
     FactSets(View<Index<formalism::Program>, C> program, TaggedFactSets<formalism::FluentTag, C> fluent_facts);
 
     template<formalism::FactKind T>
-    void reset() noexcept;
+    void reset() noexcept
+    {
+        get<T>().template reset();
+    }
 
-    void reset() noexcept;
-
-    template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundAtom<T>>, C> view);
-
-    template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> view);
-
-    template<formalism::FactKind T>
-    const TaggedFactSets<T, C>& get() const;
+    void reset() noexcept
+    {
+        reset<formalism::StaticTag>();
+        reset<formalism::FluentTag>();
+    }
 
     template<formalism::FactKind T>
-    TaggedFactSets<T, C>& get();
+    void insert(View<IndexList<formalism::GroundAtom<T>>, C> view)
+    {
+        get<T>().predicate.insert(view);
+    }
+
+    template<formalism::FactKind T>
+    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, C> view)
+    {
+        get<T>().function.insert(view);
+    }
+
+    template<formalism::FactKind T>
+    const TaggedFactSets<T, C>& get() const
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_sets;
+        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
+            return fluent_sets;
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
+    }
+
+    template<formalism::FactKind T>
+    TaggedFactSets<T, C>& get()
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_sets;
+        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
+            return fluent_sets;
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
+    }
 };
 }
 

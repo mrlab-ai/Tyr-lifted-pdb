@@ -165,14 +165,16 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_axiom_context(m_axiom_program.get_program(), m_axiom_program.get_repository()),
     parameter_domains_per_cond_effect_per_action()
 {
+    /*
     const auto num_objects = task.get_domain().get_constants().size() + task.get_objects().size();
+
     const auto variable_domains = analysis::compute_variable_domains(m_action_program.get_program());
 
     const auto static_fact_sets = TaggedFactSets(task.get_atoms<StaticTag>(), task.get_fterm_values<StaticTag>());
-    const auto static_assignment_sets = TaggedAssignmentSets(task.get_domain().get_predicates<FluentTag>(),
-                                                             task.get_domain().get_functions<FluentTag>(),
-                                                             variable_domains.fluent_predicate_domains,
-                                                             variable_domains.fluent_function_domains,
+    const auto static_assignment_sets = TaggedAssignmentSets(task.get_domain().get_predicates<StaticTag>(),
+                                                             task.get_domain().get_functions<StaticTag>(),
+                                                             variable_domains.static_predicate_domains,
+                                                             variable_domains.static_function_domains,
                                                              num_objects);
 
     for (const auto action : task.get_domain().get_actions())
@@ -197,6 +199,7 @@ LiftedTask::LiftedTask(DomainPtr domain,
         }
         parameter_domains_per_cond_effect_per_action.push_back(std::move(parameter_domains_per_cond_effect));
     }
+        */
 }
 
 Node<LiftedTask> LiftedTask::get_initial_node_impl()

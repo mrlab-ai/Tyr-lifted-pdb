@@ -174,20 +174,50 @@ struct AssignmentSets
     AssignmentSets(View<Index<formalism::Program>, C> program, const analysis::ProgramVariableDomains& domains, const FactSets<C>& fact_sets);
 
     template<formalism::FactKind T>
-    void reset() noexcept;
+    void reset() noexcept
+    {
+        get<T>().reset();
+    }
 
-    void reset() noexcept;
+    void reset() noexcept
+    {
+        reset<formalism::StaticTag>();
+        reset<formalism::FluentTag>();
+    }
 
     template<formalism::FactKind T>
-    void insert(const TaggedFactSets<T, C>& fact_set);
+    void insert(const TaggedFactSets<T, C>& fact_set)
+    {
+        get<T>().insert(fact_set);
+    }
 
-    void insert(const FactSets<C>& fact_sets);
+    void insert(const FactSets<C>& fact_sets)
+    {
+        insert(fact_sets.template get<formalism::StaticTag>());
+        insert(fact_sets.template get<formalism::FluentTag>());
+    }
 
     template<formalism::FactKind T>
-    TaggedAssignmentSets<T, C>& get();
+    TaggedAssignmentSets<T, C>& get()
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_sets;
+        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
+            return fluent_sets;
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
+    }
 
     template<formalism::FactKind T>
-    const TaggedAssignmentSets<T, C>& get() const;
+    const TaggedAssignmentSets<T, C>& get() const
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_sets;
+        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
+            return fluent_sets;
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
+    }
 };
 
 }

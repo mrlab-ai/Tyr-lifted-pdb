@@ -37,13 +37,13 @@ namespace tyr::grounder
 {
 struct FactsExecutionContext
 {
-    FactSets fact_sets;
-    AssignmentSets assignment_sets;
+    FactSets<formalism::Repository> fact_sets;
+    AssignmentSets<formalism::Repository> assignment_sets;
 
     FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::ProgramVariableDomains& domains);
 
     FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
-                          TaggedFactSets<formalism::FluentTag> fluent_facts,
+                          TaggedFactSets<formalism::FluentTag, formalism::Repository> fluent_facts,
                           const analysis::ProgramVariableDomains& domains);
 
     template<formalism::FactKind T>
@@ -61,7 +61,7 @@ struct FactsExecutionContext
 struct RuleExecutionContext
 {
     const View<Index<formalism::Rule>, formalism::Repository> rule;
-    const StaticConsistencyGraph static_consistency_graph;
+    const StaticConsistencyGraph<formalism::Repository> static_consistency_graph;
 
     kpkc::DenseKPartiteGraph consistency_graph;
     kpkc::Workspace kpkc_workspace;
@@ -70,13 +70,13 @@ struct RuleExecutionContext
     std::vector<View<Index<formalism::GroundRule>, formalism::OverlayRepository<formalism::Repository>>> ground_rules;
 
     RuleExecutionContext(View<Index<formalism::Rule>, formalism::Repository> rule,
-                         uint_t num_objects,
-                         const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
+                         const analysis::DomainListList& parameter_domains,
+                         const TaggedAssignmentSets<formalism::StaticTag, formalism::Repository>& static_assignment_sets,
                          const formalism::Repository& parent);
 
     void clear() noexcept;
 
-    void initialize(const AssignmentSets& assignment_sets);
+    void initialize(const AssignmentSets<formalism::Repository>& assignment_sets);
 };
 
 struct ThreadExecutionContext

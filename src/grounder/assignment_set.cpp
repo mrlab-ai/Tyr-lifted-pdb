@@ -179,7 +179,7 @@ PredicateAssignmentSets<T, C>::PredicateAssignmentSets(View<IndexList<formalism:
 
     /* Initialize sets. */
     for (const auto predicate : predicates)
-        m_sets.emplace_back(PredicateAssignmentSet<T>(predicate, predicate_domains[predicate.get_index().get_value()], num_objects));
+        m_sets.emplace_back(PredicateAssignmentSet<T, C>(predicate, predicate_domains[predicate.get_index().get_value()], num_objects));
 }
 
 template<formalism::FactKind T, formalism::Context C>
@@ -315,7 +315,7 @@ FunctionAssignmentSets<T, C>::FunctionAssignmentSets(View<IndexList<formalism::F
 
     /* Initialize sets. */
     for (const auto function : functions)
-        m_sets.emplace_back(FunctionAssignmentSet<T>(function, function_domains[function.get_index().get_value()], num_objects));
+        m_sets.emplace_back(FunctionAssignmentSet<T, C>(function, function_domains[function.get_index().get_value()], num_objects));
 }
 
 template<formalism::FactKind T, formalism::Context C>
@@ -423,82 +423,7 @@ AssignmentSets<C>::AssignmentSets(View<Index<formalism::Program>, C> program, co
     insert(fact_sets);
 }
 
-template<formalism::Context C>
-template<formalism::FactKind T>
-void AssignmentSets<C>::reset() noexcept
-{
-    get<T>().reset();
-}
-
-template void AssignmentSets<formalism::Repository>::reset<formalism::StaticTag>() noexcept;
-template void AssignmentSets<formalism::Repository>::reset<formalism::FluentTag>() noexcept;
-template void AssignmentSets<formalism::OverlayRepository<formalism::Repository>>::reset<formalism::StaticTag>() noexcept;
-template void AssignmentSets<formalism::OverlayRepository<formalism::Repository>>::reset<formalism::FluentTag>() noexcept;
-
-template<formalism::Context C>
-void AssignmentSets<C>::reset() noexcept
-{
-    reset<formalism::StaticTag>();
-    reset<formalism::FluentTag>();
-}
-
-template<formalism::Context C>
-template<formalism::FactKind T>
-void AssignmentSets<C>::insert(const TaggedFactSets<T, C>& fact_set)
-{
-    get<T>().insert(fact_set);
-}
-
-template void AssignmentSets<formalism::Repository>::insert(const TaggedFactSets<formalism::StaticTag, formalism::Repository>& fact_set);
-template void AssignmentSets<formalism::Repository>::insert(const TaggedFactSets<formalism::FluentTag, formalism::Repository>& fact_set);
-template void AssignmentSets<formalism::OverlayRepository<formalism::Repository>>::insert(
-    const TaggedFactSets<formalism::StaticTag, formalism::OverlayRepository<formalism::Repository>>& fact_set);
-template void AssignmentSets<formalism::OverlayRepository<formalism::Repository>>::insert(
-    const TaggedFactSets<formalism::FluentTag, formalism::OverlayRepository<formalism::Repository>>& fact_set);
-
-template<formalism::Context C>
-void AssignmentSets<C>::insert(const FactSets<C>& fact_sets)
-{
-    insert(fact_sets.template get<formalism::StaticTag>());
-    insert(fact_sets.template get<formalism::FluentTag>());
-}
-
-template<formalism::Context C>
-template<formalism::FactKind T>
-TaggedAssignmentSets<T, C>& AssignmentSets<C>::get()
-{
-    if constexpr (std::is_same_v<T, formalism::StaticTag>)
-        return static_sets;
-    else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-        return fluent_sets;
-    else
-        static_assert(dependent_false<T>::value, "Missing case");
-}
-
-template TaggedAssignmentSets<formalism::StaticTag, formalism::Repository>& AssignmentSets<formalism::Repository>::get<formalism::StaticTag>();
-template TaggedAssignmentSets<formalism::FluentTag, formalism::Repository>& AssignmentSets<formalism::Repository>::get<formalism::FluentTag>();
-template TaggedAssignmentSets<formalism::StaticTag, formalism::OverlayRepository<formalism::Repository>>&
-AssignmentSets<formalism::OverlayRepository<formalism::Repository>>::get<formalism::StaticTag>();
-template TaggedAssignmentSets<formalism::FluentTag, formalism::OverlayRepository<formalism::Repository>>&
-AssignmentSets<formalism::OverlayRepository<formalism::Repository>>::get<formalism::FluentTag>();
-
-template<formalism::Context C>
-template<formalism::FactKind T>
-const TaggedAssignmentSets<T, C>& AssignmentSets<C>::get() const
-{
-    if constexpr (std::is_same_v<T, formalism::StaticTag>)
-        return static_sets;
-    else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-        return fluent_sets;
-    else
-        static_assert(dependent_false<T>::value, "Missing case");
-}
-
-template const TaggedAssignmentSets<formalism::StaticTag, formalism::Repository>& AssignmentSets<formalism::Repository>::get<formalism::StaticTag>() const;
-template const TaggedAssignmentSets<formalism::FluentTag, formalism::Repository>& AssignmentSets<formalism::Repository>::get<formalism::FluentTag>() const;
-template const TaggedAssignmentSets<formalism::StaticTag, formalism::OverlayRepository<formalism::Repository>>&
-AssignmentSets<formalism::OverlayRepository<formalism::Repository>>::get<formalism::StaticTag>() const;
-template const TaggedAssignmentSets<formalism::FluentTag, formalism::OverlayRepository<formalism::Repository>>&
-AssignmentSets<formalism::OverlayRepository<formalism::Repository>>::get<formalism::FluentTag>() const;
+template class AssignmentSets<formalism::Repository>;
+template class AssignmentSets<formalism::OverlayRepository<formalism::Repository>>;
 
 }

@@ -102,19 +102,18 @@ private:
     /// @brief Helper to initialize vertices.
     std::pair<details::Vertices<C>, std::vector<std::vector<uint_t>>>
     compute_vertices(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                     uint_t num_objects,
+                     const analysis::DomainListList& parameter_domains,
                      const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets);
 
     /// @brief Helper to initialize edges.
     std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
     compute_edges(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                  uint_t num_objects,
                   const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets,
                   const details::Vertices<C>& vertices);
 
 public:
     StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                           uint_t num_objects,
+                           const analysis::DomainListList& parameter_domains,
                            const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets);
 
     class EdgeIterator
@@ -178,13 +177,10 @@ public:
     size_t get_num_edges() const noexcept;
 
     View<Index<formalism::ConjunctiveCondition>, C> get_condition() const noexcept;
-    uint_t get_num_objects() const noexcept;
-
     const std::vector<std::vector<uint_t>>& get_partitions() const noexcept;
 
 private:
     View<Index<formalism::ConjunctiveCondition>, C> m_condition;
-    uint_t m_num_objects;
 
     /* The data member of the consistency graph. */
     details::Vertices<C> m_vertices;

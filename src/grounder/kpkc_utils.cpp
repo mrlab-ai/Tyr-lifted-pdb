@@ -133,7 +133,7 @@ void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<C>& spars
 }
 
 template void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<formalism::Repository>& sparse_graph,
-                                                   const AssignmentSets<C>& assignment_sets,
+                                                   const AssignmentSets<formalism::Repository>& assignment_sets,
                                                    DenseKPartiteGraph& ref_graph,
                                                    Workspace& ref_workspace);
 
