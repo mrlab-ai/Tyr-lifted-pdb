@@ -42,7 +42,6 @@ float_t evaluate_metric(View<Index<Task>, OverlayRepository<Repository>> task_vi
     if (task_view.get_auxiliary_fterm_value())
         return task_view.get_auxiliary_fterm_value().value().get_value();
 
-    // TODO: what is a sensible default for no metric at all? probably +infinity
     return task_view.get_metric() ? evaluate(task_view.get_metric().value().get_fexpr(), facts_view) : 0.;
 }
 
@@ -248,8 +247,6 @@ void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_stat
     solve_bottom_up(m_axiom_context);
 
     read_derived_atoms_from_program_context(derived_atoms, *this->m_overlay_repository, m_axiom_context);
-
-    std::cout << to_string(m_axiom_context.program_merge_atoms) << std::endl;
 }
 
 Node<LiftedTask> LiftedTask::get_initial_node_impl()

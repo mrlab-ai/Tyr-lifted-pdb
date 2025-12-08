@@ -40,7 +40,8 @@ auto fluent_facts = parser.parse_fluent_facts("fluent_facts.dl");
 // Goal facts can optionally be parsed to trigger early termination
 auto goal_facts = parser.parse_goal("goal_facts.dl");
 
-// Re-initialization with new fluent and goal facts is possible 
+// Initialize execution context. Fine-grained reinitialization with new fluent and goal facts possible.
+// Only assumptions are fixed sets of objects and static facts.
 auto execuction_context = tyr::grounder::ProgramExecutionContext(program, fluent_facts, goal_facts);
 
 // Execution modes

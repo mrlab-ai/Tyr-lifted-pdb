@@ -103,7 +103,7 @@ Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, fo
     auto& succ_derived_atoms = succ_unpacked_state.template get_atoms<formalism::DerivedTag>();
     auto& succ_numeric_variables = succ_unpacked_state.get_numeric_variables();
 
-    auto succ_metric_value = std::numeric_limits<float_t>::quiet_NaN();
+    auto succ_metric_value = node.get_state_metric();
 
     auto positive_effects = boost::dynamic_bitset<>();
     auto negative_effects = boost::dynamic_bitset<>();
@@ -120,7 +120,7 @@ Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, fo
 
     task.compute_extended_state(succ_unpacked_state);
 
-    if (task.get_task().get_domain().get_auxiliary_function())
+    if (task.get_task().get_metric())
     {
         const auto succ_facts_view = grounder::FactsView(state.template get_atoms<formalism::StaticTag>(),
                                                          succ_fluent_atoms,
@@ -128,9 +128,10 @@ Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, fo
                                                          state.template get_numeric_variables<formalism::StaticTag>(),
                                                          succ_numeric_variables);
 
-        if (task.get_task().get_metric())
-            succ_metric_value = grounder::evaluate(task.get_task().get_metric().value().get_fexpr(), succ_facts_view);
+        succ_metric_value = grounder::evaluate(task.get_task().get_metric().value().get_fexpr(), succ_facts_view);
     }
+    else
+        ++succ_metric_value;  // Assume unit cost if no metric is given
 
     const auto succ_state_index = task.register_state(succ_unpacked_state);
 
