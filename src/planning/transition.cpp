@@ -126,7 +126,8 @@ Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, fo
                                                          succ_fluent_atoms,
                                                          succ_derived_atoms,
                                                          state.template get_numeric_variables<formalism::StaticTag>(),
-                                                         succ_numeric_variables);
+                                                         succ_numeric_variables,
+                                                         succ_metric_value);
 
         succ_metric_value = grounder::evaluate(task.get_task().get_metric().value().get_fexpr(), succ_facts_view);
     }

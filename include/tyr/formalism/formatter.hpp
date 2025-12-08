@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_FORMATTER_HPP_
 
 #include "tyr/common/formatter.hpp"
+#include "tyr/common/iostream.hpp"
 #include "tyr/formalism/datas.hpp"
 #include "tyr/formalism/views.hpp"
 
