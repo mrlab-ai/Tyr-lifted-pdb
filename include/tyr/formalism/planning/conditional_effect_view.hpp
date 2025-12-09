@@ -39,11 +39,12 @@ public:
 
     View(Index<formalism::ConditionalEffect> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
+    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
+    auto get_arity() const noexcept { return get_condition().get_arity(); }
     auto get_condition() const noexcept { return make_view(get_data().condition, *m_context); }
     auto get_effect() const noexcept { return make_view(get_data().effect, *m_context); }
 

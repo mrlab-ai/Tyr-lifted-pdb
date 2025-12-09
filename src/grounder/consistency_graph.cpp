@@ -24,6 +24,7 @@
 #include "tyr/formalism/views.hpp"
 #include "tyr/grounder/assignment_sets.hpp"
 #include "tyr/grounder/declarations.hpp"
+#include "tyr/grounder/formatter.hpp"
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
 #include <optional>
@@ -350,6 +351,8 @@ bool Vertex<C>::consistent_literals(View<IndexList<formalism::Literal<T>>, C> li
 
             const auto true_assignment = predicate_assignment_set[assignment];
 
+            std::cout << "assignment: " << true_assignment << std::endl;
+
             if (!negated && !true_assignment)
             {
                 return false;
@@ -417,19 +420,16 @@ Index<formalism::Object> Vertex<C>::get_object_if_overlap(View<Data<formalism::T
 
             if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
             {
+                std::cout << m_parameter_index << " " << arg << " " << m_object_index << std::endl;
                 if (m_parameter_index == arg)
                     return m_object_index;
                 else
                     return Index<formalism::Object>::max();
             }
             else if constexpr (std::is_same_v<Alternative, View<Index<formalism::Object>, C>>)
-            {
                 return arg.get_index();
-            }
             else
-            {
                 static_assert(dependent_false<Alternative>::value, "Missing case");
-            }
         },
         term.get_variant());
 }
@@ -612,13 +612,15 @@ template<formalism::Context C>
 std::pair<details::Vertices<C>, std::vector<std::vector<uint_t>>>
 StaticConsistencyGraph<C>::compute_vertices(View<Index<formalism::ConjunctiveCondition>, C> condition,
                                             const analysis::DomainListList& parameter_domains,
+                                            uint_t begin_parameter_index,
+                                            uint_t end_parameter_index,
                                             const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets)
 {
     auto vertices = details::Vertices<C> {};
 
     auto partitions = std::vector<std::vector<uint_t>> {};
 
-    for (uint_t parameter_index = 0; parameter_index < condition.get_arity(); ++parameter_index)
+    for (uint_t parameter_index = begin_parameter_index; parameter_index < end_parameter_index; ++parameter_index)
     {
         auto& parameter_domain = parameter_domains[parameter_index];
 
@@ -636,6 +638,14 @@ StaticConsistencyGraph<C>::compute_vertices(View<Index<formalism::ConjunctiveCon
             {
                 vertices.push_back(std::move(vertex));
                 partition.push_back(vertex.get_index());
+
+                if (begin_parameter_index > 0)
+                    std::cout << "Consistent " << vertex << std::endl;
+            }
+            else
+            {
+                if (begin_parameter_index > 0)
+                    std::cout << "Inconsistent " << vertex << std::endl;
             }
         }
 
@@ -692,10 +702,12 @@ StaticConsistencyGraph<C>::compute_edges(View<Index<formalism::ConjunctiveCondit
 template<formalism::Context C>
 StaticConsistencyGraph<C>::StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, C> condition,
                                                   const analysis::DomainListList& parameter_domains,
+                                                  uint_t begin_parameter_index,
+                                                  uint_t end_parameter_index,
                                                   const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets) :
     m_condition(condition)
 {
-    auto [vertices_, partitions_] = compute_vertices(condition, parameter_domains, static_assignment_sets);
+    auto [vertices_, partitions_] = compute_vertices(condition, parameter_domains, begin_parameter_index, end_parameter_index, static_assignment_sets);
     m_vertices = std::move(vertices_);
     m_partitions = std::move(partitions_);
 

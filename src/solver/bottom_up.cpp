@@ -102,15 +102,13 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
             // Inser new fact
             if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(merge_head))
-            {
-                program_merge_rules.insert(merge_rule);
-                program_merge_atoms.insert(merge_head);
-
-                program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge_head);
-                program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(merge_head);
-
                 discovered_new_fact = true;
-            }
+
+            program_merge_rules.insert(merge_rule);
+            program_merge_atoms.insert(merge_head);
+
+            program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge_head);
+            program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(merge_head);
         }
 
         if (!discovered_new_fact)

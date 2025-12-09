@@ -696,6 +696,8 @@ auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& dest
                                       rule.clear();
 
                                       rule.rule = element.get_rule().get_index();
+                                      for (const auto object : element.get_objects())
+                                          rule.objects.push_back(merge(object, builder, destination, cache).get_index());
                                       rule.body = merge(element.get_body(), builder, destination, cache).get_index();
                                       rule.head = merge(element.get_head(), builder, destination, cache).get_index();
 

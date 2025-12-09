@@ -103,6 +103,8 @@ private:
     std::pair<details::Vertices<C>, std::vector<std::vector<uint_t>>>
     compute_vertices(View<Index<formalism::ConjunctiveCondition>, C> condition,
                      const analysis::DomainListList& parameter_domains,
+                     uint_t begin_parameter_index,
+                     uint_t end_parameter_index,
                      const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets);
 
     /// @brief Helper to initialize edges.
@@ -114,6 +116,8 @@ private:
 public:
     StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, C> condition,
                            const analysis::DomainListList& parameter_domains,
+                           uint_t begin_parameter_index,
+                           uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets);
 
     class EdgeIterator

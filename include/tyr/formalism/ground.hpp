@@ -240,6 +240,7 @@ View<Index<GroundRule>, C_DST> ground(View<Index<Rule>, C_SRC> element, View<Ind
 
     // Fill data
     rule.rule = element.get_index();
+    rule.objects = binding.get_data();
     rule.body = ground(element.get_body(), binding, builder, destination).get_index();
     rule.head = ground(element.get_head(), binding, builder, destination).get_index();
 
@@ -368,7 +369,7 @@ View<Index<GroundAxiom>, C_DST> ground(View<Index<Axiom>, C_SRC> element, View<I
     axiom.clear();
 
     // Fill data
-    axiom.axiom = element.get_axiom().get_index();
+    axiom.axiom = element.get_index();
     axiom.body = ground(element.get_body(), binding, builder, destination).get_index();
     axiom.head = ground(element.get_head(), binding, builder, destination).get_index();
 

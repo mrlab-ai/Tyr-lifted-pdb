@@ -33,7 +33,10 @@ public:
     GroundTask(DomainPtr domain,
                formalism::RepositoryPtr repository,
                formalism::OverlayRepositoryPtr<formalism::Repository> overlay_repository,
-               View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task);
+               View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
+               IndexList<formalism::GroundAtom<formalism::FluentTag>> fluent_atoms,
+               IndexList<formalism::GroundAction> ground_actions,
+               IndexList<formalism::GroundAxiom> ground_axioms);
 
     void compute_extended_state(UnpackedState<GroundTask>& unpacked_state);
 

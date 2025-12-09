@@ -43,7 +43,7 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_arg() const
+    auto get_arg() const noexcept
     {
         if constexpr (Viewable<T, C>)
         {

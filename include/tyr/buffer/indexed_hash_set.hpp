@@ -58,15 +58,15 @@ public:
      * Iterators
      */
 
-    auto begin() const { return m_vec.begin(); }
-    auto end() const { return m_vec.end(); }
+    auto begin() const noexcept { return m_vec.begin(); }
+    auto end() const noexcept { return m_vec.end(); }
 
     /**
      * Capacity
      */
 
-    bool empty() const { return m_vec.empty(); }
-    size_t size() const { return m_vec.size(); }
+    bool empty() const noexcept { return m_vec.empty(); }
+    size_t size() const noexcept { return m_vec.size(); }
 
     /**
      * Modifiers
@@ -79,7 +79,7 @@ public:
         m_vec.clear();
     }
 
-    const Data<Tag>* find(const Data<Tag>& element) const
+    const Data<Tag>* find(const Data<Tag>& element) const noexcept
     {
         assert(is_canonical(element));
 
@@ -120,7 +120,7 @@ public:
      * Lookup
      */
 
-    const Data<Tag>& operator[](Index<Tag> index) const
+    const Data<Tag>& operator[](Index<Tag> index) const noexcept
     {
         assert(index.get_value() < m_vec.size());
         return *m_vec[index.get_value()];

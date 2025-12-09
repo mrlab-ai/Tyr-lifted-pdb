@@ -46,8 +46,9 @@ public:
 
     auto get_index() const noexcept { return m_handle; }
     auto get_rule() const noexcept { return make_view(get_data().rule, *m_context); }
-    auto get_body() const { return make_view(get_data().body, *m_context); }
-    auto get_head() const { return make_view(get_data().head, *m_context); }
+    auto get_objects() const noexcept { return make_view(get_data().objects, *m_context); }
+    auto get_body() const noexcept { return make_view(get_data().body, *m_context); }
+    auto get_head() const noexcept { return make_view(get_data().head, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

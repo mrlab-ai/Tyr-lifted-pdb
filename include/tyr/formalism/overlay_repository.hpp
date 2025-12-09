@@ -36,7 +36,7 @@ public:
     OverlayRepository(const C& parent_scope, C& local_scope) : parent_scope(parent_scope), local_scope(local_scope) {}
 
     template<typename T>
-    std::optional<View<Index<T>, OverlayRepository<C>>> find(const Data<T>& builder) const
+    std::optional<View<Index<T>, OverlayRepository<C>>> find(const Data<T>& builder) const noexcept
     {
         if (auto ptr = parent_scope.find(builder))
             return View<Index<T>, OverlayRepository<C>>(ptr->get_index(), *this);
@@ -60,7 +60,7 @@ public:
     }
 
     template<typename T>
-    const Data<T>& operator[](Index<T> index) const
+    const Data<T>& operator[](Index<T> index) const noexcept
     {
         assert(index != Index<T>::max() && "Unassigned index.");
 
@@ -78,7 +78,7 @@ public:
     }
 
     template<typename T>
-    size_t size() const
+    size_t size() const noexcept
     {
         return parent_scope.template size<T>() + local_scope.template size<T>();
     }

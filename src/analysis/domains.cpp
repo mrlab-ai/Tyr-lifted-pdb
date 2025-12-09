@@ -493,6 +493,7 @@ ProgramVariableDomains compute_variable_domains(View<Index<formalism::Program>, 
             for (const auto op : rule.get_body().get_numeric_constraints())
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
 
+            assert(rule.get_index().value == rule_domain_sets.size());
             rule_domain_sets.push_back(std::move(parameter_domains));
         }
     }
@@ -595,6 +596,7 @@ TaskVariableDomains compute_variable_domains(View<Index<formalism::Task>, formal
                 parameter_domains_per_cond_effect.push_back(std::move(c_parameter_domains));
             }
 
+            assert(action.get_index().value == action_domain_sets.size());
             action_domain_sets.emplace_back(std::make_pair(std::move(parameter_domains), std::move(parameter_domains_per_cond_effect)));
         }
     }
@@ -612,6 +614,7 @@ TaskVariableDomains compute_variable_domains(View<Index<formalism::Task>, formal
             for (const auto op : axiom.get_body().get_numeric_constraints())
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
 
+            assert(axiom.get_index().value == axiom_domain_sets.size());
             axiom_domain_sets.push_back(std::move(parameter_domains));
         }
 
@@ -626,6 +629,7 @@ TaskVariableDomains compute_variable_domains(View<Index<formalism::Task>, formal
             for (const auto op : axiom.get_body().get_numeric_constraints())
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
 
+            assert(axiom.get_index().value == axiom_domain_sets.size());
             axiom_domain_sets.push_back(std::move(parameter_domains));
         }
     }

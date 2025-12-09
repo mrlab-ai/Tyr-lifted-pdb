@@ -50,7 +50,7 @@ public:
         const Node<LiftedTask>& node,
         std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<LiftedTask>>>& out_nodes);
 
-    GroundTask get_ground_task();
+    GroundTaskPtr get_ground_task();
 
     const ApplicableActionProgram& get_action_program() const;
     const AxiomEvaluatorProgram& get_axiom_program() const;

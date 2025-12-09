@@ -42,24 +42,24 @@ public:
 
     View(Index<formalism::Program> data, const C& context) : m_context(&context), m_handle(data) {}
 
-    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
+    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
     template<formalism::FactKind T>
-    auto get_predicates() const
+    auto get_predicates() const noexcept
     {
         return make_view(get_data().template get_predicates<T>(), *m_context);
     }
     template<formalism::FactKind T>
-    auto get_functions() const
+    auto get_functions() const noexcept
     {
         return make_view(get_data().template get_functions<T>(), *m_context);
     }
-    auto get_objects() const { return make_view(get_data().objects, *m_context); }
+    auto get_objects() const noexcept { return make_view(get_data().objects, *m_context); }
     template<formalism::FactKind T>
-    auto get_atoms() const
+    auto get_atoms() const noexcept
     {
         return make_view(get_data().template get_atoms<T>(), *m_context);
     }

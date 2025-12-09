@@ -17,29 +17,42 @@
 
 #include "tyr/planning/ground_task.hpp"
 
+#include "tyr/formalism/formatter.hpp"
+
+using namespace tyr::formalism;
+
 namespace tyr::planning
 {
 
 GroundTask::GroundTask(DomainPtr domain,
-                       formalism::RepositoryPtr repository,
-                       formalism::OverlayRepositoryPtr<formalism::Repository> overlay_repository,
-                       View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task) :
+                       RepositoryPtr repository,
+                       OverlayRepositoryPtr<Repository> overlay_repository,
+                       View<Index<Task>, OverlayRepository<Repository>> task,
+                       IndexList<GroundAtom<FluentTag>> fluent_atoms,
+                       IndexList<GroundAction> ground_actions,
+                       IndexList<GroundAxiom> ground_axioms) :
     TaskMixin(std::move(domain), std::move(repository), std::move(overlay_repository), task)
 {
+    std::cout << make_view(fluent_atoms, *this->m_overlay_repository) << std::endl;
+    std::cout << make_view(ground_actions, *this->m_overlay_repository) << std::endl;
+    std::cout << make_view(ground_axioms, *this->m_overlay_repository) << std::endl;
+
+    std::cout << "Num fluent atoms: " << fluent_atoms.size() << std::endl;
+    std::cout << "Num ground actions: " << ground_actions.size() << std::endl;
+    std::cout << "Num ground axioms: " << ground_axioms.size() << std::endl;
 }
 
 void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state) {}
 
-std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>
+std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>
 GroundTask::get_labeled_successor_nodes_impl(const Node<GroundTask>& node)
 {
-    auto result = std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>> {};
+    auto result = std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>> {};
     return result;
 }
 
-void GroundTask::get_labeled_successor_nodes_impl(
-    const Node<GroundTask>& node,
-    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>& out_nodes)
+void GroundTask::get_labeled_successor_nodes_impl(const Node<GroundTask>& node,
+                                                  std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>& out_nodes)
 {
 }
 

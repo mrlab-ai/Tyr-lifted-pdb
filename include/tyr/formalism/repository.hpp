@@ -136,7 +136,7 @@ public:
     Repository() = default;
 
     template<typename T>
-    std::optional<View<Index<T>, Repository>> find(const Data<T>& builder) const
+    std::optional<View<Index<T>, Repository>> find(const Data<T>& builder) const noexcept
     {
         const auto& indexed_hash_set = get_container<T>(m_repository);
 
@@ -161,7 +161,7 @@ public:
 
     /// @brief Access the element with the given index.
     template<typename T>
-    const Data<T>& operator[](Index<T> index) const
+    const Data<T>& operator[](Index<T> index) const noexcept
     {
         assert(index != Index<T>::max() && "Unassigned index.");
 
@@ -180,7 +180,7 @@ public:
 
     /// @brief Get the number of stored elements.
     template<typename T>
-    size_t size() const
+    size_t size() const noexcept
     {
         const auto& repository = get_container<T>(m_repository);
 

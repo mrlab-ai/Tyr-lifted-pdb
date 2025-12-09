@@ -17,7 +17,6 @@
 
 #include "tyr/planning/programs/ground.hpp"
 
-#include "common.hpp"
 #include "tyr/formalism/compile.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/merge.hpp"
@@ -49,40 +48,30 @@ make_delete_free_body(View<Index<formalism::Action>, formalism::OverlayRepositor
     auto append_from_condition = [&](auto&& cond)
     {
         for (const auto literal : cond.template get_literals<formalism::StaticTag>())
-        {
             if (literal.get_polarity())
                 conj_cond.static_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
-        }
 
         for (const auto literal : cond.template get_literals<formalism::FluentTag>())
-        {
             if (literal.get_polarity())
                 conj_cond.fluent_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
-        }
 
         for (const auto literal : cond.template get_literals<formalism::DerivedTag>())
-        {
             if (literal.get_polarity())
                 conj_cond.fluent_literals.push_back(
                     formalism::compile<formalism::DerivedTag, formalism::FluentTag>(literal, builder, repository, compile_cache, merge_cache).get_index());
-        }
 
         for (const auto literal : cond.template get_nullary_literals<formalism::StaticTag>())
-        {
             if (literal.get_polarity())
                 conj_cond.static_nullary_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
-        }
+
         for (const auto literal : cond.template get_nullary_literals<formalism::FluentTag>())
-        {
             if (literal.get_polarity())
                 conj_cond.fluent_nullary_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
-        }
+
         for (const auto literal : cond.template get_nullary_literals<formalism::DerivedTag>())
-        {
             if (literal.get_polarity())
                 conj_cond.fluent_nullary_literals.push_back(
                     formalism::compile<formalism::DerivedTag, formalism::FluentTag>(literal, builder, repository, compile_cache, merge_cache).get_index());
-        }
     };
 
     append_from_condition(action.get_condition());
@@ -113,14 +102,12 @@ translate_action_to_delete_free_rules(View<Index<formalism::Action>, formalism::
             if (!literal.get_polarity())
                 continue;  /// ignore delete effects
 
-            auto head_atom_view = formalism::merge(literal.get_atom(), builder, repository, merge_cache);
-
             auto rule_ptr = builder.get_builder<formalism::Rule>();
             auto& rule = *rule_ptr;
             rule.clear();
 
             rule.body = body.get_index();
-            rule.head = head_atom_view.get_index();
+            rule.head = formalism::merge(literal.get_atom(), builder, repository, merge_cache).get_index();
 
             formalism::canonicalize(rule);
             auto new_rule = repository.get_or_create(rule, builder.get_buffer()).first;
@@ -130,6 +117,73 @@ translate_action_to_delete_free_rules(View<Index<formalism::Action>, formalism::
             program.rules.push_back(new_rule.get_index());
         }
     }
+}
+
+static void process_delete_free_axiom_body(View<Index<formalism::ConjunctiveCondition>, formalism::OverlayRepository<formalism::Repository>> axiom_body,
+                                           formalism::Builder& builder,
+                                           formalism::Repository& repository,
+                                           formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>& merge_cache,
+                                           formalism::CompileCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>& compile_cache,
+                                           Data<formalism::ConjunctiveCondition>& conj_cond)
+{
+    for (const auto literal : axiom_body.get_literals<formalism::StaticTag>())
+        if (literal.get_polarity())
+            conj_cond.static_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
+
+    for (const auto literal : axiom_body.get_literals<formalism::FluentTag>())
+        if (literal.get_polarity())
+            conj_cond.fluent_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
+
+    for (const auto literal : axiom_body.get_literals<formalism::DerivedTag>())
+        if (literal.get_polarity())
+            conj_cond.fluent_literals.push_back(
+                formalism::compile<formalism::DerivedTag, formalism::FluentTag>(literal, builder, repository, compile_cache, merge_cache).get_index());
+
+    for (const auto literal : axiom_body.get_nullary_literals<formalism::StaticTag>())
+        if (literal.get_polarity())
+            conj_cond.static_nullary_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
+
+    for (const auto literal : axiom_body.get_nullary_literals<formalism::FluentTag>())
+        if (literal.get_polarity())
+            conj_cond.fluent_nullary_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
+
+    for (const auto literal : axiom_body.get_nullary_literals<formalism::DerivedTag>())
+        if (literal.get_polarity())
+            conj_cond.fluent_nullary_literals.push_back(
+                formalism::compile<formalism::DerivedTag, formalism::FluentTag>(literal, builder, repository, compile_cache, merge_cache).get_index());
+}
+
+View<Index<formalism::Rule>, formalism::Repository> static create_delete_free_axiom_rule(
+    View<Index<formalism::Axiom>, formalism::OverlayRepository<formalism::Repository>> axiom,
+    formalism::Builder& builder,
+    formalism::Repository& repository,
+    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>& merge_cache,
+    formalism::CompileCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>& compile_cache)
+{
+    auto rule_ptr = builder.get_builder<formalism::Rule>();
+    auto& rule = *rule_ptr;
+    rule.clear();
+
+    auto conj_cond_ptr = builder.get_builder<formalism::ConjunctiveCondition>();
+    auto& conj_cond = *conj_cond_ptr;
+    conj_cond.clear();
+
+    for (const auto variable : axiom.get_variables())
+        conj_cond.variables.push_back(formalism::merge(variable, builder, repository, merge_cache).get_index());
+
+    process_delete_free_axiom_body(axiom.get_body(), builder, repository, merge_cache, compile_cache, conj_cond);
+
+    formalism::canonicalize(conj_cond);
+    const auto new_conj_cond = repository.get_or_create(conj_cond, builder.get_buffer()).first;
+
+    rule.body = new_conj_cond.get_index();
+
+    const auto new_head = formalism::compile<formalism::DerivedTag, formalism::FluentTag>(axiom.get_head(), builder, repository, compile_cache, merge_cache);
+
+    rule.head = new_head.get_index();
+
+    formalism::canonicalize(rule);
+    return repository.get_or_create(rule, builder.get_buffer()).first;
 }
 
 static View<Index<formalism::Program>, formalism::Repository> create(const LiftedTask& task,
@@ -146,36 +200,24 @@ static View<Index<formalism::Program>, formalism::Repository> create(const Lifte
     program.clear();
 
     for (const auto predicate : task.get_task().get_domain().get_predicates<formalism::StaticTag>())
-    {
         program.static_predicates.push_back(formalism::merge(predicate, builder, repository, merge_cache).get_index());
-    }
 
     for (const auto predicate : task.get_task().get_domain().get_predicates<formalism::FluentTag>())
-    {
         program.fluent_predicates.push_back(formalism::merge(predicate, builder, repository, merge_cache).get_index());
-    }
 
     for (const auto predicate : task.get_task().get_domain().get_predicates<formalism::DerivedTag>())
-    {
         program.fluent_predicates.push_back(
             formalism::compile<formalism::DerivedTag, formalism::FluentTag>(predicate, builder, repository, compile_cache, merge_cache).get_index());
-    }
 
     for (const auto predicate : task.get_task().get_derived_predicates())
-    {
         program.fluent_predicates.push_back(
             formalism::compile<formalism::DerivedTag, formalism::FluentTag>(predicate, builder, repository, compile_cache, merge_cache).get_index());
-    }
 
     for (const auto function : task.get_task().get_domain().get_functions<formalism::StaticTag>())
-    {
         program.static_functions.push_back(formalism::merge(function, builder, repository, merge_cache).get_index());
-    }
 
     for (const auto function : task.get_task().get_domain().get_functions<formalism::FluentTag>())
-    {
         program.fluent_functions.push_back(formalism::merge(function, builder, repository, merge_cache).get_index());
-    }
 
     // We can ignore auxiliary function total-cost because it never occurs in a condition
 
@@ -197,35 +239,27 @@ static View<Index<formalism::Program>, formalism::Repository> create(const Lifte
     }
 
     for (const auto atom : task.get_task().get_atoms<formalism::StaticTag>())
-    {
         program.static_atoms.push_back(formalism::merge(atom, builder, repository, merge_cache).get_index());
-    }
 
     for (const auto atom : task.get_task().get_atoms<formalism::FluentTag>())
-    {
         program.fluent_atoms.push_back(formalism::merge(atom, builder, repository, merge_cache).get_index());
-    }
 
     for (const auto fterm_value : task.get_task().get_fterm_values<formalism::StaticTag>())
-    {
         program.static_fterm_values.push_back(formalism::merge(fterm_value, builder, repository, merge_cache).get_index());
-    }
 
     for (const auto action : task.get_task().get_domain().get_actions())
-    {
         translate_action_to_delete_free_rules(action, program, repository, builder, merge_cache, compile_cache, rule_to_actions_mapping);
-    }
 
     for (const auto axiom : task.get_task().get_domain().get_axioms())
     {
-        auto new_rule = create_axiom_rule(axiom, builder, repository, merge_cache, compile_cache);
+        auto new_rule = create_delete_free_axiom_rule(axiom, builder, repository, merge_cache, compile_cache);
         rule_to_axioms_mapping[new_rule].emplace_back(axiom);
         program.rules.push_back(new_rule.get_index());
     }
 
     for (const auto axiom : task.get_task().get_axioms())
     {
-        auto new_rule = create_axiom_rule(axiom, builder, repository, merge_cache, compile_cache);
+        auto new_rule = create_delete_free_axiom_rule(axiom, builder, repository, merge_cache, compile_cache);
         rule_to_axioms_mapping[new_rule].emplace_back(axiom);
         program.rules.push_back(new_rule.get_index());
     }

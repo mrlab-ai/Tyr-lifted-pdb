@@ -496,9 +496,9 @@ inline void canonicalize(Data<GroundConjunctiveEffect>& data)
     canonicalize(data.numeric_effects);
 }
 
-inline void canonicalize(Data<Action>& data) {}
+inline void canonicalize(Data<Action>& data) { canonicalize(data.effects); }
 
-inline void canonicalize(Data<GroundAction>& data) {}
+inline void canonicalize(Data<GroundAction>& data) { canonicalize(data.effects); }
 
 inline void canonicalize(Data<Axiom>& data) {}
 

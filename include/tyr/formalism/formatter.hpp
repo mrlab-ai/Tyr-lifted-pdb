@@ -375,6 +375,8 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveCo
     {
         IndentScope scope(os);
 
+        os << print_indent << "variables = " << el.variables << "\n";
+
         os << print_indent << "static literals = " << el.static_literals << "\n";
 
         os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
@@ -392,6 +394,8 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Conjunc
     os << "ConjunctiveCondition(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "variables = " << el.get_variables() << "\n";
 
         os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
