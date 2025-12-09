@@ -83,7 +83,7 @@ bool PredicateFactSet<T, C>::contains(View<Index<formalism::GroundAtom<T>>, C> v
 template<formalism::FactKind T, formalism::Context C>
 View<IndexList<formalism::GroundAtom<T>>, C> PredicateFactSet<T, C>::get_facts() const noexcept
 {
-    return View<IndexList<formalism::GroundAtom<T>>, C>(m_indices, m_context);
+    return make_view(m_indices, m_context);
 }
 
 template<formalism::FactKind T, formalism::Context C>
@@ -173,7 +173,7 @@ float_t FunctionFactSet<T, C>::operator[](Index<formalism::GroundFunctionTerm<T>
 template<formalism::FactKind T, formalism::Context C>
 View<IndexList<formalism::GroundFunctionTerm<T>>, C> FunctionFactSet<T, C>::get_fterms() const noexcept
 {
-    return View<IndexList<formalism::GroundFunctionTerm<T>>, C>(m_indices, m_context);
+    return make_view(m_indices, m_context);
 }
 
 template<formalism::FactKind T, formalism::Context C>

@@ -48,12 +48,9 @@ public:
     template<formalism::FactKind T>
     auto get_literals() const
     {
-        return View<IndexList<formalism::GroundLiteral<T>>, C>(get_data().template get_literals<T>(), *m_context);
+        return make_view(get_data().template get_literals<T>(), *m_context);
     }
-    auto get_numeric_constraints() const
-    {
-        return View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C>(get_data().numeric_constraints, *m_context);
-    }
+    auto get_numeric_constraints() const { return make_view(get_data().numeric_constraints, *m_context); }
     auto get_arity() const { return get_data().objects.size(); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }

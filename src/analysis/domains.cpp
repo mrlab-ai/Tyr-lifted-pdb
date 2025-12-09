@@ -551,9 +551,7 @@ TaskVariableDomains compute_variable_domains(View<Index<formalism::Task>, formal
         derived_predicate_indices.push_back(predicate.get_index());
     for (const auto predicate : task.get_derived_predicates())
         derived_predicate_indices.push_back(predicate.get_index());
-    auto derived_predicate_domain_sets = initialize_predicate_domain_sets(
-        View<IndexList<formalism::Predicate<formalism::DerivedTag>>, formalism::OverlayRepository<formalism::Repository>>(derived_predicate_indices,
-                                                                                                                          task.get_context()));
+    auto derived_predicate_domain_sets = initialize_predicate_domain_sets(make_view(derived_predicate_indices, task.get_context()));
     insert_into_predicate_domain_sets(task.get_atoms<formalism::StaticTag>(), static_predicate_domain_sets);
     insert_into_predicate_domain_sets(task.get_atoms<formalism::FluentTag>(), fluent_predicate_domain_sets);
 

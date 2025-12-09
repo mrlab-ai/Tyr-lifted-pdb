@@ -46,24 +46,16 @@ public:
     auto get_lhs() const
     {
         if constexpr (Viewable<T, C>)
-        {
-            return View<T, C>(get_data().lhs, *m_context);
-        }
+            return make_view(get_data().lhs, *m_context);
         else
-        {
             return get_data().lhs;
-        }
     }
     auto get_rhs() const
     {
         if constexpr (Viewable<T, C>)
-        {
-            return View<T, C>(get_data().rhs, *m_context);
-        }
+            return make_view(get_data().rhs, *m_context);
         else
-        {
             return get_data().rhs;
-        }
     }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }

@@ -695,6 +695,7 @@ auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& dest
                                       auto& rule = *rule_ptr;
                                       rule.clear();
 
+                                      rule.rule = element.get_rule().get_index();
                                       rule.body = merge(element.get_body(), builder, destination, cache).get_index();
                                       rule.head = merge(element.get_head(), builder, destination, cache).get_index();
 

@@ -48,8 +48,8 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_fterm() const noexcept { return View<Index<formalism::FunctionTerm<T>>, C>(get_data().fterm, *m_context); }
-    auto get_fexpr() const noexcept { return View<Data<formalism::FunctionExpression>, C>(get_data().fexpr, *m_context); }
+    auto get_fterm() const noexcept { return make_view(get_data().fterm, *m_context); }
+    auto get_fexpr() const noexcept { return make_view(get_data().fexpr, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

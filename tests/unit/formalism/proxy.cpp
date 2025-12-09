@@ -54,7 +54,7 @@ TEST(TyrTests, TyrFormalismView)
     auto [atom, atom_success] = repository.get_or_create(atom_builder, buffer);
 
     // Recurse through proxy
-    auto atom_proxy = View<Index<Atom<FluentTag>>, Repository>(atom.get_index(), repository);
+    auto atom_proxy = make_view(atom.get_index(), repository);
     auto atom_relation_proxy = atom_proxy.get_predicate();
     auto atom_terms_proxy = atom_proxy.get_terms();
 

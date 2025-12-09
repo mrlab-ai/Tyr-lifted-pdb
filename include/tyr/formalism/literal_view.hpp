@@ -43,7 +43,7 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_atom() const { return View<Index<formalism::Atom<T>>, C>(get_data().atom, *m_context); }
+    auto get_atom() const { return make_view(get_data().atom, *m_context); }
     auto get_polarity() const { return get_data().polarity; }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }

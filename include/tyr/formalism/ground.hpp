@@ -239,6 +239,7 @@ View<Index<GroundRule>, C_DST> ground(View<Index<Rule>, C_SRC> element, View<Ind
     rule.clear();
 
     // Fill data
+    rule.rule = element.get_index();
     rule.body = ground(element.get_body(), binding, builder, destination).get_index();
     rule.head = ground(element.get_head(), binding, builder, destination).get_index();
 

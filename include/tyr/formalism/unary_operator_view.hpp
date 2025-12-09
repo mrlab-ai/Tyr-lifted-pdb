@@ -47,7 +47,7 @@ public:
     {
         if constexpr (Viewable<T, C>)
         {
-            return View<T, C>(get_data().arg, *m_context);
+            return make_view(get_data().arg, *m_context);
         }
         else
         {

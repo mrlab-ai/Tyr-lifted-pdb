@@ -50,25 +50,25 @@ public:
     template<formalism::FactKind T>
     auto get_predicates() const
     {
-        return View<IndexList<formalism::Predicate<T>>, C>(get_data().template get_predicates<T>(), *m_context);
+        return make_view(get_data().template get_predicates<T>(), *m_context);
     }
     template<formalism::FactKind T>
     auto get_functions() const
     {
-        return View<IndexList<formalism::Function<T>>, C>(get_data().template get_functions<T>(), *m_context);
+        return make_view(get_data().template get_functions<T>(), *m_context);
     }
-    auto get_objects() const { return View<IndexList<formalism::Object>, C>(get_data().objects, *m_context); }
+    auto get_objects() const { return make_view(get_data().objects, *m_context); }
     template<formalism::FactKind T>
     auto get_atoms() const
     {
-        return View<IndexList<formalism::GroundAtom<T>>, C>(get_data().template get_atoms<T>(), *m_context);
+        return make_view(get_data().template get_atoms<T>(), *m_context);
     }
     template<formalism::FactKind T>
     auto get_fterm_values() const
     {
-        return View<IndexList<formalism::GroundFunctionTermValue<T>>, C>(get_data().template get_fterm_values<T>(), *m_context);
+        return make_view(get_data().template get_fterm_values<T>(), *m_context);
     }
-    auto get_rules() const { return View<IndexList<formalism::Rule>, C>(get_data().rules, *m_context); }
+    auto get_rules() const { return make_view(get_data().rules, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

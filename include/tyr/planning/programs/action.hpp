@@ -31,9 +31,9 @@ namespace tyr::planning
 class ApplicableActionProgram
 {
 public:
-    // Mapping from program predicate to task action; there may be multiple actions
-    using PredicateToActionsMapping = UnorderedMap<View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository>,
-                                                   std::vector<View<Index<formalism::Action>, formalism::OverlayRepository<formalism::Repository>>>>;
+    // Mapping from program rule to task action; there may be multiple actions
+    using RuleToActionsMapping = UnorderedMap<View<Index<formalism::Rule>, formalism::Repository>,
+                                              std::vector<View<Index<formalism::Action>, formalism::OverlayRepository<formalism::Repository>>>>;
 
     // Mapping from program object to task object
     using ObjectToObjectMapping = UnorderedMap<View<Index<formalism::Object>, formalism::Repository>,
@@ -41,14 +41,14 @@ public:
 
     explicit ApplicableActionProgram(const LiftedTask& task);
 
-    const PredicateToActionsMapping& get_predicate_to_actions_mapping() const noexcept;
+    const RuleToActionsMapping& get_rule_to_actions_mapping() const noexcept;
     const ObjectToObjectMapping& get_object_to_object_mapping() const noexcept;
 
     View<Index<formalism::Program>, formalism::Repository> get_program() const noexcept;
     const formalism::RepositoryPtr& get_repository() const noexcept;
 
 private:
-    PredicateToActionsMapping m_predicate_to_actions;
+    RuleToActionsMapping m_rule_to_actions;
     ObjectToObjectMapping m_object_to_object;
 
     formalism::RepositoryPtr m_repository;

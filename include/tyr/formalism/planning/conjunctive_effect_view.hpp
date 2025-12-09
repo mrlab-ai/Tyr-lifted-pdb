@@ -46,15 +46,9 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_literals() const noexcept { return View<IndexList<formalism::Literal<formalism::FluentTag>>, C>(get_data().literals, *m_context); }
-    auto get_numeric_effects() const noexcept
-    {
-        return View<DataList<formalism::NumericEffectOperator<formalism::FluentTag>>, C>(get_data().numeric_effects, *m_context);
-    }
-    auto get_auxiliary_numeric_effect() const noexcept
-    {
-        return View<::cista::optional<Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>>, C>(get_data().auxiliary_numeric_effect, *m_context);
-    }
+    auto get_literals() const noexcept { return make_view(get_data().literals, *m_context); }
+    auto get_numeric_effects() const noexcept { return make_view(get_data().numeric_effects, *m_context); }
+    auto get_auxiliary_numeric_effect() const noexcept { return make_view(get_data().auxiliary_numeric_effect, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

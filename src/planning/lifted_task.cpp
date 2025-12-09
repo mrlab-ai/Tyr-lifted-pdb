@@ -168,17 +168,15 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
     auto& positive_effects = action_context.planning_execution_context.positive_effects;
     auto& negative_effects = action_context.planning_execution_context.negative_effects;
 
-    for (const auto atom : action_context.program_merge_atoms)
+    for (const auto rule : action_context.program_merge_rules)
     {
-        std::cout << std::endl << atom << std::endl;
-
         binding.clear();
-        for (const auto object : atom.get_objects())
+        for (const auto object : rule.get_head().get_objects())
             binding.push_back(action_program.get_object_to_object_mapping().at(object).get_index());
 
         auto binding_view = make_view(binding, task_repository);
 
-        for (const auto action : action_program.get_predicate_to_actions_mapping().at(atom.get_predicate()))
+        for (const auto action : action_program.get_rule_to_actions_mapping().at(rule.get_rule()))
         {
             const auto action_index = action.get_index().get_value();
 

@@ -25,6 +25,7 @@
 #include "tyr/formalism/ground_atom_index.hpp"
 #include "tyr/formalism/ground_literal_index.hpp"
 #include "tyr/formalism/ground_rule_index.hpp"
+#include "tyr/formalism/rule_index.hpp"
 
 namespace tyr
 {
@@ -34,12 +35,17 @@ struct Data<formalism::GroundRule>
     using Tag = formalism::GroundRule;
 
     Index<formalism::GroundRule> index;
+    Index<formalism::Rule> rule;
     Index<formalism::GroundConjunctiveCondition> body;
     Index<formalism::GroundAtom<formalism::FluentTag>> head;
 
     Data() = default;
-    Data(Index<formalism::GroundRule> index, Index<formalism::GroundConjunctiveCondition> body, Index<formalism::GroundAtom<formalism::FluentTag>> head) :
+    Data(Index<formalism::GroundRule> index,
+         Index<formalism::Rule> rule,
+         Index<formalism::GroundConjunctiveCondition> body,
+         Index<formalism::GroundAtom<formalism::FluentTag>> head) :
         index(index),
+        rule(rule),
         body(body),
         head(head)
     {
@@ -51,8 +57,8 @@ struct Data<formalism::GroundRule>
 
     void clear() noexcept {}
 
-    auto cista_members() const noexcept { return std::tie(index, body, head); }
-    auto identifying_members() const noexcept { return std::tie(body, head); }
+    auto cista_members() const noexcept { return std::tie(index, rule, body, head); }
+    auto identifying_members() const noexcept { return std::tie(rule, body, head); }
 };
 
 }

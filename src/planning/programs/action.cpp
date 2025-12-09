@@ -29,7 +29,7 @@ namespace tyr::planning
 {
 static View<Index<formalism::Program>, formalism::Repository> create(const LiftedTask& task,
                                                                      ApplicableActionProgram::ObjectToObjectMapping& object_to_object_mapping,
-                                                                     ApplicableActionProgram::PredicateToActionsMapping& predicate_to_actions_mapping,
+                                                                     ApplicableActionProgram::RuleToActionsMapping& rule_to_actions_mapping,
                                                                      formalism::Repository& repository)
 {
     auto merge_cache = formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>();
@@ -119,7 +119,6 @@ static View<Index<formalism::Program>, formalism::Repository> create(const Lifte
 
         if (std::find(program.fluent_predicates.begin(), program.fluent_predicates.end(), new_predicate.get_index()) == program.fluent_predicates.end())
             program.fluent_predicates.push_back(new_predicate.get_index());
-        predicate_to_actions_mapping[new_predicate].push_back(action);
 
         auto rule_ptr = builder.get_builder<formalism::Rule>();
         auto& rule = *rule_ptr;
@@ -194,6 +193,8 @@ static View<Index<formalism::Program>, formalism::Repository> create(const Lifte
         formalism::canonicalize(rule);
         const auto new_rule = repository.get_or_create(rule, builder.get_buffer()).first;
 
+        rule_to_actions_mapping[new_rule].emplace_back(action);
+
         program.rules.push_back(new_rule.get_index());
     }
 
@@ -202,17 +203,14 @@ static View<Index<formalism::Program>, formalism::Repository> create(const Lifte
 }
 
 ApplicableActionProgram::ApplicableActionProgram(const LiftedTask& task) :
-    m_predicate_to_actions(),
+    m_rule_to_actions(),
     m_object_to_object(),
     m_repository(std::make_shared<formalism::Repository>()),
-    m_program(create(task, m_object_to_object, m_predicate_to_actions, *m_repository))
+    m_program(create(task, m_object_to_object, m_rule_to_actions, *m_repository))
 {
 }
 
-const ApplicableActionProgram::PredicateToActionsMapping& ApplicableActionProgram::get_predicate_to_actions_mapping() const noexcept
-{
-    return m_predicate_to_actions;
-}
+const ApplicableActionProgram::RuleToActionsMapping& ApplicableActionProgram::get_rule_to_actions_mapping() const noexcept { return m_rule_to_actions; }
 
 const ApplicableActionProgram::ObjectToObjectMapping& ApplicableActionProgram::get_object_to_object_mapping() const noexcept { return m_object_to_object; }
 

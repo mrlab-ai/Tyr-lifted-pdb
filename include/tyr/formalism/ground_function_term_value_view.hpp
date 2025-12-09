@@ -42,7 +42,7 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_fterm() const { return View<Index<formalism::GroundFunctionTerm<T>>, C>(get_data().fterm, *m_context); }
+    auto get_fterm() const { return make_view(get_data().fterm, *m_context); }
     auto get_value() const { return get_data().value; }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }

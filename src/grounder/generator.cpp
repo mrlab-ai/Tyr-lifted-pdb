@@ -40,8 +40,7 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
                          ThreadExecutionContext& thread_execution_context)
 {
     thread_execution_context.binding.clear();
-    const auto binding = View<IndexList<formalism::Object>, formalism::OverlayRepository<formalism::Repository>>(thread_execution_context.binding,
-                                                                                                                 rule_execution_context.repository);
+    const auto binding = make_view(thread_execution_context.binding, rule_execution_context.repository);
 
     auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 
@@ -67,8 +66,7 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
         const auto& vertex = rule_execution_context.static_consistency_graph.get_vertex(vertex_index);
         thread_execution_context.binding.push_back(vertex.get_object_index());
 
-        const auto binding = View<IndexList<formalism::Object>, formalism::OverlayRepository<formalism::Repository>>(thread_execution_context.binding,
-                                                                                                                     rule_execution_context.repository);
+        const auto binding = make_view(thread_execution_context.binding, rule_execution_context.repository);
 
         auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 
@@ -99,8 +97,7 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
                 thread_execution_context.binding.push_back(Index<formalism::Object>(vertex.get_object_index()));
             }
 
-            const auto binding = View<IndexList<formalism::Object>, formalism::OverlayRepository<formalism::Repository>>(thread_execution_context.binding,
-                                                                                                                         rule_execution_context.repository);
+            const auto binding = make_view(thread_execution_context.binding, rule_execution_context.repository);
 
             auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 

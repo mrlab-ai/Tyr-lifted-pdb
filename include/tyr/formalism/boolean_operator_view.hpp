@@ -40,7 +40,7 @@ public:
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_variant() const { return View<typename Data<formalism::BooleanOperator<T>>::Variant, C>(m_handle.value, *m_context); }
+    auto get_variant() const { return make_view(m_handle.value, *m_context); }
 
     auto get_arity() const { return m_handle.arity; }
 
