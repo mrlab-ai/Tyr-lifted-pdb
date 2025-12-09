@@ -31,6 +31,7 @@
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/kpkc_utils.hpp"
 
+#include <boost/dynamic_bitset.hpp>
 #include <oneapi/tbb/enumerable_thread_specific.h>
 
 namespace tyr::grounder
@@ -92,8 +93,15 @@ struct ThreadExecutionContext
     void clear() noexcept;
 };
 
-struct FixedPointContext
+struct PlanningExecutionContext
 {
+    IndexList<formalism::Object> binding;
+    IndexList<formalism::Object> binding_full;
+    formalism::EffectFamilyList effect_families;
+    boost::dynamic_bitset<> positive_effects;
+    boost::dynamic_bitset<> negative_effects;
+
+    PlanningExecutionContext() = default;
 };
 
 struct ProgramExecutionContext
@@ -112,6 +120,8 @@ struct ProgramExecutionContext
     oneapi::tbb::enumerable_thread_specific<grounder::ThreadExecutionContext> thread_execution_contexts;
 
     formalism::Builder builder;
+
+    PlanningExecutionContext planning_execution_context;
 
     // Stage
     formalism::RepositoryPtr stage_repository;

@@ -702,9 +702,8 @@ private:
                                     if (ArityVisitor().get(part) == 0)
                                     {
                                         auto binding = IndexList<formalism::Object> {};
-                                        auto view = View<IndexList<formalism::Object>, C>(binding, context);
                                         func_ground_and_insert_nullary_literal(index_literal_variant,
-                                                                               view,
+                                                                               make_view(binding, context),
                                                                                conj_condition.static_nullary_literals,
                                                                                conj_condition.fluent_nullary_literals,
                                                                                conj_condition.derived_nullary_literals);
@@ -719,11 +718,9 @@ private:
                                     if (ArityVisitor().get(part) == 0)
                                     {
                                         auto binding = IndexList<formalism::Object> {};
-                                        auto binding_view = View<IndexList<formalism::Object>, C>(binding, context);
-                                        auto numeric_constraint_view =
-                                            View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(numeric_constraint, context);
                                         conj_condition.nullary_numeric_constraints.push_back(
-                                            formalism::ground(numeric_constraint_view, binding_view, builder, context).get_data());
+                                            formalism::ground(make_view(numeric_constraint, context), make_view(binding, context), builder, context)
+                                                .get_data());
                                     }
                                 }
                                 else
@@ -747,9 +744,8 @@ private:
                     if (ArityVisitor().get(element) == 0)
                     {
                         auto binding = IndexList<formalism::Object> {};
-                        auto view = View<IndexList<formalism::Object>, C>(binding, context);
                         func_ground_and_insert_nullary_literal(index_literal_variant,
-                                                               view,
+                                                               make_view(binding, context),
                                                                conj_condition.static_nullary_literals,
                                                                conj_condition.fluent_nullary_literals,
                                                                conj_condition.derived_nullary_literals);
@@ -767,11 +763,8 @@ private:
                     if (ArityVisitor().get(element) == 0)
                     {
                         auto binding = IndexList<formalism::Object> {};
-                        auto binding_view = View<IndexList<formalism::Object>, C>(binding, context);
-                        auto numeric_constraint_view =
-                            View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C>(numeric_constraint, context);
                         conj_condition.nullary_numeric_constraints.push_back(
-                            formalism::ground(numeric_constraint_view, binding_view, builder, context).get_data());
+                            formalism::ground(make_view(numeric_constraint, context), make_view(binding, context), builder, context).get_data());
                     }
 
                     formalism::canonicalize(conj_condition);
@@ -1108,7 +1101,7 @@ private:
                     if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
                     {
                         // We store atoms in the head, not literals
-                        axiom.head = View<Index<formalism::Literal<formalism::DerivedTag>>, C>(arg, context).get_atom().get_index();
+                        axiom.head = make_view(arg, context).get_atom().get_index();
                     }
                     else
                     {

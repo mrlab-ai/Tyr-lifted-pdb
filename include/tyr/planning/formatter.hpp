@@ -100,11 +100,7 @@ std::ostream& print(std::ostream& os, const planning::State<Task>& el)
     {
         if (!std::isnan(static_numeric_variables[i]))
         {
-            static_fterm_values.emplace_back(
-                View<Index<formalism::GroundFunctionTerm<formalism::StaticTag>>, formalism::OverlayRepository<formalism::Repository>>(
-                    Index<formalism::GroundFunctionTerm<formalism::StaticTag>>(i),
-                    context),
-                static_numeric_variables[i]);
+            static_fterm_values.emplace_back(make_view(Index<formalism::GroundFunctionTerm<formalism::StaticTag>>(i), context), static_numeric_variables[i]);
         }
     }
 
@@ -114,11 +110,7 @@ std::ostream& print(std::ostream& os, const planning::State<Task>& el)
     {
         if (!std::isnan(fluent_numeric_variables[i]))
         {
-            fluent_fterm_values.emplace_back(
-                View<Index<formalism::GroundFunctionTerm<formalism::FluentTag>>, formalism::OverlayRepository<formalism::Repository>>(
-                    Index<formalism::GroundFunctionTerm<formalism::FluentTag>>(i),
-                    context),
-                static_numeric_variables[i]);
+            fluent_fterm_values.emplace_back(make_view(Index<formalism::GroundFunctionTerm<formalism::FluentTag>>(i), context), static_numeric_variables[i]);
         }
     }
 
@@ -126,29 +118,15 @@ std::ostream& print(std::ostream& os, const planning::State<Task>& el)
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os,
-                   "static atoms = {}\n",
-                   to_string(View<IndexList<formalism::GroundAtom<formalism::StaticTag>>, formalism::OverlayRepository<formalism::Repository>>(static_atoms,
-                                                                                                                                               context)));
+        os << print_indent << "static atoms = " << make_view(static_atoms, context) << "\n";
 
-        os << print_indent;
-        fmt::print(os,
-                   "fluent atoms = {}\n",
-                   to_string(View<IndexList<formalism::GroundAtom<formalism::FluentTag>>, formalism::OverlayRepository<formalism::Repository>>(fluent_atoms,
-                                                                                                                                               context)));
+        os << print_indent << "fluent atoms = " << make_view(fluent_atoms, context) << "\n";
 
-        os << print_indent;
-        fmt::print(os,
-                   "derived atoms = {}\n",
-                   to_string(View<IndexList<formalism::GroundAtom<formalism::DerivedTag>>, formalism::OverlayRepository<formalism::Repository>>(derived_atoms,
-                                                                                                                                                context)));
+        os << print_indent << "derived atoms = " << make_view(derived_atoms, context) << "\n";
 
-        os << print_indent;
-        fmt::print(os, "static numeric variables = {}\n", to_string(static_fterm_values));
+        os << print_indent << "static numeric variables = " << static_fterm_values << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent numeric variables = {}\n", to_string(fluent_fterm_values));
+        os << print_indent << "fluent numeric variables = " << fluent_fterm_values << "\n";
     }
 
     os << print_indent << ")";

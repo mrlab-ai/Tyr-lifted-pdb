@@ -122,15 +122,13 @@ ground(View<Data<FunctionExpression>, C_SRC> element, View<IndexList<Object>, C_
             using Alternative = std::decay_t<decltype(arg)>;
 
             if constexpr (std::is_same_v<Alternative, float_t>)
-                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(arg), destination);
+                return make_view(Data<GroundFunctionExpression>(arg), destination);
             else if constexpr (std::is_same_v<Alternative, View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C_SRC>>)
             {
-                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(ground(arg, binding, builder, destination).get_data()),
-                                                                   destination);
+                return make_view(Data<GroundFunctionExpression>(ground(arg, binding, builder, destination).get_data()), destination);
             }
             else
-                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(ground(arg, binding, builder, destination).get_index()),
-                                                                   destination);
+                return make_view(Data<GroundFunctionExpression>(ground(arg, binding, builder, destination).get_index()), destination);
         },
         element.get_variant());
 }
@@ -194,11 +192,7 @@ ground(View<Data<BooleanOperator<Data<FunctionExpression>>>, C_SRC> element, Vie
 {
     return visit(
         [&](auto&& arg)
-        {
-            return View<Data<BooleanOperator<Data<GroundFunctionExpression>>>, C_DST>(
-                Data<BooleanOperator<Data<GroundFunctionExpression>>>(ground(arg, binding, builder, destination).get_index()),
-                destination);
-        },
+        { return make_view(Data<BooleanOperator<Data<GroundFunctionExpression>>>(ground(arg, binding, builder, destination).get_index()), destination); },
         element.get_variant());
 }
 
@@ -208,11 +202,7 @@ ground(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C_SRC> element, 
 {
     return visit(
         [&](auto&& arg)
-        {
-            return View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_DST>(
-                Data<ArithmeticOperator<Data<GroundFunctionExpression>>>(ground(arg, binding, builder, destination).get_index()),
-                destination);
-        },
+        { return make_view(Data<ArithmeticOperator<Data<GroundFunctionExpression>>>(ground(arg, binding, builder, destination).get_index()), destination); },
         element.get_variant());
 }
 
@@ -279,14 +269,9 @@ template<FactKind T, Context C_SRC, Context C_DST>
 View<Data<GroundNumericEffectOperator<T>>, C_DST>
 ground(View<Data<NumericEffectOperator<T>>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
 {
-    return visit(
-        [&](auto&& arg)
-        {
-            return View<Data<GroundNumericEffectOperator<T>>, C_DST>(
-                Data<GroundNumericEffectOperator<T>>(ground(arg, binding, builder, destination).get_index()),
-                destination);
-        },
-        element.get_variant());
+    return visit([&](auto&& arg)
+                 { return make_view(Data<GroundNumericEffectOperator<T>>(ground(arg, binding, builder, destination).get_index()), destination); },
+                 element.get_variant());
 }
 
 template<Context C_SRC, Context C_DST>
@@ -332,6 +317,7 @@ ground(View<Index<ConditionalEffect>, C_SRC> element, View<IndexList<Object>, C_
 template<Context C_SRC, Context C_DST>
 View<Index<GroundAction>, C_DST> ground(View<Index<Action>, C_SRC> element,
                                         View<IndexList<Object>, C_DST> binding,
+                                        IndexList<Object>& binding_full,
                                         const analysis::DomainListListList& cond_effect_domains,
                                         Builder& builder,
                                         C_DST& destination)
@@ -345,7 +331,7 @@ View<Index<GroundAction>, C_DST> ground(View<Index<Action>, C_SRC> element,
     action.action = element.get_index();
     action.condition = ground(element.get_condition(), binding, builder, destination).get_index();
 
-    thread_local IndexList<Object> full_binding;
+    binding_full = binding.get_data();
 
     for (uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
@@ -355,17 +341,16 @@ View<Index<GroundAction>, C_DST> ground(View<Index<Action>, C_SRC> element,
         // Ensure that we stripped off the action precondition parameter domains.
         assert(std::distance(parameter_domains.begin(), parameter_domains.end()) == static_cast<int>(cond_effect.get_condition().get_arity()));
 
-        for_element_in_cartesian_set(
-            parameter_domains.begin(),
-            parameter_domains.end(),
-            [&](auto&& binding_ext)
-            {
-                full_binding = binding.get_data();  // reset it
-                full_binding.insert(full_binding.end(), binding_ext.begin(), binding_ext.end());
+        for_element_in_cartesian_set(parameter_domains.begin(),
+                                     parameter_domains.end(),
+                                     [&](auto&& binding_cond)
+                                     {
+                                         binding_full.resize(binding.size());  // strip from prev cond effect
+                                         binding_full.insert(binding_full.end(), binding_cond.begin(), binding_cond.end());
 
-                action.effects.push_back(
-                    ground(cond_effect, View<IndexList<Object>, C_DST>(full_binding, binding.get_context()), builder, destination).get_index());
-            });
+                                         action.effects.push_back(
+                                             ground(cond_effect, make_view(binding_full, binding.get_context()), builder, destination).get_index());
+                                     });
     }
 
     // Canonicalize and Serialize

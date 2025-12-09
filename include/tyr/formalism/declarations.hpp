@@ -223,28 +223,54 @@ struct Program
 {
 };
 
+enum class EffectFamily
+{
+    NONE = 0,
+    ASSIGN = 1,
+    INCREASE_DECREASE = 2,
+    SCALE_UP_SCALE_DOWN = 3,
+};
+
+using EffectFamilyList = std::vector<EffectFamily>;
+
+inline bool is_compatible_effect_family(EffectFamily lhs, EffectFamily rhs)
+{
+    if (lhs == EffectFamily::NONE || rhs == EffectFamily::NONE)
+        return true;  ///< first effect
+
+    if (lhs == rhs)
+        return lhs != EffectFamily::ASSIGN;  ///< disallow double assignment.
+
+    return false;  ///< disallow mixing assign, additive, or multiplicative
+}
+
 struct OpAssign
 {
+    static constexpr EffectFamily family = EffectFamily::ASSIGN;
     static constexpr int kind = 0;
     auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpIncrease
 {
+    static constexpr EffectFamily family = EffectFamily::INCREASE_DECREASE;
     static constexpr int kind = 1;
     auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpDecrease
 {
+    static constexpr EffectFamily family = EffectFamily::INCREASE_DECREASE;
     static constexpr int kind = 2;
     auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpScaleUp
 {
+    static constexpr EffectFamily family = EffectFamily::SCALE_UP_SCALE_DOWN;
     static constexpr int kind = 3;
     auto identifying_members() const noexcept { return std::tie(kind); }
 };
 struct OpScaleDown
 {
+    static constexpr EffectFamily family = EffectFamily::SCALE_UP_SCALE_DOWN;
     static constexpr int kind = 4;
     auto identifying_members() const noexcept { return std::tie(kind); }
 };

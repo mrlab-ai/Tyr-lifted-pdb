@@ -379,17 +379,9 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
                 using T = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::StaticTag>>>)
-                    static_atoms.push_back(
-                        View<Index<formalism::GroundLiteral<formalism::StaticTag>>, formalism::OverlayRepository<formalism::Repository>>(arg,
-                                                                                                                                         *overlay_task_context)
-                            .get_atom()
-                            .get_index());
+                    static_atoms.push_back(make_view(arg, *overlay_task_context).get_atom().get_index());
                 else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::FluentTag>>>)
-                    fluent_atoms.push_back(
-                        View<Index<formalism::GroundLiteral<formalism::FluentTag>>, formalism::OverlayRepository<formalism::Repository>>(arg,
-                                                                                                                                         *overlay_task_context)
-                            .get_atom()
-                            .get_index());
+                    fluent_atoms.push_back(make_view(arg, *overlay_task_context).get_atom().get_index());
                 else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::DerivedTag>>>)
                     throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section.");
                 else

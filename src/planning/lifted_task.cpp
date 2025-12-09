@@ -51,11 +51,10 @@ static void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluen
 {
     /// --- Initialize FactSets
     for (auto i = fluent_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = fluent_atoms.find_next(i))
-        axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(
-            merge(View<Index<GroundAtom<FluentTag>>, OverlayRepository<Repository>>(Index<GroundAtom<FluentTag>>(i), atoms_context),
-                  axiom_context.builder,
-                  *axiom_context.repository,
-                  axiom_context.task_to_program_merge_cache));
+        axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge(make_view(Index<GroundAtom<FluentTag>>(i), atoms_context),
+                                                                                           axiom_context.builder,
+                                                                                           *axiom_context.repository,
+                                                                                           axiom_context.task_to_program_merge_cache));
 }
 
 static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& derived_atoms,
@@ -65,7 +64,7 @@ static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& deri
     /// --- Initialize FactSets
     for (auto i = derived_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = derived_atoms.find_next(i))
         axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(
-            compile<DerivedTag, FluentTag>(View<Index<GroundAtom<DerivedTag>>, OverlayRepository<Repository>>(Index<GroundAtom<DerivedTag>>(i), atoms_context),
+            compile<DerivedTag, FluentTag>(make_view(Index<GroundAtom<DerivedTag>>(i), atoms_context),
                                            axiom_context.builder,
                                            *axiom_context.repository,
                                            axiom_context.task_to_program_compile_cache,
@@ -81,8 +80,7 @@ static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& num
     {
         if (!std::isnan(numeric_variables[i]))
             axiom_context.facts_execution_context.fact_sets.fluent_sets.function.insert(
-                merge(View<Index<GroundFunctionTerm<FluentTag>>, OverlayRepository<Repository>>(Index<GroundFunctionTerm<FluentTag>>(i),
-                                                                                                numeric_variables_context),
+                merge(make_view(Index<GroundFunctionTerm<FluentTag>>(i), numeric_variables_context),
                       axiom_context.builder,
                       *axiom_context.repository,
                       axiom_context.task_to_program_merge_cache),
@@ -155,6 +153,7 @@ static void read_derived_atoms_from_program_context(boost::dynamic_bitset<>& der
 
 static void read_solution_and_instantiate_labeled_successor_nodes(
     Node<LiftedTask> node,
+    const tyr::grounder::FactsView& facts_view,
     OverlayRepository<Repository>& task_repository,
     ProgramExecutionContext& action_context,
     const ApplicableActionProgram& action_program,
@@ -163,24 +162,32 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
 {
     out_successors.clear();
 
+    auto& binding = action_context.planning_execution_context.binding;
+    auto& binding_full = action_context.planning_execution_context.binding_full;
+    auto& effect_families = action_context.planning_execution_context.effect_families;
+    auto& positive_effects = action_context.planning_execution_context.positive_effects;
+    auto& negative_effects = action_context.planning_execution_context.negative_effects;
+
     for (const auto atom : action_context.program_merge_atoms)
     {
         std::cout << std::endl << atom << std::endl;
 
-        auto binding = IndexList<Object> {};
+        binding.clear();
         for (const auto object : atom.get_objects())
             binding.push_back(action_program.get_object_to_object_mapping().at(object).get_index());
 
-        auto binding_view = View<IndexList<Object>, OverlayRepository<Repository>>(binding, task_repository);
+        auto binding_view = make_view(binding, task_repository);
 
         for (const auto action : action_program.get_predicate_to_actions_mapping().at(atom.get_predicate()))
         {
             const auto action_index = action.get_index().get_value();
 
             const auto ground_action =
-                ground(action, binding_view, parameter_domains_per_cond_effect_per_action[action_index], action_context.builder, task_repository);
+                ground(action, binding_view, binding_full, parameter_domains_per_cond_effect_per_action[action_index], action_context.builder, task_repository);
 
-            out_successors.emplace_back(ground_action, apply_action(node, ground_action));
+            effect_families.clear();
+            if (grounder::is_applicable(ground_action, facts_view, effect_families))
+                out_successors.emplace_back(ground_action, apply_action(node, ground_action, positive_effects, negative_effects));
         }
     }
 }
@@ -290,11 +297,14 @@ LiftedTask::get_labeled_successor_nodes_impl(const Node<LiftedTask>& node)
     const auto& derived_atoms = state.get_atoms<DerivedTag>();
     const auto& numeric_variables = state.get_numeric_variables<FluentTag>();
 
+    const auto facts_view = grounder::FactsView(this->m_static_atoms_bitset, fluent_atoms, derived_atoms, this->m_static_numeric_variables, numeric_variables);
+
     insert_extended_state(fluent_atoms, derived_atoms, numeric_variables, *this->m_overlay_repository, m_action_context);
 
     solve_bottom_up(m_action_context);
 
     read_solution_and_instantiate_labeled_successor_nodes(node,
+                                                          facts_view,
                                                           *this->m_overlay_repository,
                                                           m_action_context,
                                                           m_action_program,

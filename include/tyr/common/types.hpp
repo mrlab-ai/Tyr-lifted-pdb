@@ -80,6 +80,21 @@ concept Indexable = requires(T a) {
     { a.get_value() } -> std::same_as<uint_t>;
 };
 
+/// @brief Helper to create a view
+template<typename T, typename C>
+auto make_view(const T& element, const C& context)
+{
+    return View<T, C>(element, context);
+}
+
+template<typename T, typename C>
+auto make_view(T&& element, C&& context)
+{
+    using TT = std::remove_cvref_t<T>;
+    using CC = std::remove_cvref_t<C>;
+    return View<TT, CC>(std::forward<T>(element), std::forward<C>(context));
+}
+
 }
 
 #endif

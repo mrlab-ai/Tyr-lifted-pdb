@@ -68,6 +68,7 @@ struct FactsExecutionContext;
 struct RuleExecutionContext;
 struct ProgramExecutionContext;
 struct ThreadExecutionContext;
+struct PlanningExecutionContext;
 
 namespace kpkc
 {

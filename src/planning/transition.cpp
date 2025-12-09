@@ -83,7 +83,10 @@ inline void process_effects(View<Index<formalism::GroundAction>, formalism::Over
 /// @param state_fact_sets
 /// @return
 template<typename Task>
-Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action)
+Node<Task> apply_action(Node<Task> node,
+                        View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+                        boost::dynamic_bitset<>& out_positive_effects,
+                        boost::dynamic_bitset<>& out_negative_effects)
 {
     const auto state = node.get_state();
     auto& task = node.get_task();
@@ -107,18 +110,18 @@ Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, fo
 
     auto succ_metric_value = node.get_state_metric();
 
-    auto positive_effects = boost::dynamic_bitset<>();
-    auto negative_effects = boost::dynamic_bitset<>();
+    out_positive_effects.clear();
+    out_negative_effects.clear();
 
-    process_effects(action, facts_view, positive_effects, negative_effects, succ_numeric_variables, succ_metric_value);
+    process_effects(action, facts_view, out_positive_effects, out_negative_effects, succ_numeric_variables, succ_metric_value);
 
-    const auto max_size = std::max({ succ_fluent_atoms.size(), positive_effects.size(), negative_effects.size() });
+    const auto max_size = std::max({ succ_fluent_atoms.size(), out_positive_effects.size(), out_negative_effects.size() });
     succ_fluent_atoms.resize(max_size, false);
-    positive_effects.resize(max_size, false);
-    negative_effects.resize(max_size, false);
+    out_positive_effects.resize(max_size, false);
+    out_negative_effects.resize(max_size, false);
 
-    succ_fluent_atoms -= negative_effects;
-    succ_fluent_atoms |= positive_effects;
+    succ_fluent_atoms -= out_negative_effects;
+    succ_fluent_atoms |= out_positive_effects;
 
     task.compute_extended_state(succ_unpacked_state);
 
@@ -141,6 +144,12 @@ Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, fo
     return Node<Task>(succ_state_index, succ_metric_value, task);
 }
 
-template Node<LiftedTask> apply_action(Node<LiftedTask> node, View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action);
-template Node<GroundTask> apply_action(Node<GroundTask> node, View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action);
+template Node<LiftedTask> apply_action(Node<LiftedTask> node,
+                                       View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+                                       boost::dynamic_bitset<>& out_positive_effects,
+                                       boost::dynamic_bitset<>& out_negative_effects);
+template Node<GroundTask> apply_action(Node<GroundTask> node,
+                                       View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+                                       boost::dynamic_bitset<>& out_positive_effects,
+                                       boost::dynamic_bitset<>& out_negative_effects);
 }

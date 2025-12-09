@@ -23,6 +23,8 @@
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 
+#include <boost/dynamic_bitset.hpp>
+
 namespace tyr::planning
 {
 /// @brief Apply the action in the given node to apply its successor node.
@@ -34,7 +36,10 @@ namespace tyr::planning
 /// @param state_fact_sets
 /// @return
 template<typename Task>
-Node<Task> apply_action(Node<Task> node, View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action);
+Node<Task> apply_action(Node<Task> node,
+                        View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+                        boost::dynamic_bitset<>& out_positive_effects,
+                        boost::dynamic_bitset<>& out_negative_effects);
 }
 
 #endif

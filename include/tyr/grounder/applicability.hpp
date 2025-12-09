@@ -18,6 +18,7 @@
 #ifndef TYR_GROUNDER_APPLICABILITY_HPP_
 #define TYR_GROUNDER_APPLICABILITY_HPP_
 
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -36,13 +37,6 @@
 
 namespace tyr::grounder
 {
-
-enum class EffectFamily
-{
-    ASSIGN = 0,
-    INCREASE_DECREASE = 1,
-    SCALE_UP_SCALE_DOWN = 2,
-};
 
 /**
  * evaluate
@@ -165,11 +159,9 @@ float_t evaluate(View<Data<formalism::GroundNumericEffectOperator<T>>, C> elemen
 template<formalism::Context C>
 bool is_applicable_if_fires(View<Index<formalism::GroundConditionalEffect>, C> element,
                             const FactsView& facts_view,
-                            std::vector<EffectFamily>& ref_fluent_effect_families,
-                            EffectFamily& ref_auxiliary_effect_family)
+                            formalism::EffectFamilyList& ref_fluent_effect_families)
 {
-    return !is_applicable(element.get_effect(), facts_view, ref_fluent_effect_families, ref_auxiliary_effect_family)
-           || is_applicable(element.get_condition(), facts_view);
+    return is_applicable(element.get_effect(), facts_view, ref_fluent_effect_families) || !is_applicable(element.get_condition(), facts_view);
 }
 
 /**
@@ -192,6 +184,60 @@ template<formalism::Context C>
 bool is_applicable(View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C> elements, const FactsView& facts_view)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return evaluate(arg, facts_view); });
+}
+
+template<formalism::NumericEffectOpKind Op, formalism::Context C>
+bool is_applicable(View<Index<formalism::GroundNumericEffect<Op, formalism::FluentTag>>, C> element,
+                   const FactsView& facts_view,
+                   formalism::EffectFamilyList& ref_fluent_effect_families)
+{
+    const auto fterm_index = element.get_fterm().get_index();
+    ref_fluent_effect_families.resize(fterm_index.get_value() + 1, formalism::EffectFamily::NONE);
+
+    // Check non-conflicting effects
+    if (!is_compatible_effect_family(Op::family, ref_fluent_effect_families[fterm_index.get_value()]))
+        return false;  /// incompatible effects
+
+    ref_fluent_effect_families[fterm_index.get_value()] = Op::family;
+
+    // Check fterm is well-defined in facts_view
+    if constexpr (!std::is_same_v<Op, formalism::OpAssign>)
+    {
+        if (!facts_view.contains(fterm_index))
+            return false;  /// target function is undefined and operator is not assign
+    }
+
+    // Check fexpr is well-defined in facts_view
+    return !std::isnan(evaluate(element.get_fexpr(), facts_view));
+}
+
+template<formalism::Context C>
+bool is_applicable(View<Data<formalism::GroundNumericEffectOperator<formalism::FluentTag>>, C> element,
+                   const FactsView& facts_view,
+                   formalism::EffectFamilyList& ref_fluent_effect_families)
+{
+    return visit([&](auto&& arg) { return is_applicable(arg, facts_view, ref_fluent_effect_families); }, element.get_variant());
+}
+
+template<formalism::Context C>
+bool is_applicable(View<DataList<formalism::GroundNumericEffectOperator<formalism::FluentTag>>, C> elements,
+                   const FactsView& facts_view,
+                   formalism::EffectFamilyList& ref_fluent_effect_families)
+{
+    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, facts_view, ref_fluent_effect_families); });
+}
+
+template<formalism::Context C>
+bool is_applicable(View<Index<formalism::GroundNumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>, C> element, const FactsView& facts_view)
+{
+    // Check fexpr is well-defined in facts_view
+    return !std::isnan(evaluate(element.get_fexpr(), facts_view));
+}
+
+template<formalism::Context C>
+bool is_applicable(View<Data<formalism::GroundNumericEffectOperator<formalism::AuxiliaryTag>>, C> element, const FactsView& facts_view)
+{
+    return visit([&](auto&& arg) { return is_applicable(arg, facts_view); }, element.get_variant());
 }
 
 // GroundConjunctiveCondition
@@ -218,13 +264,10 @@ bool is_applicable(View<Index<formalism::GroundRule>, C> element, const FactsVie
 template<formalism::Context C>
 bool is_applicable(View<Index<formalism::GroundConjunctiveEffect>, C> element,
                    const FactsView& facts_view,
-                   std::vector<EffectFamily>& ref_fluent_effect_families,
-                   EffectFamily& ref_auxiliary_effect_family)
+                   formalism::EffectFamilyList& ref_fluent_effect_families)
 {
-    return is_applicable(element.template get_literals<formalism::StaticTag>(), facts_view)      //
-           && is_applicable(element.template get_literals<formalism::FluentTag>(), facts_view)   //
-           && is_applicable(element.template get_literals<formalism::DerivedTag>(), facts_view)  //
-           && is_applicable(element.get_numeric_effects(), facts_view, ref_fluent_effect_families, ref_auxiliary_effect_family);
+    return is_applicable(element.get_numeric_effects(), facts_view, ref_fluent_effect_families)
+           && (!element.get_auxiliary_numeric_effect().has_value() || is_applicable(element.get_auxiliary_numeric_effect().value(), facts_view));
 }
 
 // GroundConditionalEffect
@@ -232,26 +275,21 @@ bool is_applicable(View<Index<formalism::GroundConjunctiveEffect>, C> element,
 template<formalism::Context C>
 bool is_applicable(View<Index<formalism::GroundConditionalEffect>, C> element,
                    const FactsView& facts_view,
-                   std::vector<EffectFamily>& ref_fluent_effect_families,
-                   EffectFamily& ref_auxiliary_effect_family)
+                   formalism::EffectFamilyList& ref_fluent_effect_families)
 {
-    return is_applicable(element.get_condition(), facts_view, ref_fluent_effect_families, ref_auxiliary_effect_family)  //
-           && is_applicable(element.get_effect(), facts_view, ref_fluent_effect_families, ref_auxiliary_effect_family);
+    return is_applicable(element.get_condition(), facts_view, ref_fluent_effect_families)  //
+           && is_applicable(element.get_effect(), facts_view, ref_fluent_effect_families);
 }
 
 // GroundAction
 
 template<formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundAction>, C> element,
-                   const FactsView& facts_view,
-                   std::vector<EffectFamily>& out_fluent_effect_families,
-                   EffectFamily& out_auxiliary_effect_family)
+bool is_applicable(View<Index<formalism::GroundAction>, C> element, const FactsView& facts_view, formalism::EffectFamilyList& out_fluent_effect_families)
 {
     return is_applicable(element.get_condition(), facts_view)
            && std::all_of(element.get_effects().begin(),
                           element.get_effects().end(),
-                          [&](auto&& cond_effect)
-                          { return is_applicable_if_fires(cond_effect, facts_view, out_fluent_effect_families, out_auxiliary_effect_family); });
+                          [&](auto&& cond_effect) { return is_applicable_if_fires(cond_effect, facts_view, out_fluent_effect_families); });
 }
 
 // GroundAxiom
