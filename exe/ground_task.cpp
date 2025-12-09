@@ -25,6 +25,7 @@ int main(int argc, char** argv)
     auto program = argparse::ArgumentParser("AStar search.");
     program.add_argument("-D", "--domain-filepath").required().help("The path to the PDDL domain file.");
     program.add_argument("-P", "--problem-filepath").required().help("The path to the PDDL problem file.");
+    program.add_argument("-N", "--num-worker-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of worker threads.");
 
     try
     {
@@ -39,7 +40,7 @@ int main(int argc, char** argv)
 
     auto domain_filepath = program.get<std::string>("--domain-filepath");
     auto problem_filepath = program.get<std::string>("--problem-filepath");
-    // oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, 1);
+    oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, program.get<std::size_t>("--num-worker-threads"));
 
     auto parser = planning::Parser(domain_filepath);
     auto domain = parser.get_domain();
@@ -49,4 +50,6 @@ int main(int argc, char** argv)
     std::cout << *domain << std::endl;
 
     std::cout << *lifted_task << std::endl;
+
+    auto ground_task = lifted_task->get_ground_task();
 }

@@ -315,7 +315,14 @@ void LiftedTask::get_labeled_successor_nodes_impl(const Node<LiftedTask>& node,
 {
 }
 
-GroundTask LiftedTask::get_ground_task() { return GroundTask(this->m_domain, this->m_repository, this->m_overlay_repository, this->m_task); }
+GroundTask LiftedTask::get_ground_task()
+{
+    auto ground_context = grounder::ProgramExecutionContext(m_ground_program.get_program(), m_ground_program.get_repository());
+
+    solve_bottom_up(ground_context);
+
+    return GroundTask(this->m_domain, this->m_repository, this->m_overlay_repository, this->m_task);
+}
 
 const ApplicableActionProgram& LiftedTask::get_action_program() const { return m_action_program; }
 
