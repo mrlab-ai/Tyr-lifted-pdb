@@ -55,8 +55,6 @@ private:
         return temp;
     }
 
-    T* get() const noexcept { return m_entry; }
-
 public:
     UniqueObjectPoolPtr() noexcept : UniqueObjectPoolPtr(nullptr, nullptr) {}
 
@@ -121,6 +119,8 @@ public:
         assert(m_entry);
         return m_entry;
     }
+
+    T* get() const noexcept { return m_entry; }
 
     explicit operator bool() const noexcept { return m_entry != nullptr; }
 };

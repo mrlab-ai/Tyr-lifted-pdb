@@ -165,6 +165,8 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
 
     for (const auto atom : action_context.program_merge_atoms)
     {
+        std::cout << std::endl << atom << std::endl;
+
         auto binding = IndexList<Object> {};
         for (const auto object : atom.get_objects())
             binding.push_back(action_program.get_object_to_object_mapping().at(object).get_index());
@@ -207,6 +209,8 @@ LiftedTask::LiftedTask(DomainPtr domain,
     for (uint_t action_index = 0; action_index < task.get_domain().get_actions().size(); ++action_index)
     {
         const auto action = task.get_domain().get_actions()[action_index];
+
+        std::cout << action << std::endl;
 
         auto parameter_domains_per_cond_effect = analysis::DomainListListList {};
 

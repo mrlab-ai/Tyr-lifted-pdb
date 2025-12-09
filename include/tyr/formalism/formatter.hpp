@@ -371,130 +371,236 @@ inline std::ostream& print(std::ostream& os, const View<Data<formalism::GroundFu
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveCondition>& el)
 {
-    fmt::print(os,
-               "{}{}{}",
-               (el.static_literals.empty() ? "" : fmt::format("{}", fmt::join(to_strings(el.static_literals), ", "))),
-               (el.fluent_literals.empty() ? "" : fmt::format(" {}", fmt::join(to_strings(el.fluent_literals), ", "))),
-               (el.numeric_constraints.empty() ? "" : fmt::format(" {}", fmt::join(to_strings(el.numeric_constraints), ", "))));
+    os << "ConjunctiveCondition(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "static literals = {}\n", to_string(el.static_literals));
+
+        os << print_indent;
+        fmt::print(os, "fluent literals = {}\n", to_string(el.fluent_literals));
+
+        os << print_indent;
+        fmt::print(os, "numeric constraints = {}\n", to_string(el.numeric_constraints));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::ConjunctiveCondition>, C>& el)
 {
-    fmt::print(os,
-               "{}{}{}",
-               (el.template get_literals<formalism::StaticTag>().empty() ?
-                    "" :
-                    fmt::format("{}", fmt::join(to_strings(el.template get_literals<formalism::StaticTag>()), ", "))),
-               (el.template get_literals<formalism::FluentTag>().empty() ?
-                    "" :
-                    fmt::format(" {}", fmt::join(to_strings(el.template get_literals<formalism::FluentTag>()), ", "))),
-               (el.get_numeric_constraints().empty() ? "" : fmt::format(" {}", fmt::join(to_strings(el.get_numeric_constraints()), ", "))));
+    os << "ConjunctiveCondition(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "static literals = {}\n", to_string(el.template get_literals<formalism::StaticTag>()));
+
+        os << print_indent;
+        fmt::print(os, "fluent literals = {}\n", to_string(el.template get_literals<formalism::FluentTag>()));
+
+        os << print_indent;
+        fmt::print(os, "numeric constraints = {}\n", to_string(el.get_numeric_constraints()));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Rule>& el)
 {
-    fmt::print(os, "{} :- {}", to_string(el.head), to_string(el.body));
+    os << "Rule(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "head = {}\n", to_string(el.head));
+
+        os << print_indent;
+        fmt::print(os, "body = {}\n", to_string(el.body));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::Rule>, C>& el)
 {
-    fmt::print(os, "{} :- {}", to_string(el.get_head()), to_string(el.get_body()));
+    os << "Rule(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "head = {}\n", to_string(el.get_head()));
+
+        os << print_indent;
+        fmt::print(os, "body = {}\n", to_string(el.get_body()));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConjunctiveCondition>& el)
 {
-    fmt::print(os,
-               "{}{}{}",
-               (el.static_literals.empty() ? "" : fmt::format("{}", fmt::join(to_strings(el.static_literals), ", "))),
-               (el.fluent_literals.empty() ? "" : fmt::format(" {}", fmt::join(to_strings(el.fluent_literals), ", "))),
-               (el.numeric_constraints.empty() ? "" : fmt::format(" {}", fmt::join(to_strings(el.numeric_constraints), ", "))));
+    os << "GroundConjunctiveCondition(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "static literals = {}\n", to_string(el.static_literals));
+
+        os << print_indent;
+        fmt::print(os, "fluent literals = {}\n", to_string(el.fluent_literals));
+
+        os << print_indent;
+        fmt::print(os, "numeric constraints = {}\n", to_string(el.numeric_constraints));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConjunctiveCondition>, C>& el)
 {
-    fmt::print(os,
-               "{}{}{}",
-               (el.template get_literals<formalism::StaticTag>().empty() ?
-                    "" :
-                    fmt::format("{}", fmt::join(to_strings(el.template get_literals<formalism::StaticTag>()), ", "))),
-               (el.template get_literals<formalism::FluentTag>().empty() ?
-                    "" :
-                    fmt::format(" {}", fmt::join(to_strings(el.template get_literals<formalism::FluentTag>()), ", "))),
-               (el.get_numeric_constraints().empty() ? "" : fmt::format(" {}", fmt::join(to_strings(el.get_numeric_constraints()), ", "))));
+    os << "GroundConjunctiveCondition(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "static literals = {}\n", to_string(el.template get_literals<formalism::StaticTag>()));
+
+        os << print_indent;
+        fmt::print(os, "fluent literals = {}\n", to_string(el.template get_literals<formalism::FluentTag>()));
+
+        os << print_indent;
+        fmt::print(os, "numeric constraints = {}\n", to_string(el.get_numeric_constraints()));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundRule>& el)
 {
-    fmt::print(os, "{} :- {}", to_string(el.head), to_string(el.body));
+    os << "GroundRule(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "head = {}\n", to_string(el.head));
+
+        os << print_indent;
+        fmt::print(os, "body = {}\n", to_string(el.body));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::GroundRule>, C>& el)
 {
-    fmt::print(os, "{} :- {}", to_string(el.get_head()), to_string(el.get_body()));
+    os << "GroundRule(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "head = {}\n", to_string(el.get_head()));
+
+        os << print_indent;
+        fmt::print(os, "body = {}\n", to_string(el.get_body()));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Program>& el)
 {
-    fmt::print(os,
-               "% static predicates\n{}\n"
-               "% fluent predicates\n{}\n"
-               "% static functions\n{}\n"
-               "% fluent functions\n{}\n"
-               "% objects\n{}\n"
-               "% static atoms\n{}\n"
-               "% fluent atoms\n{}\n"
-               "% static fterms\n{}\n"
-               "% fluent fterms\n{}\n"
-               "% rules\n{}",
-               fmt::format("{}", fmt::join(to_strings(el.static_predicates), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.fluent_predicates), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.static_functions), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.fluent_functions), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.objects), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.static_atoms), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.fluent_atoms), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.static_fterm_values), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.fluent_fterm_values), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.rules), "\n")));
+    os << "Program(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "static predicates = {}\n", to_string(el.static_predicates));
+
+        os << print_indent;
+        fmt::print(os, "fluent predicates = {}\n", to_string(el.fluent_predicates));
+
+        os << print_indent;
+        fmt::print(os, "static functions = {}\n", to_string(el.static_functions));
+
+        os << print_indent;
+        fmt::print(os, "fluent functions = {}\n", to_string(el.fluent_functions));
+
+        os << print_indent;
+        fmt::print(os, "objects = {}\n", to_string(el.objects));
+
+        os << print_indent;
+        fmt::print(os, "static atoms = {}\n", to_string(el.static_atoms));
+
+        os << print_indent;
+        fmt::print(os, "fluent atoms = {}\n", to_string(el.fluent_atoms));
+
+        os << print_indent;
+        fmt::print(os, "static fterms = {}\n", to_string(el.static_fterm_values));
+
+        os << print_indent;
+        fmt::print(os, "fluent fterms = {}\n", to_string(el.fluent_fterm_values));
+
+        os << print_indent;
+        fmt::print(os, "rules = {}\n", to_string(el.rules));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::Program>, C>& el)
 {
-    fmt::print(os,
-               "% static predicates\n{}\n"
-               "% fluent predicates\n{}\n"
-               "% static functions\n{}\n"
-               "% fluent functions\n{}\n"
-               "% objects\n{}\n"
-               "% static atoms\n{}\n"
-               "% fluent atoms\n{}\n"
-               "% static fterms\n{}\n"
-               "% fluent fterms\n{}\n"
-               "% rules\n{}",
-               fmt::format("{}", fmt::join(to_strings(el.template get_predicates<formalism::StaticTag>()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.template get_predicates<formalism::FluentTag>()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.template get_functions<formalism::StaticTag>()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.template get_functions<formalism::FluentTag>()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.get_objects()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.template get_atoms<formalism::StaticTag>()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.template get_atoms<formalism::FluentTag>()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.template get_fterm_values<formalism::StaticTag>()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.template get_fterm_values<formalism::FluentTag>()), "\n")),
-               fmt::format("{}", fmt::join(to_strings(el.get_rules()), "\n")));
+    os << "Program(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent;
+        fmt::print(os, "static predicates = {}\n", to_string(el.template get_predicates<formalism::StaticTag>()));
+
+        os << print_indent;
+        fmt::print(os, "fluent predicates = {}\n", to_string(el.template get_predicates<formalism::FluentTag>()));
+
+        os << print_indent;
+        fmt::print(os, "static functions = {}\n", to_string(el.template get_functions<formalism::StaticTag>()));
+
+        os << print_indent;
+        fmt::print(os, "fluent functions = {}\n", to_string(el.template get_functions<formalism::FluentTag>()));
+
+        os << print_indent;
+        fmt::print(os, "objects = {}\n", to_string(el.get_objects()));
+
+        os << print_indent;
+        fmt::print(os, "static atoms = {}\n", to_string(el.template get_atoms<formalism::StaticTag>()));
+
+        os << print_indent;
+        fmt::print(os, "fluent atoms = {}\n", to_string(el.template get_atoms<formalism::FluentTag>()));
+
+        os << print_indent;
+        fmt::print(os, "static fterms = {}\n", to_string(el.template get_fterm_values<formalism::StaticTag>()));
+
+        os << print_indent;
+        fmt::print(os, "fluent fterms = {}\n", to_string(el.template get_fterm_values<formalism::FluentTag>()));
+
+        os << print_indent;
+        fmt::print(os, "rules = {}\n", to_string(el.get_rules()));
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
@@ -594,181 +700,293 @@ std::ostream& print(std::ostream& os, const View<Data<formalism::GroundNumericEf
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::ConditionalEffect>& el)
 {
-    fmt::print(os,
-               "\nCondition: {}\n"
-               "Effect: {}",
-               to_string(el.condition),
-               to_string(el.effect));
+    os << "ConditionalEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "condition = " << el.condition << "\n";
+
+        os << print_indent << "effect = " << el.effect << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::ConditionalEffect>, C>& el)
 {
-    fmt::print(os,
-               "\nCondition: {}\n"
-               "Effect: {}",
-               to_string(el.get_condition()),
-               to_string(el.get_effect()));
+    os << "ConditionalEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "condition = " << el.get_condition() << "\n";
+
+        os << print_indent << "effect = " << el.get_effect() << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConditionalEffect>& el)
 {
-    fmt::print(os,
-               "\nCondition: {}\n"
-               "Effect: {}",
-               to_string(el.condition),
-               to_string(el.effect));
+    os << "GroundConditionalEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "condition = " << el.condition << "\n";
+
+        os << print_indent << "effect = " << el.effect << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConditionalEffect>, C>& el)
 {
-    fmt::print(os,
-               "\nCondition: {}\n"
-               "Effect: {}",
-               to_string(el.get_condition()),
-               to_string(el.get_effect()));
+    os << "GroundConditionalEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "condition = " << el.get_condition() << "\n";
+
+        os << print_indent << "effect = " << el.get_effect() << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveEffect>& el)
 {
-    fmt::print(os,
-               "\nFluent literals: {}\n"
-               "Fluent numeric effects: {}\n"
-               "Auxiliary numeric effect: {}",
-               to_string(el.literals),
-               to_string(el.numeric_effects),
-               to_string(el.auxiliary_numeric_effect));
+    os << "ConjunctiveEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "fluent literals = ";
+        print(os, el.literals);
+        os << "\n";
+
+        os << print_indent << "fluent numeric effects = ";
+        print(os, el.numeric_effects);
+        os << "\n";
+
+        os << print_indent << "auxiliary numeric effect = ";
+        print(os, el.auxiliary_numeric_effect);
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::ConjunctiveEffect>, C>& el)
 {
-    fmt::print(os,
-               "\nFluent literals: {}\n"
-               "Fluent numeric effects: {}\n"
-               "Auxiliary numeric effect: {}",
-               to_string(el.get_literals()),
-               to_string(el.get_numeric_effects()),
-               to_string(el.get_auxiliary_numeric_effect()));
+    os << "ConjunctiveEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "fluent literals = ";
+        print(os, el.get_literals());
+        os << "\n";
+
+        os << print_indent << "fluent numeric effects = ";
+        print(os, el.get_numeric_effects());
+        os << "\n";
+
+        os << print_indent << "auxiliary numeric effect = ";
+        print(os, el.get_auxiliary_numeric_effect());
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConjunctiveEffect>& el)
 {
-    fmt::print(os,
-               "\nFluent literals: {}\n"
-               "Fluent numeric effects: {}\n"
-               "Auxiliary numeric effect: {}",
-               to_string(el.literals),
-               to_string(el.numeric_effects),
-               to_string(el.auxiliary_numeric_effect));
+    os << "GroundConjunctiveEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "fluent literals = ";
+        print(os, el.literals);
+        os << "\n";
+
+        os << print_indent << "fluent numeric effects = ";
+        print(os, el.numeric_effects);
+        os << "\n";
+
+        os << print_indent << "auxiliary numeric effect = ";
+        print(os, el.auxiliary_numeric_effect);
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConjunctiveEffect>, C>& el)
 {
-    fmt::print(os,
-               "\nFluent literals: {}\n"
-               "Fluent numeric effects: {}\n"
-               "Auxiliary numeric effect: {}",
-               to_string(el.get_literals()),
-               to_string(el.get_numeric_effects()),
-               to_string(el.get_auxiliary_numeric_effect()));
+    os << "GroundConjunctiveEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "fluent literals = ";
+        print(os, el.get_literals());
+        os << "\n";
+
+        os << print_indent << "fluent numeric effects = ";
+        print(os, el.get_numeric_effects());
+        os << "\n";
+
+        os << print_indent << "auxiliary numeric effect = ";
+        print(os, el.get_auxiliary_numeric_effect());
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Action>& el)
 {
-    fmt::print(os,
-               "\nName: {}\n"
-               "Condition: {}\n"
-               "Effects: {}",
-               to_string(el.name),
-               to_string(el.condition),
-               to_string(el.effects));
+    os << "Action(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "name = " << el.name << "\n";
+
+        os << print_indent << "condition = " << el.condition << "\n";
+
+        os << print_indent << "effects = ";
+        print(os, el.effects);
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Action>, C>& el)
 {
-    fmt::print(os,
-               "\nName: {}\n"
-               "Condition: {}\n"
-               "Effects: {}",
-               to_string(el.get_name()),
-               to_string(el.get_condition()),
-               to_string(el.get_effects()));
+    os << "Action(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "name = " << el.get_name() << "\n";
+
+        os << print_indent << "condition = " << el.get_condition() << "\n";
+
+        os << print_indent << "effects = ";
+        print(os, el.get_effects());
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAction>& el)
 {
-    fmt::print(os,
-               "\nCondition: {}\n"
-               "Effects: {}",
-               to_string(el.condition),
-               to_string(el.effects));
+    os << "GroundAction(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "condition = " << el.condition << "\n";
+
+        os << print_indent << "effects = ";
+        print(os, el.effects);
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAction>, C>& el)
 {
-    fmt::print(os,
-               "\nCondition: {}\n"
-               "Effects: {}",
-               to_string(el.get_condition()),
-               to_string(el.get_effects()));
+    os << "GroundAction(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "condition = " << el.get_condition() << "\n";
+
+        os << print_indent << "effects = ";
+        print(os, el.get_effects());
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Axiom>& el)
 {
-    fmt::print(os,
-               "\nBody: {}\n"
-               "Head: {}",
-               to_string(el.body),
-               to_string(el.head));
+    os << "Axiom(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "body = " << el.body << "\n";
+
+        os << print_indent << "head = " << el.head << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Axiom>, C>& el)
 {
-    fmt::print(os,
-               "\nBody: {}\n"
-               "Head: {}",
-               to_string(el.get_body()),
-               to_string(el.get_head()));
+    os << "Axiom(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "body = " << el.get_body() << "\n";
+
+        os << print_indent << "head = " << el.get_head() << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAxiom>& el)
 {
-    fmt::print(os,
-               "\nBody: {}\n"
-               "Head: {}",
-               to_string(el.body),
-               to_string(el.head));
+    os << "GroundAxiom(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "body = " << el.body << "\n";
+
+        os << print_indent << "head = " << el.head << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAxiom>, C>& el)
 {
-    fmt::print(os,
-               "\nBody: {}\n"
-               "Head: {}",
-               to_string(el.get_body()),
-               to_string(el.get_head()));
+    os << "GroundAxiom(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "body = " << el.get_body() << "\n";
+
+        os << print_indent << "head = " << el.get_head() << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
@@ -787,111 +1005,207 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Metric>, C>& e
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Task>& el)
 {
-    fmt::print(os,
-               "\nName: {}\n"
-               "Derived predicates: {}\n"
-               "Objects: {}\n"
-               "Static atoms: {}\n"
-               "Fluent atoms: {}\n"
-               "Static function term values: {}\n"
-               "Fluent function term values: {}\n"
-               "Auxiliary function term value: {}\n"
-               "Goal: {}\n"
-               "Metric: {}\n"
-               "Axioms: {}",
-               to_string(el.name),
-               to_string(el.derived_predicates),
-               to_string(el.objects),
-               to_string(el.static_atoms),
-               to_string(el.fluent_atoms),
-               to_string(el.static_fterm_values),
-               to_string(el.fluent_fterm_values),
-               to_string(el.auxiliary_fterm_value),
-               to_string(el.goal),
-               to_string(el.metric),
-               to_string(el.axioms));
+    os << "Task(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "name = " << el.name << "\n";
+
+        os << print_indent << "derived predicates = ";
+        print(os, el.derived_predicates);
+        os << "\n";
+
+        os << print_indent << "objects = ";
+        print(os, el.objects);
+        os << "\n";
+
+        os << print_indent << "static atoms = ";
+        print(os, el.static_atoms);
+        os << "\n";
+
+        os << print_indent << "fluent atoms = ";
+        print(os, el.fluent_atoms);
+        os << "\n";
+
+        os << print_indent << "static numeric variables = ";
+        print(os, el.static_fterm_values);
+        os << "\n";
+
+        os << print_indent << "fluent numeric variables = ";
+        print(os, el.fluent_fterm_values);
+        os << "\n";
+
+        os << print_indent << "auxiliary numeric variable = ";
+        print(os, el.auxiliary_fterm_value);
+        os << "\n";
+
+        os << print_indent << "goal = ";
+        print(os, el.goal);
+        os << "\n";
+
+        os << print_indent << "metric = ";
+        print(os, el.metric);
+        os << "\n";
+
+        os << print_indent << "axioms = ";
+        print(os, el.axioms);
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Task>, C>& el)
 {
-    fmt::print(os,
-               "\nName: {}\n"
-               "Derived predicates: {}\n"
-               "Objects: {}\n"
-               "Static atoms: {}\n"
-               "Fluent atoms: {}\n"
-               "Static function term values: {}\n"
-               "Fluent function term values: {}\n"
-               "Auxiliary function term value: {}\n"
-               "Goal: {}\n"
-               "Metric: {}\n"
-               "Axioms: {}",
-               to_string(el.get_name()),
-               to_string(el.template get_derived_predicates()),
-               to_string(el.get_objects()),
-               to_string(el.template get_atoms<formalism::StaticTag>()),
-               to_string(el.template get_atoms<formalism::FluentTag>()),
-               to_string(el.template get_fterm_values<formalism::StaticTag>()),
-               to_string(el.template get_fterm_values<formalism::FluentTag>()),
-               to_string(el.get_auxiliary_fterm_value()),
-               to_string(el.get_goal()),
-               to_string(el.get_metric()),
-               to_string(el.get_axioms()));
+    os << "Task(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "name = " << el.get_name() << "\n";
+
+        os << print_indent << "derived predicates = ";
+        print(os, el.get_derived_predicates());
+        os << "\n";
+
+        os << print_indent << "objects = ";
+        print(os, el.get_objects());
+        os << "\n";
+
+        os << print_indent << "static atoms = ";
+        print(os, el.template get_atoms<formalism::StaticTag>());
+        os << "\n";
+
+        os << print_indent << "fluent atoms = ";
+        print(os, el.template get_atoms<formalism::FluentTag>());
+        os << "\n";
+
+        os << print_indent << "static numeric variables = ";
+        print(os, el.template get_fterm_values<formalism::StaticTag>());
+        os << "\n";
+
+        os << print_indent << "fluent numeric variables = ";
+        print(os, el.template get_fterm_values<formalism::FluentTag>());
+        os << "\n";
+
+        os << print_indent << "auxiliary numeric variable = ";
+        print(os, el.get_auxiliary_fterm_value());
+        os << "\n";
+
+        os << print_indent << "goal = ";
+        print(os, el.get_goal());
+        os << "\n";
+
+        os << print_indent << "metric = ";
+        print(os, el.get_metric());
+        os << "\n";
+
+        os << print_indent << "axioms = ";
+        print(os, el.get_axioms());
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 inline std::ostream& print(std::ostream& os, const Data<formalism::Domain>& el)
 {
-    fmt::print(os,
-               "\nName: {}\n"
-               "Static predicates: {}\n"
-               "Fluent predicates: {}\n"
-               "Derived predicates: {}\n"
-               "Static functions: {}\n"
-               "Fluent functions: {}\n"
-               "Auxiliary function: {}\n"
-               "Constants: {}\n"
-               "Actions: {}\n"
-               "Axioms: {}",
-               to_string(el.name),
-               to_string(el.static_predicates),
-               to_string(el.fluent_predicates),
-               to_string(el.derived_predicates),
-               to_string(el.static_functions),
-               to_string(el.fluent_functions),
-               to_string(el.auxiliary_function),
-               to_string(el.constants),
-               to_string(el.actions),
-               to_string(el.axioms));
+    os << "Domain(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "name = " << el.name << "\n";
+
+        os << print_indent << "static predicates = ";
+        print(os, el.static_predicates);
+        os << "\n";
+
+        os << print_indent << "fluent predicates = ";
+        print(os, el.fluent_predicates);
+        os << "\n";
+
+        os << print_indent << "derived predicates = ";
+        print(os, el.derived_predicates);
+        os << "\n";
+
+        os << print_indent << "static functions = ";
+        print(os, el.static_functions);
+        os << "\n";
+
+        os << print_indent << "fluent functions = ";
+        print(os, el.fluent_functions);
+        os << "\n";
+
+        os << print_indent << "auxiliary function = ";
+        print(os, el.auxiliary_function);
+        os << "\n";
+
+        os << print_indent << "constants = ";
+        print(os, el.constants);
+        os << "\n";
+
+        os << print_indent << "actions = ";
+        print(os, el.actions);
+        os << "\n";
+
+        os << print_indent << "axioms = ";
+        print(os, el.axioms);
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 
 template<formalism::Context C>
 std::ostream& print(std::ostream& os, const View<Index<formalism::Domain>, C>& el)
 {
-    fmt::print(os,
-               "\nName: {}\n"
-               "Static predicates: {}\n"
-               "Fluent predicates: {}\n"
-               "Derived predicates: {}\n"
-               "Static functions: {}\n"
-               "Fluent functions: {}\n"
-               "Auxiliary function: {}\n"
-               "Constants: {}\n"
-               "Actions: {}\n"
-               "Axioms: {}",
-               to_string(el.get_name()),
-               to_string(el.template get_predicates<formalism::StaticTag>()),
-               to_string(el.template get_predicates<formalism::FluentTag>()),
-               to_string(el.template get_predicates<formalism::DerivedTag>()),
-               to_string(el.template get_functions<formalism::StaticTag>()),
-               to_string(el.template get_functions<formalism::FluentTag>()),
-               to_string(el.get_auxiliary_function()),
-               to_string(el.get_constants()),
-               to_string(el.get_actions()),
-               to_string(el.get_axioms()));
+    os << "Domain(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "name = " << el.get_name() << "\n";
+
+        os << print_indent << "static predicates = ";
+        print(os, el.template get_predicates<formalism::StaticTag>());
+        os << "\n";
+
+        os << print_indent << "fluent predicates = ";
+        print(os, el.template get_predicates<formalism::FluentTag>());
+        os << "\n";
+
+        os << print_indent << "derived predicates = ";
+        print(os, el.template get_predicates<formalism::DerivedTag>());
+        os << "\n";
+
+        os << print_indent << "static functions = ";
+        print(os, el.template get_functions<formalism::StaticTag>());
+        os << "\n";
+
+        os << print_indent << "fluent functions = ";
+        print(os, el.template get_functions<formalism::FluentTag>());
+        os << "\n";
+
+        os << print_indent << "auxiliary function = ";
+        print(os, el.get_auxiliary_function());
+        os << "\n";
+
+        os << print_indent << "constants = ";
+        print(os, el.get_constants());
+        os << "\n";
+
+        os << print_indent << "actions = ";
+        print(os, el.get_actions());
+        os << "\n";
+
+        os << print_indent << "axioms = ";
+        print(os, el.get_axioms());
+        os << "\n";
+    }
+    os << print_indent << ")";
+
     return os;
 }
 

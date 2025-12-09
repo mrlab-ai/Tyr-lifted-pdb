@@ -31,14 +31,14 @@ struct Data<formalism::Metric>
 {
     using Tag = formalism::Metric;
 
+    using ObjectiveVariant = ::cista::offset::variant<formalism::Minimize, formalism::Maximize>;
+
     Index<formalism::Metric> index;
-    ::cista::offset::variant<formalism::Minimize, formalism::Maximize> objective;
+    ObjectiveVariant objective;
     Data<formalism::GroundFunctionExpression> fexpr;
 
     Data() = default;
-    Data(Index<formalism::Metric> index,
-         ::cista::offset::variant<formalism::Minimize, formalism::Maximize> objective,
-         Data<formalism::GroundFunctionExpression> fexpr) :
+    Data(Index<formalism::Metric> index, ObjectiveVariant objective, Data<formalism::GroundFunctionExpression> fexpr) :
         index(index),
         objective(objective),
         fexpr(fexpr)
@@ -49,7 +49,12 @@ struct Data<formalism::Metric>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        objective.destruct();
+        objective.idx_ = ObjectiveVariant::NO_VALUE;
+        fexpr.clear();
+    }
 
     auto cista_members() const noexcept { return std::tie(index, objective, fexpr); }
     auto identifying_members() const noexcept { return std::tie(objective, fexpr); }

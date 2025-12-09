@@ -21,6 +21,7 @@
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/ground_numeric_effect_operator_utils.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/grounder/facts_view.hpp"
@@ -116,7 +117,6 @@ float_t evaluate(View<Index<formalism::GroundFunctionTerm<T>>, C> element, const
 {
     if (!facts_view.contains(element.get_index()))
         return std::numeric_limits<float_t>::quiet_NaN();
-
     return facts_view[element.get_index()];
 }
 
@@ -125,7 +125,6 @@ float_t evaluate(View<Index<formalism::GroundFunctionTerm<formalism::AuxiliaryTa
 {
     if (!facts_view.get_auxiliary_numeric_variable())
         return std::numeric_limits<float_t>::quiet_NaN();
-
     return facts_view.get_auxiliary_numeric_variable().value();
 }
 

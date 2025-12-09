@@ -20,9 +20,9 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/function_expression_data.hpp"
-#include "tyr/formalism/function_term_index.hpp"
-#include "tyr/formalism/planning/numeric_effect_index.hpp"
+#include "tyr/formalism/ground_function_expression_data.hpp"
+#include "tyr/formalism/ground_function_term_index.hpp"
+#include "tyr/formalism/planning/ground_numeric_effect_index.hpp"
 
 namespace tyr
 {
@@ -51,10 +51,10 @@ struct Data<formalism::GroundNumericEffect<Op, T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept { fexpr.clear(); }
 
     auto cista_members() const noexcept { return std::tie(index, fterm, fexpr); }
-    auto identifying_members() const noexcept { return std::tie(fterm, fexpr); }
+    auto identifying_members() const noexcept { return std::tie(Op::kind, fterm, fexpr); }
 };
 }
 

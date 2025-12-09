@@ -23,6 +23,7 @@
 #include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/views.hpp"
 
 namespace tyr::formalism
@@ -88,6 +89,7 @@ ground(View<Index<FunctionTerm<T>>, C_SRC> element, View<IndexList<Object>, C_DS
 
     // Fill data
     fterm.function = element.get_function().get_index();
+    assert(fterm.objects.empty());
     for (const auto term : element.get_terms())
     {
         visit(
@@ -122,8 +124,10 @@ ground(View<Data<FunctionExpression>, C_SRC> element, View<IndexList<Object>, C_
             if constexpr (std::is_same_v<Alternative, float_t>)
                 return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(arg), destination);
             else if constexpr (std::is_same_v<Alternative, View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C_SRC>>)
+            {
                 return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(ground(arg, binding, builder, destination).get_data()),
                                                                    destination);
+            }
             else
                 return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(ground(arg, binding, builder, destination).get_index()),
                                                                    destination);
@@ -299,8 +303,8 @@ ground(View<Index<ConjunctiveEffect>, C_SRC> element, View<IndexList<Object>, C_
         conj_eff.literals.push_back(ground(literal, binding, builder, destination).get_index());
     for (const auto numeric_effect : element.get_numeric_effects())
         conj_eff.numeric_effects.push_back(ground(numeric_effect, binding, builder, destination).get_data());
-    if (element.get_auxiliary_numeric_effect())
-        conj_eff.auxiliary_numeric_effect = ground(*element.get_auxiliary_numeric_effect(), binding, builder, destination).get_data();
+    if (element.get_auxiliary_numeric_effect().has_value())
+        conj_eff.auxiliary_numeric_effect = ground(element.get_auxiliary_numeric_effect().value(), binding, builder, destination).get_data();
 
     // Canonicalize and Serialize
     canonicalize(conj_eff);

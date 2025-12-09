@@ -19,11 +19,13 @@
 #define TYR_GROUNDER_FACTS_VIEW_HPP_
 
 #include "tyr/common/config.hpp"
+#include "tyr/common/formatter.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/grounder/fact_sets.hpp"
 
 #include <boost/dynamic_bitset.hpp>
+#include <iostream>
 #include <vector>
 
 namespace tyr::grounder
@@ -118,7 +120,7 @@ struct FactsView
             static_assert(dependent_false<T>::value, "Missing case");
     }
 
-    const auto& get_auxiliary_numeric_variable() const noexcept { return auxiliary_numeric_variable; }
+    auto get_auxiliary_numeric_variable() const noexcept { return auxiliary_numeric_variable; }
 };
 
 }

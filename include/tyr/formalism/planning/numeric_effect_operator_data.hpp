@@ -42,7 +42,11 @@ struct Data<formalism::NumericEffectOperator<formalism::FluentTag>>
     Data() = default;
     Data(Variant value) : value(value) {}
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        value.destruct();
+        value.idx_ = Variant::NO_VALUE;
+    }
 
     friend bool operator==(const Data& lhs, const Data& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
     friend bool operator!=(const Data& lhs, const Data& rhs) { return lhs.value != rhs.value; }
@@ -67,7 +71,11 @@ struct Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>
     Data() = default;
     Data(Variant value) : value(value) {}
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        value.destruct();
+        value.idx_ = Variant::NO_VALUE;
+    }
 
     friend bool operator==(const Data& lhs, const Data& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
     friend bool operator!=(const Data& lhs, const Data& rhs) { return lhs.value != rhs.value; }

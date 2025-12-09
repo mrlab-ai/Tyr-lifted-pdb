@@ -44,45 +44,97 @@ namespace tyr
  * Forward declarations
  */
 
+/// --- operator<<
+
 template<typename T, size_t N>
-std::ostream& operator<<(std::ostream& os, const std::array<T, N>& arr);
+std::ostream& operator<<(std::ostream& os, const std::array<T, N>& el);
 
 template<typename Key, typename T, typename Compare, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::map<Key, T, Compare, Allocator>& map);
+std::ostream& operator<<(std::ostream& os, const std::map<Key, T, Compare, Allocator>& el);
 
 template<typename T1, typename T2>
-std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& pair);
+std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& el);
 
 template<typename Key, typename Compare, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::set<Key, Compare, Allocator>& set);
+std::ostream& operator<<(std::ostream& os, const std::set<Key, Compare, Allocator>& el);
 
 template<typename... Ts>
-std::ostream& operator<<(std::ostream& os, const std::tuple<Ts...>& tuple);
+std::ostream& operator<<(std::ostream& os, const std::tuple<Ts...>& el);
 
 template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::unordered_map<Key, T, Hash, KeyEqual, Allocator>& map);
+std::ostream& operator<<(std::ostream& os, const std::unordered_map<Key, T, Hash, KeyEqual, Allocator>& el);
 
 template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const gtl::flat_hash_map<Key, T, Hash, KeyEqual, Allocator>& map);
+std::ostream& operator<<(std::ostream& os, const gtl::flat_hash_map<Key, T, Hash, KeyEqual, Allocator>& el);
 
 template<typename Key, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::unordered_set<Key, Hash, KeyEqual, Allocator>& set);
+std::ostream& operator<<(std::ostream& os, const std::unordered_set<Key, Hash, KeyEqual, Allocator>& el);
 
 template<typename Key, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const gtl::flat_hash_set<Key, Hash, KeyEqual, Allocator>& set);
+std::ostream& operator<<(std::ostream& os, const gtl::flat_hash_set<Key, Hash, KeyEqual, Allocator>& el);
 
 template<typename T, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::vector<T, Allocator>& vec);
+std::ostream& operator<<(std::ostream& os, const std::vector<T, Allocator>& el);
 
 template<typename... Ts>
     requires(sizeof...(Ts) > 0)
-std::ostream& operator<<(std::ostream& os, const std::variant<Ts...>& variant);
+std::ostream& operator<<(std::ostream& os, const std::variant<Ts...>& el);
 
 template<typename Derived>
-std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& mixin);
+std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& el);
 
 template<typename Derived>
-std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& mixin);
+std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& el);
+
+/// --- print
+
+template<typename T, size_t N>
+std::ostream& print(std::ostream& os, const std::array<T, N>& el);
+
+template<typename Key, typename T, typename Compare, typename Allocator>
+std::ostream& print(std::ostream& os, const std::map<Key, T, Compare, Allocator>& el);
+
+template<typename T1, typename T2>
+std::ostream& print(std::ostream& os, const std::pair<T1, T2>& el);
+
+template<typename Key, typename Compare, typename Allocator>
+std::ostream& print(std::ostream& os, const std::set<Key, Compare, Allocator>& el);
+
+template<typename... Ts>
+std::ostream& print(std::ostream& os, const std::tuple<Ts...>& el);
+
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+std::ostream& print(std::ostream& os, const std::unordered_map<Key, T, Hash, KeyEqual, Allocator>& el);
+
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+std::ostream& print(std::ostream& os, const gtl::flat_hash_map<Key, T, Hash, KeyEqual, Allocator>& el);
+
+template<typename Key, typename Hash, typename KeyEqual, typename Allocator>
+std::ostream& print(std::ostream& os, const std::unordered_set<Key, Hash, KeyEqual, Allocator>& el);
+
+template<typename Key, typename Hash, typename KeyEqual, typename Allocator>
+std::ostream& print(std::ostream& os, const gtl::flat_hash_set<Key, Hash, KeyEqual, Allocator>& el);
+
+template<typename T, typename Allocator>
+std::ostream& print(std::ostream& os, const std::vector<T, Allocator>& el);
+
+template<typename... Ts>
+    requires(sizeof...(Ts) > 0)
+std::ostream& print(std::ostream& os, const std::variant<Ts...>& el);
+
+template<typename Derived>
+std::ostream& print(std::ostream& os, const IndexMixin<Derived>& el);
+
+template<typename Derived>
+std::ostream& print(std::ostream& os, const FixedUintMixin<Derived>& el);
+
+// cista
+
+template<typename T>
+std::ostream& print(std::ostream& os, const ::cista::optional<T>& el);
+
+template<typename C, typename T>
+std::ostream& print(std::ostream& os, const View<::cista::optional<T>, C>& el);
 
 template<typename... Ts>
     requires(sizeof...(Ts) > 0)
@@ -93,10 +145,10 @@ template<typename C, typename... Ts>
 std::ostream& print(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el);
 
 template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
-std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec);
+std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& el);
 
 template<typename C, typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
-std::ostream& print(std::ostream& os, const View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>& vec);
+std::ostream& print(std::ostream& os, const View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>& el);
 
 /**
  * ADL-enabled stream helper: finds operator<< in the type's namespace
@@ -154,109 +206,222 @@ std::vector<std::string> to_strings(const Range& range)
  * Definitions
  */
 
-template<typename T, size_t N>
-std::ostream& operator<<(std::ostream& os, const std::array<T, N>& arr)
+template<std::ranges::input_range Range>
+std::ostream& print_range(std::ostream& os, const Range& r, std::string_view open = "[", std::string_view close = "]")
 {
-    fmt::print(os, "<{}>", fmt::join(to_strings(arr), ", "));
+    os << open;
+    bool first = true;
+    for (auto const& x : r)
+    {
+        if (!first)
+            os << ", ";
+        first = false;
+        print(os, x);  // <-- calls your entire print stack, indentation-aware
+    }
+    os << close;
     return os;
+}
+
+/// --- operator<<
+
+template<typename T, size_t N>
+std::ostream& operator<<(std::ostream& os, const std::array<T, N>& el)
+{
+    return print(os, el);
 }
 
 template<typename Key, typename T, typename Compare, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::map<Key, T, Compare, Allocator>& map)
+std::ostream& operator<<(std::ostream& os, const std::map<Key, T, Compare, Allocator>& el)
 {
-    fmt::print(os, "{{{}}}", fmt::join(to_strings(map), ", "));
-    return os;
+    return print(os, el);
 }
 
 template<typename T1, typename T2>
-std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& pair)
+std::ostream& operator<<(std::ostream& os, const std::pair<T1, T2>& el)
 {
-    fmt::print(os, "<{},{}>", to_string(pair.first), to_string(pair.second));
+    return print(os, el);
+}
+
+template<typename Key, typename Compare, typename Allocator>
+std::ostream& operator<<(std::ostream& os, const std::set<Key, Compare, Allocator>& el)
+{
+    return print(os, el);
+}
+
+template<typename... Ts>
+std::ostream& operator<<(std::ostream& os, const std::tuple<Ts...>& el)
+{
+    return print(os, el);
+}
+
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+std::ostream& operator<<(std::ostream& os, const std::unordered_map<Key, T, Hash, KeyEqual, Allocator>& el)
+{
+    return print(os, el);
+}
+
+template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
+std::ostream& operator<<(std::ostream& os, const gtl::flat_hash_map<Key, T, Hash, KeyEqual, Allocator>& el)
+{
+    return print(os, el);
+}
+
+template<typename Key, typename Hash, typename KeyEqual, typename Allocator>
+std::ostream& operator<<(std::ostream& os, const std::unordered_set<Key, Hash, KeyEqual, Allocator>& el)
+{
+    return print(os, el);
+}
+
+template<typename Key, typename Hash, typename KeyEqual, typename Allocator>
+std::ostream& operator<<(std::ostream& os, const gtl::flat_hash_set<Key, Hash, KeyEqual, Allocator>& el)
+{
+    return print(os, el);
+}
+
+template<typename T, typename Allocator>
+std::ostream& operator<<(std::ostream& os, const std::vector<T, Allocator>& el)
+{
+    return print(os, el);
+}
+
+template<typename... Ts>
+    requires(sizeof...(Ts) > 0)
+std::ostream& operator<<(std::ostream& os, const std::variant<Ts...>& el)
+{
+    return print(os, el);
+}
+
+template<typename Derived>
+std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& el)
+{
+    return print(os, el);
+}
+
+template<typename Derived>
+std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& el)
+{
+    return print(os, el);
+}
+
+/// --- print
+
+template<typename T, size_t N>
+std::ostream& print(std::ostream& os, const std::array<T, N>& el)
+{
+    return print_range(os, el, "<", ">");
+}
+
+template<typename Key, typename T, typename Compare, typename Allocator>
+std::ostream& print(std::ostream& os, const std::map<Key, T, Compare, Allocator>& el)
+{
+    return print_range(os, el, "{", "}");
+}
+
+template<typename T1, typename T2>
+std::ostream& print(std::ostream& os, const std::pair<T1, T2>& el)
+{
+    os << "<";
+    print(os, el.first);
+    os << ", ";
+    print(os, el.second);
+    os << ">";
     return os;
 }
 
 template<typename Key, typename Compare, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::set<Key, Compare, Allocator>& set)
+std::ostream& print(std::ostream& os, const std::set<Key, Compare, Allocator>& el)
 {
-    fmt::print(os, "{{{}}}", fmt::join(to_strings(set), ", "));
-    return os;
+    return print_range(os, el, "{", "}");
 }
 
 template<typename... Ts>
-std::ostream& operator<<(std::ostream& os, const std::tuple<Ts...>& tuple)
+std::ostream& print(std::ostream& os, const std::tuple<Ts...>& tuple)
 {
     os << "<";
     if constexpr (sizeof...(Ts) > 0)
     {
         std::size_t n = 0;
-        std::apply([&os, &n](const Ts&... args) { ((os << (n++ == 0 ? "" : ", ") << to_string(args)), ...); }, tuple);
+        std::apply([&os, &n](const Ts&... args) { ((os << (n++ == 0 ? "" : ", "), print(os, args)), ...); }, tuple);
     }
     os << ">";
     return os;
 }
 
 template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::unordered_map<Key, T, Hash, KeyEqual, Allocator>& map)
+std::ostream& print(std::ostream& os, const std::unordered_map<Key, T, Hash, KeyEqual, Allocator>& el)
 {
-    fmt::print(os, "{{{}}}", fmt::join(to_strings(map), ", "));
-    return os;
+    return print_range(os, el, "{", "}");
 }
 
 template<typename Key, typename T, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const gtl::flat_hash_map<Key, T, Hash, KeyEqual, Allocator>& map)
+std::ostream& print(std::ostream& os, const gtl::flat_hash_map<Key, T, Hash, KeyEqual, Allocator>& el)
 {
-    fmt::print(os, "{{{}}}", fmt::join(to_strings(map), ", "));
-    return os;
+    return print_range(os, el, "{", "}");
 }
 
 template<typename Key, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::unordered_set<Key, Hash, KeyEqual, Allocator>& set)
+std::ostream& print(std::ostream& os, const std::unordered_set<Key, Hash, KeyEqual, Allocator>& el)
 {
-    fmt::print(os, "{{{}}}", fmt::join(to_strings(set), ", "));
-    return os;
+    return print_range(os, el, "{", "}");
 }
 
 template<typename Key, typename Hash, typename KeyEqual, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const gtl::flat_hash_set<Key, Hash, KeyEqual, Allocator>& set)
+std::ostream& print(std::ostream& os, const gtl::flat_hash_set<Key, Hash, KeyEqual, Allocator>& el)
 {
-    fmt::print(os, "{{{}}}", fmt::join(to_strings(set), ", "));
-    return os;
+    return print_range(os, el, "{", "}");
 }
 
 template<typename T, typename Allocator>
-std::ostream& operator<<(std::ostream& os, const std::vector<T, Allocator>& vec)
+std::ostream& print(std::ostream& os, const std::vector<T, Allocator>& el)
 {
-    fmt::print(os, "[{}]", fmt::join(to_strings(vec), ", "));
+    return print_range(os, el, "[", "]");
+}
+
+template<typename... Ts>
+    requires(sizeof...(Ts) > 0)
+std::ostream& print(std::ostream& os, const std::variant<Ts...>& el)
+{
+    std::visit([&](auto&& arg) { print(os, arg); }, el);
+    return os;
+}
+
+template<typename Derived>
+std::ostream& print(std::ostream& os, const IndexMixin<Derived>& el)
+{
+    return print(os, el.get_value());
+}
+
+template<typename Derived>
+std::ostream& print(std::ostream& os, const FixedUintMixin<Derived>& el)
+{
+    return print(os, el.value());
+}
+
+template<typename T>
+std::ostream& print(std::ostream& os, const ::cista::optional<T>& el)
+{
+    if (el.has_value())
+        print(os, el.value());
+    else
+        os << "<nullopt>";
+    return os;
+}
+
+template<typename C, typename T>
+std::ostream& print(std::ostream& os, const View<::cista::optional<T>, C>& el)
+{
+    if (el.has_value())
+        print(os, el.value());
+    else
+        os << "<nullopt>";
     return os;
 }
 
 template<typename... Ts>
     requires(sizeof...(Ts) > 0)
-std::ostream& operator<<(std::ostream& os, const std::variant<Ts...>& variant)
+std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& el)
 {
-    std::visit([&](auto&& arg) { os << to_string(arg); }, variant);
-    return os;
-}
-
-template<typename Derived>
-std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& mixin)
-{
-    os << to_string(mixin.get_value());
-    return os;
-}
-
-template<typename Derived>
-std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& mixin)
-{
-    os << to_string(mixin.value());
-    return os;
-}
-
-template<typename... Ts>
-    requires(sizeof...(Ts) > 0)
-std::ostream& print(std::ostream& os, const ::cista::offset::variant<Ts...>& variant)
-{
-    std::visit([&](auto&& arg) { os << to_string(arg); }, variant);
+    std::visit([&](auto&& arg) { print(os, arg); }, el);
     return os;
 }
 
@@ -264,22 +429,20 @@ template<typename C, typename... Ts>
     requires(sizeof...(Ts) > 0)
 std::ostream& print(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el)
 {
-    visit([&os](auto&& arg) { os << to_string(arg); }, el);
+    visit([&os](auto&& arg) { print(os, arg); }, el);
     return os;
 }
 
 template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
-std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& vec)
+std::ostream& print(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& el)
 {
-    fmt::print(os, "[{}]", fmt::join(to_strings(vec), ", "));
-    return os;
+    return print_range(os, el, "[", "]");
 }
 
 template<typename C, typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
-std::ostream& print(std::ostream& os, const View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>& vec)
+std::ostream& print(std::ostream& os, const View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>& el)
 {
-    fmt::print(os, "[{}]", fmt::join(to_strings(vec), ", "));
-    return os;
+    return print_range(os, el, "[", "]");
 }
 
 }

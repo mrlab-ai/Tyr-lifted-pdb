@@ -43,6 +43,8 @@ struct Builder
         using container_type = UniqueObjectPool<Data<T>>;
 
         container_type container;
+
+        BuilderEntry() = default;
     };
 
     using BuilderStorage = std::tuple<BuilderEntry<Variable>,

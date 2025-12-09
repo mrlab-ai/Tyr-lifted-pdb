@@ -51,10 +51,10 @@ struct Data<formalism::NumericEffect<Op, T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept { fexpr.clear(); }
 
     auto cista_members() const noexcept { return std::tie(index, fterm, fexpr); }
-    auto identifying_members() const noexcept { return std::tie(fterm, fexpr); }
+    auto identifying_members() const noexcept { return std::tie(Op::kind, fterm, fexpr); }
 };
 }
 

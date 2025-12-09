@@ -66,8 +66,10 @@ inline void process_effects(View<Index<formalism::GroundAction>, formalism::Over
                     numeric_effect.get_variant());
             }
 
-            if (cond_effect.get_effect().get_auxiliary_numeric_effect())
+            if (cond_effect.get_effect().get_auxiliary_numeric_effect().has_value())
+            {
                 succ_metric_value = grounder::evaluate(cond_effect.get_effect().get_auxiliary_numeric_effect().value(), facts_view);
+            }
         }
     }
 }
