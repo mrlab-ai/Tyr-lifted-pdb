@@ -375,14 +375,11 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveCo
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "static literals = {}\n", to_string(el.static_literals));
+        os << print_indent << "static literals = " << el.static_literals << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent literals = {}\n", to_string(el.fluent_literals));
+        os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
 
-        os << print_indent;
-        fmt::print(os, "numeric constraints = {}\n", to_string(el.numeric_constraints));
+        os << print_indent << "numeric constraints = " << el.numeric_constraints << "\n";
     }
     os << print_indent << ")";
 
@@ -396,14 +393,11 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Conjunc
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "static literals = {}\n", to_string(el.template get_literals<formalism::StaticTag>()));
+        os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent literals = {}\n", to_string(el.template get_literals<formalism::FluentTag>()));
+        os << print_indent << "fluent literals = " << el.template get_literals<formalism::FluentTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "numeric constraints = {}\n", to_string(el.get_numeric_constraints()));
+        os << print_indent << "numeric constraints = " << el.get_numeric_constraints() << "\n";
     }
     os << print_indent << ")";
 
@@ -416,11 +410,9 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Rule>& el)
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "head = {}\n", to_string(el.head));
+        os << print_indent << "head = " << el.head << "\n";
 
-        os << print_indent;
-        fmt::print(os, "body = {}\n", to_string(el.body));
+        os << print_indent << "body = " << el.body << "\n";
     }
     os << print_indent << ")";
 
@@ -434,11 +426,9 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Rule>, 
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "head = {}\n", to_string(el.get_head()));
+        os << print_indent << "head = " << el.get_head() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "body = {}\n", to_string(el.get_body()));
+        os << print_indent << "body = " << el.get_body() << "\n";
     }
     os << print_indent << ")";
 
@@ -451,14 +441,11 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConjunc
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "static literals = {}\n", to_string(el.static_literals));
+        os << print_indent << "static literals = " << el.static_literals << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent literals = {}\n", to_string(el.fluent_literals));
+        os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
 
-        os << print_indent;
-        fmt::print(os, "numeric constraints = {}\n", to_string(el.numeric_constraints));
+        os << print_indent << "numeric constraints = " << el.numeric_constraints << "\n";
     }
     os << print_indent << ")";
 
@@ -472,14 +459,11 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::GroundC
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "static literals = {}\n", to_string(el.template get_literals<formalism::StaticTag>()));
+        os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent literals = {}\n", to_string(el.template get_literals<formalism::FluentTag>()));
+        os << print_indent << "fluent literals = " << el.template get_literals<formalism::FluentTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "numeric constraints = {}\n", to_string(el.get_numeric_constraints()));
+        os << print_indent << "numeric constraints = " << el.get_numeric_constraints() << "\n";
     }
     os << print_indent << ")";
 
@@ -492,11 +476,9 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundRule>& 
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "head = {}\n", to_string(el.head));
+        os << print_indent << "head = " << el.head << "\n";
 
-        os << print_indent;
-        fmt::print(os, "body = {}\n", to_string(el.body));
+        os << print_indent << "body = " << el.body << "\n";
     }
     os << print_indent << ")";
 
@@ -510,11 +492,9 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::GroundR
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "head = {}\n", to_string(el.get_head()));
+        os << print_indent << "head = " << el.get_head() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "body = {}\n", to_string(el.get_body()));
+        os << print_indent << "body = " << el.get_body() << "\n";
     }
     os << print_indent << ")";
 
@@ -527,35 +507,25 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Program>& el)
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "static predicates = {}\n", to_string(el.static_predicates));
+        os << print_indent << "static predicates =" << el.static_predicates << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent predicates = {}\n", to_string(el.fluent_predicates));
+        os << print_indent << "fluent predicates = " << el.fluent_predicates << "\n";
 
-        os << print_indent;
-        fmt::print(os, "static functions = {}\n", to_string(el.static_functions));
+        os << print_indent << "static functions = " << el.static_functions << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent functions = {}\n", to_string(el.fluent_functions));
+        os << print_indent << "fluent functions = " << el.fluent_functions << "\n";
 
-        os << print_indent;
-        fmt::print(os, "objects = {}\n", to_string(el.objects));
+        os << print_indent << "objects = " << el.objects << "\n";
 
-        os << print_indent;
-        fmt::print(os, "static atoms = {}\n", to_string(el.static_atoms));
+        os << print_indent << "static atoms = " << el.static_atoms << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent atoms = {}\n", to_string(el.fluent_atoms));
+        os << print_indent << "fluent atoms = " << el.fluent_atoms << "\n";
 
-        os << print_indent;
-        fmt::print(os, "static fterms = {}\n", to_string(el.static_fterm_values));
+        os << print_indent << "static fterms = " << el.static_fterm_values << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent fterms = {}\n", to_string(el.fluent_fterm_values));
+        os << print_indent << "fluent fterms = " << el.fluent_fterm_values << "\n";
 
-        os << print_indent;
-        fmt::print(os, "rules = {}\n", to_string(el.rules));
+        os << print_indent << "rules = " << el.rules << "\n";
     }
     os << print_indent << ")";
 
@@ -569,35 +539,25 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Program
     {
         IndentScope scope(os);
 
-        os << print_indent;
-        fmt::print(os, "static predicates = {}\n", to_string(el.template get_predicates<formalism::StaticTag>()));
+        os << print_indent << "static predicates =" << el.template get_predicates<formalism::StaticTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent predicates = {}\n", to_string(el.template get_predicates<formalism::FluentTag>()));
+        os << print_indent << "fluent predicates = " << el.template get_predicates<formalism::FluentTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "static functions = {}\n", to_string(el.template get_functions<formalism::StaticTag>()));
+        os << print_indent << "static functions = " << el.template get_functions<formalism::StaticTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent functions = {}\n", to_string(el.template get_functions<formalism::FluentTag>()));
+        os << print_indent << "fluent functions = " << el.template get_functions<formalism::FluentTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "objects = {}\n", to_string(el.get_objects()));
+        os << print_indent << "objects = " << el.get_objects() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "static atoms = {}\n", to_string(el.template get_atoms<formalism::StaticTag>()));
+        os << print_indent << "static atoms = " << el.template get_atoms<formalism::StaticTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent atoms = {}\n", to_string(el.template get_atoms<formalism::FluentTag>()));
+        os << print_indent << "fluent atoms = " << el.template get_atoms<formalism::FluentTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "static fterms = {}\n", to_string(el.template get_fterm_values<formalism::StaticTag>()));
+        os << print_indent << "static fterms = " << el.template get_fterm_values<formalism::StaticTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "fluent fterms = {}\n", to_string(el.template get_fterm_values<formalism::FluentTag>()));
+        os << print_indent << "fluent fterms = " << el.template get_fterm_values<formalism::FluentTag>() << "\n";
 
-        os << print_indent;
-        fmt::print(os, "rules = {}\n", to_string(el.get_rules()));
+        os << print_indent << "rules = " << el.get_rules() << "\n";
     }
     os << print_indent << ")";
 
@@ -766,17 +726,11 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveEf
     {
         IndentScope scope(os);
 
-        os << print_indent << "fluent literals = ";
-        print(os, el.literals);
-        os << "\n";
+        os << print_indent << "fluent literals = " << el.literals << "\n";
 
-        os << print_indent << "fluent numeric effects = ";
-        print(os, el.numeric_effects);
-        os << "\n";
+        os << print_indent << "fluent numeric effects = " << el.numeric_effects << "\n";
 
-        os << print_indent << "auxiliary numeric effect = ";
-        print(os, el.auxiliary_numeric_effect);
-        os << "\n";
+        os << print_indent << "auxiliary numeric effect = " << el.auxiliary_numeric_effect << "\n";
     }
     os << print_indent << ")";
 
@@ -790,17 +744,11 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::ConjunctiveEff
     {
         IndentScope scope(os);
 
-        os << print_indent << "fluent literals = ";
-        print(os, el.get_literals());
-        os << "\n";
+        os << print_indent << "fluent literals = " << el.get_literals() << "\n";
 
-        os << print_indent << "fluent numeric effects = ";
-        print(os, el.get_numeric_effects());
-        os << "\n";
+        os << print_indent << "fluent numeric effects = " << el.get_numeric_effects() << "\n";
 
-        os << print_indent << "auxiliary numeric effect = ";
-        print(os, el.get_auxiliary_numeric_effect());
-        os << "\n";
+        os << print_indent << "auxiliary numeric effect = " << el.get_auxiliary_numeric_effect() << "\n";
     }
     os << print_indent << ")";
 
@@ -813,17 +761,11 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConjunc
     {
         IndentScope scope(os);
 
-        os << print_indent << "fluent literals = ";
-        print(os, el.literals);
-        os << "\n";
+        os << print_indent << "fluent literals = " << el.literals << "\n";
 
-        os << print_indent << "fluent numeric effects = ";
-        print(os, el.numeric_effects);
-        os << "\n";
+        os << print_indent << "fluent numeric effects = " << el.numeric_effects << "\n";
 
-        os << print_indent << "auxiliary numeric effect = ";
-        print(os, el.auxiliary_numeric_effect);
-        os << "\n";
+        os << print_indent << "auxiliary numeric effect = " << el.auxiliary_numeric_effect << "\n";
     }
     os << print_indent << ")";
 
@@ -837,17 +779,11 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::GroundConjunct
     {
         IndentScope scope(os);
 
-        os << print_indent << "fluent literals = ";
-        print(os, el.get_literals());
-        os << "\n";
+        os << print_indent << "fluent literals = " << el.get_literals() << "\n";
 
-        os << print_indent << "fluent numeric effects = ";
-        print(os, el.get_numeric_effects());
-        os << "\n";
+        os << print_indent << "fluent numeric effects = " << el.get_numeric_effects() << "\n";
 
-        os << print_indent << "auxiliary numeric effect = ";
-        print(os, el.get_auxiliary_numeric_effect());
-        os << "\n";
+        os << print_indent << "auxiliary numeric effect = " << el.get_auxiliary_numeric_effect() << "\n";
     }
     os << print_indent << ")";
 
@@ -864,9 +800,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Action>& el)
 
         os << print_indent << "condition = " << el.condition << "\n";
 
-        os << print_indent << "effects = ";
-        print(os, el.effects);
-        os << "\n";
+        os << print_indent << "effects = " << el.effects << "\n";
     }
     os << print_indent << ")";
 
@@ -884,9 +818,7 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Action>, C>& e
 
         os << print_indent << "condition = " << el.get_condition() << "\n";
 
-        os << print_indent << "effects = ";
-        print(os, el.get_effects());
-        os << "\n";
+        os << print_indent << "effects = " << el.get_effects() << "\n";
     }
     os << print_indent << ")";
 
@@ -901,9 +833,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAction>
 
         os << print_indent << "condition = " << el.condition << "\n";
 
-        os << print_indent << "effects = ";
-        print(os, el.effects);
-        os << "\n";
+        os << print_indent << "effects = " << el.effects << "\n";
     }
     os << print_indent << ")";
 
@@ -919,9 +849,7 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAction>,
 
         os << print_indent << "condition = " << el.get_condition() << "\n";
 
-        os << print_indent << "effects = ";
-        print(os, el.get_effects());
-        os << "\n";
+        os << print_indent << "effects = " << el.get_effects() << "\n";
     }
     os << print_indent << ")";
 
@@ -1011,45 +939,25 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Task>& el)
 
         os << print_indent << "name = " << el.name << "\n";
 
-        os << print_indent << "derived predicates = ";
-        print(os, el.derived_predicates);
-        os << "\n";
+        os << print_indent << "derived predicates = " << el.derived_predicates << "\n";
 
-        os << print_indent << "objects = ";
-        print(os, el.objects);
-        os << "\n";
+        os << print_indent << "objects = " << el.objects << "\n";
 
-        os << print_indent << "static atoms = ";
-        print(os, el.static_atoms);
-        os << "\n";
+        os << print_indent << "static atoms = " << el.static_atoms << "\n";
 
-        os << print_indent << "fluent atoms = ";
-        print(os, el.fluent_atoms);
-        os << "\n";
+        os << print_indent << "fluent atoms = " << el.fluent_atoms << "\n";
 
-        os << print_indent << "static numeric variables = ";
-        print(os, el.static_fterm_values);
-        os << "\n";
+        os << print_indent << "static numeric variables = " << el.static_fterm_values << "\n";
 
-        os << print_indent << "fluent numeric variables = ";
-        print(os, el.fluent_fterm_values);
-        os << "\n";
+        os << print_indent << "fluent numeric variables = " << el.fluent_fterm_values << "\n";
 
-        os << print_indent << "auxiliary numeric variable = ";
-        print(os, el.auxiliary_fterm_value);
-        os << "\n";
+        os << print_indent << "auxiliary numeric variable = " << el.auxiliary_fterm_value << "\n";
 
-        os << print_indent << "goal = ";
-        print(os, el.goal);
-        os << "\n";
+        os << print_indent << "goal = " << el.goal << "\n";
 
-        os << print_indent << "metric = ";
-        print(os, el.metric);
-        os << "\n";
+        os << print_indent << "metric = " << el.metric << "\n";
 
-        os << print_indent << "axioms = ";
-        print(os, el.axioms);
-        os << "\n";
+        os << print_indent << "axioms = " << el.axioms << "\n";
     }
     os << print_indent << ")";
 
@@ -1065,45 +973,25 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Task>, C>& el)
 
         os << print_indent << "name = " << el.get_name() << "\n";
 
-        os << print_indent << "derived predicates = ";
-        print(os, el.get_derived_predicates());
-        os << "\n";
+        os << print_indent << "derived predicates = " << el.get_derived_predicates() << "\n";
 
-        os << print_indent << "objects = ";
-        print(os, el.get_objects());
-        os << "\n";
+        os << print_indent << "objects = " << el.get_objects() << "\n";
 
-        os << print_indent << "static atoms = ";
-        print(os, el.template get_atoms<formalism::StaticTag>());
-        os << "\n";
+        os << print_indent << "static atoms = " << el.template get_atoms<formalism::StaticTag>() << "\n";
 
-        os << print_indent << "fluent atoms = ";
-        print(os, el.template get_atoms<formalism::FluentTag>());
-        os << "\n";
+        os << print_indent << "fluent atoms = " << el.template get_atoms<formalism::FluentTag>() << "\n";
 
-        os << print_indent << "static numeric variables = ";
-        print(os, el.template get_fterm_values<formalism::StaticTag>());
-        os << "\n";
+        os << print_indent << "static numeric variables = " << el.template get_fterm_values<formalism::StaticTag>() << "\n";
 
-        os << print_indent << "fluent numeric variables = ";
-        print(os, el.template get_fterm_values<formalism::FluentTag>());
-        os << "\n";
+        os << print_indent << "fluent numeric variables = " << el.template get_fterm_values<formalism::FluentTag>() << "\n";
 
-        os << print_indent << "auxiliary numeric variable = ";
-        print(os, el.get_auxiliary_fterm_value());
-        os << "\n";
+        os << print_indent << "auxiliary numeric variable = " << el.get_auxiliary_fterm_value() << "\n";
 
-        os << print_indent << "goal = ";
-        print(os, el.get_goal());
-        os << "\n";
+        os << print_indent << "goal = " << el.get_goal() << "\n";
 
-        os << print_indent << "metric = ";
-        print(os, el.get_metric());
-        os << "\n";
+        os << print_indent << "metric = " << el.get_metric() << "\n";
 
-        os << print_indent << "axioms = ";
-        print(os, el.get_axioms());
-        os << "\n";
+        os << print_indent << "axioms = " << el.get_axioms() << "\n";
     }
     os << print_indent << ")";
 
@@ -1118,41 +1006,23 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Domain>& el)
 
         os << print_indent << "name = " << el.name << "\n";
 
-        os << print_indent << "static predicates = ";
-        print(os, el.static_predicates);
-        os << "\n";
+        os << print_indent << "static predicates = " << el.static_predicates << "\n";
 
-        os << print_indent << "fluent predicates = ";
-        print(os, el.fluent_predicates);
-        os << "\n";
+        os << print_indent << "fluent predicates = " << el.fluent_predicates << "\n";
 
-        os << print_indent << "derived predicates = ";
-        print(os, el.derived_predicates);
-        os << "\n";
+        os << print_indent << "derived predicates = " << el.derived_predicates << "\n";
 
-        os << print_indent << "static functions = ";
-        print(os, el.static_functions);
-        os << "\n";
+        os << print_indent << "static functions = " << el.static_functions << "\n";
 
-        os << print_indent << "fluent functions = ";
-        print(os, el.fluent_functions);
-        os << "\n";
+        os << print_indent << "fluent functions = " << el.fluent_functions << "\n";
 
-        os << print_indent << "auxiliary function = ";
-        print(os, el.auxiliary_function);
-        os << "\n";
+        os << print_indent << "auxiliary function = " << el.auxiliary_function << "\n";
 
-        os << print_indent << "constants = ";
-        print(os, el.constants);
-        os << "\n";
+        os << print_indent << "constants = " << el.constants << "\n";
 
-        os << print_indent << "actions = ";
-        print(os, el.actions);
-        os << "\n";
+        os << print_indent << "actions = " << el.actions << "\n";
 
-        os << print_indent << "axioms = ";
-        print(os, el.axioms);
-        os << "\n";
+        os << print_indent << "axioms = " << el.axioms << "\n";
     }
     os << print_indent << ")";
 
@@ -1168,41 +1038,23 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Domain>, C>& e
 
         os << print_indent << "name = " << el.get_name() << "\n";
 
-        os << print_indent << "static predicates = ";
-        print(os, el.template get_predicates<formalism::StaticTag>());
-        os << "\n";
+        os << print_indent << "static predicates = " << el.template get_predicates<formalism::StaticTag>() << "\n";
 
-        os << print_indent << "fluent predicates = ";
-        print(os, el.template get_predicates<formalism::FluentTag>());
-        os << "\n";
+        os << print_indent << "fluent predicates = " << el.template get_predicates<formalism::FluentTag>() << "\n";
 
-        os << print_indent << "derived predicates = ";
-        print(os, el.template get_predicates<formalism::DerivedTag>());
-        os << "\n";
+        os << print_indent << "derived predicates = " << el.template get_predicates<formalism::DerivedTag>() << "\n";
 
-        os << print_indent << "static functions = ";
-        print(os, el.template get_functions<formalism::StaticTag>());
-        os << "\n";
+        os << print_indent << "static functions = " << el.template get_functions<formalism::StaticTag>() << "\n";
 
-        os << print_indent << "fluent functions = ";
-        print(os, el.template get_functions<formalism::FluentTag>());
-        os << "\n";
+        os << print_indent << "fluent functions = " << el.template get_functions<formalism::FluentTag>() << "\n";
 
-        os << print_indent << "auxiliary function = ";
-        print(os, el.get_auxiliary_function());
-        os << "\n";
+        os << print_indent << "auxiliary function = " << el.get_auxiliary_function() << "\n";
 
-        os << print_indent << "constants = ";
-        print(os, el.get_constants());
-        os << "\n";
+        os << print_indent << "constants = " << el.get_constants() << "\n";
 
-        os << print_indent << "actions = ";
-        print(os, el.get_actions());
-        os << "\n";
+        os << print_indent << "actions = " << el.get_actions() << "\n";
 
-        os << print_indent << "axioms = ";
-        print(os, el.get_axioms());
-        os << "\n";
+        os << print_indent << "axioms = " << el.get_axioms() << "\n";
     }
     os << print_indent << ")";
 

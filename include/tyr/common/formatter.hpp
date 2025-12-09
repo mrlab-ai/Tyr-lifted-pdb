@@ -86,6 +86,28 @@ std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& el);
 template<typename Derived>
 std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& el);
 
+// cista
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const ::cista::optional<T>& el);
+
+template<typename C, typename T>
+std::ostream& operator<<(std::ostream& os, const View<::cista::optional<T>, C>& el);
+
+template<typename... Ts>
+    requires(sizeof...(Ts) > 0)
+std::ostream& operator<<(std::ostream& os, const ::cista::offset::variant<Ts...>& el);
+
+template<typename C, typename... Ts>
+    requires(sizeof...(Ts) > 0)
+std::ostream& operator<<(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el);
+
+template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& operator<<(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& el);
+
+template<typename C, typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& operator<<(std::ostream& os, const View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>& el);
+
 /// --- print
 
 template<typename T, size_t N>
@@ -299,6 +321,46 @@ std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& el)
 
 template<typename Derived>
 std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& el)
+{
+    return print(os, el);
+}
+
+// cista
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const ::cista::optional<T>& el)
+{
+    return print(os, el);
+}
+
+template<typename C, typename T>
+std::ostream& operator<<(std::ostream& os, const View<::cista::optional<T>, C>& el)
+{
+    return print(os, el);
+}
+
+template<typename... Ts>
+    requires(sizeof...(Ts) > 0)
+std::ostream& operator<<(std::ostream& os, const ::cista::offset::variant<Ts...>& el)
+{
+    return print(os, el);
+}
+
+template<typename C, typename... Ts>
+    requires(sizeof...(Ts) > 0)
+std::ostream& operator<<(std::ostream& os, const View<::cista::offset::variant<Ts...>, C>& el)
+{
+    return print(os, el);
+}
+
+template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& operator<<(std::ostream& os, const ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>& el)
+{
+    return print(os, el);
+}
+
+template<typename C, typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
+std::ostream& operator<<(std::ostream& os, const View<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>, C>& el)
 {
     return print(os, el);
 }
