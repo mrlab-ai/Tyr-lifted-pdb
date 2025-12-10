@@ -23,6 +23,24 @@
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/state_index.hpp"
 
+/**
+ * Forward declarations
+ */
+
+namespace tyr::formalism
+{
+template<typename T>
+class OverlayRepository;
+
+class Repository;
+
+struct GroundAction;
+}
+
+/**
+ * Definitions
+ */
+
 namespace tyr::planning
 {
 template<>

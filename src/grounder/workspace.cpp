@@ -89,6 +89,7 @@ RuleExecutionContext::RuleExecutionContext(View<Index<formalism::Rule>, formalis
     kpkc_workspace(grounder::kpkc::allocate_workspace(static_consistency_graph)),
     local(std::make_shared<formalism::Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
     repository(parent, *local),
+    all_ground_rules(),
     ground_rules()
 {
 }

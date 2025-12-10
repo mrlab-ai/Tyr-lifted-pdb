@@ -24,6 +24,7 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/domain.hpp"
 #include "tyr/planning/ground_task/node.hpp"
 #include "tyr/planning/ground_task/state.hpp"
 #include "tyr/planning/lifted_task.hpp"

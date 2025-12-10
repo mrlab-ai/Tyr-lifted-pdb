@@ -15,8 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted_task/transition.hpp"
+#include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/views.hpp"
+//
 
+#include "transition.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/common/variant.hpp"

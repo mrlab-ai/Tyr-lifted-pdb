@@ -44,6 +44,8 @@ GroundTask::GroundTask(DomainPtr domain,
     std::cout << "Num ground axioms: " << ground_axioms.size() << std::endl;
 }
 
+Node<GroundTask> get_initial_node() {}
+
 void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state) {}
 
 std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>

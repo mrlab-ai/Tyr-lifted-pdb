@@ -20,7 +20,6 @@
 
 #include "tyr/common/config.hpp"
 #include "tyr/common/declarations.hpp"
-#include "tyr/planning/state.hpp"
 #include "tyr/planning/state_index.hpp"
 
 #include <concepts>

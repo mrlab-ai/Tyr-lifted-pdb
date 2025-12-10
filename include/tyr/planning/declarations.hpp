@@ -18,9 +18,8 @@
 #ifndef TYR_PLANNING_DECLARATIONS_HPP_
 #define TYR_PLANNING_DECLARATIONS_HPP_
 
-#include "tyr/common/declarations.hpp"
-
 #include <concepts>
+#include <memory>
 
 namespace tyr::planning
 {

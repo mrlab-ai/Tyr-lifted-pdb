@@ -22,9 +22,18 @@ ATTRIBUTES = [
     "num_derived_atoms",
     "num_ground_actions",
     "num_ground_axioms",
-    "total_task_grounding_time"
-]
+    "total_task_grounding_time",
 
+    "init_total_time_min",
+    "init_total_time_max",
+    "init_total_time_median",
+    "ground_total_time_min",
+    "ground_total_time_max",
+    "ground_total_time_median",
+    "num_rules",
+    "merge_total_time",
+    "merge_total_time_average_over_rules",
+]
 
 exp = Experiment("2025-11-10-ground_task-combined")
 

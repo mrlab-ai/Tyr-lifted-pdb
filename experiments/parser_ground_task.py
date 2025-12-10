@@ -21,5 +21,15 @@ class GroundTaskParser(Parser):
         self.add_pattern("num_ground_actions", r"Num ground actions: (\d+)", type=int)
         self.add_pattern("num_ground_axioms", r"Num ground axioms: (\d+)", type=int)
         self.add_pattern("total_task_grounding_time", r"Total task grounding time: (\d+) ms", type=int)
+
+        self.add_pattern("init_total_time_min", r"init_total_time_min: (\d+) ms", type=int)
+        self.add_pattern("init_total_time_max", r"init_total_time_max: (\d+) ms", type=int)
+        self.add_pattern("init_total_time_median", r"init_total_time_median: (\d+) ms", type=int)
+        self.add_pattern("ground_total_time_min", r"ground_total_time_min: (\d+) ms", type=int)
+        self.add_pattern("ground_total_time_max", r"ground_total_time_max: (\d+) ms", type=int)
+        self.add_pattern("ground_total_time_median", r"ground_total_time_median: (\d+) ms", type=int)
+        self.add_pattern("num_rules", r"num_rules: (\d+)", type=int)
+        self.add_pattern("merge_total_time", r"merge_total_time: (\d+) ms", type=int)
+        self.add_pattern("merge_total_time_average_over_rules", r"merge_total_time_average_over_rules: (\d+) ms", type=int)
         self.add_function(add_dummy_attribute)
         

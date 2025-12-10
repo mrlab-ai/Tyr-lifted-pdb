@@ -58,11 +58,24 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                               auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
                               auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();  // thread-local
 
+                              auto start_init = std::chrono::steady_clock::now();
+
                               rule_execution_context.clear();
                               rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
                               thread_execution_context.clear();
 
+                              auto end_init = std::chrono::steady_clock::now();
+                              rule_execution_context.statistics.init_total_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end_init - start_init);
+
+                              auto start_ground = std::chrono::steady_clock::now();
+
                               ground(facts_execution_context, rule_execution_context, thread_execution_context);
+
+                              auto end_ground = std::chrono::steady_clock::now();
+                              rule_execution_context.statistics.ground_total_time +=
+                                  std::chrono::duration_cast<std::chrono::nanoseconds>(end_ground - start_ground);
+
+                              ++rule_execution_context.statistics.num_executions;
                           });
 
         /**
@@ -70,6 +83,8 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
          */
 
         /// --- Sequentially combine results into a temporary staging repository to prevent modying the program's repository
+
+        auto start_merge = std::chrono::steady_clock::now();
 
         program_execution_context.clear_stage();
 
@@ -110,6 +125,9 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
             program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge_head);
             program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(merge_head);
         }
+
+        auto end_merge = std::chrono::steady_clock::now();
+        program_execution_context.statistics.merge_total_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end_merge - start_merge);
 
         if (!discovered_new_fact)
             break;  ///< Reached fixed point

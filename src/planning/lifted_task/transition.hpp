@@ -15,24 +15,40 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_TRANSITION_HPP_
-#define TYR_PLANNING_GROUND_TASK_TRANSITION_HPP_
+#ifndef TYR_SRC_PLANNING_LIFTED_TASK_TRANSITION_HPP_
+#define TYR_SRC_PLANNING_LIFTED_TASK_TRANSITION_HPP_
 
+#include "tyr/common/declarations.hpp"
 #include "tyr/common/types.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/grounder/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/transition.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 
+/**
+ * Forward declarations
+ */
+
+namespace tyr::formalism
+{
+template<typename T>
+class OverlayRepository;
+
+class Repository;
+
+struct GroundAction;
+}
+
+/**
+ * Definitions
+ */
+
 namespace tyr::planning
 {
-template<>
-Node<GroundTask> apply_action(Node<GroundTask> node,
-                              View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
-                              boost::dynamic_bitset<>& out_positive_effects,
-                              boost::dynamic_bitset<>& out_negative_effects);
+
+extern Node<LiftedTask> apply_action(Node<LiftedTask> node,
+                                     View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+                                     boost::dynamic_bitset<>& out_positive_effects,
+                                     boost::dynamic_bitset<>& out_negative_effects);
 }
 
 #endif

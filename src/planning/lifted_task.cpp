@@ -17,8 +17,10 @@
 
 #include "tyr/planning/lifted_task.hpp"
 
+#include "lifted_task/transition.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/compile.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/ground.hpp"
@@ -27,7 +29,13 @@
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/facts_view.hpp"
 #include "tyr/grounder/generator.hpp"
-#include "tyr/planning/lifted_task/transition.hpp"
+#include "tyr/grounder/workspace.hpp"
+#include "tyr/planning/domain.hpp"
+#include "tyr/planning/ground_task.hpp"
+#include "tyr/planning/lifted_task/node.hpp"
+#include "tyr/planning/lifted_task/packed_state.hpp"
+#include "tyr/planning/lifted_task/state.hpp"
+#include "tyr/planning/lifted_task/unpacked_state.hpp"
 #include "tyr/solver/bottom_up.hpp"
 
 using namespace tyr::formalism;
@@ -432,6 +440,21 @@ GroundTaskPtr LiftedTask::get_ground_task()
     auto ground_context = grounder::ProgramExecutionContext(m_ground_program.get_program(), m_ground_program.get_repository());
 
     solve_bottom_up(ground_context);
+
+    auto aggregated_statistics = grounder::RuleExecutionContext::compute_aggregate_statistics(ground_context.rule_execution_contexts);
+
+    auto to_ms = [](auto d) { return std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(d).count(); };
+
+    std::cout << "init_total_time_min: " << to_ms(aggregated_statistics.init_total_time_min) << " ms" << std::endl;
+    std::cout << "init_total_time_max: " << to_ms(aggregated_statistics.init_total_time_max) << " ms" << std::endl;
+    std::cout << "init_total_time_median: " << to_ms(aggregated_statistics.init_total_time_median) << " ms" << std::endl;
+    std::cout << "ground_total_time_min: " << to_ms(aggregated_statistics.ground_total_time_min) << " ms" << std::endl;
+    std::cout << "ground_total_time_max: " << to_ms(aggregated_statistics.ground_total_time_max) << " ms" << std::endl;
+    std::cout << "ground_total_time_median: " << to_ms(aggregated_statistics.ground_total_time_median) << " ms" << std::endl;
+    std::cout << "num_rules: " << ground_context.rule_execution_contexts.size() << std::endl;
+    std::cout << "merge_total_time: " << to_ms(ground_context.statistics.merge_total_time) << " ms" << std::endl;
+    std::cout << "merge_total_time_average_over_rules: " << to_ms(ground_context.statistics.merge_total_time) / ground_context.rule_execution_contexts.size()
+              << " ms" << std::endl;
 
     ground_context.clear_program_to_task();
 

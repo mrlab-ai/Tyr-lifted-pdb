@@ -20,14 +20,11 @@
 
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/common.hpp"
-#include "tyr/common/dynamic_bitset.hpp"
-#include "tyr/common/vector.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/grounder/workspace.hpp"
-#include "tyr/planning/domain.hpp"
-#include "tyr/planning/ground_task.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted_task/node.hpp"
 #include "tyr/planning/lifted_task/packed_state.hpp"
 #include "tyr/planning/lifted_task/state.hpp"
@@ -36,6 +33,8 @@
 #include "tyr/planning/programs/axiom.hpp"
 #include "tyr/planning/programs/ground.hpp"
 #include "tyr/planning/state_index.hpp"
+
+#include <valla/valla.hpp>
 
 namespace tyr::planning
 {
