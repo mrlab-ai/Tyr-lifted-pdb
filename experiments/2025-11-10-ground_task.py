@@ -48,7 +48,7 @@ for num_threads in [1,2,4,8]:
             setup=TetralithEnvironment.DEFAULT_SETUP,
             memory_per_cpu="2840M",
             cpus_per_task=num_threads,
-            extra_options="#SBATCH --account=naiss2025-5-382")
+            extra_options="#SBATCH --account=naiss2025-22-1245")
         ENVS.append((num_threads, ENV))
         
     else:
