@@ -190,36 +190,24 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
     }
 }
 
-LiftedTask::LiftedTask(DomainPtr domain,
-                       RepositoryPtr repository,
-                       OverlayRepositoryPtr<Repository> overlay_repository,
-                       View<Index<Task>, OverlayRepository<Repository>> task) :
-    TaskMixin(std::move(domain), std::move(repository), std::move(overlay_repository), task),
-    m_action_program(*this),
-    m_axiom_program(*this),
-    m_ground_program(*this),
-    m_action_context(m_action_program.get_program(), m_action_program.get_repository()),
-    m_axiom_context(m_axiom_program.get_program(), m_axiom_program.get_repository()),
-    m_parameter_domains_per_cond_effect_per_action()
+static std::vector<analysis::DomainListListList> compute_parameter_domains_per_cond_effect_per_action(View<Index<Task>, OverlayRepository<Repository>>& task)
 {
+    auto result = std::vector<analysis::DomainListListList> {};
+
     const auto num_objects = task.get_domain().get_constants().size() + task.get_objects().size();
     const auto variable_domains = analysis::compute_variable_domains(task);
-    std::cout << variable_domains.static_predicate_domains << std::endl;
-    std::cout << variable_domains.static_function_domains << std::endl;
     const auto static_fact_sets = TaggedFactSets(task.get_atoms<StaticTag>(), task.get_fterm_values<StaticTag>());
-    const auto static_assignment_sets = TaggedAssignmentSets(task.get_domain().get_predicates<StaticTag>(),
-                                                             task.get_domain().get_functions<StaticTag>(),
-                                                             variable_domains.static_predicate_domains,
-                                                             variable_domains.static_function_domains,
-                                                             num_objects);
+    auto static_assignment_sets = TaggedAssignmentSets(task.get_domain().get_predicates<StaticTag>(),
+                                                       task.get_domain().get_functions<StaticTag>(),
+                                                       variable_domains.static_predicate_domains,
+                                                       variable_domains.static_function_domains,
+                                                       num_objects);
+
+    static_assignment_sets.insert(static_fact_sets);
 
     for (uint_t action_index = 0; action_index < task.get_domain().get_actions().size(); ++action_index)
     {
         const auto action = task.get_domain().get_actions()[action_index];
-
-        std::cout << action << std::endl;
-
-        std::cout << "Parameter domains: " << variable_domains.action_domains[action_index] << std::endl;
 
         auto parameter_domains_per_cond_effect = analysis::DomainListListList {};
 
@@ -241,19 +229,33 @@ LiftedTask::LiftedTask(DomainPtr domain,
             {
                 auto domain = analysis::DomainList {};
                 for (const auto vertex_index : partition)
+                {
                     domain.push_back(static_consistency_graph.get_vertex(vertex_index).get_object_index());
-
+                }
                 parameter_domains.push_back(std::move(domain));
             }
+
             parameter_domains_per_cond_effect.push_back(std::move(parameter_domains));
         }
-        m_parameter_domains_per_cond_effect_per_action.push_back(std::move(parameter_domains_per_cond_effect));
+
+        result.push_back(std::move(parameter_domains_per_cond_effect));
     }
 
-    for (size_t i = 0; i < variable_domains.action_domains.size(); ++i)
-    {
-        std::cout << variable_domains.action_domains[i] << "    =>    " << m_parameter_domains_per_cond_effect_per_action[i] << std::endl;
-    }
+    return result;
+}
+
+LiftedTask::LiftedTask(DomainPtr domain,
+                       RepositoryPtr repository,
+                       OverlayRepositoryPtr<Repository> overlay_repository,
+                       View<Index<Task>, OverlayRepository<Repository>> task) :
+    TaskMixin(std::move(domain), std::move(repository), std::move(overlay_repository), task),
+    m_action_program(*this),
+    m_axiom_program(*this),
+    m_ground_program(*this),
+    m_action_context(m_action_program.get_program(), m_action_program.get_repository()),
+    m_axiom_context(m_axiom_program.get_program(), m_axiom_program.get_repository()),
+    m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(task))
+{
 }
 
 void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_state)
@@ -333,27 +335,33 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     solve_bottom_up(ground_context);
 
-    auto fluent_atoms = m_task.get_atoms<FluentTag>().get_data();
-    auto ground_actions = IndexList<GroundAction> {};
-    auto ground_axioms = IndexList<GroundAxiom> {};
-
     ground_context.clear_program_to_task();
 
-    for (const auto atom : ground_context.program_merge_atoms)
-    {
-        const auto fluent_atom = merge(atom, ground_context.builder, *this->m_overlay_repository, ground_context.program_to_task_merge_cache);
-        fluent_atoms.push_back(fluent_atom.get_index());
-    }
+    // --- Prepare FactsView based on initial node. We will only check static applicability here.
+
+    const auto initial_node = this->get_initial_node();
+    const auto initial_state = initial_node.get_state();
+    const auto facts_view = grounder::FactsView(initial_state.template get_atoms<formalism::StaticTag>(),
+                                                initial_state.template get_atoms<formalism::FluentTag>(),
+                                                initial_state.template get_atoms<formalism::DerivedTag>(),
+                                                initial_state.template get_numeric_variables<formalism::StaticTag>(),
+                                                initial_state.template get_numeric_variables<formalism::FluentTag>(),
+                                                initial_node.get_state_metric());
 
     auto& binding = ground_context.planning_execution_context.binding;
     auto& binding_full = ground_context.planning_execution_context.binding_full;
-    auto& effect_families = ground_context.planning_execution_context.effect_families;
+
+    /// --- Ground Atoms
+
+    auto fluent_atoms_set = UnorderedSet<Index<GroundAtom<FluentTag>>>();
+    auto derived_atoms_set = UnorderedSet<Index<GroundAtom<DerivedTag>>>();
+
+    /// --- Ground Actions
+
+    auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
 
     for (const auto rule : ground_context.program_merge_rules)
     {
-        // std::cout << rule.get_rule() << std::endl;
-        // std::cout << rule << std::endl;
-
         if (m_ground_program.get_rule_to_actions_mapping().contains(rule.get_rule()))
         {
             binding.clear();
@@ -364,11 +372,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
             for (const auto action : m_ground_program.get_rule_to_actions_mapping().at(rule.get_rule()))
             {
-                // std::cout << action << std::endl;
-
                 const auto action_index = action.get_index().get_value();
-
-                // std::cout << m_parameter_domains_per_cond_effect_per_action[action_index] << std::endl;
 
                 const auto ground_action = ground(action,
                                                   binding_view,
@@ -377,14 +381,35 @@ GroundTaskPtr LiftedTask::get_ground_task()
                                                   ground_context.builder,
                                                   *this->m_overlay_repository);
 
-                // std::cout << ground_action << std::endl;
+                if (is_statically_applicable(ground_action, facts_view))
+                {
+                    ground_actions_set.insert(ground_action.get_index());
 
-                // TODO: check static applicability before push_back
+                    for (const auto literal : ground_action.get_condition().get_literals<FluentTag>())
+                        fluent_atoms_set.insert(literal.get_atom().get_index());
 
-                ground_actions.push_back(ground_action.get_index());
+                    for (const auto literal : ground_action.get_condition().get_literals<DerivedTag>())
+                        derived_atoms_set.insert(literal.get_atom().get_index());
+
+                    for (const auto cond_effect : ground_action.get_effects())
+                    {
+                        for (const auto literal : cond_effect.get_condition().get_literals<FluentTag>())
+                            fluent_atoms_set.insert(literal.get_atom().get_index());
+
+                        for (const auto literal : cond_effect.get_condition().get_literals<DerivedTag>())
+                            derived_atoms_set.insert(literal.get_atom().get_index());
+
+                        for (const auto literal : cond_effect.get_effect().get_literals())
+                            fluent_atoms_set.insert(literal.get_atom().get_index());
+                    }
+                }
             }
         }
     }
+
+    /// --- Ground Axioms
+
+    auto ground_axioms_set = UnorderedSet<Index<GroundAxiom>> {};
 
     for (const auto rule : ground_context.program_merge_rules)
     {
@@ -400,14 +425,29 @@ GroundTaskPtr LiftedTask::get_ground_task()
             {
                 const auto ground_axiom = ground(axiom, binding_view, ground_context.builder, *this->m_overlay_repository);
 
-                // TODO: check static applicability before push_back
+                if (is_statically_applicable(ground_axiom, facts_view))
+                {
+                    ground_axioms_set.insert(ground_axiom.get_index());
 
-                ground_axioms.push_back(ground_axiom.get_index());
+                    for (const auto literal : ground_axiom.get_body().get_literals<FluentTag>())
+                        fluent_atoms_set.insert(literal.get_atom().get_index());
+
+                    for (const auto literal : ground_axiom.get_body().get_literals<DerivedTag>())
+                        derived_atoms_set.insert(literal.get_atom().get_index());
+
+                    derived_atoms_set.insert(ground_axiom.get_head().get_index());
+                }
             }
         }
     }
 
+    auto fluent_atoms = IndexList<GroundAtom<FluentTag>>(fluent_atoms_set.begin(), fluent_atoms_set.end());
+    auto derived_atoms = IndexList<GroundAtom<DerivedTag>>(derived_atoms_set.begin(), derived_atoms_set.end());
+    auto ground_actions = IndexList<GroundAction>(ground_actions_set.begin(), ground_actions_set.end());
+    auto ground_axioms = IndexList<GroundAxiom>(ground_axioms_set.begin(), ground_axioms_set.end());
+
     canonicalize(fluent_atoms);
+    canonicalize(derived_atoms);
     canonicalize(ground_actions);
     canonicalize(ground_axioms);
 
@@ -416,6 +456,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
                                         this->m_overlay_repository,
                                         this->m_task,
                                         fluent_atoms,
+                                        derived_atoms,
                                         ground_actions,
                                         ground_axioms);
 }

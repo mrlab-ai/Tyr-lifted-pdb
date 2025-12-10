@@ -29,15 +29,18 @@ GroundTask::GroundTask(DomainPtr domain,
                        OverlayRepositoryPtr<Repository> overlay_repository,
                        View<Index<Task>, OverlayRepository<Repository>> task,
                        IndexList<GroundAtom<FluentTag>> fluent_atoms,
+                       IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms,
                        IndexList<GroundAction> ground_actions,
                        IndexList<GroundAxiom> ground_axioms) :
     TaskMixin(std::move(domain), std::move(repository), std::move(overlay_repository), task)
 {
     std::cout << make_view(fluent_atoms, *this->m_overlay_repository) << std::endl;
+    std::cout << make_view(derived_atoms, *this->m_overlay_repository) << std::endl;
     std::cout << make_view(ground_actions, *this->m_overlay_repository) << std::endl;
     std::cout << make_view(ground_axioms, *this->m_overlay_repository) << std::endl;
 
     std::cout << "Num fluent atoms: " << fluent_atoms.size() << std::endl;
+    std::cout << "Num derived atoms: " << derived_atoms.size() << std::endl;
     std::cout << "Num ground actions: " << ground_actions.size() << std::endl;
     std::cout << "Num ground axioms: " << ground_axioms.size() << std::endl;
 }

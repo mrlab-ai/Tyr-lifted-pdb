@@ -301,6 +301,42 @@ bool is_applicable(View<Index<formalism::GroundAxiom>, C> element, const FactsVi
 }
 
 /**
+ * is_statically_applicable
+ */
+
+// GroundConjunctiveCondition
+
+template<formalism::Context C>
+bool is_statically_applicable(View<Index<formalism::GroundConjunctiveCondition>, C> element, const FactsView& facts_view)
+{
+    return is_applicable(element.template get_literals<formalism::StaticTag>(), facts_view);
+}
+
+// GroundRule
+
+template<formalism::Context C>
+bool is_statically_applicable(View<Index<formalism::GroundRule>, C> element, const FactsView& facts_view)
+{
+    return is_statically_applicable(element.get_body(), facts_view);
+}
+
+// GroundAction
+
+template<formalism::Context C>
+bool is_statically_applicable(View<Index<formalism::GroundAction>, C> element, const FactsView& facts_view)
+{
+    return is_statically_applicable(element.get_condition(), facts_view);
+}
+
+// GroundAxiom
+
+template<formalism::Context C>
+bool is_statically_applicable(View<Index<formalism::GroundAxiom>, C> element, const FactsView& facts_view)
+{
+    return is_statically_applicable(element.get_body(), facts_view);
+}
+
+/**
  * nullary_conditions_hold
  */
 

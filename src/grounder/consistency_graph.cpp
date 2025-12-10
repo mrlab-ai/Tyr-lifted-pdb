@@ -351,8 +351,6 @@ bool Vertex<C>::consistent_literals(View<IndexList<formalism::Literal<T>>, C> li
 
             const auto true_assignment = predicate_assignment_set[assignment];
 
-            std::cout << "assignment: " << true_assignment << std::endl;
-
             if (!negated && !true_assignment)
             {
                 return false;
@@ -420,7 +418,6 @@ Index<formalism::Object> Vertex<C>::get_object_if_overlap(View<Data<formalism::T
 
             if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
             {
-                std::cout << m_parameter_index << " " << arg << " " << m_object_index << std::endl;
                 if (m_parameter_index == arg)
                     return m_object_index;
                 else
@@ -638,14 +635,6 @@ StaticConsistencyGraph<C>::compute_vertices(View<Index<formalism::ConjunctiveCon
             {
                 vertices.push_back(std::move(vertex));
                 partition.push_back(vertex.get_index());
-
-                if (begin_parameter_index > 0)
-                    std::cout << "Consistent " << vertex << std::endl;
-            }
-            else
-            {
-                if (begin_parameter_index > 0)
-                    std::cout << "Inconsistent " << vertex << std::endl;
             }
         }
 

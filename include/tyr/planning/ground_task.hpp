@@ -35,6 +35,7 @@ public:
                formalism::OverlayRepositoryPtr<formalism::Repository> overlay_repository,
                View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
                IndexList<formalism::GroundAtom<formalism::FluentTag>> fluent_atoms,
+               IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms,
                IndexList<formalism::GroundAction> ground_actions,
                IndexList<formalism::GroundAxiom> ground_axioms);
 

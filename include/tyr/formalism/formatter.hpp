@@ -381,6 +381,8 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveCo
 
         os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
 
+        os << print_indent << "derived literals = " << el.derived_literals << "\n";
+
         os << print_indent << "numeric constraints = " << el.numeric_constraints << "\n";
     }
     os << print_indent << ")";
@@ -400,6 +402,8 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Conjunc
         os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
         os << print_indent << "fluent literals = " << el.template get_literals<formalism::FluentTag>() << "\n";
+
+        os << print_indent << "derived literals = " << el.template get_literals<formalism::DerivedTag>() << "\n";
 
         os << print_indent << "numeric constraints = " << el.get_numeric_constraints() << "\n";
     }
@@ -449,6 +453,8 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConjunc
 
         os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
 
+        os << print_indent << "derived literals = " << el.derived_literals << "\n";
+
         os << print_indent << "numeric constraints = " << el.numeric_constraints << "\n";
     }
     os << print_indent << ")";
@@ -466,6 +472,8 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::GroundC
         os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
         os << print_indent << "fluent literals = " << el.template get_literals<formalism::FluentTag>() << "\n";
+
+        os << print_indent << "derived literals = " << el.template get_literals<formalism::DerivedTag>() << "\n";
 
         os << print_indent << "numeric constraints = " << el.get_numeric_constraints() << "\n";
     }
@@ -800,6 +808,8 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Action>& el)
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "name = " << el.name << "\n";
 
         os << print_indent << "condition = " << el.condition << "\n";
@@ -818,6 +828,8 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Action>, C>& e
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.get_index() << "\n";
+
         os << print_indent << "name = " << el.get_name() << "\n";
 
         os << print_indent << "condition = " << el.get_condition() << "\n";
@@ -835,6 +847,10 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAction>
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
+        os << print_indent << "action index = " << el.action << "\n";
+
         os << print_indent << "condition = " << el.condition << "\n";
 
         os << print_indent << "effects = " << el.effects << "\n";
@@ -851,6 +867,10 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAction>,
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.get_index() << "\n";
+
+        os << print_indent << "action index = " << el.get_action().get_index() << "\n";
+
         os << print_indent << "condition = " << el.get_condition() << "\n";
 
         os << print_indent << "effects = " << el.get_effects() << "\n";
@@ -865,6 +885,8 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Axiom>& el)
     os << "Axiom(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
 
         os << print_indent << "body = " << el.body << "\n";
 
@@ -882,6 +904,8 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Axiom>, C>& el
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.get_index() << "\n";
+
         os << print_indent << "body = " << el.get_body() << "\n";
 
         os << print_indent << "head = " << el.get_head() << "\n";
@@ -896,6 +920,10 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAxiom>&
     os << "GroundAxiom(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
+
+        os << print_indent << "axiom index = " << el.axiom << "\n";
 
         os << print_indent << "body = " << el.body << "\n";
 
@@ -912,6 +940,10 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAxiom>, 
     os << "GroundAxiom(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
+
+        os << print_indent << "axiom index = " << el.get_axiom().get_index() << "\n";
 
         os << print_indent << "body = " << el.get_body() << "\n";
 

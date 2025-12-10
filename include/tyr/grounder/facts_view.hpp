@@ -31,9 +31,6 @@
 namespace tyr::grounder
 {
 
-/// TODO: Find a better name
-/// Its job is to group the randomized access low level fact set or state information together,
-/// allowing us to check applicability on actions or rules on state or fact sets.
 struct FactsView
 {
     const boost::dynamic_bitset<>& static_atoms;
