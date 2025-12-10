@@ -24,44 +24,18 @@
 
 namespace tyr::planning
 {
+// template<typename T>
+// concept StateConcept = requires(T state) {
+//     { state.get_index() } -> std::same_as<StateIndex>;
+//     { state.get_task() } -> std::same_as<typename T::TaskType&>;
+//     { state.get_task() } -> std::same_as<const typename T::TaskType&>;
+//     { state.get_unpacked_state() } -> std::same_as<const UnpackedState<typename T::TaskType>&>;
+// };
+
 template<typename Task>
 class State
 {
-public:
-    State(Task& task, SharedObjectPoolPtr<UnpackedState<Task>> unpacked) noexcept : m_unpacked(std::move(unpacked)), m_task(&task) {}
-
-    StateIndex get_index() const noexcept { return m_unpacked->get_index(); }
-
-    template<formalism::FactKind T>
-    const boost::dynamic_bitset<>& get_atoms() const noexcept
-    {
-        if constexpr (std::is_same_v<T, formalism::StaticTag>)
-            return m_task->get_static_atoms_bitset();
-        else if constexpr (std::is_same_v<T, formalism::FluentTag> || std::is_same_v<T, formalism::DerivedTag>)
-            return m_unpacked->template get_atoms<T>();
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-    template<formalism::FactKind T>
-    const std::vector<float_t>& get_numeric_variables() const noexcept
-    {
-        if constexpr (std::is_same_v<T, formalism::StaticTag>)
-            return m_task->get_static_numeric_variables();
-        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-            return m_unpacked->get_numeric_variables();
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-    const UnpackedState<Task>& get_unpacked_state() const noexcept { return *m_unpacked; }
-
-    Task& get_task() noexcept { return *m_task; }
-    const Task& get_task() const noexcept { return *m_task; }
-
-private:
-    SharedObjectPoolPtr<UnpackedState<Task>> m_unpacked;
-    Task* m_task;
+    static_assert(dependent_false<Task>::value, "State is not defined for type T.");
 };
 }
 

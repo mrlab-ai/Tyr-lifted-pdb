@@ -19,8 +19,7 @@
 #define TYR_PLANNING_PACKED_STATE_HPP_
 
 #include "tyr/common/config.hpp"
-#include "tyr/common/equal_to.hpp"
-#include "tyr/common/hash.hpp"
+#include "tyr/common/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/state_index.hpp"
 
@@ -28,43 +27,15 @@
 
 namespace tyr::planning
 {
+// template<typename T>
+// concept PackedStateConcept = requires(T packed_state) {
+//     { packed_state.get_index() } -> std::same_as<StateIndex>;
+// };
+
 template<typename Task>
 class PackedState
 {
-public:
-    PackedState(StateIndex index, valla::Slot<uint_t> fluent_atoms, valla::Slot<uint_t> derived_atoms, valla::Slot<uint_t> numeric_variables) noexcept :
-        m_index(index),
-        m_fluent_atoms(fluent_atoms),
-        m_derived_atoms(derived_atoms),
-        m_numeric_variables(numeric_variables)
-    {
-    }
-
-    StateIndex get_index() const noexcept { return m_index; }
-
-    template<formalism::FactKind T>
-    valla::Slot<uint_t> get_atoms() const noexcept
-    {
-        if constexpr (std::same_as<T, formalism::FluentTag>)
-            return m_fluent_atoms;
-        else if constexpr (std::same_as<T, formalism::DerivedTag>)
-            return m_derived_atoms;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-    valla::Slot<uint_t> get_numeric_variables() const noexcept { return m_numeric_variables; }
-
-    auto identifying_members() const noexcept
-    {
-        return std::tie(m_fluent_atoms.i1, m_fluent_atoms.i2, m_derived_atoms.i1, m_derived_atoms.i2, m_numeric_variables.i1, m_numeric_variables.i2);
-    }
-
-private:
-    StateIndex m_index;
-    valla::Slot<uint_t> m_fluent_atoms;
-    valla::Slot<uint_t> m_derived_atoms;
-    valla::Slot<uint_t> m_numeric_variables;
+    static_assert(dependent_false<Task>::value, "PackedState is not defined for type T.");
 };
 }
 

@@ -15,22 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/transition.hpp"
+#include "tyr/planning/lifted_task/transition.hpp"
 
 #include "tyr/common/dynamic_bitset.hpp"
+#include "tyr/common/types.hpp"
 #include "tyr/common/variant.hpp"
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/ground_numeric_effect_operator_utils.hpp"
-#include "tyr/formalism/repository.hpp"
 #include "tyr/grounder/applicability.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/facts_view.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/lifted_task.hpp"
-#include "tyr/planning/node.hpp"
-#include "tyr/planning/state.hpp"
+#include "tyr/planning/lifted_task/node.hpp"
+#include "tyr/planning/lifted_task/state.hpp"
+
+#include <boost/dynamic_bitset.hpp>
 
 namespace tyr::planning
 {
@@ -74,19 +76,10 @@ inline void process_effects(View<Index<formalism::GroundAction>, formalism::Over
     }
 }
 
-/// @brief Apply the action in the given node to apply its successor node.
-/// This involved computing the successor state of the state underlying the given node,
-/// as well as computing the metric value of the successor node given the metric value and the state in the given node.
-/// @tparam Task
-/// @param node
-/// @param action
-/// @param state_fact_sets
-/// @return
-template<typename Task>
-Node<Task> apply_action(Node<Task> node,
-                        View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
-                        boost::dynamic_bitset<>& out_positive_effects,
-                        boost::dynamic_bitset<>& out_negative_effects)
+Node<LiftedTask> apply_action(Node<LiftedTask> node,
+                              View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+                              boost::dynamic_bitset<>& out_positive_effects,
+                              boost::dynamic_bitset<>& out_negative_effects)
 {
     const auto state = node.get_state();
     auto& task = node.get_task();
@@ -141,15 +134,6 @@ Node<Task> apply_action(Node<Task> node,
 
     const auto succ_state_index = task.register_state(succ_unpacked_state);
 
-    return Node<Task>(succ_state_index, succ_metric_value, task);
+    return Node<LiftedTask>(succ_state_index, succ_metric_value, task);
 }
-
-template Node<LiftedTask> apply_action(Node<LiftedTask> node,
-                                       View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
-                                       boost::dynamic_bitset<>& out_positive_effects,
-                                       boost::dynamic_bitset<>& out_negative_effects);
-template Node<GroundTask> apply_action(Node<GroundTask> node,
-                                       View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
-                                       boost::dynamic_bitset<>& out_positive_effects,
-                                       boost::dynamic_bitset<>& out_negative_effects);
 }

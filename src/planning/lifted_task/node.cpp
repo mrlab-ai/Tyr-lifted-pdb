@@ -15,34 +15,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_NODE_HPP_
-#define TYR_PLANNING_NODE_HPP_
+#include "tyr/planning/lifted_task/node.hpp"
 
+#include "tyr/planning/lifted_task/state.hpp"
+//
 #include "tyr/common/config.hpp"
-#include "tyr/common/declarations.hpp"
-#include "tyr/planning/state.hpp"
+#include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/state_index.hpp"
 
 namespace tyr::planning
 {
-// template<typename T>
-// concept NodeConcept = requires(T node) {
-//     { node.get_state() } -> std::same_as<State<typename T::TaskType>>;
-//     { node.get_task() } -> std::same_as<typename T::TaskType&>;
-//     { node.get_task() } -> std::same_as<const typename T::TaskType&>;
-//     { node.get_state_metric() } -> std::same_as<float_t>;
-//     { node.get_state_index() } -> std::same_as<StateIndex>;
-//     { node.get_labeled_successor_nodes() };
-// };
 
-template<typename Task>
-class Node
+std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<LiftedTask>>>
+Node<LiftedTask>::get_labeled_successor_nodes()
 {
-    static_assert(dependent_false<Task>::value, "Node is not defined for type T.");
-};
-
-template<typename Task>
-using NodeList = std::vector<Node<Task>>;
+    return m_task->get_labeled_successor_nodes(*this);
 }
 
-#endif
+void Node<LiftedTask>::get_labeled_successor_nodes(
+    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<LiftedTask>>>& out_nodes)
+{
+    m_task->get_labeled_successor_nodes(*this, out_nodes);
+}
+
+}

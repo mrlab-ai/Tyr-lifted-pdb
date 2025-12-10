@@ -18,8 +18,12 @@
 #ifndef TYR_PLANNING_TRANSITION_HPP_
 #define TYR_PLANNING_TRANSITION_HPP_
 
+#include "tyr/common/declarations.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/formalism/repository.hpp"
+#include "tyr/formalism/views.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 
@@ -39,7 +43,10 @@ template<typename Task>
 Node<Task> apply_action(Node<Task> node,
                         View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
                         boost::dynamic_bitset<>& out_positive_effects,
-                        boost::dynamic_bitset<>& out_negative_effects);
+                        boost::dynamic_bitset<>& out_negative_effects)
+{
+    static_assert(dependent_false<Task>::value, "apply_action is not defined for type T.");
+}
 }
 
 #endif

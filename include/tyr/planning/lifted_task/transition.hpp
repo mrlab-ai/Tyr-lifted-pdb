@@ -15,29 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_DOMAIN_HPP_
-#define TYR_PLANNING_DOMAIN_HPP_
+#ifndef TYR_PLANNING_LIFTED_TASK_TRANSITION_HPP_
+#define TYR_PLANNING_LIFTED_TASK_TRANSITION_HPP_
 
+#include "tyr/common/types.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/grounder/declarations.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/transition.hpp"
+
+#include <boost/dynamic_bitset.hpp>
 
 namespace tyr::planning
 {
 
-class Domain
-{
-public:
-    Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::Domain>, formalism::Repository> domain);
-
-    View<Index<formalism::Domain>, formalism::Repository> get_domain() const noexcept;
-
-private:
-    std::shared_ptr<formalism::Repository> m_repository;
-    View<Index<formalism::Domain>, formalism::Repository> m_domain;
-};
-
+extern Node<LiftedTask> apply_action(Node<LiftedTask> node,
+                                     View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+                                     boost::dynamic_bitset<>& out_positive_effects,
+                                     boost::dynamic_bitset<>& out_negative_effects);
 }
 
 #endif

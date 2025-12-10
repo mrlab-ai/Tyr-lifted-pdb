@@ -15,29 +15,30 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_DOMAIN_HPP_
-#define TYR_PLANNING_DOMAIN_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_NODE_HPP_
+#define TYR_PLANNING_GROUND_TASK_NODE_HPP_
 
+#include "tyr/common/config.hpp"
+#include "tyr/common/types.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/planning/node.hpp"
 
 namespace tyr::planning
 {
-
-class Domain
+template<>
+class Node<GroundTask>
 {
 public:
-    Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::Domain>, formalism::Repository> domain);
+    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>
+    get_labeled_successor_nodes();
 
-    View<Index<formalism::Domain>, formalism::Repository> get_domain() const noexcept;
+    void get_labeled_successor_nodes(
+        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>& out_nodes);
 
 private:
-    std::shared_ptr<formalism::Repository> m_repository;
-    View<Index<formalism::Domain>, formalism::Repository> m_domain;
 };
 
+using GroundNodeList = std::vector<Node<GroundTask>>;
 }
 
 #endif

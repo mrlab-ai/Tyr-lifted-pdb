@@ -27,7 +27,7 @@
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/facts_view.hpp"
 #include "tyr/grounder/generator.hpp"
-#include "tyr/planning/transition.hpp"
+#include "tyr/planning/lifted_task/transition.hpp"
 #include "tyr/solver/bottom_up.hpp"
 
 using namespace tyr::formalism;
@@ -244,11 +244,76 @@ static std::vector<analysis::DomainListListList> compute_parameter_domains_per_c
     return result;
 }
 
+inline void fill_atoms(valla::Slot<uint_t> slot,
+                       const valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& uint_nodes,
+                       std::vector<uint_t>& buffer,
+                       boost::dynamic_bitset<>& atoms)
+{
+    buffer.clear();
+
+    valla::read_sequence(slot, uint_nodes, std::back_inserter(buffer));
+
+    if (!buffer.empty())
+    {
+        assert(std::is_sorted(buffer.begin(), buffer.end()));
+        atoms.resize(buffer.back() + 1, false);
+        for (const auto& atom_index : buffer)
+            atoms.set(atom_index);
+    }
+}
+
+inline void fill_numeric_variables(valla::Slot<uint_t> slot,
+                                   const valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& uint_nodes,
+                                   const valla::IndexedHashSet<float_t, uint_t>& float_nodes,
+                                   std::vector<uint_t>& buffer,
+                                   std::vector<float_t>& numeric_variables)
+{
+    buffer.clear();
+
+    valla::read_sequence(slot, uint_nodes, std::back_inserter(buffer));
+
+    if (!buffer.empty())
+        valla::decode_from_unsigned_integrals(buffer, float_nodes, std::back_inserter(numeric_variables));
+}
+
+inline valla::Slot<uint_t>
+create_atoms_slot(const boost::dynamic_bitset<>& atoms, std::vector<uint_t>& buffer, valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& uint_nodes)
+{
+    buffer.clear();
+
+    const auto& bits = atoms;
+    for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
+        buffer.push_back(i);
+
+    return valla::insert_sequence(buffer, uint_nodes);
+}
+
+inline valla::Slot<uint_t> create_numeric_variables_slot(const std::vector<float_t>& numeric_variables,
+                                                         std::vector<uint_t>& buffer,
+                                                         valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& uint_nodes,
+                                                         valla::IndexedHashSet<float_t, uint_t>& float_nodes)
+{
+    buffer.clear();
+
+    valla::encode_as_unsigned_integrals(numeric_variables, float_nodes, std::back_inserter(buffer));
+
+    return valla::insert_sequence(buffer, uint_nodes);
+}
+
 LiftedTask::LiftedTask(DomainPtr domain,
                        RepositoryPtr repository,
                        OverlayRepositoryPtr<Repository> overlay_repository,
                        View<Index<Task>, OverlayRepository<Repository>> task) :
-    TaskMixin(std::move(domain), std::move(repository), std::move(overlay_repository), task),
+    m_domain(std::move(domain)),
+    m_repository(std::move(repository)),
+    m_overlay_repository(std::move(overlay_repository)),
+    m_task(task),
+    m_uint_nodes(),
+    m_float_nodes(),
+    m_packed_states(),
+    m_unpacked_state_pool(),
+    m_static_atoms_bitset(),
+    m_static_numeric_variables(),
     m_action_program(*this),
     m_axiom_program(*this),
     m_ground_program(*this),
@@ -256,6 +321,39 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_axiom_context(m_axiom_program.get_program(), m_axiom_program.get_repository()),
     m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(task))
 {
+    for (const auto atom : task.template get_atoms<formalism::StaticTag>())
+        set(atom.get_index().get_value(), m_static_atoms_bitset);
+
+    for (const auto fterm_value : task.template get_fterm_values<formalism::StaticTag>())
+        set(fterm_value.get_fterm().get_index().get_value(), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
+}
+
+State<LiftedTask> LiftedTask::get_state(StateIndex state_index)
+{
+    const auto& packed_state = m_packed_states[state_index];
+
+    auto unpacked_state = m_unpacked_state_pool.get_or_allocate();
+    unpacked_state->clear();
+
+    thread_local auto buffer = std::vector<uint_t> {};
+
+    unpacked_state->get_index() = state_index;
+    fill_atoms(packed_state.template get_atoms<formalism::FluentTag>(), m_uint_nodes, buffer, unpacked_state->template get_atoms<formalism::FluentTag>());
+    fill_atoms(packed_state.template get_atoms<formalism::DerivedTag>(), m_uint_nodes, buffer, unpacked_state->template get_atoms<formalism::DerivedTag>());
+    fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, buffer, unpacked_state->get_numeric_variables());
+
+    return State<LiftedTask>(*this, std::move(unpacked_state));
+}
+
+StateIndex LiftedTask::register_state(const UnpackedState<LiftedTask>& state)
+{
+    thread_local auto buffer = std::vector<uint_t> {};
+
+    auto fluent_atoms = create_atoms_slot(state.template get_atoms<formalism::FluentTag>(), buffer, m_uint_nodes);
+    auto derived_atoms = create_atoms_slot(state.template get_atoms<formalism::DerivedTag>(), buffer, m_uint_nodes);
+    auto numeric_variables = create_numeric_variables_slot(state.get_numeric_variables(), buffer, m_uint_nodes, m_float_nodes);
+
+    return m_packed_states.insert(PackedState<LiftedTask>(StateIndex(m_packed_states.size()), fluent_atoms, derived_atoms, numeric_variables));
 }
 
 void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_state)
@@ -270,7 +368,7 @@ void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_stat
     read_derived_atoms_from_program_context(derived_atoms, *this->m_overlay_repository, m_axiom_context);
 }
 
-Node<LiftedTask> LiftedTask::get_initial_node_impl()
+Node<LiftedTask> LiftedTask::get_initial_node()
 {
     auto unpacked_state_ptr = m_unpacked_state_pool.get_or_allocate();
     auto& unpacked_state = *unpacked_state_ptr;
@@ -298,7 +396,7 @@ Node<LiftedTask> LiftedTask::get_initial_node_impl()
 }
 
 std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<LiftedTask>>>
-LiftedTask::get_labeled_successor_nodes_impl(const Node<LiftedTask>& node)
+LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node)
 {
     auto result = std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<LiftedTask>>> {};
 
@@ -324,8 +422,8 @@ LiftedTask::get_labeled_successor_nodes_impl(const Node<LiftedTask>& node)
     return result;
 }
 
-void LiftedTask::get_labeled_successor_nodes_impl(const Node<LiftedTask>& node,
-                                                  std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<LiftedTask>>>& out_nodes)
+void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node,
+                                             std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<LiftedTask>>>& out_nodes)
 {
 }
 

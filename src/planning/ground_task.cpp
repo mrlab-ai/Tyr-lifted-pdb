@@ -31,8 +31,7 @@ GroundTask::GroundTask(DomainPtr domain,
                        IndexList<GroundAtom<FluentTag>> fluent_atoms,
                        IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms,
                        IndexList<GroundAction> ground_actions,
-                       IndexList<GroundAxiom> ground_axioms) :
-    TaskMixin(std::move(domain), std::move(repository), std::move(overlay_repository), task)
+                       IndexList<GroundAxiom> ground_axioms)
 {
     // std::cout << make_view(fluent_atoms, *this->m_overlay_repository) << std::endl;
     // std::cout << make_view(derived_atoms, *this->m_overlay_repository) << std::endl;
@@ -48,14 +47,14 @@ GroundTask::GroundTask(DomainPtr domain,
 void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state) {}
 
 std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>
-GroundTask::get_labeled_successor_nodes_impl(const Node<GroundTask>& node)
+GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node)
 {
     auto result = std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>> {};
     return result;
 }
 
-void GroundTask::get_labeled_successor_nodes_impl(const Node<GroundTask>& node,
-                                                  std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>& out_nodes)
+void GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node,
+                                             std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>& out_nodes)
 {
 }
 

@@ -18,14 +18,21 @@
 #ifndef TYR_PLANNING_GROUND_TASK_HPP_
 #define TYR_PLANNING_GROUND_TASK_HPP_
 
+#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"
-#include "tyr/planning/task_mixin.hpp"
+#include "tyr/planning/ground_task/node.hpp"
+#include "tyr/planning/ground_task/packed_state.hpp"
+#include "tyr/planning/ground_task/state.hpp"
+#include "tyr/planning/ground_task/unpacked_state.hpp"
 
 namespace tyr::planning
 {
 
-class GroundTask : public TaskMixin<GroundTask>
+class GroundTask
 {
 public:
     // Eventually pass ground facts, actions, and axioms derived from delete relaxation in the constructor
@@ -41,12 +48,12 @@ public:
 
     void compute_extended_state(UnpackedState<GroundTask>& unpacked_state);
 
-    Node<GroundTask> get_initial_node_impl();
+    Node<GroundTask> get_initial_node();
 
     std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>
-    get_labeled_successor_nodes_impl(const Node<GroundTask>& node);
+    get_labeled_successor_nodes(const Node<GroundTask>& node);
 
-    void get_labeled_successor_nodes_impl(
+    void get_labeled_successor_nodes(
         const Node<GroundTask>& node,
         std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>& out_nodes);
 };
