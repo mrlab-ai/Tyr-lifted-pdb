@@ -146,6 +146,10 @@ struct Object
 {
 };
 
+struct Binding
+{
+};
+
 struct Term
 {
 };

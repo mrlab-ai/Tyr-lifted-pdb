@@ -19,9 +19,10 @@
 #define TYR_FORMALISM_GROUND_FUNCTION_TERM_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/ground_function_term_index.hpp"
-#include "tyr/formalism/term_data.hpp"
 
 namespace tyr
 {
@@ -33,13 +34,13 @@ struct Data<formalism::GroundFunctionTerm<T>>
 
     Index<formalism::GroundFunctionTerm<T>> index;
     Index<formalism::Function<T>> function;
-    IndexList<formalism::Object> objects;
+    Index<formalism::Binding> binding;
 
     Data() = default;
-    Data(Index<formalism::GroundFunctionTerm<T>> index, Index<formalism::Function<T>> function, IndexList<formalism::Object> objects) :
+    Data(Index<formalism::GroundFunctionTerm<T>> index, Index<formalism::Function<T>> function, Index<formalism::Binding> binding) :
         index(index),
         function(function),
-        objects(std::move(objects))
+        binding(binding)
     {
     }
     Data(const Data& other) = delete;
@@ -47,10 +48,10 @@ struct Data<formalism::GroundFunctionTerm<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept { objects.clear(); }
+    void clear() noexcept {}
 
-    auto cista_members() const noexcept { return std::tie(index, function, objects); }
-    auto identifying_members() const noexcept { return std::tie(function, objects); }
+    auto cista_members() const noexcept { return std::tie(index, function, binding); }
+    auto identifying_members() const noexcept { return std::tie(function, binding); }
 };
 }
 

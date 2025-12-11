@@ -116,7 +116,7 @@ template<formalism::FactKind T, formalism::Context C>
 void PredicateAssignmentSet<T, C>::insert(View<Index<formalism::GroundAtom<T>>, C> ground_atom)
 {
     const auto arity = ground_atom.get_predicate().get_arity();
-    const auto objects = ground_atom.get_objects();
+    const auto objects = ground_atom.get_binding().get_objects();
 
     assert(ground_atom.get_predicate().get_index() == m_predicate);
 
@@ -239,7 +239,7 @@ template<formalism::FactKind T, formalism::Context C>
 void FunctionAssignmentSet<T, C>::insert(View<Index<formalism::GroundFunctionTerm<T>>, C> function_term, float_t value)
 {
     const auto arity = function_term.get_function().get_arity();
-    const auto arguments = function_term.get_objects();
+    const auto arguments = function_term.get_binding().get_objects();
 
     assert(function_term.get_function().get_index() == m_function);
 

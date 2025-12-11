@@ -28,6 +28,53 @@
 
 namespace tyr::formalism
 {
+template<Context C_SRC, Context C_DST>
+View<Index<Binding>, C_DST> ground(View<DataList<Term>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
+{
+    // Fetch and clear
+    auto result_binding_ptr = builder.template get_builder<Binding>();
+    auto& result_binding = *result_binding_ptr;
+    result_binding.clear();
+
+    // Fill data
+    for (const auto term : element)
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                    result_binding.objects.push_back(binding[uint_t(arg)].get_index());
+                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, C_SRC>>)
+                    result_binding.objects.push_back(arg.get_index());
+                else
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+    }
+
+    // Canonicalize and Serialize
+    canonicalize(result_binding);
+    return destination.get_or_create(result_binding, builder.get_buffer()).first;
+}
+
+template<Context C>
+View<Index<Binding>, C> to_binding(View<IndexList<Object>, C> binding, Builder& builder, C& destination)
+{
+    // Fetch and clear
+    auto result_binding_ptr = builder.get_builder<Binding>();
+    auto& result_binding = *result_binding_ptr;
+    result_binding.clear();
+
+    // Fill data
+    result_binding.objects = binding.get_data();
+
+    // Canonicalize and Serialize
+    canonicalize(result_binding);
+    return destination.get_or_create(result_binding, builder.get_buffer()).first;
+}
+
 template<FactKind T, Context C_SRC, Context C_DST>
 View<Index<GroundAtom<T>>, C_DST> ground(View<Index<Atom<T>>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination)
 {
@@ -38,22 +85,7 @@ View<Index<GroundAtom<T>>, C_DST> ground(View<Index<Atom<T>>, C_SRC> element, Vi
 
     // Fill data
     atom.predicate = element.get_predicate().get_index();
-    for (const auto term : element.get_terms())
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    atom.objects.push_back(binding[uint_t(arg)].get_index());
-                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, C_SRC>>)
-                    atom.objects.push_back(arg.get_index());
-                else
-                    static_assert(dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
+    atom.binding = ground(element.get_terms(), binding, builder, destination).get_index();
 
     // Canonicalize and Serialize
     canonicalize(atom);
@@ -89,23 +121,7 @@ ground(View<Index<FunctionTerm<T>>, C_SRC> element, View<IndexList<Object>, C_DS
 
     // Fill data
     fterm.function = element.get_function().get_index();
-    assert(fterm.objects.empty());
-    for (const auto term : element.get_terms())
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    fterm.objects.push_back(binding[uint_t(arg)].get_index());
-                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, C_SRC>>)
-                    fterm.objects.push_back(arg.get_index());
-                else
-                    static_assert(dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
+    fterm.binding = ground(element.get_terms(), binding, builder, destination).get_index();
 
     // Canonicalize and Serialize
     canonicalize(fterm);
@@ -240,7 +256,7 @@ View<Index<GroundRule>, C_DST> ground(View<Index<Rule>, C_SRC> element, View<Ind
 
     // Fill data
     rule.rule = element.get_index();
-    rule.objects = binding.get_data();
+    rule.binding = to_binding(binding, builder, destination).get_index();
     rule.body = ground(element.get_body(), binding, builder, destination).get_index();
     rule.head = ground(element.get_head(), binding, builder, destination).get_index();
 

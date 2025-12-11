@@ -21,6 +21,7 @@
 #include "tyr/formalism/arithmetic_operator_view.hpp"
 #include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/binary_operator_view.hpp"
+#include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/boolean_operator_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/function_expression_view.hpp"

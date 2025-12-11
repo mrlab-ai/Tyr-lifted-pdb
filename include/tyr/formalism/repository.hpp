@@ -50,6 +50,7 @@ private:
 
     using RepositoryStorage = std::tuple<RepositoryEntry<Variable>,
                                          RepositoryEntry<Object>,
+                                         RepositoryEntry<Binding>,
                                          RepositoryEntry<Predicate<StaticTag>>,
                                          RepositoryEntry<Predicate<FluentTag>>,
                                          RepositoryEntry<Predicate<DerivedTag>>,

@@ -192,6 +192,19 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Object>
     return os;
 }
 
+inline std::ostream& print(std::ostream& os, const Data<formalism::Binding>& el)
+{
+    fmt::print(os, "{}", fmt::join(to_strings(el.objects), " "));
+    return os;
+}
+
+template<formalism::Context C>
+inline std::ostream& print(std::ostream& os, const View<Index<formalism::Binding>, C>& el)
+{
+    fmt::print(os, "{}", fmt::join(to_strings(el.get_objects()), " "));
+    return os;
+}
+
 inline std::ostream& print(std::ostream& os, const Data<formalism::Term>& el)
 {
     fmt::print(os, "{}", to_string(el.value));
@@ -256,14 +269,14 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Literal
 template<formalism::FactKind T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundAtom<T>>& el)
 {
-    fmt::print(os, "({} {})", to_string(el.predicate), fmt::format("{}", fmt::join(to_strings(el.objects), " ")));
+    fmt::print(os, "({} {})", to_string(el.predicate), to_string(el.binding));
     return os;
 }
 
 template<formalism::FactKind T, formalism::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::GroundAtom<T>>, C>& el)
 {
-    fmt::print(os, "({} {})", to_string(el.get_predicate().get_name()), fmt::format("{}", fmt::join(to_strings(el.get_objects()), " ")));
+    fmt::print(os, "({} {})", to_string(el.get_predicate().get_name()), to_string(el.get_binding()));
     return os;
 }
 
@@ -318,14 +331,14 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Functio
 template<formalism::FactKind T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundFunctionTerm<T>>& el)
 {
-    fmt::print(os, "({} {})", to_string(el.function), fmt::format("{}", fmt::join(to_strings(el.objects), " ")));
+    fmt::print(os, "({} {})", to_string(el.function), to_string(el.binding));
     return os;
 }
 
 template<formalism::FactKind T, formalism::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::GroundFunctionTerm<T>>, C>& el)
 {
-    fmt::print(os, "({} {})", to_string(el.get_function().get_name()), fmt::format("{}", fmt::join(to_strings(el.get_objects()), " ")));
+    fmt::print(os, "({} {})", to_string(el.get_function().get_name()), to_string(el.get_binding()));
     return os;
 }
 
@@ -1193,6 +1206,14 @@ inline std::ostream& operator<<(std::ostream& os, const Data<Object>& el) { retu
 
 template<Context C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Object>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Binding>& el) { return tyr::print(os, el); }
+
+template<formalism::Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Binding>, C>& el)
 {
     return tyr::print(os, el);
 }

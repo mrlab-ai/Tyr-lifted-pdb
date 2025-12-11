@@ -49,6 +49,7 @@ struct Builder
 
     using BuilderStorage = std::tuple<BuilderEntry<Variable>,
                                       BuilderEntry<Object>,
+                                      BuilderEntry<Binding>,
                                       BuilderEntry<Predicate<StaticTag>>,
                                       BuilderEntry<Predicate<FluentTag>>,
                                       BuilderEntry<Predicate<DerivedTag>>,

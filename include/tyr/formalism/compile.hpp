@@ -234,8 +234,7 @@ auto compile(View<Index<GroundAtom<T_SRC>>, C_SRC> element,
             atom.clear();
 
             atom.predicate = compile<T_SRC, T_DST>(element.get_predicate(), builder, destination, compile_cache, merge_cache).get_index();
-            for (const auto object : element.get_objects())
-                atom.objects.push_back(merge(object, builder, destination, merge_cache).get_index());
+            atom.binding = merge(element.get_binding(), builder, destination, merge_cache).get_index();
 
             canonicalize(atom);
             return destination.get_or_create(atom, builder.get_buffer()).first;
@@ -355,8 +354,7 @@ auto compile(View<Index<GroundFunctionTerm<T_SRC>>, C_SRC> element,
             fterm.clear();
 
             fterm.function = compile<T_SRC, T_DST>(element.get_function(), builder, destination, compile_cache, merge_cache).get_index();
-            for (const auto object : element.get_objects())
-                fterm.objects.push_back(merge(object, builder, destination, merge_cache).get_index());
+            fterm.binding = merge(element.get_binding(), builder, destination, merge_cache).get_index();
 
             canonicalize(fterm);
             return destination.get_or_create(fterm, builder.get_buffer()).first;

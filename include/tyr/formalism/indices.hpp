@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/binary_operator_index.hpp"
+#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/function_term_index.hpp"

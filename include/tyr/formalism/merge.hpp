@@ -41,6 +41,7 @@ private:
 
     using MergeStorage = std::tuple<MapEntryType<Variable>,
                                     MapEntryType<Object>,
+                                    MapEntryType<Binding>,
                                     MapEntryType<Predicate<StaticTag>>,
                                     MapEntryType<Predicate<FluentTag>>,
                                     MapEntryType<Predicate<DerivedTag>>,
@@ -173,6 +174,9 @@ auto merge(View<Index<Variable>, C_SRC> element, Builder& builder, C_DST& destin
 
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<Object>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Binding>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
 
 template<Context C_SRC, Context C_DST>
 auto merge(View<Data<Term>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
@@ -363,6 +367,25 @@ auto merge(View<Index<Object>, C_SRC> element, Builder& builder, C_DST& destinat
 }
 
 template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Binding>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return with_cache<Binding>(element,
+                               cache,
+                               [&]()
+                               {
+                                   auto binding_ptr = builder.template get_builder<Binding>();
+                                   auto& binding = *binding_ptr;
+                                   binding.clear();
+
+                                   for (const auto object : element.get_objects())
+                                       binding.objects.push_back(merge(object, builder, destination, cache).get_index());
+
+                                   canonicalize(binding);
+                                   return destination.get_or_create(binding, builder.get_buffer()).first;
+                               });
+}
+
+template<Context C_SRC, Context C_DST>
 auto merge(View<Data<Term>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
 {
     return visit(
@@ -431,8 +454,7 @@ auto merge(View<Index<GroundAtom<T>>, C_SRC> element, Builder& builder, C_DST& d
                                          atom.clear();
 
                                          atom.predicate = merge(element.get_predicate(), builder, destination, cache).get_index();
-                                         for (const auto object : element.get_objects())
-                                             atom.objects.push_back(merge(object, builder, destination, cache).get_index());
+                                         atom.binding = merge(element.get_binding(), builder, destination, cache).get_index();
 
                                          canonicalize(atom);
                                          return destination.get_or_create(atom, builder.get_buffer()).first;
@@ -528,8 +550,7 @@ auto merge(View<Index<GroundFunctionTerm<T>>, C_SRC> element, Builder& builder, 
                                                  fterm.clear();
 
                                                  fterm.function = merge(element.get_function(), builder, destination, cache).get_index();
-                                                 for (const auto object : element.get_objects())
-                                                     fterm.objects.push_back(merge(object, builder, destination, cache).get_index());
+                                                 fterm.binding = merge(element.get_binding(), builder, destination, cache).get_index();
 
                                                  canonicalize(fterm);
                                                  return destination.get_or_create(fterm, builder.get_buffer()).first;
@@ -696,8 +717,7 @@ auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& dest
                                       rule.clear();
 
                                       rule.rule = element.get_rule().get_index();
-                                      for (const auto object : element.get_objects())
-                                          rule.objects.push_back(merge(object, builder, destination, cache).get_index());
+                                      rule.binding = merge(element.get_binding(), builder, destination, cache).get_index();
                                       rule.body = merge(element.get_body(), builder, destination, cache).get_index();
                                       rule.head = merge(element.get_head(), builder, destination, cache).get_index();
 

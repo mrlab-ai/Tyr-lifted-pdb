@@ -265,11 +265,15 @@ inline IndexList<formalism::GroundAtom<formalism::StaticTag>> add_static_ground_
 
         for (const auto& atom : atoms)
         {
-            ground_atom_builder.objects.clear();
+            auto binding_builder = Data<formalism::Binding> {};
+            binding_builder.objects.clear();
             for (const auto& term : atom)
             {
-                ground_atom_builder.objects.push_back(convert(term));
+                binding_builder.objects.push_back(convert(term));
             }
+            canonicalize(binding_builder);
+            ground_atom_builder.binding = repository.get_or_create(binding_builder, buffer).first.get_index();
+
             canonicalize(ground_atom_builder);
             result.push_back(repository.get_or_create(ground_atom_builder, buffer).first.get_index());
         }
@@ -300,11 +304,15 @@ inline IndexList<formalism::GroundAtom<formalism::FluentTag>> add_fluent_ground_
         ground_atom_builder.predicate = convert(predicate);
         for (const auto& atom : atoms)
         {
-            ground_atom_builder.objects.clear();
+            auto binding_builder = Data<formalism::Binding> {};
+            binding_builder.objects.clear();
             for (const auto& term : atom)
             {
-                ground_atom_builder.objects.push_back(convert(term));
+                binding_builder.objects.push_back(convert(term));
             }
+            canonicalize(binding_builder);
+            ground_atom_builder.binding = repository.get_or_create(binding_builder, buffer).first.get_index();
+
             canonicalize(ground_atom_builder);
             result.push_back(repository.get_or_create(ground_atom_builder, buffer).first.get_index());
         }

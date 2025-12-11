@@ -15,42 +15,35 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_GROUND_ATOM_DATA_HPP_
-#define TYR_FORMALISM_GROUND_ATOM_DATA_HPP_
+#ifndef TYR_FORMALISM_BINDING_DATA_HPP_
+#define TYR_FORMALISM_BINDING_DATA_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_index.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/formalism/object_index.hpp"
 
 namespace tyr
 {
-template<formalism::FactKind T>
-struct Data<formalism::GroundAtom<T>>
+template<>
+struct Data<formalism::Binding>
 {
-    using Tag = formalism::GroundAtom<T>;
+    using Tag = formalism::Binding;
 
-    Index<formalism::GroundAtom<T>> index;
-    Index<formalism::Predicate<T>> predicate;
-    Index<formalism::Binding> binding;
+    Index<formalism::Binding> index;
+    IndexList<formalism::Object> objects;
 
     Data() = default;
-    Data(Index<formalism::GroundAtom<T>> index, Index<formalism::Predicate<T>> predicate, Index<formalism::Binding> binding) :
-        index(index),
-        predicate(predicate),
-        binding(binding)
-    {
-    }
+    Data(Index<formalism::Binding> index, IndexList<formalism::Object> objects) : index(index), objects(std::move(objects)) {}
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept { objects.clear(); }
 
-    auto cista_members() const noexcept { return std::tie(index, predicate, binding); }
-    auto identifying_members() const noexcept { return std::tie(predicate, binding); }
+    auto cista_members() const noexcept { return std::tie(index, objects); }
+    auto identifying_members() const noexcept { return std::tie(objects); }
 };
 
 }

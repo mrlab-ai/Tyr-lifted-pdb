@@ -21,6 +21,7 @@
 #include "tyr/formalism/arithmetic_operator_data.hpp"
 #include "tyr/formalism/atom_data.hpp"
 #include "tyr/formalism/binary_operator_data.hpp"
+#include "tyr/formalism/binding_data.hpp"
 #include "tyr/formalism/boolean_operator_data.hpp"
 #include "tyr/formalism/conjunctive_condition_data.hpp"
 #include "tyr/formalism/function_data.hpp"

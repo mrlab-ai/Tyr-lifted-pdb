@@ -1152,6 +1152,17 @@ private:
     }
 
     template<formalism::Context C>
+    Index<formalism::Binding> to_binding(const IndexList<formalism::Object>& element, formalism::Builder& builder, C& context)
+    {
+        auto binding_ptr = builder.get_builder<formalism::Binding>();
+        auto& binding = *binding_ptr;
+        binding.clear();
+        binding.objects = element;
+        formalism::canonicalize(binding);
+        return context.get_or_create(binding, builder.get_buffer()).first.get_index();
+    }
+
+    template<formalism::Context C>
     IndexGroundAtomVariant translate_grounded(loki::Atom element, formalism::Builder& builder, C& context)
     {
         auto index_predicate_variant = translate_common(element->get_predicate(), builder, context);
@@ -1164,7 +1175,7 @@ private:
             auto& atom = *atom_ptr;
             atom.clear();
             atom.predicate = predicate_index;
-            atom.objects = this->translate_grounded(element->get_terms(), builder, context);
+            atom.binding = to_binding(this->translate_grounded(element->get_terms(), builder, context), builder, context);
             formalism::canonicalize(atom);
             return context.get_or_create(atom, builder.get_buffer()).first.get_index();
         };
@@ -1337,7 +1348,7 @@ private:
             auto& fterm = *fterm_ptr;
             fterm.clear();
             fterm.function = function_index;
-            fterm.objects = this->translate_grounded(element->get_terms(), builder, context);
+            fterm.binding = to_binding(this->translate_grounded(element->get_terms(), builder, context), builder, context);
             formalism::canonicalize(fterm);
             return context.get_or_create(fterm, builder.get_buffer()).first.get_index();
         };

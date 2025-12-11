@@ -15,40 +15,35 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_GROUND_RULE_VIEW_HPP_
-#define TYR_FORMALISM_GROUND_RULE_VIEW_HPP_
+#ifndef TYR_FORMALISM_BINDING_VIEW_HPP_
+#define TYR_FORMALISM_BINDING_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/vector.hpp"
+#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_view.hpp"
-#include "tyr/formalism/ground_conjunctive_condition_view.hpp"
-#include "tyr/formalism/ground_rule_index.hpp"
-#include "tyr/formalism/rule_view.hpp"
+#include "tyr/formalism/object_index.hpp"
 
 namespace tyr
 {
 template<formalism::Context C>
-class View<Index<formalism::GroundRule>, C>
+class View<Index<formalism::Binding>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::GroundRule> m_handle;
+    Index<formalism::Binding> m_handle;
 
 public:
-    using Tag = formalism::GroundRule;
+    using Tag = formalism::Binding;
 
-    View(Index<formalism::GroundRule> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::Binding> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_rule() const noexcept { return make_view(get_data().rule, *m_context); }
-    auto get_binding() const noexcept { return make_view(get_data().binding, *m_context); }
-    auto get_body() const noexcept { return make_view(get_data().body, *m_context); }
-    auto get_head() const noexcept { return make_view(get_data().head, *m_context); }
+    auto get_objects() const { return make_view(get_data().objects, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

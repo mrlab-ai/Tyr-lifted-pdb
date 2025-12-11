@@ -179,7 +179,7 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
     for (const auto rule : action_context.program_merge_rules)
     {
         binding.clear();
-        for (const auto object : rule.get_head().get_objects())
+        for (const auto object : rule.get_head().get_binding().get_objects())
             binding.push_back(action_program.get_object_to_object_mapping().at(object).get_index());
 
         auto binding_view = make_view(binding, task_repository);
@@ -488,7 +488,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
         if (m_ground_program.get_rule_to_actions_mapping().contains(rule.get_rule()))
         {
             binding.clear();
-            for (const auto object : rule.get_objects())
+            for (const auto object : rule.get_binding().get_objects())
                 binding.push_back(m_ground_program.get_object_to_object_mapping().at(object).get_index());
 
             auto binding_view = make_view(binding, *this->m_overlay_repository);
@@ -539,7 +539,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
         if (m_ground_program.get_rule_to_axioms_mapping().contains(rule.get_rule()))
         {
             binding.clear();
-            for (const auto object : rule.get_objects())
+            for (const auto object : rule.get_binding().get_objects())
                 binding.push_back(m_ground_program.get_object_to_object_mapping().at(object).get_index());
 
             auto binding_view = make_view(binding, *this->m_overlay_repository);

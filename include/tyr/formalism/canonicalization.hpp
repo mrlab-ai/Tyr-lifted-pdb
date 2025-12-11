@@ -144,6 +144,8 @@ inline bool is_canonical(const Data<Variable>& data) { return true; }
 
 inline bool is_canonical(const Data<Object>& data) { return true; }
 
+inline bool is_canonical(const Data<Binding>& data) { return true; }
+
 inline bool is_canonical(const Data<Term>& data) { return true; }
 
 template<FactKind T>
@@ -355,6 +357,11 @@ inline void canonicalize(Data<Variable>& data)
 }
 
 inline void canonicalize(Data<Object>& data)
+{
+    // Trivially canonical
+}
+
+inline void canonicalize(Data<Binding>& data)
 {
     // Trivially canonical
 }
