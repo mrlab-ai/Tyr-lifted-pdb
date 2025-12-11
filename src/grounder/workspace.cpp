@@ -120,6 +120,38 @@ void ThreadExecutionContext::clear() noexcept
 }
 
 /**
+ * ProgramResultsExecutionContext
+ */
+
+void ProgramResultsExecutionContext::clear() noexcept { rule_binding_pairs.clear(); }
+
+/**
+ * StateToProgramExecutionContext
+ */
+
+void StageToProgramExecutionContext::clear() noexcept { merge_cache.clear(); }
+
+/**
+ * ProgramToTaskExecutionContext
+ */
+
+void ProgramToTaskExecutionContext::clear() noexcept
+{
+    merge_cache.clear();
+    compile_cache.clear();
+}
+
+/**
+ * TaskToProgramExecutionContext
+ */
+
+void TaskToProgramExecutionContext::clear() noexcept
+{
+    merge_cache.clear();
+    compile_cache.clear();
+}
+
+/**
  * ProgramExecutionContext
  */
 
@@ -134,10 +166,10 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<formalism::Program>,
     thread_execution_contexts(),
     builder(),
     planning_execution_context(),
-    stage_to_program_merge_cache(),
-    program_to_task_merge_cache(),
-    program_to_task_compile_cache(),
-    program_merge_rules()
+    program_results_execution_context(),
+    stage_to_program_execution_context(),
+    program_to_task_execution_context(),
+    task_to_program_execution_context()
 {
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
@@ -145,21 +177,5 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<formalism::Program>,
         rule_execution_contexts.back().initialize(facts_execution_context.assignment_sets);
     }
 }
-
-void ProgramExecutionContext::clear_stage_to_program() noexcept { stage_to_program_merge_cache.clear(); }
-
-void ProgramExecutionContext::clear_program_to_task() noexcept
-{
-    program_to_task_merge_cache.clear();
-    program_to_task_compile_cache.clear();
-}
-
-void ProgramExecutionContext::clear_task_to_program() noexcept
-{
-    task_to_program_merge_cache.clear();
-    task_to_program_compile_cache.clear();
-}
-
-void ProgramExecutionContext::clear_results() noexcept { program_merge_rules.clear(); }
 
 }

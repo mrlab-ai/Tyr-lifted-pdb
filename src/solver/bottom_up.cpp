@@ -31,11 +31,6 @@ namespace tyr::solver
 {
 static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& program_execution_context, const analysis::RuleStratum& stratum)
 {
-    auto& builder = program_execution_context.builder;
-    auto& stage_to_program_merge_cache = program_execution_context.stage_to_program_merge_cache;
-    auto& program_repository = *program_execution_context.repository;
-    auto& program_merge_rules = program_execution_context.program_merge_rules;
-
     while (true)
     {
         /**
@@ -55,12 +50,11 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                               auto& facts_execution_context = program_execution_context.facts_execution_context;
                               auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
                               auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();  // thread-local
+                              thread_execution_context.clear();
 
                               auto start_init = std::chrono::steady_clock::now();
 
-                              rule_execution_context.clear();
                               rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
-                              thread_execution_context.clear();
 
                               auto end_init = std::chrono::steady_clock::now();
                               rule_execution_context.statistics.init_total_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end_init - start_init);
@@ -89,8 +83,6 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
         auto discovered_new_fact = bool { false };
 
-        program_execution_context.clear_stage_to_program();
-
         for (uint_t j = 0; j < stratum.size(); ++j)
         {
             const auto i = stratum[j].get_index().get_value();
@@ -99,11 +91,17 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
             for (const auto binding : rule_execution_context.bindings)
             {
-                const auto merge_binding = merge(binding, builder, program_repository, stage_to_program_merge_cache);
+                const auto merge_binding = merge(binding,
+                                                 program_execution_context.builder,
+                                                 *program_execution_context.repository,
+                                                 program_execution_context.stage_to_program_execution_context.merge_cache);
 
-                program_merge_rules.emplace(rule_execution_context.rule, merge_binding);
+                program_execution_context.program_results_execution_context.rule_binding_pairs.emplace(rule_execution_context.rule, merge_binding);
 
-                const auto ground_head = formalism::ground(rule_execution_context.rule.get_head(), merge_binding.get_objects(), builder, program_repository);
+                const auto ground_head = formalism::ground(rule_execution_context.rule.get_head(),
+                                                           merge_binding.get_objects(),
+                                                           program_execution_context.builder,
+                                                           *program_execution_context.repository);
 
                 // Insert new fact
                 if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head))
@@ -124,10 +122,14 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
 void solve_bottom_up(grounder::ProgramExecutionContext& program_execution_context)
 {
-    program_execution_context.clear_results();
+    program_execution_context.program_results_execution_context.clear();
+    program_execution_context.stage_to_program_execution_context.clear();
 
     for (const auto& stratum : program_execution_context.strata.strata)
     {
+        for (size_t j = 0; j < stratum.size(); ++j)
+            program_execution_context.rule_execution_contexts[j].clear();
+
         solve_bottom_up_for_stratum(program_execution_context, stratum);
     }
 }

@@ -62,7 +62,7 @@ static void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluen
         axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge(make_view(Index<GroundAtom<FluentTag>>(i), atoms_context),
                                                                                            axiom_context.builder,
                                                                                            *axiom_context.repository,
-                                                                                           axiom_context.task_to_program_merge_cache));
+                                                                                           axiom_context.task_to_program_execution_context.merge_cache));
 }
 
 static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& derived_atoms,
@@ -75,8 +75,8 @@ static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& deri
             compile<DerivedTag, FluentTag>(make_view(Index<GroundAtom<DerivedTag>>(i), atoms_context),
                                            axiom_context.builder,
                                            *axiom_context.repository,
-                                           axiom_context.task_to_program_compile_cache,
-                                           axiom_context.task_to_program_merge_cache));
+                                           axiom_context.task_to_program_execution_context.compile_cache,
+                                           axiom_context.task_to_program_execution_context.merge_cache));
 }
 
 static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& numeric_variables,
@@ -91,7 +91,7 @@ static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& num
                 merge(make_view(Index<GroundFunctionTerm<FluentTag>>(i), numeric_variables_context),
                       axiom_context.builder,
                       *axiom_context.repository,
-                      axiom_context.task_to_program_merge_cache),
+                      axiom_context.task_to_program_execution_context.merge_cache),
                 numeric_variables[i]);
     }
 }
@@ -117,7 +117,7 @@ static void
 insert_unextended_state(const boost::dynamic_bitset<>& fluent_atoms, const OverlayRepository<Repository>& atoms_context, ProgramExecutionContext& axiom_context)
 {
     axiom_context.facts_execution_context.reset<formalism::FluentTag>();
-    axiom_context.clear_task_to_program();
+    axiom_context.task_to_program_execution_context.clear();
 
     insert_fluent_atoms_to_fact_set(fluent_atoms, atoms_context, axiom_context);
 
@@ -131,7 +131,7 @@ static void insert_extended_state(const boost::dynamic_bitset<>& fluent_atoms,
                                   ProgramExecutionContext& action_context)
 {
     action_context.facts_execution_context.reset<formalism::FluentTag>();
-    action_context.clear_task_to_program();
+    action_context.task_to_program_execution_context.clear();
 
     insert_fluent_atoms_to_fact_set(fluent_atoms, atoms_context, action_context);
     insert_derived_atoms_to_fact_set(derived_atoms, atoms_context, action_context);
@@ -145,10 +145,10 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
                                                     OverlayRepository<Repository>& task_repository,
                                                     ProgramExecutionContext& axiom_context)
 {
-    axiom_context.clear_program_to_task();
+    axiom_context.program_to_task_execution_context.clear();
 
     /// --- Initialized derived atoms in unpacked state
-    for (const auto& [rule, program_binding] : axiom_context.program_merge_rules)
+    for (const auto& [rule, program_binding] : axiom_context.program_results_execution_context.rule_binding_pairs)
     {
         // TODO: this got ugly, essentially as compile + merge + ground
         auto atom_builder_ptr = axiom_context.builder.get_builder<GroundAtom<DerivedTag>>();
@@ -182,7 +182,7 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
     auto& positive_effects = action_context.planning_execution_context.positive_effects;
     auto& negative_effects = action_context.planning_execution_context.negative_effects;
 
-    for (const auto& [rule, program_binding] : action_context.program_merge_rules)
+    for (const auto& [rule, program_binding] : action_context.program_results_execution_context.rule_binding_pairs)
     {
         for (const auto action : action_program.get_rule_to_actions_mapping().at(rule))
         {
@@ -465,7 +465,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
     const auto parallel_time = ground_context.statistics.ground_seq_total_time.count();
     std::cout << "parallel_fraction: " << ((total_time > 0) ? static_cast<double>(parallel_time) / total_time : 1.0) << std::endl;
 
-    ground_context.clear_program_to_task();
+    ground_context.program_to_task_execution_context.clear();
 
     // --- Prepare FactsView based on initial node. We will only check static applicability here.
 
@@ -489,7 +489,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
 
-    for (const auto& [rule, program_binding] : ground_context.program_merge_rules)
+    for (const auto& [rule, program_binding] : ground_context.program_results_execution_context.rule_binding_pairs)
     {
         if (m_ground_program.get_rule_to_actions_mapping().contains(rule))
         {
@@ -534,7 +534,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto ground_axioms_set = UnorderedSet<Index<GroundAxiom>> {};
 
-    for (const auto& [rule, program_binding] : ground_context.program_merge_rules)
+    for (const auto& [rule, program_binding] : ground_context.program_results_execution_context.rule_binding_pairs)
     {
         if (m_ground_program.get_rule_to_axioms_mapping().contains(rule))
         {

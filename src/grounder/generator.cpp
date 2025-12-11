@@ -158,8 +158,6 @@ void ground(const FactsExecutionContext& fact_execution_context, RuleExecutionCo
 
     const auto arity = rule.get_body().get_arity();
 
-    rule_execution_context.bindings.clear();
-
     if (arity == 0)
         ground_nullary_case(fact_execution_context, rule_execution_context, thread_execution_context);
     else if (arity == 1)
