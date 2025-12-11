@@ -51,10 +51,10 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
     {
         // std::cout << ground_rule << std::endl;
 
-        if (!rule_execution_context.all_ground_rules.contains(ground_rule))
+        if (!rule_execution_context.all_bindings.contains(ground_rule.get_binding()))
         {
-            rule_execution_context.all_ground_rules.insert(ground_rule);
-            rule_execution_context.ground_rules.push_back(ground_rule);
+            rule_execution_context.all_bindings.insert(ground_rule.get_binding());
+            rule_execution_context.bindings.push_back(ground_rule.get_binding());
         }
     }
 }
@@ -82,10 +82,10 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
         {
             // std::cout << ground_rule << std::endl;
 
-            if (!rule_execution_context.all_ground_rules.contains(ground_rule))
+            if (!rule_execution_context.all_bindings.contains(ground_rule.get_binding()))
             {
-                rule_execution_context.all_ground_rules.insert(ground_rule);
-                rule_execution_context.ground_rules.push_back(ground_rule);
+                rule_execution_context.all_bindings.insert(ground_rule.get_binding());
+                rule_execution_context.bindings.push_back(ground_rule.get_binding());
             }
         }
     }
@@ -118,10 +118,10 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
 
             if (is_applicable(ground_rule, fact_sets_adapter))
             {
-                if (!rule_execution_context.all_ground_rules.contains(ground_rule))
+                if (!rule_execution_context.all_bindings.contains(ground_rule.get_binding()))
                 {
-                    rule_execution_context.all_ground_rules.insert(ground_rule);
-                    rule_execution_context.ground_rules.push_back(ground_rule);
+                    rule_execution_context.all_bindings.insert(ground_rule.get_binding());
+                    rule_execution_context.bindings.push_back(ground_rule.get_binding());
                 }
             }
         });
@@ -137,7 +137,7 @@ void ground(const FactsExecutionContext& fact_execution_context, RuleExecutionCo
 
     const auto arity = rule.get_body().get_arity();
 
-    rule_execution_context.ground_rules.clear();
+    rule_execution_context.bindings.clear();
 
     if (arity == 0)
         ground_nullary_case(fact_execution_context, rule_execution_context, thread_execution_context);

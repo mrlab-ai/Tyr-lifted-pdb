@@ -140,20 +140,31 @@ static void insert_extended_state(const boost::dynamic_bitset<>& fluent_atoms,
     insert_fact_sets_into_assignment_sets(action_context);
 }
 
-static void read_derived_atoms_from_program_context(boost::dynamic_bitset<>& derived_atoms,
+static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram& axiom_program,
+                                                    boost::dynamic_bitset<>& derived_atoms,
                                                     OverlayRepository<Repository>& task_repository,
                                                     ProgramExecutionContext& axiom_context)
 {
     axiom_context.clear_program_to_task();
 
+    auto& binding = axiom_context.planning_execution_context.binding;
+
     /// --- Initialized derived atoms in unpacked state
-    for (const auto atom : axiom_context.program_merge_atoms)
+    for (const auto& [rule, program_binding] : axiom_context.program_merge_rules)
     {
-        const auto derived_atom = compile<FluentTag, DerivedTag>(atom,
-                                                                 axiom_context.builder,
-                                                                 task_repository,
-                                                                 axiom_context.program_to_task_compile_cache,
-                                                                 axiom_context.program_to_task_merge_cache);
+        auto atom_builder_ptr = axiom_context.builder.get_builder<GroundAtom<DerivedTag>>();
+        auto& atom_builder = *atom_builder_ptr;
+        atom_builder.clear();
+
+        atom_builder.predicate = axiom_program.get_predicate_to_predicate_mapping().at(rule.get_head().get_predicate()).get_index();
+        binding.clear();
+        for (const auto object : program_binding.get_objects())
+            binding.push_back(axiom_program.get_object_to_object_mapping().at(object).get_index());
+        auto binding_view = make_view(binding, task_repository);
+        atom_builder.binding = to_binding(binding_view, axiom_context.builder, task_repository).get_index();
+
+        canonicalize(atom_builder);
+        const auto derived_atom = task_repository.get_or_create(atom_builder, axiom_context.builder.get_buffer()).first;
 
         set(derived_atom.get_index().get_value(), derived_atoms);
     }
@@ -176,15 +187,15 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
     auto& positive_effects = action_context.planning_execution_context.positive_effects;
     auto& negative_effects = action_context.planning_execution_context.negative_effects;
 
-    for (const auto rule : action_context.program_merge_rules)
+    for (const auto& [rule, program_binding] : action_context.program_merge_rules)
     {
         binding.clear();
-        for (const auto object : rule.get_head().get_binding().get_objects())
+        for (const auto object : program_binding.get_objects())
             binding.push_back(action_program.get_object_to_object_mapping().at(object).get_index());
 
         auto binding_view = make_view(binding, task_repository);
 
-        for (const auto action : action_program.get_rule_to_actions_mapping().at(rule.get_rule()))
+        for (const auto action : action_program.get_rule_to_actions_mapping().at(rule))
         {
             const auto action_index = action.get_index().get_value();
 
@@ -373,7 +384,7 @@ void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_stat
 
     solve_bottom_up(m_axiom_context);
 
-    read_derived_atoms_from_program_context(derived_atoms, *this->m_overlay_repository, m_axiom_context);
+    read_derived_atoms_from_program_context(m_axiom_program, derived_atoms, *this->m_overlay_repository, m_axiom_context);
 }
 
 Node<LiftedTask> LiftedTask::get_initial_node()
@@ -483,17 +494,17 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
 
-    for (const auto rule : ground_context.program_merge_rules)
+    for (const auto& [rule, program_binding] : ground_context.program_merge_rules)
     {
-        if (m_ground_program.get_rule_to_actions_mapping().contains(rule.get_rule()))
+        if (m_ground_program.get_rule_to_actions_mapping().contains(rule))
         {
             binding.clear();
-            for (const auto object : rule.get_binding().get_objects())
+            for (const auto object : program_binding.get_objects())
                 binding.push_back(m_ground_program.get_object_to_object_mapping().at(object).get_index());
 
             auto binding_view = make_view(binding, *this->m_overlay_repository);
 
-            for (const auto action : m_ground_program.get_rule_to_actions_mapping().at(rule.get_rule()))
+            for (const auto action : m_ground_program.get_rule_to_actions_mapping().at(rule))
             {
                 const auto action_index = action.get_index().get_value();
 
@@ -534,17 +545,17 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto ground_axioms_set = UnorderedSet<Index<GroundAxiom>> {};
 
-    for (const auto rule : ground_context.program_merge_rules)
+    for (const auto& [rule, program_binding] : ground_context.program_merge_rules)
     {
-        if (m_ground_program.get_rule_to_axioms_mapping().contains(rule.get_rule()))
+        if (m_ground_program.get_rule_to_axioms_mapping().contains(rule))
         {
             binding.clear();
-            for (const auto object : rule.get_binding().get_objects())
+            for (const auto object : program_binding.get_objects())
                 binding.push_back(m_ground_program.get_object_to_object_mapping().at(object).get_index());
 
             auto binding_view = make_view(binding, *this->m_overlay_repository);
 
-            for (const auto axiom : m_ground_program.get_rule_to_axioms_mapping().at(rule.get_rule()))
+            for (const auto axiom : m_ground_program.get_rule_to_axioms_mapping().at(rule))
             {
                 const auto ground_axiom = ground(axiom, binding_view, ground_context.builder, *this->m_overlay_repository);
 

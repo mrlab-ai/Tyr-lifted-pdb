@@ -69,8 +69,9 @@ struct RuleExecutionContext
     kpkc::Workspace kpkc_workspace;
     std::shared_ptr<formalism::Repository> local;
     formalism::OverlayRepository<formalism::Repository> repository;
-    UnorderedSet<View<Index<formalism::GroundRule>, formalism::OverlayRepository<formalism::Repository>>> all_ground_rules;
-    std::vector<View<Index<formalism::GroundRule>, formalism::OverlayRepository<formalism::Repository>>> ground_rules;
+
+    UnorderedSet<View<Index<formalism::Binding>, formalism::OverlayRepository<formalism::Repository>>> all_bindings;
+    std::vector<View<Index<formalism::Binding>, formalism::OverlayRepository<formalism::Repository>>> bindings;
 
     struct Statistics
     {
@@ -201,8 +202,8 @@ struct ProgramExecutionContext
     // Stage
     formalism::RepositoryPtr stage_repository;
     formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> stage_merge_cache;
-    UnorderedSet<View<Index<formalism::GroundRule>, formalism::Repository>> stage_merge_rules;
-    UnorderedSet<View<Index<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository>> stage_merge_atoms;
+
+    UnorderedSet<std::pair<View<Index<formalism::Rule>, formalism::Repository>, View<Index<formalism::Binding>, formalism::Repository>>> stage_merge_rules;
 
     void clear_stage() noexcept;
 
@@ -224,8 +225,7 @@ struct ProgramExecutionContext
     void clear_task_to_program() noexcept;
 
     // Results
-    UnorderedSet<View<Index<formalism::GroundRule>, formalism::Repository>> program_merge_rules;
-    UnorderedSet<View<Index<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository>> program_merge_atoms;
+    UnorderedSet<std::pair<View<Index<formalism::Rule>, formalism::Repository>, View<Index<formalism::Binding>, formalism::Repository>>> program_merge_rules;
 
     void clear_results() noexcept;
 

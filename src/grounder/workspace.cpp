@@ -89,8 +89,8 @@ RuleExecutionContext::RuleExecutionContext(View<Index<formalism::Rule>, formalis
     kpkc_workspace(grounder::kpkc::allocate_workspace(static_consistency_graph)),
     local(std::make_shared<formalism::Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
     repository(parent, *local),
-    all_ground_rules(),
-    ground_rules()
+    all_bindings(),
+    bindings()
 {
 }
 
@@ -130,12 +130,10 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<formalism::Program>,
     stage_repository(std::make_shared<formalism::Repository>()),
     stage_merge_cache(),
     stage_merge_rules(),
-    stage_merge_atoms(),
     stage_to_program_merge_cache(),
     program_to_task_merge_cache(),
     program_to_task_compile_cache(),
-    program_merge_rules(),
-    program_merge_atoms()
+    program_merge_rules()
 {
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
@@ -149,7 +147,6 @@ void ProgramExecutionContext::clear_stage() noexcept
     stage_repository->clear();
     stage_merge_cache.clear();
     stage_merge_rules.clear();
-    stage_merge_atoms.clear();
 }
 
 void ProgramExecutionContext::clear_stage_to_program() noexcept { stage_to_program_merge_cache.clear(); }
@@ -166,10 +163,6 @@ void ProgramExecutionContext::clear_task_to_program() noexcept
     task_to_program_compile_cache.clear();
 }
 
-void ProgramExecutionContext::clear_results() noexcept
-{
-    program_merge_rules.clear();
-    program_merge_atoms.clear();
-}
+void ProgramExecutionContext::clear_results() noexcept { program_merge_rules.clear(); }
 
 }

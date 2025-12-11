@@ -19,6 +19,7 @@
 
 #include "tyr/analysis/analysis.hpp"
 #include "tyr/formalism/formatter.hpp"
+#include "tyr/formalism/ground.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/grounder/generator.hpp"
 #include "tyr/grounder/workspace.hpp"
@@ -34,11 +35,9 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
     auto& stage_merge_cache = program_execution_context.stage_merge_cache;
     auto& stage_repository = *program_execution_context.stage_repository;
     auto& stage_merge_rules = program_execution_context.stage_merge_rules;
-    auto& stage_merge_atoms = program_execution_context.stage_merge_atoms;
     auto& stage_to_program_merge_cache = program_execution_context.stage_to_program_merge_cache;
     auto& program_repository = *program_execution_context.repository;
     auto& program_merge_rules = program_execution_context.program_merge_rules;
-    auto& program_merge_atoms = program_execution_context.program_merge_atoms;
 
     while (true)
     {
@@ -99,13 +98,11 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
             const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
 
-            for (const auto rule : rule_execution_context.ground_rules)
+            for (const auto binding : rule_execution_context.bindings)
             {
-                const auto merge_rule = merge(rule, builder, stage_repository, stage_merge_cache);
-                const auto merge_head = merge_rule.get_head();
+                const auto merge_binding = merge(binding, builder, stage_repository, stage_merge_cache);
 
-                stage_merge_rules.insert(merge_rule);
-                stage_merge_atoms.insert(merge_head);
+                stage_merge_rules.emplace(rule_execution_context.rule, merge_binding);
             }
         }
 
@@ -115,20 +112,20 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
         auto discovered_new_fact = bool { false };
 
-        for (const auto rule : stage_merge_rules)
+        for (const auto& [rule, binding] : stage_merge_rules)
         {
-            const auto merge_rule = merge(rule, builder, program_repository, stage_to_program_merge_cache);
-            const auto merge_head = merge_rule.get_head();
+            const auto merge_binding = merge(binding, builder, program_repository, stage_to_program_merge_cache);
+
+            program_merge_rules.emplace(rule, merge_binding);
+
+            const auto ground_head = formalism::ground(rule.get_head(), merge_binding.get_objects(), builder, program_repository);
 
             // Inser new fact
-            if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(merge_head))
+            if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head))
                 discovered_new_fact = true;
 
-            program_merge_rules.insert(merge_rule);
-            program_merge_atoms.insert(merge_head);
-
-            program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(merge_head);
-            program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(merge_head);
+            program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(ground_head);
+            program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head);
         }
 
         auto end_merge_seq = std::chrono::steady_clock::now();
