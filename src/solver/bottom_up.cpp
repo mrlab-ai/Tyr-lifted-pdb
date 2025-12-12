@@ -18,6 +18,7 @@
 #include "tyr/solver/bottom_up.hpp"
 
 #include "tyr/analysis/analysis.hpp"
+#include "tyr/common/chrono.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/ground.hpp"
 #include "tyr/formalism/views.hpp"
@@ -39,47 +40,37 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
         const uint_t num_rules = stratum.size();
 
-        auto start_ground_seq = std::chrono::steady_clock::now();
+        {
+            auto stopwatch = StopwatchScope(program_execution_context.statistics.ground_seq_total_time);
 
-        tbb::parallel_for(uint_t { 0 },
-                          num_rules,
-                          [&](uint_t j)
-                          {
-                              const auto i = stratum[j].get_index().get_value();
-                              auto& facts_execution_context = program_execution_context.facts_execution_context;
-                              auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
-                              auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
-                              auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();
-
+            tbb::parallel_for(uint_t { 0 },
+                              num_rules,
+                              [&](uint_t j)
                               {
-                                  ///--- Initialization phase
-                                  auto start_init = std::chrono::steady_clock::now();
+                                  const auto i = stratum[j].get_index().get_value();
+                                  auto& facts_execution_context = program_execution_context.facts_execution_context;
+                                  auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
+                                  auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
+                                  auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();
 
-                                  thread_execution_context.clear();
-                                  rule_execution_context.clear();
-                                  rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
+                                  {
+                                      ///--- Initialization phase
+                                      auto stopwatch = StopwatchScope(rule_execution_context.statistics.init_total_time);
 
-                                  auto end_init = std::chrono::steady_clock::now();
-                                  rule_execution_context.statistics.init_total_time +=
-                                      std::chrono::duration_cast<std::chrono::nanoseconds>(end_init - start_init);
-                              }
+                                      thread_execution_context.clear();
+                                      rule_execution_context.clear();
+                                      rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
+                                  }
 
-                              {
-                                  /// --- Grounding phase
-                                  auto start_ground = std::chrono::steady_clock::now();
+                                  {
+                                      /// --- Grounding phase
+                                      auto stopwatch = StopwatchScope(rule_execution_context.statistics.ground_total_time);
+                                      ++rule_execution_context.statistics.num_executions;
 
-                                  ground(facts_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
-
-                                  auto end_ground = std::chrono::steady_clock::now();
-                                  rule_execution_context.statistics.ground_total_time +=
-                                      std::chrono::duration_cast<std::chrono::nanoseconds>(end_ground - start_ground);
-
-                                  ++rule_execution_context.statistics.num_executions;
-                              }
-                          });
-
-        auto end_ground_seq = std::chrono::steady_clock::now();
-        program_execution_context.statistics.ground_seq_total_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end_ground_seq - start_ground_seq);
+                                      ground(facts_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
+                                  }
+                              });
+        }
 
         /**
          * Sequential merge.
@@ -87,42 +78,41 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
         /// --- Sequentially combine results into a temporary staging repository to prevent modying the program's repository
 
-        auto start_merge_seq = std::chrono::steady_clock::now();
-
-        auto discovered_new_fact = bool { false };
-
-        for (uint_t j = 0; j < stratum.size(); ++j)
         {
-            const auto i = stratum[j].get_index().get_value();
+            auto stopwatch = StopwatchScope(program_execution_context.statistics.merge_seq_total_time);
 
-            const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
+            auto discovered_new_fact = bool { false };
 
-            for (const auto binding : rule_execution_context.bindings)
+            for (uint_t j = 0; j < stratum.size(); ++j)
             {
-                const auto merge_binding = merge(binding, program_execution_context.builder, *program_execution_context.repository);
+                const auto i = stratum[j].get_index().get_value();
 
-                /// --- Insert (rule, binding) pair
-                program_execution_context.program_results_execution_context.rule_binding_pairs.emplace(rule_execution_context.rule, merge_binding);
+                const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
 
-                const auto ground_head = formalism::ground(rule_execution_context.rule.get_head(),
-                                                           merge_binding.get_objects(),
-                                                           program_execution_context.builder,
-                                                           *program_execution_context.repository);
+                for (const auto binding : rule_execution_context.bindings)
+                {
+                    const auto merge_binding = merge(binding, program_execution_context.builder, *program_execution_context.repository);
 
-                // Insert new fact into fact sets and assigment sets
-                if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head))
-                    discovered_new_fact = true;
+                    /// --- Insert (rule, binding) pair
+                    program_execution_context.program_results_execution_context.rule_binding_pairs.emplace(rule_execution_context.rule, merge_binding);
 
-                program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(ground_head);
-                program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head);
+                    const auto ground_head = formalism::ground(rule_execution_context.rule.get_head(),
+                                                               merge_binding.get_objects(),
+                                                               program_execution_context.builder,
+                                                               *program_execution_context.repository);
+
+                    // Insert new fact into fact sets and assigment sets
+                    if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head))
+                        discovered_new_fact = true;
+
+                    program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(ground_head);
+                    program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head);
+                }
             }
+
+            if (!discovered_new_fact)
+                break;  ///< Reached fixed point
         }
-
-        auto end_merge_seq = std::chrono::steady_clock::now();
-        program_execution_context.statistics.merge_seq_total_time += std::chrono::duration_cast<std::chrono::nanoseconds>(end_merge_seq - start_merge_seq);
-
-        if (!discovered_new_fact)
-            break;  ///< Reached fixed point
     }
 }
 

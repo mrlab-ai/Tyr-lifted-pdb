@@ -19,6 +19,7 @@
 #define TYR_COMMON_COMMON_HPP_
 
 #include "tyr/common/bits.hpp"
+#include "tyr/common/chrono.hpp"
 #include "tyr/common/closed_interval.hpp"
 #include "tyr/common/config.hpp"
 #include "tyr/common/declarations.hpp"
