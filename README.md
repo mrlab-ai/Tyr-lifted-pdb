@@ -25,7 +25,7 @@ TODO
 
 TODO
 
-## 3. Datalog Interface (Finished)
+## 3. Datalog Interface (Semi-Finished)
 
 The high level C++ datalog interface is as follows:
 
@@ -58,7 +58,7 @@ auto solution = tyr::solver::solve_bottomup(execuction_context, annotated, weigh
 
 The high level C++ planning interface is as follows:
 
-## 4.1 Lifted Planning (Semi-Finished)
+## 4.1 Lifted Planning (Finished)
 
 We obtain a lifted task by parsing the PDDL. Then, we translate the lifted task into three datalog program: P1) ground task program, P2) action program, P3) axiom program. Program P1 encodes the delete free task to approximate the set of applicable ground actions and axioms in the task. Program P2 encodes a the action preconditions to overapproximate the set of ground applicable actions in a state. Program P3 encodes the axiom evaluation in a state. Given these three programs, the API allows to retrieve the extended initial node (sparse state + metric value) using program P3. Given a node, compute the labeled successor nodes (ground action + node) using programs P2 and P3.
 
