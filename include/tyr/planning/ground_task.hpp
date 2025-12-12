@@ -43,8 +43,8 @@ public:
                View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
                IndexList<formalism::GroundAtom<formalism::FluentTag>> fluent_atoms,
                IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms,
-               IndexList<formalism::GroundAction> ground_actions,
-               IndexList<formalism::GroundAxiom> ground_axioms);
+               IndexList<formalism::GroundAction> actions,
+               IndexList<formalism::GroundAxiom> axioms);
 
     void compute_extended_state(UnpackedState<GroundTask>& unpacked_state);
 
@@ -56,6 +56,17 @@ public:
     void get_labeled_successor_nodes(
         const Node<GroundTask>& node,
         std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>& out_nodes);
+
+    template<formalism::FactKind T>
+    size_t get_num_atoms() const noexcept;
+    size_t get_num_actions() const noexcept;
+    size_t get_num_axioms() const noexcept;
+
+private:
+    size_t m_num_fluent_atoms;
+    size_t m_num_derived_atoms;
+    size_t m_num_actions;
+    size_t m_num_axioms;
 };
 
 }

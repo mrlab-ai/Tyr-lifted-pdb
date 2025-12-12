@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_ATOM_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/predicate_index.hpp"
@@ -47,7 +48,12 @@ struct Data<formalism::Atom<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept { terms.clear(); }
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(predicate);
+        tyr::clear(terms);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, predicate, terms); }
     auto identifying_members() const noexcept { return std::tie(predicate, terms); }

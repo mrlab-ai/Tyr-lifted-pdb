@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_AXIOM_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -48,7 +49,12 @@ struct Data<formalism::Axiom>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(body);
+        tyr::clear(head);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, body, head); }
     auto identifying_members() const noexcept { return std::tie(body, head); }

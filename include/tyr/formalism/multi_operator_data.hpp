@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_MULTI_OPERATOR_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/multi_operator_index.hpp"
 
@@ -40,7 +41,11 @@ struct Data<formalism::MultiOperator<Op, T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept { args.clear(); }
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(args);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, args); }
     auto identifying_members() const noexcept { return std::tie(Op::kind, args); }

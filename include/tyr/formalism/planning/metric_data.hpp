@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_METRIC_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_function_expression_data.hpp"
 #include "tyr/formalism/planning/metric_index.hpp"
@@ -51,9 +52,9 @@ struct Data<formalism::Metric>
 
     void clear() noexcept
     {
-        objective.destruct();
-        objective.idx_ = ObjectiveVariant::NO_VALUE;
-        fexpr.clear();
+        tyr::clear(index);
+        tyr::clear(objective);
+        tyr::clear(fexpr);
     }
 
     auto cista_members() const noexcept { return std::tie(index, objective, fexpr); }

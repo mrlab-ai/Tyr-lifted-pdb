@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_GROUND_FUNCTION_TERM_VALUE_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_function_term_index.hpp"
 #include "tyr/formalism/ground_function_term_value_index.hpp"
@@ -48,7 +49,12 @@ struct Data<formalism::GroundFunctionTermValue<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(fterm);
+        tyr::clear(value);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, fterm, value); }
     auto identifying_members() const noexcept { return std::tie(fterm, value); }

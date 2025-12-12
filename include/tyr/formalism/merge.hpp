@@ -313,9 +313,13 @@ auto merge(View<Data<ArithmeticOperator<T>>, C_SRC> element, Builder& builder, C
 template<typename T, Context C_SRC, Context C_DST>
 auto merge(View<Data<BooleanOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
 {
-    return visit([&](auto&& arg)
-                 { return View<Data<BooleanOperator<T>>, C_DST>(Data<BooleanOperator<T>>(merge(arg, builder, destination, cache).get_index()), destination); },
-                 element.get_variant());
+    return visit(
+        [&](auto&& arg)
+        {
+            return View<Data<BooleanOperator<T>>, C_DST>(Data<BooleanOperator<T>>(merge(arg, builder, destination, cache).get_index(), element.get_arity()),
+                                                         destination);
+        },
+        element.get_variant());
 }
 
 template<Context C_SRC, Context C_DST>

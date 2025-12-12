@@ -45,7 +45,7 @@ public:
     auto get_index() const noexcept { return m_handle; }
     auto get_arg() const noexcept
     {
-        if constexpr (Viewable<T, C>)
+        if constexpr (ViewConcept<T, C>)
         {
             return make_view(get_data().arg, *m_context);
         }

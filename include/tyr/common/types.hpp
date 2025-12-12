@@ -58,7 +58,7 @@ struct View
 };
 
 template<typename T, typename C>
-concept Viewable = requires(T type, const C& context) {
+concept ViewConcept = requires(T type, const C& context) {
     // Constructor
     View<T, C>(type, context);
     // Method to retrieve the underlying Data.

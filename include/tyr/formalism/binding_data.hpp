@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_BINDING_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/object_index.hpp"
@@ -40,7 +41,11 @@ struct Data<formalism::Binding>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept { objects.clear(); }
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(objects);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, objects); }
     auto identifying_members() const noexcept { return std::tie(objects); }

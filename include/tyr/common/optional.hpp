@@ -44,7 +44,7 @@ public:
 
     decltype(auto) value() const
     {
-        if constexpr (Viewable<T, C>)
+        if constexpr (ViewConcept<T, C>)
         {
             return View<T, C>(**m_handle, *m_context);
         }
@@ -58,9 +58,9 @@ public:
 
     auto operator->() const
     {
-        if constexpr (Viewable<T, C>)
+        if constexpr (ViewConcept<T, C>)
         {
-            static_assert(!Viewable<T, C>,
+            static_assert(!ViewConcept<T, C>,
                           "operator-> is not supported when T is viewable; "
                           "call .value() first to get a View<T, C>.");
         }

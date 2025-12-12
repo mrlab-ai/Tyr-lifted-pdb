@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_GROUND_AXIOM_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
 #include "tyr/formalism/ground_conjunctive_condition_index.hpp"
@@ -53,7 +54,13 @@ struct Data<formalism::GroundAxiom>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(axiom);
+        tyr::clear(body);
+        tyr::clear(head);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, axiom, body, head); }
     auto identifying_members() const noexcept { return std::tie(axiom, body, head); }

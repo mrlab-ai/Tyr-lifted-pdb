@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_NUMERIC_EFFECT_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_expression_data.hpp"
 #include "tyr/formalism/function_term_index.hpp"
@@ -51,7 +52,12 @@ struct Data<formalism::NumericEffect<Op, T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept { fexpr.clear(); }
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(fterm);
+        tyr::clear(fexpr);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, fterm, fexpr); }
     auto identifying_members() const noexcept { return std::tie(Op::kind, fterm, fexpr); }

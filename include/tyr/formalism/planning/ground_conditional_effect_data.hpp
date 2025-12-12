@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_GROUND_CONDITIONAL_EFFECT_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/ground_conditional_effect_index.hpp"
@@ -50,7 +51,12 @@ struct Data<formalism::GroundConditionalEffect>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(condition);
+        tyr::clear(effect);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, condition, effect); }
     auto identifying_members() const noexcept { return std::tie(condition, effect); }

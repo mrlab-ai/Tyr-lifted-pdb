@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_BOOLEAN_OPERATOR_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -39,13 +40,9 @@ struct Data<formalism::BooleanOperator<T>>
     uint_t arity;
 
     Data() = default;
-    Data(Variant value) : value(value) {}
+    Data(Variant value, uint_t arity) : value(value), arity(arity) {}
 
-    void clear() noexcept
-    {
-        value.destruct();
-        value.idx_ = Variant::NO_VALUE;
-    }
+    void clear() noexcept { tyr::clear(value); }
 
     friend bool operator==(const Data& lhs, const Data& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
     friend bool operator!=(const Data& lhs, const Data& rhs) { return lhs.value != rhs.value; }
@@ -55,7 +52,7 @@ struct Data<formalism::BooleanOperator<T>>
     friend bool operator>(const Data& lhs, const Data& rhs) { return lhs.value > rhs.value; }
 
     auto cista_members() const noexcept { return std::tie(value, arity); }
-    auto identifying_members() const noexcept { return std::tie(value); }
+    auto identifying_members() const noexcept { return std::tie(value, arity); }
 };
 }
 

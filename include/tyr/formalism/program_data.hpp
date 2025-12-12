@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PROGRAM_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
@@ -79,16 +80,17 @@ struct Data<formalism::Program>
 
     void clear() noexcept
     {
-        static_predicates.clear();
-        fluent_predicates.clear();
-        static_functions.clear();
-        fluent_functions.clear();
-        objects.clear();
-        static_atoms.clear();
-        fluent_atoms.clear();
-        static_fterm_values.clear();
-        fluent_fterm_values.clear();
-        rules.clear();
+        tyr::clear(index);
+        tyr::clear(static_predicates);
+        tyr::clear(fluent_predicates);
+        tyr::clear(static_functions);
+        tyr::clear(fluent_functions);
+        tyr::clear(objects);
+        tyr::clear(static_atoms);
+        tyr::clear(fluent_atoms);
+        tyr::clear(static_fterm_values);
+        tyr::clear(fluent_fterm_values);
+        tyr::clear(rules);
     }
 
     template<formalism::FactKind T>

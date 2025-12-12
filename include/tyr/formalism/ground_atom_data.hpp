@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_GROUND_ATOM_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
@@ -47,7 +48,12 @@ struct Data<formalism::GroundAtom<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(predicate);
+        tyr::clear(binding);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, predicate, binding); }
     auto identifying_members() const noexcept { return std::tie(predicate, binding); }

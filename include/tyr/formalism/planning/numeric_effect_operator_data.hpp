@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_NUMERIC_EFFECT_OPERATOR_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/common/variant.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
@@ -42,11 +43,7 @@ struct Data<formalism::NumericEffectOperator<formalism::FluentTag>>
     Data() = default;
     Data(Variant value) : value(value) {}
 
-    void clear() noexcept
-    {
-        value.destruct();
-        value.idx_ = Variant::NO_VALUE;
-    }
+    void clear() noexcept { tyr::clear(value); }
 
     friend bool operator==(const Data& lhs, const Data& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
     friend bool operator!=(const Data& lhs, const Data& rhs) { return lhs.value != rhs.value; }
@@ -74,7 +71,7 @@ struct Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>
     void clear() noexcept
     {
         value.destruct();
-        value.idx_ = Variant::NO_VALUE;
+        new (&value) Variant {};
     }
 
     friend bool operator==(const Data& lhs, const Data& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }

@@ -45,14 +45,14 @@ public:
     auto get_index() const noexcept { return m_handle; }
     auto get_lhs() const
     {
-        if constexpr (Viewable<T, C>)
+        if constexpr (ViewConcept<T, C>)
             return make_view(get_data().lhs, *m_context);
         else
             return get_data().lhs;
     }
     auto get_rhs() const
     {
-        if constexpr (Viewable<T, C>)
+        if constexpr (ViewConcept<T, C>)
             return make_view(get_data().rhs, *m_context);
         else
             return get_data().rhs;

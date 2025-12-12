@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_TASK_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
 #include "tyr/formalism/ground_conjunctive_condition_index.hpp"
@@ -88,15 +89,19 @@ struct Data<formalism::Task>
 
     void clear() noexcept
     {
-        derived_predicates.clear();
-        objects.clear();
-        static_atoms.clear();
-        fluent_atoms.clear();
-        static_fterm_values.clear();
-        fluent_fterm_values.clear();
-        auxiliary_fterm_value = std::nullopt;
-        metric = std::nullopt;
-        axioms.clear();
+        tyr::clear(index);
+        tyr::clear(name);
+        tyr::clear(domain);
+        tyr::clear(derived_predicates);
+        tyr::clear(objects);
+        tyr::clear(static_atoms);
+        tyr::clear(fluent_atoms);
+        tyr::clear(static_fterm_values);
+        tyr::clear(fluent_fterm_values);
+        tyr::clear(auxiliary_fterm_value);
+        tyr::clear(goal);
+        tyr::clear(metric);
+        tyr::clear(axioms);
     }
 
     template<formalism::FactKind T>

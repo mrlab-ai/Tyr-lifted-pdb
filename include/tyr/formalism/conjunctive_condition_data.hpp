@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_CONJUNCTIVE_CONDITION_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/boolean_operator_data.hpp"
 #include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -75,15 +76,16 @@ struct Data<formalism::ConjunctiveCondition>
 
     void clear() noexcept
     {
-        variables.clear();
-        static_literals.clear();
-        fluent_literals.clear();
-        derived_literals.clear();
-        numeric_constraints.clear();
-        static_nullary_literals.clear();
-        fluent_nullary_literals.clear();
-        derived_nullary_literals.clear();
-        nullary_numeric_constraints.clear();
+        tyr::clear(index);
+        tyr::clear(variables);
+        tyr::clear(static_literals);
+        tyr::clear(fluent_literals);
+        tyr::clear(derived_literals);
+        tyr::clear(numeric_constraints);
+        tyr::clear(static_nullary_literals);
+        tyr::clear(fluent_nullary_literals);
+        tyr::clear(derived_nullary_literals);
+        tyr::clear(nullary_numeric_constraints);
     }
 
     template<formalism::FactKind T>

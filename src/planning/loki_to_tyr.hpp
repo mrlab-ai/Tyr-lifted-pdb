@@ -175,6 +175,12 @@ struct ArityVisitor
         collect_variables(element);
         return variables.size();
     }
+
+    size_t get(loki::ConditionNumericConstraint element)
+    {
+        collect_variables(element);
+        return variables.size();
+    }
 };
 
 class LokiToTyrTranslator
@@ -601,7 +607,10 @@ private:
             binary.lhs = translate_lifted(element->get_left_function_expression(), builder, context);
             binary.rhs = translate_lifted(element->get_right_function_expression(), builder, context);
             formalism::canonicalize(binary);
-            return Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>(context.get_or_create(binary, builder.get_buffer()).first.get_index());
+            auto visitor = ArityVisitor();
+            const auto arity = visitor.get(element);
+            return Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>(context.get_or_create(binary, builder.get_buffer()).first.get_index(),
+                                                                                         arity);
         };
 
         switch (element->get_binary_comparator())
@@ -1417,8 +1426,11 @@ private:
             binary.lhs = translate_grounded(element->get_left_function_expression(), builder, context);
             binary.rhs = translate_grounded(element->get_right_function_expression(), builder, context);
             formalism::canonicalize(binary);
+            auto visitor = ArityVisitor();
+            const auto arity = visitor.get(element);
             return Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>(
-                context.get_or_create(binary, builder.get_buffer()).first.get_index());
+                context.get_or_create(binary, builder.get_buffer()).first.get_index(),
+                arity);
         };
 
         switch (element->get_binary_comparator())

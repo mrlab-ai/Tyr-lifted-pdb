@@ -208,7 +208,10 @@ ground(View<Data<BooleanOperator<Data<FunctionExpression>>>, C_SRC> element, Vie
 {
     return visit(
         [&](auto&& arg)
-        { return make_view(Data<BooleanOperator<Data<GroundFunctionExpression>>>(ground(arg, binding, builder, destination).get_index()), destination); },
+        {
+            return make_view(Data<BooleanOperator<Data<GroundFunctionExpression>>>(ground(arg, binding, builder, destination).get_index(), element.get_arity()),
+                             destination);
+        },
         element.get_variant());
 }
 

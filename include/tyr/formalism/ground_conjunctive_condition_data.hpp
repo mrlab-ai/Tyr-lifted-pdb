@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_GROUND_CONJUNCTIVE_CONDITION_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/boolean_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_conjunctive_condition_index.hpp"
@@ -57,10 +58,11 @@ struct Data<formalism::GroundConjunctiveCondition>
 
     void clear() noexcept
     {
-        static_literals.clear();
-        fluent_literals.clear();
-        derived_literals.clear();
-        numeric_constraints.clear();
+        tyr::clear(index);
+        tyr::clear(static_literals);
+        tyr::clear(fluent_literals);
+        tyr::clear(derived_literals);
+        tyr::clear(numeric_constraints);
     }
 
     template<formalism::FactKind T>

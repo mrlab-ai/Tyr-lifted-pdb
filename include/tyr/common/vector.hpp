@@ -41,7 +41,7 @@ public:
 
     decltype(auto) operator[](size_t i) const
     {
-        if constexpr (Viewable<T, C>)
+        if constexpr (ViewConcept<T, C>)
         {
             return View<T, C>(get_data()[i], get_context());
         }
@@ -53,7 +53,7 @@ public:
 
     decltype(auto) front() const
     {
-        if constexpr (Viewable<T, C>)
+        if constexpr (ViewConcept<T, C>)
         {
             return View<T, C>(get_data().front(), get_context());
         }
@@ -69,7 +69,7 @@ public:
         const T* ptr;
 
         using difference_type = std::ptrdiff_t;
-        using value_type = std::conditional_t<Viewable<T, C>, ::tyr::View<T, C>, T>;
+        using value_type = std::conditional_t<ViewConcept<T, C>, ::tyr::View<T, C>, T>;
         using iterator_category = std::random_access_iterator_tag;
         using iterator_concept = std::random_access_iterator_tag;
 
@@ -78,7 +78,7 @@ public:
 
         decltype(auto) operator*() const
         {
-            if constexpr (Viewable<T, C>)
+            if constexpr (ViewConcept<T, C>)
             {
                 return View<T, C>(*ptr, *ctx);
             }
@@ -151,7 +151,7 @@ public:
         // []
         auto operator[](difference_type n) const
         {
-            if constexpr (Viewable<T, C>)
+            if constexpr (ViewConcept<T, C>)
                 return View<T, C>(*(ptr + n), *ctx);
             else
                 return *(ptr + n);

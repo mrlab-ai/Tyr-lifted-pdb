@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_LITERAL_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/atom_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_index.hpp"
@@ -41,7 +42,12 @@ struct Data<formalism::Literal<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(atom);
+        tyr::clear(polarity);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, atom, polarity); }
     auto identifying_members() const noexcept { return std::tie(atom, polarity); }

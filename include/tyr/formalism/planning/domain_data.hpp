@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_DOMAIN_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/object_index.hpp"
@@ -80,15 +81,17 @@ struct Data<formalism::Domain>
 
     void clear() noexcept
     {
-        static_predicates.clear();
-        fluent_predicates.clear();
-        derived_predicates.clear();
-        static_functions.clear();
-        fluent_functions.clear();
-        auxiliary_function = std::nullopt;
-        constants.clear();
-        actions.clear();
-        axioms.clear();
+        tyr::clear(index);
+        tyr::clear(name);
+        tyr::clear(static_predicates);
+        tyr::clear(fluent_predicates);
+        tyr::clear(derived_predicates);
+        tyr::clear(static_functions);
+        tyr::clear(fluent_functions);
+        tyr::clear(auxiliary_function);
+        tyr::clear(constants);
+        tyr::clear(actions);
+        tyr::clear(axioms);
     }
 
     template<formalism::FactKind T>

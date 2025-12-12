@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_CONJUNCTIVE_EFFECT_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
@@ -55,9 +56,10 @@ struct Data<formalism::ConjunctiveEffect>
 
     void clear() noexcept
     {
-        literals.clear();
-        numeric_effects.clear();
-        auxiliary_numeric_effect = std::nullopt;
+        tyr::clear(index);
+        tyr::clear(literals);
+        tyr::clear(numeric_effects);
+        tyr::clear(auxiliary_numeric_effect);
     }
 
     auto cista_members() const noexcept { return std::tie(index, literals, numeric_effects, auxiliary_numeric_effect); }

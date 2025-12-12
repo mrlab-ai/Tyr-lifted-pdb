@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_OBJECT_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/object_index.hpp"
 
@@ -39,7 +40,11 @@ struct Data<formalism::Object>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(name);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, name); }
     auto identifying_members() const noexcept { return std::tie(name); }

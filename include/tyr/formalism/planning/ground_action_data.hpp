@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_PLANNING_GROUND_ACTION_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/ground_conjunctive_condition_index.hpp"
@@ -54,7 +55,13 @@ struct Data<formalism::GroundAction>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept { effects.clear(); }
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(action);
+        tyr::clear(condition);
+        tyr::clear(effects);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, action, condition, effects); }
     auto identifying_members() const noexcept { return std::tie(action, condition, effects); }

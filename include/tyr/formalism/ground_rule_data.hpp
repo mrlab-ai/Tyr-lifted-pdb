@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_GROUND_RULE_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/boolean_operator_data.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -58,7 +59,14 @@ struct Data<formalism::GroundRule>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(rule);
+        tyr::clear(binding);
+        tyr::clear(body);
+        tyr::clear(head);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, rule, binding, body, head); }
     auto identifying_members() const noexcept { return std::tie(rule, binding, body, head); }

@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_BINARY_OPERATOR_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 
@@ -41,7 +42,12 @@ struct Data<formalism::BinaryOperator<Op, T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(lhs);
+        tyr::clear(rhs);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, lhs, rhs); }
     auto identifying_members() const noexcept { return std::tie(Op::kind, lhs, rhs); }

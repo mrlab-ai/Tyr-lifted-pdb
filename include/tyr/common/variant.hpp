@@ -45,7 +45,7 @@ public:
     template<typename U>
     decltype(auto) get() const
     {
-        if constexpr (Viewable<U, C>)
+        if constexpr (ViewConcept<U, C>)
         {
             return View<U, C>(std::get<U>(index_variant()), get_context());
         }
@@ -63,7 +63,7 @@ public:
             {
                 using U = std::decay_t<decltype(arg)>;
 
-                if constexpr (Viewable<U, C>)
+                if constexpr (ViewConcept<U, C>)
                 {
                     return std::forward<F>(f)(View<U, C>(arg, get_context()));
                 }

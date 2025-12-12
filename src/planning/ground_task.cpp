@@ -30,18 +30,22 @@ GroundTask::GroundTask(DomainPtr domain,
                        View<Index<Task>, OverlayRepository<Repository>> task,
                        IndexList<GroundAtom<FluentTag>> fluent_atoms,
                        IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms,
-                       IndexList<GroundAction> ground_actions,
-                       IndexList<GroundAxiom> ground_axioms)
+                       IndexList<GroundAction> actions,
+                       IndexList<GroundAxiom> axioms) :
+    m_num_fluent_atoms(fluent_atoms.size()),
+    m_num_derived_atoms(derived_atoms.size()),
+    m_num_actions(actions.size()),
+    m_num_axioms(axioms.size())
 {
     // std::cout << make_view(fluent_atoms, *overlay_repository) << std::endl;
     // std::cout << make_view(derived_atoms, *overlay_repository) << std::endl;
-    // std::cout << make_view(ground_actions, *overlay_repository) << std::endl;
-    // std::cout << make_view(ground_axioms, *overlay_repository) << std::endl;
+    // std::cout << make_view(actions, *overlay_repository) << std::endl;
+    // std::cout << make_view(axioms, *overlay_repository) << std::endl;
 
     std::cout << "Num fluent atoms: " << fluent_atoms.size() << std::endl;
     std::cout << "Num derived atoms: " << derived_atoms.size() << std::endl;
-    std::cout << "Num ground actions: " << ground_actions.size() << std::endl;
-    std::cout << "Num ground axioms: " << ground_axioms.size() << std::endl;
+    std::cout << "Num ground actions: " << actions.size() << std::endl;
+    std::cout << "Num ground axioms: " << axioms.size() << std::endl;
 }
 
 Node<GroundTask> get_initial_node() {}
@@ -59,5 +63,23 @@ void GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node,
                                              std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>& out_nodes)
 {
 }
+
+template<formalism::FactKind T>
+size_t GroundTask::get_num_atoms() const noexcept
+{
+    if constexpr (std::is_same_v<T, formalism::FluentTag>)
+        return m_num_fluent_atoms;
+    else if constexpr (std::is_same_v<T, formalism::DerivedTag>)
+        return m_num_derived_atoms;
+    else
+        static_assert(dependent_false<T>::value, "Missing case");
+}
+
+template size_t GroundTask::get_num_atoms<formalism::FluentTag>() const noexcept;
+template size_t GroundTask::get_num_atoms<formalism::DerivedTag>() const noexcept;
+
+size_t GroundTask::get_num_actions() const noexcept { return m_num_actions; }
+
+size_t GroundTask::get_num_axioms() const noexcept { return m_num_axioms; }
 
 }

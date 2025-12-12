@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_FUNCTION_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_index.hpp"
 
@@ -41,7 +42,12 @@ struct Data<formalism::Function<T>>
     Data(Data&& other) = default;
     Data& operator=(Data&& other) = default;
 
-    void clear() noexcept {}
+    void clear() noexcept
+    {
+        tyr::clear(index);
+        tyr::clear(name);
+        tyr::clear(arity);
+    }
 
     auto cista_members() const noexcept { return std::tie(index, name, arity); }
     auto identifying_members() const noexcept { return std::tie(name, arity); }

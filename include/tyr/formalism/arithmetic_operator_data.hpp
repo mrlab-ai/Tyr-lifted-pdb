@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_ARITHMETIC_OPERATOR_DATA_HPP_
 
 #include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/binary_operator_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/multi_operator_index.hpp"
@@ -44,11 +45,7 @@ struct Data<formalism::ArithmeticOperator<T>>
     Data() = default;
     Data(Variant value) : value(value) {}
 
-    void clear() noexcept
-    {
-        value.destruct();
-        value.idx_ = Variant::NO_VALUE;
-    }
+    void clear() noexcept { tyr::clear(value); }
 
     friend bool operator==(const Data& lhs, const Data& rhs) { return EqualTo<Variant> {}(lhs.value, rhs.value); }
     friend bool operator!=(const Data& lhs, const Data& rhs) { return !(lhs.value == rhs.value); }
