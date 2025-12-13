@@ -140,7 +140,8 @@ private:
                                          RepositoryEntry<FDRConjunctiveEffect>,
                                          RepositoryEntry<FDRConditionalEffect>,
                                          RepositoryEntry<FDRAxiom>,
-                                         RepositoryEntry<FDRAction>>;
+                                         RepositoryEntry<FDRAction>,
+                                         RepositoryEntry<FDRTask>>;
 
     RepositoryStorage m_repository;
 

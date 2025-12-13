@@ -265,6 +265,14 @@ inline bool is_canonical(const Data<FDRAction>& data) { return is_canonical(data
 
 inline bool is_canonical(const Data<FDRAxiom>& data) { return true; }
 
+inline bool is_canonical(const Data<FDRTask>& data)
+{
+    return is_canonical(data.derived_predicates) && is_canonical(data.objects) && is_canonical(data.static_atoms) && is_canonical(data.fluent_atoms)
+           && is_canonical(data.derived_atoms) && is_canonical(data.static_fterm_values) && is_canonical(data.fluent_fterm_values) && is_canonical(data.axioms)
+           && is_canonical(data.fluent_variables) && is_canonical(data.derived_variables) && is_canonical(data.fluent_facts)
+           && is_canonical(data.ground_actions) && is_canonical(data.ground_axioms);
+}
+
 /**
  * Datalog
  */
@@ -562,6 +570,23 @@ inline void canonicalize(Data<FDRAction>& data) { canonicalize(data.effects); }
 inline void canonicalize(Data<FDRAxiom>& data)
 {
     // Trivially canonical
+}
+
+inline void canonicalize(Data<FDRTask>& data)
+{
+    canonicalize(data.derived_predicates);
+    canonicalize(data.objects);
+    canonicalize(data.static_atoms);
+    canonicalize(data.fluent_atoms);
+    canonicalize(data.derived_atoms);
+    canonicalize(data.static_fterm_values);
+    canonicalize(data.fluent_fterm_values);
+    canonicalize(data.axioms);
+    canonicalize(data.fluent_variables);
+    canonicalize(data.derived_variables);
+    canonicalize(data.fluent_facts);
+    canonicalize(data.ground_actions);
+    canonicalize(data.ground_axioms);
 }
 
 }

@@ -43,6 +43,7 @@
 #include "tyr/formalism/planning/fdr_conditional_effect_index.hpp"
 #include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/fdr_conjunctive_effect_index.hpp"
+#include "tyr/formalism/planning/fdr_task_index.hpp"
 #include "tyr/formalism/planning/fdr_variable_index.hpp"
 #include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/formalism/planning/ground_axiom_index.hpp"

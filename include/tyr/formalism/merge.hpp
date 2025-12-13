@@ -166,12 +166,6 @@ template<typename T, Context C_SRC, Context C_DST>
 auto merge(View<Data<BooleanOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination);
 
 template<Context C_SRC, Context C_DST>
-auto merge(float_t element, Builder&, C_DST&);
-
-template<Context C_SRC, Context C_DST>
-auto merge(ParameterIndex element, Builder&, C_DST&);
-
-template<Context C_SRC, Context C_DST>
 auto merge(View<Index<Variable>, C_SRC> element, Builder& builder, C_DST& destination);
 
 template<Context C_SRC, Context C_DST>
@@ -228,6 +222,12 @@ auto merge(View<Index<Rule>, C_SRC> element, Builder& builder, C_DST& destinatio
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& destination);
 
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Axiom>, C_SRC> element, Builder& builder, C_DST& destination);
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Metric>, C_SRC> element, Builder& builder, C_DST& destination);
+
 template<OpKind O, typename T, Context C_SRC, Context C_DST>
 auto merge(View<Index<UnaryOperator<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
 
@@ -242,12 +242,6 @@ auto merge(View<Data<ArithmeticOperator<T>>, C_SRC> element, Builder& builder, C
 
 template<typename T, Context C_SRC, Context C_DST>
 auto merge(View<Data<BooleanOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<Context C_SRC, Context C_DST>
-auto merge(float_t element, Builder&, C_DST&, MergeCache<C_SRC, C_DST>&);
-
-template<Context C_SRC, Context C_DST>
-auto merge(ParameterIndex element, Builder&, C_DST&, MergeCache<C_SRC, C_DST>&);
 
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<Variable>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
@@ -305,6 +299,12 @@ auto merge(View<Index<Rule>, C_SRC> element, Builder& builder, C_DST& destinatio
 
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Axiom>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Metric>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
 
 /**
  * Implementations
@@ -368,18 +368,6 @@ auto merge(View<Data<BooleanOperator<T>>, C_SRC> element, Builder& builder, C_DS
                                                          destination);
         },
         element.get_variant());
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(float_t element, Builder&, C_DST&)
-{
-    return element;
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(ParameterIndex element, Builder&, C_DST&)
-{
-    return element;
 }
 
 template<Context C_SRC, Context C_DST>
@@ -577,7 +565,7 @@ auto merge(View<Data<FunctionExpression>, C_SRC> element, Builder& builder, C_DS
 
             if constexpr (std::is_same_v<Alternative, float_t>)
             {
-                return View<Data<FunctionExpression>, C_DST>(Data<FunctionExpression>(merge(arg, builder, destination)), destination);
+                return View<Data<FunctionExpression>, C_DST>(Data<FunctionExpression>(arg), destination);
             }
             else if constexpr (std::is_same_v<Alternative, View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C_SRC>>)
             {
@@ -601,7 +589,7 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
 
             if constexpr (std::is_same_v<Alternative, float_t>)
             {
-                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(merge(arg, builder, destination)), destination);
+                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(arg), destination);
             }
             else if constexpr (std::is_same_v<Alternative, View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_SRC>>)
             {
@@ -691,6 +679,34 @@ auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& dest
 
     canonicalize(rule);
     return destination.get_or_create(rule, builder.get_buffer()).first;
+}
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Axiom>, C_SRC> element, Builder& builder, C_DST& destination)
+{
+    auto axiom_ptr = builder.template get_builder<Axiom>();
+    auto& axiom = *axiom_ptr;
+    axiom.clear();
+
+    axiom.body = merge(element.get_body(), builder, destination).get_index();
+    axiom.head = merge(element.get_head(), builder, destination).get_index();
+
+    canonicalize(axiom);
+    return destination.get_or_create(axiom, builder.get_buffer()).first;
+}
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Metric>, C_SRC> element, Builder& builder, C_DST& destination)
+{
+    auto metric_ptr = builder.template get_builder<Metric>();
+    auto& metric = *metric_ptr;
+    metric.clear();
+
+    metric.objective = element.get_objective();
+    metric.fexpr = merge(element.get_fexpr(), builder, destination).get_data();
+
+    canonicalize(metric);
+    return destination.get_or_create(metric, builder.get_buffer()).first;
 }
 
 template<typename T, Context C_SRC, Context C_DST, typename F>
@@ -783,18 +799,6 @@ auto merge(View<Data<BooleanOperator<T>>, C_SRC> element, Builder& builder, C_DS
                                                          destination);
         },
         element.get_variant());
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(float_t element, Builder&, C_DST&, MergeCache<C_SRC, C_DST>&)
-{
-    return element;
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(ParameterIndex element, Builder&, C_DST&, MergeCache<C_SRC, C_DST>&)
-{
-    return element;
 }
 
 template<Context C_SRC, Context C_DST>
@@ -1052,7 +1056,7 @@ auto merge(View<Data<FunctionExpression>, C_SRC> element, Builder& builder, C_DS
 
             if constexpr (std::is_same_v<Alternative, float_t>)
             {
-                return View<Data<FunctionExpression>, C_DST>(Data<FunctionExpression>(merge(arg, builder, destination, cache)), destination);
+                return View<Data<FunctionExpression>, C_DST>(Data<FunctionExpression>(arg), destination);
             }
             else if constexpr (std::is_same_v<Alternative, View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C_SRC>>)
             {
@@ -1076,7 +1080,7 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
 
             if constexpr (std::is_same_v<Alternative, float_t>)
             {
-                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(merge(arg, builder, destination, cache)), destination);
+                return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(arg), destination);
             }
             else if constexpr (std::is_same_v<Alternative, View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_SRC>>)
             {
@@ -1190,6 +1194,44 @@ auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& dest
                                       canonicalize(rule);
                                       return destination.get_or_create(rule, builder.get_buffer()).first;
                                   });
+}
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Axiom>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return with_cache<Axiom>(element,
+                             cache,
+                             [&]()
+                             {
+                                 auto axiom_ptr = builder.template get_builder<Axiom>();
+                                 auto& axiom = *axiom_ptr;
+                                 axiom.clear();
+
+                                 axiom.body = merge(element.get_body(), builder, destination).get_index();
+                                 axiom.head = merge(element.get_head(), builder, destination).get_index();
+
+                                 canonicalize(axiom);
+                                 return destination.get_or_create(axiom, builder.get_buffer()).first;
+                             });
+}
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<Metric>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return with_cache<Metric>(element,
+                              cache,
+                              [&]()
+                              {
+                                  auto metric_ptr = builder.template get_builder<Metric>();
+                                  auto& metric = *metric_ptr;
+                                  metric.clear();
+
+                                  metric.objective = element.get_objective();
+                                  metric.fexpr = merge(element.get_fexpr(), builder, destination).get_data();
+
+                                  canonicalize(metric);
+                                  return destination.get_or_create(metric, builder.get_buffer()).first;
+                              });
 }
 }
 

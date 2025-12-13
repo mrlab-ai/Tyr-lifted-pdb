@@ -139,7 +139,8 @@ struct Builder
                                       BuilderEntry<FDRConjunctiveEffect>,
                                       BuilderEntry<FDRConditionalEffect>,
                                       BuilderEntry<FDRAxiom>,
-                                      BuilderEntry<FDRAction>>;
+                                      BuilderEntry<FDRAction>,
+                                      BuilderEntry<FDRTask>>;
 
     BuilderStorage m_builder;
 

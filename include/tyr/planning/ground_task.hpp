@@ -71,14 +71,10 @@ private:
 
     formalism::RepositoryPtr m_repository;
     formalism::OverlayRepositoryPtr<formalism::Repository> m_overlay_repository;
-
-    IndexList<formalism::FDRVariable<formalism::FluentTag>> m_fluent_variables;
-    IndexList<formalism::FDRVariable<formalism::DerivedTag>> m_derived_variables;
+    View<Index<formalism::FDRTask>, formalism::OverlayRepository<formalism::Repository>> m_task;
 
     FDRVariablesLayout<formalism::FluentTag, uint_t> m_fluent_layout;
     FDRVariablesLayout<formalism::DerivedTag, uint_t> m_derived_layout;
-
-    DataList<formalism::FDRFact<formalism::FluentTag>> m_fluent_facts;
 };
 
 }
