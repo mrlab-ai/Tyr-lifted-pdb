@@ -30,6 +30,314 @@
 
 namespace tyr
 {
+/**
+ * Forward declarations
+ */
+namespace formalism
+{
+inline std::ostream& operator<<(std::ostream& os, const ParameterIndex& el);
+
+inline std::ostream& operator<<(std::ostream& os, OpEq el);
+
+inline std::ostream& operator<<(std::ostream& os, OpNe el);
+
+inline std::ostream& operator<<(std::ostream& os, OpLe el);
+
+inline std::ostream& operator<<(std::ostream& os, OpLt el);
+
+inline std::ostream& operator<<(std::ostream& os, OpGe el);
+
+inline std::ostream& operator<<(std::ostream& os, OpGt el);
+
+inline std::ostream& operator<<(std::ostream& os, OpAdd el);
+
+inline std::ostream& operator<<(std::ostream& os, OpSub el);
+
+inline std::ostream& operator<<(std::ostream& os, OpMul el);
+
+inline std::ostream& operator<<(std::ostream& os, OpDiv el);
+
+template<OpKind Op, typename T>
+inline std::ostream& operator<<(std::ostream& os, const Data<UnaryOperator<Op, T>>& el);
+
+template<OpKind Op, typename T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<UnaryOperator<Op, T>>, C>& el);
+
+template<OpKind Op, typename T>
+inline std::ostream& operator<<(std::ostream& os, const Data<BinaryOperator<Op, T>>& el);
+
+template<OpKind Op, typename T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<BinaryOperator<Op, T>>, C>& el);
+
+template<OpKind Op, typename T>
+inline std::ostream& operator<<(std::ostream& os, const Data<MultiOperator<Op, T>>& el);
+
+template<OpKind Op, typename T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<MultiOperator<Op, T>>, C>& el);
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const Data<ArithmeticOperator<T>>& el);
+
+template<typename T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Data<ArithmeticOperator<T>>, C>& el);
+
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const Data<BooleanOperator<T>>& el);
+
+template<typename T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Data<BooleanOperator<T>>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Variable>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Variable>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Object>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Object>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Binding>& el);
+
+template<formalism::Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Binding>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Term>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Data<Term>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<Predicate<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Predicate<T>>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<Atom<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Atom<T>>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<Literal<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Literal<T>>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundAtom<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<GroundAtom<T>>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundLiteral<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<GroundLiteral<T>>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<Function<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Function<T>>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<FunctionTerm<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<FunctionTerm<T>>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundFunctionTerm<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<GroundFunctionTerm<T>>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundFunctionTermValue<T>>& el);
+
+template<FactKind T, Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<GroundFunctionTermValue<T>>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FunctionExpression>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Data<FunctionExpression>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundFunctionExpression>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Data<GroundFunctionExpression>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<ConjunctiveCondition>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<ConjunctiveCondition>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Rule>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Rule>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConjunctiveCondition>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<GroundConjunctiveCondition>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundRule>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<GroundRule>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Program>& el);
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<Program>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const OpAssign& el);
+
+inline std::ostream& operator<<(std::ostream& os, const OpIncrease& el);
+
+inline std::ostream& operator<<(std::ostream& os, const OpDecrease& el);
+
+inline std::ostream& operator<<(std::ostream& os, const OpScaleUp& el);
+
+inline std::ostream& operator<<(std::ostream& os, const OpScaleDown& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Minimize& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Maximize& el);
+
+template<NumericEffectOpKind Op, FactKind T>
+std::ostream& operator<<(std::ostream& os, const Data<NumericEffect<Op, T>>& el);
+
+template<NumericEffectOpKind Op, FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<NumericEffect<Op, T>>, C>& el);
+
+template<NumericEffectOpKind Op, FactKind T>
+std::ostream& operator<<(std::ostream& os, const Data<GroundNumericEffect<Op, T>>& el);
+
+template<NumericEffectOpKind Op, FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundNumericEffect<Op, T>>, C>& el);
+
+template<FactKind T>
+std::ostream& operator<<(std::ostream& os, const Data<NumericEffectOperator<T>>& el);
+
+template<FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Data<NumericEffectOperator<T>>, C>& el);
+
+template<FactKind T>
+std::ostream& operator<<(std::ostream& os, const Data<GroundNumericEffectOperator<T>>& el);
+
+template<FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Data<GroundNumericEffectOperator<T>>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<ConditionalEffect>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<ConditionalEffect>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConditionalEffect>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundConditionalEffect>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<ConjunctiveEffect>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<ConjunctiveEffect>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConjunctiveEffect>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundConjunctiveEffect>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Action>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Action>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundAction>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundAction>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Axiom>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Axiom>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundAxiom>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundAxiom>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Metric>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Metric>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Task>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Task>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<Domain>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<Domain>, C>& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRVariable<T>>& el);
+
+template<FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRVariable<T>>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const FDRValue& el);
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRFact<T>>& el);
+
+template<FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Data<FDRFact<T>>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRConjunctiveCondition>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRConjunctiveCondition>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRConjunctiveEffect>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRConjunctiveEffect>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRConditionalEffect>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRConditionalEffect>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRAction>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRAction>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRAxiom>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRAxiom>, C>& el);
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRTask>& el);
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRTask>, C>& el);
+}  // end namespace formalism
+
+/**
+ * Definitions
+ */
+
 inline std::ostream& print(std::ostream& os, const formalism::ParameterIndex& el)
 {
     fmt::print(os, "V{}", uint_t(el));
@@ -1110,6 +1418,336 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::Domain>, C>& e
     return os;
 }
 
+template<formalism::FactKind T>
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRVariable<T>>& el)
+{
+    os << "FDRVariable(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
+
+        os << print_indent << "domain size = " << el.domain_size << "\n";
+
+        os << print_indent << "atoms = " << el.atoms << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<formalism::FactKind T, formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::FDRVariable<T>>, C>& el)
+{
+    os << "FDRVariable(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
+
+        os << print_indent << "domain size = " << el.get_domain_size() << "\n";
+
+        os << print_indent << "atoms = " << el.get_atoms() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::FDRValue& el)
+{
+    fmt::print(os, "{}", uint_t(el));
+    return os;
+}
+
+template<formalism::FactKind T>
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRFact<T>>& el)
+{
+    fmt::print(os, "<{},{}>", to_string(el.variable), to_string(el.value));
+    return os;
+}
+
+template<formalism::FactKind T, formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Data<formalism::FDRFact<T>>, C>& el)
+{
+    fmt::print(os, "<{},{}>", to_string(el.get_variable().get_index()), to_string(el.get_value()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRConjunctiveCondition>& el)
+{
+    os << "FDRConjunctiveCondition(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "fluent facts = " << el.fluent_facts << "\n";
+
+        os << print_indent << "derived facts = " << el.derived_facts << "\n";
+
+        os << print_indent << "numeric constraints = " << el.numeric_constraints << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::FDRConjunctiveCondition>, C>& el)
+{
+    os << "FDRConjunctiveCondition(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "fluent facts = " << el.template get_facts<formalism::FluentTag>() << "\n";
+
+        os << print_indent << "derived facts = " << el.template get_facts<formalism::DerivedTag>() << "\n";
+
+        os << print_indent << "numeric constraints = " << el.get_numeric_constraints() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRConjunctiveEffect>& el)
+{
+    os << "FDRConjunctiveEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "fluent facts = " << el.facts << "\n";
+
+        os << print_indent << "fluent numeric effects = " << el.numeric_effects << "\n";
+
+        os << print_indent << "auxiliary numeric effect = " << el.auxiliary_numeric_effect << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::FDRConjunctiveEffect>, C>& el)
+{
+    os << "FDRConjunctiveEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "fluent facts = " << el.get_facts() << "\n";
+
+        os << print_indent << "fluent numeric effects = " << el.get_numeric_effects() << "\n";
+
+        os << print_indent << "auxiliary numeric effect = " << el.get_auxiliary_numeric_effect() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRConditionalEffect>& el)
+{
+    os << "FDRConditionalEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "condition = " << el.condition << "\n";
+
+        os << print_indent << "effect = " << el.effect << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::FDRConditionalEffect>, C>& el)
+{
+    os << "FDRConditionalEffect(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "condition = " << el.get_condition() << "\n";
+
+        os << print_indent << "effect = " << el.get_effect() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRAction>& el)
+{
+    os << "FDRAction(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
+
+        os << print_indent << "action index = " << el.action << "\n";
+
+        os << print_indent << "condition = " << el.condition << "\n";
+
+        os << print_indent << "effects = " << el.effects << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::FDRAction>, C>& el)
+{
+    os << "FDRAction(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
+
+        os << print_indent << "action index = " << el.get_action().get_index() << "\n";
+
+        os << print_indent << "condition = " << el.get_condition() << "\n";
+
+        os << print_indent << "effects = " << el.get_effects() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRAxiom>& el)
+{
+    os << "FDRAxiom(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
+
+        os << print_indent << "axiom index = " << el.axiom << "\n";
+
+        os << print_indent << "body = " << el.body << "\n";
+
+        os << print_indent << "head = " << el.head << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::FDRAxiom>, C>& el)
+{
+    os << "FDRAxiom(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
+
+        os << print_indent << "axiom index = " << el.get_axiom().get_index() << "\n";
+
+        os << print_indent << "body = " << el.get_body() << "\n";
+
+        os << print_indent << "head = " << el.get_head() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRTask>& el)
+{
+    os << "FDRTask(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "name = " << el.name << "\n";
+
+        os << print_indent << "derived predicates = " << el.derived_predicates << "\n";
+
+        os << print_indent << "objects = " << el.objects << "\n";
+
+        os << print_indent << "static atoms = " << el.static_atoms << "\n";
+
+        os << print_indent << "fluent atoms = " << el.fluent_atoms << "\n";
+
+        os << print_indent << "derived atoms = " << el.derived_atoms << "\n";
+
+        os << print_indent << "static numeric variables = " << el.static_fterm_values << "\n";
+
+        os << print_indent << "fluent numeric variables = " << el.fluent_fterm_values << "\n";
+
+        os << print_indent << "auxiliary numeric variable = " << el.auxiliary_fterm_value << "\n";
+
+        os << print_indent << "goal = " << el.goal << "\n";
+
+        os << print_indent << "metric = " << el.metric << "\n";
+
+        os << print_indent << "axioms = " << el.axioms << "\n";
+
+        os << print_indent << "fluent variables = " << el.fluent_variables << "\n";
+
+        os << print_indent << "derived variables = " << el.derived_variables << "\n";
+
+        os << print_indent << "fluent facts = " << el.fluent_facts << "\n";
+
+        os << print_indent << "goal = " << el.goal << "\n";
+
+        os << print_indent << "ground actions = " << el.ground_actions << "\n";
+
+        os << print_indent << "ground axioms = " << el.ground_axioms << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<formalism::Context C>
+std::ostream& print(std::ostream& os, const View<Index<formalism::FDRTask>, C>& el)
+{
+    os << "FDRTask(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "name = " << el.get_name() << "\n";
+
+        os << print_indent << "derived predicates = " << el.get_derived_predicates() << "\n";
+
+        os << print_indent << "objects = " << el.get_objects() << "\n";
+
+        os << print_indent << "static atoms = " << el.template get_atoms<formalism::StaticTag>() << "\n";
+
+        os << print_indent << "fluent atoms = " << el.template get_atoms<formalism::FluentTag>() << "\n";
+
+        os << print_indent << "derived atoms = " << el.template get_atoms<formalism::DerivedTag>() << "\n";
+
+        os << print_indent << "static numeric variables = " << el.template get_fterm_values<formalism::StaticTag>() << "\n";
+
+        os << print_indent << "fluent numeric variables = " << el.template get_fterm_values<formalism::FluentTag>() << "\n";
+
+        os << print_indent << "auxiliary numeric variable = " << el.get_auxiliary_fterm_value() << "\n";
+
+        os << print_indent << "goal = " << el.get_goal() << "\n";
+
+        os << print_indent << "metric = " << el.get_metric() << "\n";
+
+        os << print_indent << "axioms = " << el.get_axioms() << "\n";
+
+        os << print_indent << "fluent variables = " << el.template get_variables<formalism::FluentTag>() << "\n";
+
+        os << print_indent << "derived variables = " << el.template get_variables<formalism::DerivedTag>() << "\n";
+
+        os << print_indent << "fluent facts = " << el.get_fluent_facts() << "\n";
+
+        os << print_indent << "goal = " << el.get_goal() << "\n";
+
+        os << print_indent << "ground actions = " << el.get_ground_actions() << "\n";
+
+        os << print_indent << "ground axioms = " << el.get_ground_axioms() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
 namespace formalism
 {
 inline std::ostream& operator<<(std::ostream& os, const ParameterIndex& el) { return tyr::print(os, el); }
@@ -1452,7 +2090,7 @@ std::ostream& operator<<(std::ostream& os, const View<Data<GroundNumericEffectOp
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<ConditionalEffect>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<ConditionalEffect>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<ConditionalEffect>, C>& el)
@@ -1460,7 +2098,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<ConditionalEffect>, 
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<GroundConditionalEffect>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConditionalEffect>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<GroundConditionalEffect>, C>& el)
@@ -1468,7 +2106,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<GroundConditionalEff
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<ConjunctiveEffect>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<ConjunctiveEffect>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<ConjunctiveEffect>, C>& el)
@@ -1476,7 +2114,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<ConjunctiveEffect>, 
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<GroundConjunctiveEffect>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConjunctiveEffect>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<GroundConjunctiveEffect>, C>& el)
@@ -1484,7 +2122,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<GroundConjunctiveEff
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<Action>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<Action>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<Action>, C>& el)
@@ -1492,7 +2130,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<Action>, C>& el)
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<GroundAction>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundAction>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<GroundAction>, C>& el)
@@ -1500,7 +2138,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<GroundAction>, C>& e
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<Axiom>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<Axiom>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<Axiom>, C>& el)
@@ -1508,7 +2146,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<Axiom>, C>& el)
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<GroundAxiom>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundAxiom>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<GroundAxiom>, C>& el)
@@ -1516,7 +2154,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<GroundAxiom>, C>& el
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<Metric>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<Metric>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<Metric>, C>& el)
@@ -1524,7 +2162,7 @@ std::ostream& operator<<(std::ostream& os, const View<Index<Metric>, C>& el)
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<Task>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<Task>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<Task>, C>& el)
@@ -1532,10 +2170,84 @@ std::ostream& operator<<(std::ostream& os, const View<Index<Task>, C>& el)
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<Domain>& el) { return os; }
+inline std::ostream& operator<<(std::ostream& os, const Data<Domain>& el) { return tyr::print(os, el); }
 
 template<Context C>
 std::ostream& operator<<(std::ostream& os, const View<Index<Domain>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRVariable<T>>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRVariable<T>>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const FDRValue& el) { return tyr::print(os, el); }
+
+template<FactKind T>
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRFact<T>>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<FactKind T, Context C>
+std::ostream& operator<<(std::ostream& os, const View<Data<FDRFact<T>>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRConjunctiveCondition>& el) { return tyr::print(os, el); }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRConjunctiveCondition>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRConjunctiveEffect>& el) { return tyr::print(os, el); }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRConjunctiveEffect>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRConditionalEffect>& el) { return tyr::print(os, el); }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRConditionalEffect>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRAction>& el) { return tyr::print(os, el); }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRAction>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRAxiom>& el) { return tyr::print(os, el); }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRAxiom>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRTask>& el) { return tyr::print(os, el); }
+
+template<Context C>
+std::ostream& operator<<(std::ostream& os, const View<Index<FDRTask>, C>& el)
 {
     return tyr::print(os, el);
 }

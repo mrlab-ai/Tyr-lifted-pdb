@@ -207,6 +207,18 @@ auto merge(View<Index<GroundFunctionTermValue<T>>, C_SRC> element, Builder& buil
 template<Context C_SRC, Context C_DST>
 auto merge(View<Data<FunctionExpression>, C_SRC> element, Builder& builder, C_DST& destination);
 
+template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Index<NumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination);
+
+template<FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Data<NumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination);
+
+template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Index<GroundNumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination);
+
+template<FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Data<GroundNumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination);
+
 template<Context C_SRC, Context C_DST>
 auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder, C_DST& destination);
 
@@ -290,6 +302,18 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
 
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<ConjunctiveCondition>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
+
+template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Index<NumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
+
+template<FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Data<NumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
+
+template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Index<GroundNumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
+
+template<FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Data<GroundNumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
 
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<GroundConjunctiveCondition>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
@@ -575,6 +599,54 @@ auto merge(View<Data<FunctionExpression>, C_SRC> element, Builder& builder, C_DS
             {
                 return View<Data<FunctionExpression>, C_DST>(Data<FunctionExpression>(merge(arg, builder, destination).get_index()), destination);
             }
+        },
+        element.get_variant());
+}
+
+template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Index<NumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination)
+{
+    auto numeric_effect_ptr = builder.template get_builder<NumericEffect<O, T>>();
+    auto& numeric_effect = *numeric_effect_ptr;
+    numeric_effect.clear();
+
+    numeric_effect.fterm = merge(element.get_fterm(), builder, destination).get_index();
+    numeric_effect.fexpr = merge(element.get_fexpr(), builder, destination).get_data();
+
+    canonicalize(numeric_effect);
+    return destination.get_or_create(numeric_effect, builder.get_buffer()).first;
+}
+
+template<FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Data<NumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination)
+{
+    return visit(
+        [&](auto&& arg)
+        { return View<Data<NumericEffectOperator<T>>, C_DST>(Data<NumericEffectOperator<T>>(merge(arg, builder, destination).get_index()), destination); },
+        element.get_variant());
+}
+
+template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Index<GroundNumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination)
+{
+    auto numeric_effect_ptr = builder.template get_builder<GroundNumericEffect<O, T>>();
+    auto& numeric_effect = *numeric_effect_ptr;
+    numeric_effect.clear();
+
+    numeric_effect.fterm = merge(element.get_fterm(), builder, destination).get_index();
+    numeric_effect.fexpr = merge(element.get_fexpr(), builder, destination).get_data();
+
+    canonicalize(numeric_effect);
+    return destination.get_or_create(numeric_effect, builder.get_buffer()).first;
+}
+
+template<FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Data<GroundNumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination)
+{
+    return visit(
+        [&](auto&& arg) {
+            return View<Data<GroundNumericEffectOperator<T>>, C_DST>(Data<GroundNumericEffectOperator<T>>(merge(arg, builder, destination).get_index()),
+                                                                     destination);
         },
         element.get_variant());
 }
@@ -1092,6 +1164,64 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
                 return View<Data<GroundFunctionExpression>, C_DST>(Data<GroundFunctionExpression>(merge(arg, builder, destination, cache).get_index()),
                                                                    destination);
             }
+        },
+        element.get_variant());
+}
+
+template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Index<NumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return with_cache<NumericEffect<O, T>>(element,
+                                           cache,
+                                           [&]()
+                                           {
+                                               auto numeric_effect_ptr = builder.template get_builder<NumericEffect<O, T>>();
+                                               auto& numeric_effect = *numeric_effect_ptr;
+                                               numeric_effect.clear();
+
+                                               numeric_effect.fterm = merge(element.get_fterm(), builder, destination).get_index();
+                                               numeric_effect.fexpr = merge(element.get_fexpr(), builder, destination).get_data();
+
+                                               canonicalize(numeric_effect);
+                                               return destination.get_or_create(numeric_effect, builder.get_buffer()).first;
+                                           });
+}
+
+template<FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Data<NumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return visit(
+        [&](auto&& arg)
+        { return View<Data<NumericEffectOperator<T>>, C_DST>(Data<NumericEffectOperator<T>>(merge(arg, builder, destination).get_index()), destination); },
+        element.get_variant());
+}
+
+template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Index<GroundNumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return with_cache<GroundNumericEffect<O, T>>(element,
+                                                 cache,
+                                                 [&]()
+                                                 {
+                                                     auto numeric_effect_ptr = builder.template get_builder<GroundNumericEffect<O, T>>();
+                                                     auto& numeric_effect = *numeric_effect_ptr;
+                                                     numeric_effect.clear();
+
+                                                     numeric_effect.fterm = merge(element.get_fterm(), builder, destination).get_index();
+                                                     numeric_effect.fexpr = merge(element.get_fexpr(), builder, destination).get_data();
+
+                                                     canonicalize(numeric_effect);
+                                                     return destination.get_or_create(numeric_effect, builder.get_buffer()).first;
+                                                 });
+}
+
+template<FactKind T, Context C_SRC, Context C_DST>
+auto merge(View<Data<GroundNumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return visit(
+        [&](auto&& arg) {
+            return View<Data<GroundNumericEffectOperator<T>>, C_DST>(Data<GroundNumericEffectOperator<T>>(merge(arg, builder, destination).get_index()),
+                                                                     destination);
         },
         element.get_variant());
 }
