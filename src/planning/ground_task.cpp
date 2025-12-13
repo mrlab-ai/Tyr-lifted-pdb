@@ -81,13 +81,27 @@ static auto create_fdr_conjunctive_effect(View<Index<GroundConjunctiveEffect>, O
     auto& fdr_conj_eff = *fdr_conj_eff_ptr;
     fdr_conj_eff.clear();
 
+    auto assign = UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue> {};
+
+    // 1) deletes first
     for (const auto literal : element.get_literals())
-    {
-        auto fact = fluent_variables_mapping.at(fluent_atoms_mapping.at(literal.get_atom().get_index()));
         if (!literal.get_polarity())
-            fact.value = FDRValue::none();
-        fdr_conj_eff.facts.push_back(fact);
-    }
+        {
+            const auto fact = create_fdr_fact(literal, fluent_atoms_mapping, fluent_variables_mapping);
+            assign[fact.variable] = fact.value;  // should be none()
+        }
+
+    // 2) adds second (overwrite delete)
+    for (const auto literal : element.get_literals())
+        if (literal.get_polarity())
+        {
+            const auto fact = create_fdr_fact(literal, fluent_atoms_mapping, fluent_variables_mapping);
+            assign[fact.variable] = fact.value;
+        }
+
+    // 3) materialize
+    for (const auto& [var, val] : assign)
+        fdr_conj_eff.facts.push_back(Data<FDRFact<FluentTag>>(var, val));
 
     for (const auto numeric_effect : element.get_numeric_effects())
         fdr_conj_eff.numeric_effects.push_back(merge(numeric_effect, builder, repository).get_data());
