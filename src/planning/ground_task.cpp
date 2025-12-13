@@ -27,14 +27,60 @@ using namespace tyr::formalism;
 namespace tyr::planning
 {
 
+static auto create_fdr_conjunctive_condition(View<Index<GroundConjunctiveCondition>, OverlayRepository<Repository>> element,
+                                             const UnorderedMap<Index<GroundAtom<FluentTag>>, Index<GroundAtom<FluentTag>>>& fluent_atoms_mapping,
+                                             const UnorderedMap<Index<GroundAtom<DerivedTag>>, Index<GroundAtom<DerivedTag>>>& derived_atoms_mapping,
+                                             const UnorderedMap<Index<GroundAtom<FluentTag>>, Data<FDRFact<FluentTag>>>& fluent_variables_mapping,
+                                             const UnorderedMap<Index<GroundAtom<DerivedTag>>, Data<FDRFact<DerivedTag>>>& derived_variables_mapping,
+                                             Builder& builder,
+                                             OverlayRepository<Repository>& repository)
+{
+    auto fdr_conj_cond_ptr = builder.get_builder<FDRConjunctiveCondition>();
+    auto& fdr_conj_cond = *fdr_conj_cond_ptr;
+    fdr_conj_cond.clear();
+
+    canonicalize(fdr_conj_cond);
+    return repository.get_or_create(fdr_conj_cond, builder.get_buffer()).first;
+}
+
+static auto create_fdr_action(View<Index<GroundAction>, OverlayRepository<Repository>> element,
+                              const UnorderedMap<Index<GroundAtom<FluentTag>>, Index<GroundAtom<FluentTag>>>& fluent_atoms_mapping,
+                              const UnorderedMap<Index<GroundAtom<DerivedTag>>, Index<GroundAtom<DerivedTag>>>& derived_atoms_mapping,
+                              const UnorderedMap<Index<GroundAtom<FluentTag>>, Data<FDRFact<FluentTag>>>& fluent_variables_mapping,
+                              const UnorderedMap<Index<GroundAtom<DerivedTag>>, Data<FDRFact<DerivedTag>>>& derived_variables_mapping,
+                              Builder& builder,
+                              OverlayRepository<Repository>& repository)
+{
+    auto fdr_action_ptr = builder.get_builder<FDRAction>();
+    auto& fdr_action = *fdr_action_ptr;
+    fdr_action.clear();
+
+    canonicalize(fdr_action);
+    return repository.get_or_create(fdr_action, builder.get_buffer()).first;
+}
+
+static auto create_fdr_axiom(View<Index<GroundAxiom>, OverlayRepository<Repository>> element,
+                             const UnorderedMap<Index<GroundAtom<FluentTag>>, Index<GroundAtom<FluentTag>>>& fluent_atoms_mapping,
+                             const UnorderedMap<Index<GroundAtom<DerivedTag>>, Index<GroundAtom<DerivedTag>>>& derived_atoms_mapping,
+                             const UnorderedMap<Index<GroundAtom<FluentTag>>, Data<FDRFact<FluentTag>>>& fluent_variables_mapping,
+                             const UnorderedMap<Index<GroundAtom<DerivedTag>>, Data<FDRFact<DerivedTag>>>& derived_variables_mapping,
+                             Builder& builder,
+                             OverlayRepository<Repository>& repository)
+{
+    auto fdr_axiom_ptr = builder.get_builder<FDRAxiom>();
+    auto& fdr_axiom = *fdr_axiom_ptr;
+    fdr_axiom.clear();
+
+    canonicalize(fdr_axiom);
+    return repository.get_or_create(fdr_axiom, builder.get_buffer()).first;
+}
+
 template<FactKind T>
-std::pair<IndexList<formalism::FDRVariable<T>>, UnorderedMap<Index<GroundAtom<T>>, Data<FDRFact<T>>>>
-create_fdr_variables(const std::vector<IndexList<GroundAtom<T>>>& mutexes, OverlayRepository<Repository>& repository)
+auto create_fdr_variables(const std::vector<IndexList<GroundAtom<T>>>& mutexes, Builder& builder, OverlayRepository<Repository>& repository)
 {
     auto variables = IndexList<formalism::FDRVariable<T>> {};
     auto mapping = UnorderedMap<Index<GroundAtom<T>>, Data<FDRFact<T>>> {};
 
-    auto builder = Builder();
     auto fdr_variable_ptr = builder.get_builder<FDRVariable<T>>();
     auto& fdr_variable = *fdr_variable_ptr;
 
@@ -59,16 +105,15 @@ create_fdr_variables(const std::vector<IndexList<GroundAtom<T>>>& mutexes, Overl
         }
     }
 
-    return { std::move(variables), std::move(mapping) };
+    return std::make_pair(std::move(variables), std::move(mapping));
 }
 
-View<Index<formalism::FDRTask>, formalism::OverlayRepository<formalism::Repository>>
-create_task(View<Index<Task>, OverlayRepository<Repository>> task,
-            View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> fluent_atoms,
-            View<IndexList<GroundAtom<DerivedTag>>, OverlayRepository<Repository>> derived_atoms,
-            View<IndexList<GroundAction>, OverlayRepository<Repository>> actions,
-            View<IndexList<GroundAxiom>, OverlayRepository<Repository>> axioms,
-            OverlayRepository<Repository>& repository)
+auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
+                 View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> fluent_atoms,
+                 View<IndexList<GroundAtom<DerivedTag>>, OverlayRepository<Repository>> derived_atoms,
+                 View<IndexList<GroundAction>, OverlayRepository<Repository>> actions,
+                 View<IndexList<GroundAxiom>, OverlayRepository<Repository>> axioms,
+                 OverlayRepository<Repository>& repository)
 {
     auto builder = Builder();
     auto fdr_task_ptr = builder.get_builder<FDRTask>();
@@ -115,16 +160,36 @@ create_task(View<Index<Task>, OverlayRepository<Repository>> task,
         derived_mutex_groups.push_back(IndexList<GroundAtom<DerivedTag>> { atom });
 
     /// --- Create FDR variables
-    auto [fluent_variables_, fluent_mapping_] = create_fdr_variables(fluent_mutex_groups, repository);
+    auto [fluent_variables_, fluent_variable_mapping] = create_fdr_variables(fluent_mutex_groups, builder, repository);
     fdr_task.fluent_variables = fluent_variables_;
 
-    auto [derived_variables_, derived_mapping_] = create_fdr_variables(derived_mutex_groups, repository);
+    auto [derived_variables_, derived_variable_mapping] = create_fdr_variables(derived_mutex_groups, builder, repository);
     fdr_task.derived_variables = derived_variables_;
 
-    /// --- Create fluent facts
+    /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<FluentTag>())
         if (fluent_atoms_mapping.contains(atom.get_index()))
-            fdr_task.fluent_facts.push_back(fluent_mapping_.at(fluent_atoms_mapping.at(atom.get_index())));
+            fdr_task.fluent_facts.push_back(fluent_variable_mapping.at(fluent_atoms_mapping.at(atom.get_index())));
+
+    /// --- Create FDR goal
+    fdr_task.goal = create_fdr_conjunctive_condition(task.get_goal(),
+                                                     fluent_atoms_mapping,
+                                                     derived_atoms_mapping,
+                                                     fluent_variable_mapping,
+                                                     derived_variable_mapping,
+                                                     builder,
+                                                     repository)
+                        .get_index();
+
+    /// --- Create FDR actions and axioms
+    for (const auto action : actions)
+        fdr_task.ground_actions.push_back(
+            create_fdr_action(action, fluent_atoms_mapping, derived_atoms_mapping, fluent_variable_mapping, derived_variable_mapping, builder, repository)
+                .get_index());
+    for (const auto axiom : axioms)
+        fdr_task.ground_axioms.push_back(
+            create_fdr_axiom(axiom, fluent_atoms_mapping, derived_atoms_mapping, fluent_variable_mapping, derived_variable_mapping, builder, repository)
+                .get_index());
 
     canonicalize(fdr_task);
     return repository.get_or_create(fdr_task, builder.get_buffer()).first;
