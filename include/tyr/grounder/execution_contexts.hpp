@@ -171,8 +171,6 @@ struct ThreadExecutionContext
     IndexList<formalism::Object> binding;
 
     formalism::Builder builder;
-    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::OverlayRepository<formalism::Repository>> local_merge_cache;
-    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> global_merge_cache;
 
     ThreadExecutionContext() = default;
 
@@ -192,22 +190,6 @@ struct PlanningExecutionContext
 struct ProgramResultsExecutionContext
 {
     UnorderedSet<std::pair<View<Index<formalism::Rule>, formalism::Repository>, View<Index<formalism::Binding>, formalism::Repository>>> rule_binding_pairs;
-
-    void clear() noexcept;
-};
-
-struct ProgramToTaskExecutionContext
-{
-    formalism::MergeCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> merge_cache;
-    formalism::CompileCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> compile_cache;
-
-    void clear() noexcept;
-};
-
-struct TaskToProgramExecutionContext
-{
-    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> merge_cache;
-    formalism::CompileCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> compile_cache;
 
     void clear() noexcept;
 };
@@ -235,8 +217,6 @@ struct ProgramExecutionContext
     PlanningExecutionContext planning_execution_context;
 
     ProgramResultsExecutionContext program_results_execution_context;
-    ProgramToTaskExecutionContext program_to_task_execution_context;
-    TaskToProgramExecutionContext task_to_program_execution_context;
 
     struct Statistics
     {

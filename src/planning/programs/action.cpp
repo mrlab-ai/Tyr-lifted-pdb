@@ -29,48 +29,44 @@ namespace tyr::planning
 static View<Index<formalism::Program>, formalism::Repository>
 create(const LiftedTask& task, ApplicableActionProgram::RuleToActionsMapping& rule_to_actions_mapping, formalism::Repository& repository)
 {
-    auto merge_cache = formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>();
-    auto compile_cache = formalism::CompileCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository>();
     auto builder = formalism::Builder();
     auto program_ptr = builder.get_builder<formalism::Program>();
     auto& program = *program_ptr;
     program.clear();
 
     for (const auto predicate : task.get_task().get_domain().get_predicates<formalism::StaticTag>())
-        program.static_predicates.push_back(formalism::merge(predicate, builder, repository, merge_cache).get_index());
+        program.static_predicates.push_back(formalism::merge(predicate, builder, repository).get_index());
 
     for (const auto predicate : task.get_task().get_domain().get_predicates<formalism::FluentTag>())
-        program.fluent_predicates.push_back(formalism::merge(predicate, builder, repository, merge_cache).get_index());
+        program.fluent_predicates.push_back(formalism::merge(predicate, builder, repository).get_index());
 
     for (const auto predicate : task.get_task().get_domain().get_predicates<formalism::DerivedTag>())
-        program.fluent_predicates.push_back(
-            formalism::compile<formalism::DerivedTag, formalism::FluentTag>(predicate, builder, repository, compile_cache, merge_cache).get_index());
+        program.fluent_predicates.push_back(formalism::compile<formalism::DerivedTag, formalism::FluentTag>(predicate, builder, repository).get_index());
 
     for (const auto predicate : task.get_task().get_derived_predicates())
-        program.fluent_predicates.push_back(
-            formalism::compile<formalism::DerivedTag, formalism::FluentTag>(predicate, builder, repository, compile_cache, merge_cache).get_index());
+        program.fluent_predicates.push_back(formalism::compile<formalism::DerivedTag, formalism::FluentTag>(predicate, builder, repository).get_index());
 
     for (const auto function : task.get_task().get_domain().get_functions<formalism::StaticTag>())
-        program.static_functions.push_back(formalism::merge(function, builder, repository, merge_cache).get_index());
+        program.static_functions.push_back(formalism::merge(function, builder, repository).get_index());
 
     for (const auto function : task.get_task().get_domain().get_functions<formalism::FluentTag>())
-        program.fluent_functions.push_back(formalism::merge(function, builder, repository, merge_cache).get_index());
+        program.fluent_functions.push_back(formalism::merge(function, builder, repository).get_index());
 
     // We can ignore auxiliary function total-cost because it never occurs in a condition
 
     for (const auto object : task.get_task().get_domain().get_constants())
-        program.objects.push_back(formalism::merge(object, builder, repository, merge_cache).get_index());
+        program.objects.push_back(formalism::merge(object, builder, repository).get_index());
     for (const auto object : task.get_task().get_objects())
-        program.objects.push_back(formalism::merge(object, builder, repository, merge_cache).get_index());
+        program.objects.push_back(formalism::merge(object, builder, repository).get_index());
 
     for (const auto atom : task.get_task().get_atoms<formalism::StaticTag>())
-        program.static_atoms.push_back(formalism::merge(atom, builder, repository, merge_cache).get_index());
+        program.static_atoms.push_back(formalism::merge(atom, builder, repository).get_index());
 
     for (const auto atom : task.get_task().get_atoms<formalism::FluentTag>())
-        program.fluent_atoms.push_back(formalism::merge(atom, builder, repository, merge_cache).get_index());
+        program.fluent_atoms.push_back(formalism::merge(atom, builder, repository).get_index());
 
     for (const auto fterm_value : task.get_task().get_fterm_values<formalism::StaticTag>())
-        program.static_fterm_values.push_back(formalism::merge(fterm_value, builder, repository, merge_cache).get_index());
+        program.static_fterm_values.push_back(formalism::merge(fterm_value, builder, repository).get_index());
 
     for (const auto action : task.get_task().get_domain().get_actions())
     {
@@ -96,33 +92,32 @@ create(const LiftedTask& task, ApplicableActionProgram::RuleToActionsMapping& ru
         conj_cond.clear();
 
         for (const auto variable : action.get_variables())
-            conj_cond.variables.push_back(formalism::merge(variable, builder, repository, merge_cache).get_index());
+            conj_cond.variables.push_back(formalism::merge(variable, builder, repository).get_index());
 
         for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
-            conj_cond.static_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
+            conj_cond.static_literals.push_back(formalism::merge(literal, builder, repository).get_index());
 
         for (const auto literal : action.get_condition().get_literals<formalism::FluentTag>())
-            conj_cond.fluent_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
+            conj_cond.fluent_literals.push_back(formalism::merge(literal, builder, repository).get_index());
 
         for (const auto literal : action.get_condition().get_literals<formalism::DerivedTag>())
-            conj_cond.fluent_literals.push_back(
-                formalism::compile<formalism::DerivedTag, formalism::FluentTag>(literal, builder, repository, compile_cache, merge_cache).get_index());
+            conj_cond.fluent_literals.push_back(formalism::compile<formalism::DerivedTag, formalism::FluentTag>(literal, builder, repository).get_index());
 
         for (const auto numeric_constraint : action.get_condition().get_numeric_constraints())
-            conj_cond.numeric_constraints.push_back(formalism::merge(numeric_constraint, builder, repository, merge_cache).get_data());
+            conj_cond.numeric_constraints.push_back(formalism::merge(numeric_constraint, builder, repository).get_data());
 
         for (const auto literal : action.get_condition().get_nullary_literals<formalism::StaticTag>())
-            conj_cond.static_nullary_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
+            conj_cond.static_nullary_literals.push_back(formalism::merge(literal, builder, repository).get_index());
 
         for (const auto literal : action.get_condition().get_nullary_literals<formalism::FluentTag>())
-            conj_cond.fluent_nullary_literals.push_back(formalism::merge(literal, builder, repository, merge_cache).get_index());
+            conj_cond.fluent_nullary_literals.push_back(formalism::merge(literal, builder, repository).get_index());
 
         for (const auto literal : action.get_condition().get_nullary_literals<formalism::DerivedTag>())
             conj_cond.fluent_nullary_literals.push_back(
-                formalism::compile<formalism::DerivedTag, formalism::FluentTag>(literal, builder, repository, compile_cache, merge_cache).get_index());
+                formalism::compile<formalism::DerivedTag, formalism::FluentTag>(literal, builder, repository).get_index());
 
         for (const auto numeric_constraint : action.get_condition().get_nullary_numeric_constraints())
-            conj_cond.nullary_numeric_constraints.push_back(formalism::merge(numeric_constraint, builder, repository, merge_cache).get_data());
+            conj_cond.nullary_numeric_constraints.push_back(formalism::merge(numeric_constraint, builder, repository).get_data());
 
         formalism::canonicalize(conj_cond);
         const auto new_conj_cond = repository.get_or_create(conj_cond, builder.get_buffer()).first;
