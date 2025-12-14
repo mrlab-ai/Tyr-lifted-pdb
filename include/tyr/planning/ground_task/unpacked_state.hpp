@@ -19,7 +19,10 @@
 #define TYR_PLANNING_GROUND_TASK_UNPACKED_STATE_HPP_
 
 #include "tyr/common/config.hpp"
+#include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/formalism/ground_function_term_index.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
+#include "tyr/formalism/planning/fdr_variable_index.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/unpacked_state.hpp"
 
@@ -29,54 +32,69 @@
 namespace tyr::planning
 {
 template<>
-class UnpackedState<GroundTask>
+class UnpackedState<GroundTask> : public UnpackedStateMixin<UnpackedState<GroundTask>>
 {
 public:
     using TaskType = GroundTask;
 
     UnpackedState() = default;
 
-    StateIndex& get_index() noexcept { return m_index; }
+    StateIndex get_index_impl() const { return m_index; }
+    void set_impl(StateIndex index) { m_index = index; }
 
-    StateIndex get_index() const noexcept { return m_index; }
-
-    template<formalism::FactKind T>
-    DataList<formalism::FDRFact<T>>& get_facts() noexcept
+    // Fluent facts
+    formalism::FDRValue get_impl(Index<formalism::FDRVariable<formalism::FluentTag>> index) const
     {
-        if constexpr (std::same_as<T, formalism::FluentTag>)
-            return m_fluent_facts;
-        else if constexpr (std::same_as<T, formalism::DerivedTag>)
-            return m_derived_facts;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
+        if (index.get_value() >= m_fluent_values.size())
+            return formalism::FDRValue { 0 };
+        return m_fluent_values[index.get_value()];
+    }
+    void set_impl(Data<formalism::FDRFact<formalism::FluentTag>> fact)
+    {
+        if (fact.variable.get_value() >= m_fluent_values.size())
+            m_fluent_values.resize(fact.variable.get_value() + 1, formalism::FDRValue { 0 });
+        m_fluent_values[fact.variable.get_value()] = fact.value;
     }
 
-    template<formalism::FactKind T>
-    const DataList<formalism::FDRFact<T>>& get_facts() const noexcept
+    // Derived atoms
+    bool test_impl(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const
     {
-        if constexpr (std::same_as<T, formalism::FluentTag>)
-            return m_fluent_facts;
-        else if constexpr (std::same_as<T, formalism::DerivedTag>)
-            return m_derived_facts;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
+        if (index.get_value() >= m_derived_atoms.size())
+            return false;
+        return m_derived_atoms.test(index.get_value());
+    }
+    void set_impl(Index<formalism::GroundAtom<formalism::DerivedTag>> index)
+    {
+        if (index.get_value() >= m_derived_atoms.size())
+            m_derived_atoms.resize(index.get_value() + 1, false);
+        m_derived_atoms.set(index.get_value());
     }
 
-    std::vector<float_t>& get_numeric_variables() noexcept { return m_numeric_variables; }
-
-    const std::vector<float_t>& get_numeric_variables() const noexcept { return m_numeric_variables; }
-
-    void clear()
+    // Numeric variables
+    float_t get_impl(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const
     {
-        m_fluent_facts.clear();
-        m_derived_facts.clear();
+        if (index.get_value() >= m_numeric_variables.size())
+            return std::numeric_limits<float_t>::quiet_NaN();
+        return m_numeric_variables[index.get_value()];
+    }
+    void set_impl(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value)
+    {
+        if (index.get_value() >= m_numeric_variables.size())
+            m_numeric_variables.resize(index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
+        m_numeric_variables[index.get_value()] = value;
+    }
+
+    void clear_impl()
+    {
+        m_fluent_values.clear();
+        m_derived_atoms.clear();
         m_numeric_variables.clear();
     }
 
 private:
     StateIndex m_index;
-    DataList<formalism::FDRFact<formalism::FluentTag>> m_fluent_facts;
-    DataList<formalism::FDRFact<formalism::DerivedTag>> m_derived_facts;
+    std::vector<formalism::FDRValue> m_fluent_values;
+    boost::dynamic_bitset<> m_derived_atoms;
     std::vector<float_t> m_numeric_variables;
 };
 }

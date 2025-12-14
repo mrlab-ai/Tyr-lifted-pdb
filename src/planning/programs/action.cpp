@@ -111,19 +111,6 @@ create(const LiftedTask& task, ApplicableActionProgram::RuleToActionsMapping& ru
         for (const auto numeric_constraint : action.get_condition().get_numeric_constraints())
             conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, repository, merge_cache).get_data());
 
-        for (const auto literal : action.get_condition().get_nullary_literals<StaticTag>())
-            conj_cond.static_nullary_literals.push_back(merge(literal, builder, repository, merge_cache).get_index());
-
-        for (const auto literal : action.get_condition().get_nullary_literals<FluentTag>())
-            conj_cond.fluent_nullary_literals.push_back(merge(literal, builder, repository, merge_cache).get_index());
-
-        for (const auto literal : action.get_condition().get_nullary_literals<DerivedTag>())
-            conj_cond.fluent_nullary_literals.push_back(
-                merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, builder, repository, merge_cache).get_index());
-
-        for (const auto numeric_constraint : action.get_condition().get_nullary_numeric_constraints())
-            conj_cond.nullary_numeric_constraints.push_back(merge(numeric_constraint, builder, repository, merge_cache).get_data());
-
         canonicalize(conj_cond);
         const auto new_conj_cond = repository.get_or_create(conj_cond, builder.get_buffer()).first;
 

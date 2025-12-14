@@ -40,33 +40,19 @@ struct Data<formalism::ConjunctiveCondition>
     IndexList<formalism::Literal<formalism::DerivedTag>> derived_literals;  ///< ignored in datalog.
     DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>> numeric_constraints;
 
-    // Trivially ground nullary literals and numeric constraints
-    IndexList<formalism::GroundLiteral<formalism::StaticTag>> static_nullary_literals;
-    IndexList<formalism::GroundLiteral<formalism::FluentTag>> fluent_nullary_literals;
-    IndexList<formalism::GroundLiteral<formalism::DerivedTag>> derived_nullary_literals;  ///< ignored in datalog.
-    DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> nullary_numeric_constraints;
-
     Data() = default;
     Data(Index<formalism::ConjunctiveCondition> index,
          IndexList<formalism::Variable> variables,
          IndexList<formalism::Literal<formalism::StaticTag>> static_literals,
          IndexList<formalism::Literal<formalism::FluentTag>> fluent_literals,
          IndexList<formalism::Literal<formalism::DerivedTag>> derived_literals,
-         DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>> numeric_constraints,
-         IndexList<formalism::GroundLiteral<formalism::StaticTag>> static_nullary_literals,
-         IndexList<formalism::GroundLiteral<formalism::FluentTag>> fluent_nullary_literals,
-         IndexList<formalism::GroundLiteral<formalism::DerivedTag>> derived_nullary_literals,
-         DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> nullary_numeric_constraints) :
+         DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>> numeric_constraints) :
         index(index),
         variables(std::move(variables)),
         static_literals(std::move(static_literals)),
         fluent_literals(std::move(fluent_literals)),
         derived_literals(std::move(derived_literals)),
-        numeric_constraints(std::move(numeric_constraints)),
-        static_nullary_literals(std::move(static_nullary_literals)),
-        fluent_nullary_literals(std::move(fluent_nullary_literals)),
-        derived_nullary_literals(std::move(derived_nullary_literals)),
-        nullary_numeric_constraints(std::move(nullary_numeric_constraints))
+        numeric_constraints(std::move(numeric_constraints))
     {
     }
     Data(const Data& other) = delete;
@@ -82,10 +68,6 @@ struct Data<formalism::ConjunctiveCondition>
         tyr::clear(fluent_literals);
         tyr::clear(derived_literals);
         tyr::clear(numeric_constraints);
-        tyr::clear(static_nullary_literals);
-        tyr::clear(fluent_nullary_literals);
-        tyr::clear(derived_nullary_literals);
-        tyr::clear(nullary_numeric_constraints);
     }
 
     template<formalism::FactKind T>
@@ -101,32 +83,7 @@ struct Data<formalism::ConjunctiveCondition>
             static_assert(dependent_false<T>::value, "Missing case");
     }
 
-    template<formalism::FactKind T>
-    const auto& get_nullary_literals() const
-    {
-        if constexpr (std::same_as<T, formalism::StaticTag>)
-            return static_nullary_literals;
-        else if constexpr (std::same_as<T, formalism::FluentTag>)
-            return fluent_nullary_literals;
-        else if constexpr (std::same_as<T, formalism::DerivedTag>)
-            return derived_nullary_literals;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-    auto cista_members() const noexcept
-    {
-        return std::tie(index,
-                        variables,
-                        static_literals,
-                        fluent_literals,
-                        derived_literals,
-                        numeric_constraints,
-                        static_nullary_literals,
-                        fluent_nullary_literals,
-                        derived_nullary_literals,
-                        nullary_numeric_constraints);
-    }
+    auto cista_members() const noexcept { return std::tie(index, variables, static_literals, fluent_literals, derived_literals, numeric_constraints); }
     auto identifying_members() const noexcept { return std::tie(variables, static_literals, fluent_literals, derived_literals, numeric_constraints); }
 };
 }

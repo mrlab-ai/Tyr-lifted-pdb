@@ -23,7 +23,7 @@
 #include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground.hpp"
+#include "tyr/formalism/grounder_planning.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
@@ -47,13 +47,13 @@ using IndexAtomVariant =
 using IndexLiteralVariant = std::
     variant<Index<formalism::Literal<formalism::StaticTag>>, Index<formalism::Literal<formalism::FluentTag>>, Index<formalism::Literal<formalism::DerivedTag>>>;
 
-using IndexGroundAtomVariant = std::variant<Index<formalism::GroundAtom<formalism::StaticTag>>,
-                                            Index<formalism::GroundAtom<formalism::FluentTag>>,
-                                            Index<formalism::GroundAtom<formalism::DerivedTag>>>;
+using IndexGroundAtomOrFactVariant = std::variant<Index<formalism::GroundAtom<formalism::StaticTag>>,
+                                                  Data<formalism::FDRFact<formalism::FluentTag>>,
+                                                  Index<formalism::GroundAtom<formalism::DerivedTag>>>;
 
-using IndexGroundLiteralVariant = std::variant<Index<formalism::GroundLiteral<formalism::StaticTag>>,
-                                               Index<formalism::GroundLiteral<formalism::FluentTag>>,
-                                               Index<formalism::GroundLiteral<formalism::DerivedTag>>>;
+using IndexGroundLiteralOrFactVariant = std::variant<Index<formalism::GroundLiteral<formalism::StaticTag>>,
+                                                     Data<formalism::FDRFact<formalism::FluentTag>>,
+                                                     Index<formalism::GroundLiteral<formalism::DerivedTag>>>;
 
 using IndexFunctionVariant = std::variant<Index<formalism::Function<formalism::StaticTag>>,
                                           Index<formalism::Function<formalism::FluentTag>>,
@@ -662,29 +662,6 @@ private:
                 index_literal_variant);
         };
 
-        const auto func_ground_and_insert_nullary_literal = [&](IndexLiteralVariant index_literal_variant,
-                                                                View<IndexList<formalism::Object>, C> binding,
-                                                                IndexList<formalism::GroundLiteral<formalism::StaticTag>>& static_literals,
-                                                                IndexList<formalism::GroundLiteral<formalism::FluentTag>>& fluent_literals,
-                                                                IndexList<formalism::GroundLiteral<formalism::DerivedTag>>& derived_literals)
-        {
-            std::visit(
-                [&](auto&& arg)
-                {
-                    using T = std::decay_t<decltype(arg)>;
-
-                    if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::StaticTag>>>)
-                        static_literals.push_back(formalism::ground(View<T, C>(arg, context), binding, builder, context).get_index());
-                    else if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::FluentTag>>>)
-                        fluent_literals.push_back(formalism::ground(View<T, C>(arg, context), binding, builder, context).get_index());
-                    else if constexpr (std::is_same_v<T, Index<formalism::Literal<formalism::DerivedTag>>>)
-                        derived_literals.push_back(formalism::ground(View<T, C>(arg, context), binding, builder, context).get_index());
-                    else
-                        static_assert(dependent_false<T>::value, "Missing case for type");
-                },
-                index_literal_variant);
-        };
-
         return std::visit(
             [&](auto&& condition) -> Index<formalism::ConjunctiveCondition>
             {
@@ -707,30 +684,12 @@ private:
                                                         conj_condition.static_literals,
                                                         conj_condition.fluent_literals,
                                                         conj_condition.derived_literals);
-
-                                    if (ArityVisitor().get(part) == 0)
-                                    {
-                                        auto binding = IndexList<formalism::Object> {};
-                                        func_ground_and_insert_nullary_literal(index_literal_variant,
-                                                                               make_view(binding, context),
-                                                                               conj_condition.static_nullary_literals,
-                                                                               conj_condition.fluent_nullary_literals,
-                                                                               conj_condition.derived_nullary_literals);
-                                    }
                                 }
                                 else if constexpr (std::is_same_v<SubConditionT, loki::ConditionNumericConstraint>)
                                 {
                                     const auto numeric_constraint = translate_lifted(subcondition, builder, context);
 
                                     conj_condition.numeric_constraints.push_back(numeric_constraint);
-
-                                    if (ArityVisitor().get(part) == 0)
-                                    {
-                                        auto binding = IndexList<formalism::Object> {};
-                                        conj_condition.nullary_numeric_constraints.push_back(
-                                            formalism::ground(make_view(numeric_constraint, context), make_view(binding, context), builder, context)
-                                                .get_data());
-                                    }
                                 }
                                 else
                                 {
@@ -750,16 +709,6 @@ private:
 
                     func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
 
-                    if (ArityVisitor().get(element) == 0)
-                    {
-                        auto binding = IndexList<formalism::Object> {};
-                        func_ground_and_insert_nullary_literal(index_literal_variant,
-                                                               make_view(binding, context),
-                                                               conj_condition.static_nullary_literals,
-                                                               conj_condition.fluent_nullary_literals,
-                                                               conj_condition.derived_nullary_literals);
-                    }
-
                     formalism::canonicalize(conj_condition);
                     return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
                 }
@@ -768,13 +717,6 @@ private:
                     const auto numeric_constraint = translate_lifted(condition, builder, context);
 
                     conj_condition.numeric_constraints.push_back(numeric_constraint);
-
-                    if (ArityVisitor().get(element) == 0)
-                    {
-                        auto binding = IndexList<formalism::Object> {};
-                        conj_condition.nullary_numeric_constraints.push_back(
-                            formalism::ground(make_view(numeric_constraint, context), make_view(binding, context), builder, context).get_data());
-                    }
 
                     formalism::canonicalize(conj_condition);
                     return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();
@@ -1167,11 +1109,11 @@ private:
     }
 
     template<formalism::Context C>
-    IndexGroundAtomVariant translate_grounded(loki::Atom element, formalism::Builder& builder, C& context)
+    IndexGroundAtomOrFactVariant translate_grounded(loki::Atom element, formalism::Builder& builder, C& context)
     {
         auto index_predicate_variant = translate_common(element->get_predicate(), builder, context);
 
-        auto build_atom = [&](auto fact_tag, auto predicate_index) -> IndexGroundAtomVariant
+        auto build_atom = [&](auto fact_tag, auto predicate_index) -> IndexGroundAtomOrFactVariant
         {
             using Tag = std::decay_t<decltype(fact_tag)>;
 
@@ -1184,14 +1126,43 @@ private:
             return context.get_or_create(atom, builder.get_buffer()).first.get_index();
         };
 
+        auto build_fact = [&](auto fact_tag, auto predicate_index) -> IndexGroundAtomOrFactVariant
+        {
+            using Tag = std::decay_t<decltype(fact_tag)>;
+
+            auto atom_ptr = builder.template get_builder<formalism::GroundAtom<Tag>>();
+            auto& atom = *atom_ptr;
+            atom.clear();
+            atom.predicate = predicate_index;
+            atom.binding = to_binding(this->translate_grounded(element->get_terms(), builder, context), builder, context);
+            formalism::canonicalize(atom);
+            const auto [new_atom, new_atom_inserted] = context.get_or_create(atom, builder.get_buffer());
+
+            if (new_atom_inserted)
+            {
+                const auto [new_variable, new_variable_inserted] = create_fdr_variable(new_atom, builder, context);
+
+                assert(new_variable_inserted);
+                assert(new_atom.get_index().get_value() == new_variable.get_index().get_value());
+            }
+            else
+            {
+                // Invariant check: ensure that a corresponding FDR variable exists
+                assert(!create_fdr_variable(new_atom, builder, context).second);
+            }
+
+            return Data<formalism::FDRFact<formalism::FluentTag>>(Index<formalism::FDRVariable<formalism::FluentTag>>(new_atom.get_index().get_value()),
+                                                                  formalism::FDRValue { 1 });
+        };
+
         return std::visit(
-            [&](auto&& arg) -> IndexGroundAtomVariant
+            [&](auto&& arg) -> IndexGroundAtomOrFactVariant
             {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::StaticTag>>>)
                     return build_atom(formalism::StaticTag {}, arg);
                 else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::FluentTag>>>)
-                    return build_atom(formalism::FluentTag {}, arg);
+                    return build_fact(formalism::FluentTag {}, arg);
                 else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::DerivedTag>>>)
                     return build_atom(formalism::DerivedTag {}, arg);
                 else
@@ -1201,11 +1172,11 @@ private:
     }
 
     template<formalism::Context C>
-    IndexGroundLiteralVariant translate_grounded(loki::Literal element, formalism::Builder& builder, C& context)
+    IndexGroundLiteralOrFactVariant translate_grounded(loki::Literal element, formalism::Builder& builder, C& context)
     {
-        auto index_atom_variant = translate_grounded(element->get_atom(), builder, context);
+        auto index_atom_or_fact_variant = translate_grounded(element->get_atom(), builder, context);
 
-        auto build_literal = [&](auto fact_tag, auto atom_index) -> IndexGroundLiteralVariant
+        auto build_literal = [&](auto fact_tag, auto atom_index) -> IndexGroundLiteralOrFactVariant
         {
             using Tag = std::decay_t<decltype(fact_tag)>;
 
@@ -1218,20 +1189,28 @@ private:
             return context.get_or_create(literal, builder.get_buffer()).first.get_index();
         };
 
+        auto build_fact = [&](auto fact_tag, auto fact) -> IndexGroundLiteralOrFactVariant
+        {
+            if (!element->get_polarity())
+                fact.value = formalism::FDRValue { 0 };
+
+            return fact;
+        };
+
         return std::visit(
-            [&](auto&& arg) -> IndexGroundLiteralVariant
+            [&](auto&& arg) -> IndexGroundLiteralOrFactVariant
             {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, Index<formalism::GroundAtom<formalism::StaticTag>>>)
                     return build_literal(formalism::StaticTag {}, arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::GroundAtom<formalism::FluentTag>>>)
-                    return build_literal(formalism::FluentTag {}, arg);
+                else if constexpr (std::is_same_v<T, Data<formalism::FDRFact<formalism::FluentTag>>>)
+                    return build_fact(formalism::FluentTag {}, arg);
                 else if constexpr (std::is_same_v<T, Index<formalism::GroundAtom<formalism::DerivedTag>>>)
                     return build_literal(formalism::DerivedTag {}, arg);
                 else
                     static_assert(dependent_false<T>::value, "Missing case for type");
             },
-            index_atom_variant);
+            index_atom_or_fact_variant);
     }
 
     template<formalism::Context C>
@@ -1446,15 +1425,15 @@ private:
     }
 
     template<formalism::Context C>
-    Index<formalism::GroundConjunctiveCondition> translate_grounded(loki::Condition element, formalism::Builder& builder, C& context)
+    Index<formalism::GroundFDRConjunctiveCondition> translate_grounded(loki::Condition element, formalism::Builder& builder, C& context)
     {
-        auto conj_condition_ptr = builder.template get_builder<formalism::GroundConjunctiveCondition>();
+        auto conj_condition_ptr = builder.template get_builder<formalism::GroundFDRConjunctiveCondition>();
         auto& conj_condition = *conj_condition_ptr;
         conj_condition.clear();
 
-        const auto func_insert_literal = [](IndexGroundLiteralVariant index_literal_variant,
+        const auto func_insert_literal = [](IndexGroundLiteralOrFactVariant index_literal_variant,
                                             IndexList<formalism::GroundLiteral<formalism::StaticTag>>& static_literals,
-                                            IndexList<formalism::GroundLiteral<formalism::FluentTag>>& fluent_literals,
+                                            DataList<formalism::FDRFact<formalism::FluentTag>>& fluent_facts,
                                             IndexList<formalism::GroundLiteral<formalism::DerivedTag>>& derived_literals)
         {
             std::visit(
@@ -1464,8 +1443,8 @@ private:
 
                     if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::StaticTag>>>)
                         static_literals.push_back(literal_index);
-                    else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::FluentTag>>>)
-                        fluent_literals.push_back(literal_index);
+                    else if constexpr (std::is_same_v<T, Data<formalism::FDRFact<formalism::FluentTag>>>)
+                        fluent_facts.push_back(literal_index);
                     else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::DerivedTag>>>)
                         derived_literals.push_back(literal_index);
                     else
@@ -1475,7 +1454,7 @@ private:
         };
 
         return std::visit(
-            [&](auto&& condition) -> Index<formalism::GroundConjunctiveCondition>
+            [&](auto&& condition) -> Index<formalism::GroundFDRConjunctiveCondition>
             {
                 using ConditionT = std::decay_t<decltype(condition)>;
 
@@ -1494,7 +1473,7 @@ private:
 
                                     func_insert_literal(index_literal_variant,
                                                         conj_condition.static_literals,
-                                                        conj_condition.fluent_literals,
+                                                        conj_condition.fluent_facts,
                                                         conj_condition.derived_literals);
                                 }
                                 else if constexpr (std::is_same_v<SubConditionT, loki::ConditionNumericConstraint>)
@@ -1519,7 +1498,7 @@ private:
                 {
                     const auto index_literal_variant = translate_grounded(condition->get_literal(), builder, context);
 
-                    func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_literals, conj_condition.derived_literals);
+                    func_insert_literal(index_literal_variant, conj_condition.static_literals, conj_condition.fluent_facts, conj_condition.derived_literals);
 
                     formalism::canonicalize(conj_condition);
                     return context.get_or_create(conj_condition, builder.get_buffer()).first.get_index();

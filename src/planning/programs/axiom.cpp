@@ -45,19 +45,6 @@ static void process_axiom_body(View<Index<ConjunctiveCondition>, OverlayReposito
 
     for (const auto numeric_constraint : axiom_body.get_numeric_constraints())
         conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, repository, merge_cache).get_data());
-
-    for (const auto literal : axiom_body.get_nullary_literals<StaticTag>())
-        conj_cond.static_nullary_literals.push_back(merge(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto literal : axiom_body.get_nullary_literals<FluentTag>())
-        conj_cond.fluent_nullary_literals.push_back(merge(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto literal : axiom_body.get_nullary_literals<DerivedTag>())
-        conj_cond.fluent_nullary_literals.push_back(
-            merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto numeric_constraint : axiom_body.get_nullary_numeric_constraints())
-        conj_cond.nullary_numeric_constraints.push_back(merge(numeric_constraint, builder, repository, merge_cache).get_data());
 }
 
 View<Index<Rule>, Repository> static create_axiom_rule(View<Index<Axiom>, OverlayRepository<Repository>> axiom,

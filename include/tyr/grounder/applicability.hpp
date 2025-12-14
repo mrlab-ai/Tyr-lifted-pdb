@@ -181,6 +181,31 @@ bool is_applicable(View<IndexList<formalism::GroundLiteral<T>>, C> elements, con
 }
 
 template<formalism::Context C>
+bool is_applicable(View<Data<formalism::FDRFact<formalism::FluentTag>>, C> element, const FactsView& facts_view)
+{
+    const auto variable = element.get_variable();
+    const auto atoms = variable.get_atoms();
+    const auto active_value = element.get_value();
+
+    // Domain value 0 is the "none selected" case → all atoms are false
+    for (uint_t i = 1; i < variable.get_domain_size(); ++i)
+    {
+        const auto value = formalism::FDRValue(i);
+        const bool in_facts = facts_view.template contains<formalism::FluentTag>(atoms[i].get_index());
+
+        if (in_facts != (value == active_value))
+            return false;
+    }
+    return true;
+}
+
+template<formalism::Context C>
+bool is_applicable(View<DataList<formalism::FDRFact<formalism::FluentTag>>, C> elements, const FactsView& facts_view)
+{
+    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, facts_view); });
+}
+
+template<formalism::Context C>
 bool is_applicable(View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C> elements, const FactsView& facts_view)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return evaluate(arg, facts_view); });
@@ -251,6 +276,17 @@ bool is_applicable(View<Index<formalism::GroundConjunctiveCondition>, C> element
            && is_applicable(element.get_numeric_constraints(), facts_view);
 }
 
+// GroundFDRConjunctiveCondition
+
+template<formalism::Context C>
+bool is_applicable(View<Index<formalism::GroundFDRConjunctiveCondition>, C> element, const FactsView& facts_view)
+{
+    return is_applicable(element.template get_facts<formalism::StaticTag>(), facts_view)      //
+           && is_applicable(element.template get_facts<formalism::FluentTag>(), facts_view)   //
+           && is_applicable(element.template get_facts<formalism::DerivedTag>(), facts_view)  //
+           && is_applicable(element.get_numeric_constraints(), facts_view);
+}
+
 // GroundRule
 
 template<formalism::Context C>
@@ -312,6 +348,12 @@ bool is_statically_applicable(View<Index<formalism::GroundConjunctiveCondition>,
     return is_applicable(element.template get_literals<formalism::StaticTag>(), facts_view);
 }
 
+template<formalism::Context C>
+bool is_statically_applicable(View<Index<formalism::GroundFDRConjunctiveCondition>, C> element, const FactsView& facts_view)
+{
+    return is_applicable(element.template get_facts<formalism::StaticTag>(), facts_view);
+}
+
 // GroundRule
 
 template<formalism::Context C>
@@ -336,18 +378,6 @@ bool is_statically_applicable(View<Index<formalism::GroundAxiom>, C> element, co
     return is_statically_applicable(element.get_body(), facts_view);
 }
 
-/**
- * nullary_conditions_hold
- */
-
-template<formalism::Context C>
-bool nullary_conditions_hold(View<Index<formalism::ConjunctiveCondition>, C> condition, const FactsView& facts_view) noexcept
-{
-    return is_applicable(condition.template get_nullary_literals<formalism::StaticTag>(), facts_view)
-           && is_applicable(condition.template get_nullary_literals<formalism::FluentTag>(), facts_view)
-           && is_applicable(condition.template get_nullary_literals<formalism::DerivedTag>(), facts_view)
-           && is_applicable(condition.get_nullary_numeric_constraints(), facts_view);
-}
 }
 
 #endif

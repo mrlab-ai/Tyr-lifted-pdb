@@ -22,7 +22,7 @@
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/ground.hpp"
+#include "tyr/formalism/grounder_planning.hpp"
 #include "tyr/formalism/merge.hpp"
 #include "tyr/grounder/applicability.hpp"
 #include "tyr/grounder/consistency_graph.hpp"
@@ -155,7 +155,7 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
 
         atom_builder.predicate = axiom_program.get_predicate_to_predicate_mapping().at(rule.get_head().get_predicate()).get_index();
         atom_builder.binding =
-            to_binding(make_view(program_binding.get_objects().get_data(), task_repository), axiom_context.builder, task_repository).get_index();
+            merge(program_binding, axiom_context.builder, task_repository, axiom_context.program_to_task_execution_context.merge_cache).get_index();
 
         canonicalize(atom_builder);
         const auto derived_atom = task_repository.get_or_create(atom_builder, axiom_context.builder.get_buffer()).first;
@@ -186,12 +186,13 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
         {
             const auto action_index = action.get_index().get_value();
 
-            const auto ground_action = ground(action,
-                                              make_view(program_binding.get_objects().get_data(), task_repository),
-                                              binding_full,
-                                              parameter_domains_per_cond_effect_per_action[action_index],
-                                              action_context.builder,
-                                              task_repository);
+            const auto ground_action = ground_planning(action,
+                                                       make_view(program_binding.get_objects().get_data(), task_repository),
+                                                       binding_full,
+                                                       parameter_domains_per_cond_effect_per_action[action_index],
+                                                       action_context.assign,
+                                                       action_context.builder,
+                                                       task_repository);
 
             effect_families.clear();
             if (grounder::is_applicable(ground_action, facts_view, effect_families))
@@ -499,77 +500,9 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
 
-    for (const auto& [rule, program_binding] : ground_context.program_results_execution_context.rule_binding_pairs)
-    {
-        if (m_ground_program.get_rule_to_actions_mapping().contains(rule))
-        {
-            for (const auto action : m_ground_program.get_rule_to_actions_mapping().at(rule))
-            {
-                const auto action_index = action.get_index().get_value();
-
-                const auto ground_action = ground(action,
-                                                  make_view(program_binding.get_objects().get_data(), *this->m_overlay_repository),
-                                                  binding_full,
-                                                  m_parameter_domains_per_cond_effect_per_action[action_index],
-                                                  ground_context.builder,
-                                                  *this->m_overlay_repository);
-
-                if (is_statically_applicable(ground_action, facts_view))
-                {
-                    ground_actions_set.insert(ground_action.get_index());
-
-                    for (const auto literal : ground_action.get_condition().get_literals<FluentTag>())
-                        fluent_atoms_set.insert(literal.get_atom().get_index());
-
-                    for (const auto literal : ground_action.get_condition().get_literals<DerivedTag>())
-                        derived_atoms_set.insert(literal.get_atom().get_index());
-
-                    for (const auto cond_effect : ground_action.get_effects())
-                    {
-                        for (const auto literal : cond_effect.get_condition().get_literals<FluentTag>())
-                            fluent_atoms_set.insert(literal.get_atom().get_index());
-
-                        for (const auto literal : cond_effect.get_condition().get_literals<DerivedTag>())
-                            derived_atoms_set.insert(literal.get_atom().get_index());
-
-                        for (const auto literal : cond_effect.get_effect().get_literals())
-                            fluent_atoms_set.insert(literal.get_atom().get_index());
-                    }
-                }
-            }
-        }
-    }
-
     /// --- Ground Axioms
 
     auto ground_axioms_set = UnorderedSet<Index<GroundAxiom>> {};
-
-    for (const auto& [rule, program_binding] : ground_context.program_results_execution_context.rule_binding_pairs)
-    {
-        if (m_ground_program.get_rule_to_axioms_mapping().contains(rule))
-        {
-            for (const auto axiom : m_ground_program.get_rule_to_axioms_mapping().at(rule))
-            {
-                const auto ground_axiom = ground(axiom,
-                                                 make_view(program_binding.get_objects().get_data(), *this->m_overlay_repository),
-                                                 ground_context.builder,
-                                                 *this->m_overlay_repository);
-
-                if (is_statically_applicable(ground_axiom, facts_view))
-                {
-                    ground_axioms_set.insert(ground_axiom.get_index());
-
-                    for (const auto literal : ground_axiom.get_body().get_literals<FluentTag>())
-                        fluent_atoms_set.insert(literal.get_atom().get_index());
-
-                    for (const auto literal : ground_axiom.get_body().get_literals<DerivedTag>())
-                        derived_atoms_set.insert(literal.get_atom().get_index());
-
-                    derived_atoms_set.insert(ground_axiom.get_head().get_index());
-                }
-            }
-        }
-    }
 
     auto fluent_atoms = IndexList<GroundAtom<FluentTag>>(fluent_atoms_set.begin(), fluent_atoms_set.end());
     auto derived_atoms = IndexList<GroundAtom<DerivedTag>>(derived_atoms_set.begin(), derived_atoms_set.end());

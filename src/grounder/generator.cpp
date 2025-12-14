@@ -18,7 +18,7 @@
 #include "tyr/grounder/generator.hpp"
 
 #include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/ground.hpp"
+#include "tyr/formalism/grounder_datalog.hpp"
 #include "tyr/formalism/merge.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -44,16 +44,14 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
 
     const auto fact_sets_adapter = FactsView(fact_execution_context.fact_sets);
 
-    auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
-
-    const auto merge_binding = formalism::merge(ground_rule.get_binding(),
-                                                thread_execution_context.builder,
-                                                *rule_stage_execution_context.repository,
-                                                thread_execution_context.merge_cache);
+    const auto merge_binding =
+        formalism::merge(binding, thread_execution_context.builder, *rule_stage_execution_context.repository, thread_execution_context.merge_cache);
 
     if (!rule_stage_execution_context.bindings.contains(merge_binding))
     {
         rule_stage_execution_context.bindings.insert(merge_binding);
+
+        auto ground_rule = formalism::ground_datalog(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 
         if (is_applicable(ground_rule, fact_sets_adapter))
         {
@@ -82,16 +80,15 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
 
         const auto binding = make_view(thread_execution_context.binding, rule_execution_context.repository);
 
-        auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
-
-        const auto merge_binding = formalism::merge(ground_rule.get_binding(),
-                                                    thread_execution_context.builder,
-                                                    *rule_stage_execution_context.repository,
-                                                    thread_execution_context.merge_cache);
+        const auto merge_binding =
+            formalism::merge(binding, thread_execution_context.builder, *rule_stage_execution_context.repository, thread_execution_context.merge_cache);
 
         if (!rule_stage_execution_context.bindings.contains(merge_binding))
         {
             rule_stage_execution_context.bindings.insert(merge_binding);
+
+            auto ground_rule =
+                formalism::ground_datalog(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 
             if (is_applicable(ground_rule, fact_sets_adapter))
             {
@@ -127,16 +124,15 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
 
             const auto binding = make_view(thread_execution_context.binding, rule_execution_context.repository);
 
-            auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
-
-            const auto merge_binding = formalism::merge(ground_rule.get_binding(),
-                                                        thread_execution_context.builder,
-                                                        *rule_stage_execution_context.repository,
-                                                        thread_execution_context.merge_cache);
+            const auto merge_binding =
+                formalism::merge(binding, thread_execution_context.builder, *rule_stage_execution_context.repository, thread_execution_context.merge_cache);
 
             if (!rule_stage_execution_context.bindings.contains(merge_binding))
             {
                 rule_stage_execution_context.bindings.insert(merge_binding);
+
+                auto ground_rule =
+                    formalism::ground_datalog(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 
                 if (is_applicable(ground_rule, fact_sets_adapter))
                 {
@@ -156,8 +152,9 @@ void ground(const FactsExecutionContext& fact_execution_context,
     const auto rule = rule_execution_context.rule;
     const auto& fact_sets = fact_execution_context.fact_sets;
 
-    if (!nullary_conditions_hold(rule.get_body(), fact_sets))
-        return;
+    // TODO: readd this. create a ground fdr conjunctive condition in the rule execution context
+    // if (!nullary_conditions_hold(rule.get_body(), fact_sets))
+    //    return;
 
     const auto arity = rule.get_body().get_arity();
 

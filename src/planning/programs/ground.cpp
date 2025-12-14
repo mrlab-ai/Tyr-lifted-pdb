@@ -47,19 +47,6 @@ void append_from_condition(View<Index<ConjunctiveCondition>, OverlayRepository<R
         if (literal.get_polarity())
             conj_cond.fluent_literals.push_back(
                 merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto literal : cond.template get_nullary_literals<StaticTag>())
-        if (literal.get_polarity())
-            conj_cond.static_nullary_literals.push_back(merge(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto literal : cond.template get_nullary_literals<FluentTag>())
-        if (literal.get_polarity())
-            conj_cond.fluent_nullary_literals.push_back(merge(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto literal : cond.template get_nullary_literals<DerivedTag>())
-        if (literal.get_polarity())
-            conj_cond.fluent_nullary_literals.push_back(
-                merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, builder, repository, merge_cache).get_index());
 };
 
 static View<Index<ConjunctiveCondition>, Repository> make_delete_free_body(View<Index<Action>, OverlayRepository<Repository>> action,
@@ -206,19 +193,6 @@ static void process_delete_free_axiom_body(View<Index<ConjunctiveCondition>, Ove
     for (const auto literal : axiom_body.get_literals<DerivedTag>())
         if (literal.get_polarity())
             conj_cond.fluent_literals.push_back(
-                merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto literal : axiom_body.get_nullary_literals<StaticTag>())
-        if (literal.get_polarity())
-            conj_cond.static_nullary_literals.push_back(merge(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto literal : axiom_body.get_nullary_literals<FluentTag>())
-        if (literal.get_polarity())
-            conj_cond.fluent_nullary_literals.push_back(merge(literal, builder, repository, merge_cache).get_index());
-
-    for (const auto literal : axiom_body.get_nullary_literals<DerivedTag>())
-        if (literal.get_polarity())
-            conj_cond.fluent_nullary_literals.push_back(
                 merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, builder, repository, merge_cache).get_index());
 }
 

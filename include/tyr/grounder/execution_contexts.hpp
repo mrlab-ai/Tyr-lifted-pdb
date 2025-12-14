@@ -222,6 +222,8 @@ struct ProgramExecutionContext
     /// --- Builder
     formalism::Builder builder;
 
+    UnorderedMap<Index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue> assign;
+
     /// --- Execution contexts
     FactsExecutionContext facts_execution_context;
 

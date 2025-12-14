@@ -132,7 +132,8 @@ private:
                                     MapEntryType<GroundAxiom>,
                                     MapEntryType<Metric>,
                                     MapEntryType<Domain>,
-                                    MapEntryType<Task>>;
+                                    MapEntryType<Task>,
+                                    MapEntryType<FDRVariable<FluentTag>>>;
 
     MergeStorage m_maps;
 
@@ -400,6 +401,19 @@ auto merge(View<Index<Binding>, C_SRC> element, Builder& builder, C_DST& destina
                                             canonicalize(binding);
                                             return destination.get_or_create(binding, builder.get_buffer()).first;
                                         });
+}
+
+template<Context C_SRC, Context C_DST>
+View<Index<Binding>, C_DST> merge(View<IndexList<Object>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    auto binding_ptr = builder.template get_builder<Binding>();
+    auto& binding = *binding_ptr;
+    binding.clear();
+
+    binding.objects = element.get_data();
+
+    canonicalize(binding);
+    return destination.get_or_create(binding, builder.get_buffer()).first;
 }
 
 template<Context C_SRC, Context C_DST>
@@ -725,14 +739,6 @@ auto merge(View<Index<ConjunctiveCondition>, C_SRC> element, Builder& builder, C
                 conj_cond.derived_literals.push_back(merge(literal, builder, destination, cache).get_index());
             for (const auto numeric_constraint : element.get_numeric_constraints())
                 conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, destination, cache).get_data());
-            for (const auto literal : element.template get_nullary_literals<StaticTag>())
-                conj_cond.static_nullary_literals.push_back(merge(literal, builder, destination, cache).get_index());
-            for (const auto literal : element.template get_nullary_literals<FluentTag>())
-                conj_cond.fluent_nullary_literals.push_back(merge(literal, builder, destination, cache).get_index());
-            for (const auto literal : element.template get_nullary_literals<DerivedTag>())
-                conj_cond.derived_nullary_literals.push_back(merge(literal, builder, destination, cache).get_index());
-            for (const auto numeric_constraint : element.get_nullary_numeric_constraints())
-                conj_cond.nullary_numeric_constraints.push_back(merge(numeric_constraint, builder, destination, cache).get_data());
 
             canonicalize(conj_cond);
             return destination.get_or_create(conj_cond, builder.get_buffer()).first;
@@ -766,6 +772,32 @@ auto merge(View<Index<GroundConjunctiveCondition>, C_SRC> element, Builder& buil
 }
 
 template<Context C_SRC, Context C_DST>
+auto merge(View<Index<FDRVariable<FluentTag>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return with_cache<FDRVariable<FluentTag>, FDRVariable<FluentTag>>(element,
+                                                                      cache,
+                                                                      [&]()
+                                                                      {
+                                                                          auto variable_ptr = builder.get_builder<FDRVariable<FluentTag>>();
+                                                                          auto& variable = *variable_ptr;
+                                                                          variable.clear();
+
+                                                                          variable.domain_size = element.get_domain_size();
+                                                                          for (const auto atom : element.get_atoms())
+                                                                              variable.atoms.push_back(merge(atom, builder, destination).get_index());
+
+                                                                          canonicalize(variable);
+                                                                          return destination.get_or_create(variable, builder.get_buffer()).first;
+                                                                      });
+}
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Data<FDRFact<FluentTag>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return make_view(Data<FDRFact<FluentTag>>(merge(element.get_variable(), builder, destination, cache).get_index(), element.get_value()), destination);
+}
+
+template<Context C_SRC, Context C_DST>
 auto merge(View<Index<Rule>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
 {
     return with_cache<Rule, Rule>(element,
@@ -796,7 +828,6 @@ auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& dest
                                                   rule.clear();
 
                                                   rule.rule = element.get_rule().get_index();
-                                                  rule.binding = merge(element.get_binding(), builder, destination, cache).get_index();
                                                   rule.body = merge(element.get_body(), builder, destination, cache).get_index();
                                                   rule.head = merge(element.get_head(), builder, destination, cache).get_index();
 

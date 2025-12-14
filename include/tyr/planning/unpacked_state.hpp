@@ -21,16 +21,39 @@
 #include "tyr/common/config.hpp"
 #include "tyr/common/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/planning/state_index.hpp"
 
 #include <concepts>
 
 namespace tyr::planning
 {
-template<typename T>
-concept UnpackedStateConcept = requires(T state) {
-    typename T::TaskType;
-    { state.get_index() } -> std::same_as<StateIndex&>;
+
+template<typename Derived>
+class UnpackedStateMixin
+{
+private:
+    /// @brief Helper to cast to Derived.
+    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
+    constexpr auto& self() { return static_cast<Derived&>(*this); }
+
+public:
+    void clear() { self().clear_impl(); }
+
+    StateIndex get_index() const { return self().get_index_impl(); }
+    void set(StateIndex index) { self().set_impl(index); }
+
+    // Fluent facts
+    formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const { return self().get_impl(index); }
+    void set(Data<formalism::FDRFact<formalism::FluentTag>> fact) { self().set_impl(fact); }
+
+    // Derived atoms
+    bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return self().test_impl(index); }
+    void set(Index<formalism::GroundAtom<formalism::DerivedTag>> index) { self().set_impl(index); }
+
+    // Numeric variables
+    float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const { return self().get_impl(index); }
+    void set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value) { self().set_impl(index, value); }
 };
 
 template<typename Task>

@@ -52,12 +52,6 @@ public:
         return make_view(get_data().template get_literals<T>(), *m_context);
     }
     auto get_numeric_constraints() const { return make_view(get_data().numeric_constraints, *m_context); }
-    template<formalism::FactKind T>
-    auto get_nullary_literals() const
-    {
-        return make_view(get_data().template get_nullary_literals<T>(), *m_context);
-    }
-    auto get_nullary_numeric_constraints() const { return make_view(get_data().nullary_numeric_constraints, *m_context); }
     auto get_arity() const { return get_data().variables.size(); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }

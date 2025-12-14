@@ -22,11 +22,11 @@
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
-#include "tyr/formalism/ground_conjunctive_condition_index.hpp"
 #include "tyr/formalism/ground_function_term_value_index.hpp"
 #include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/axiom_index.hpp"
 #include "tyr/formalism/planning/domain_index.hpp"
+#include "tyr/formalism/planning/ground_fdr_conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/metric_index.hpp"
 #include "tyr/formalism/planning/task_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
@@ -49,7 +49,7 @@ struct Data<formalism::Task>
     IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>> static_fterm_values;
     IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values;
     ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value;
-    Index<formalism::GroundConjunctiveCondition> goal;
+    Index<formalism::GroundFDRConjunctiveCondition> goal;
     ::cista::optional<Index<formalism::Metric>> metric;
     IndexList<formalism::Axiom> axioms;
 
@@ -64,7 +64,7 @@ struct Data<formalism::Task>
          IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>> static_fterm_values,
          IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values,
          ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value,
-         Index<formalism::GroundConjunctiveCondition> goal,
+         Index<formalism::GroundFDRConjunctiveCondition> goal,
          ::cista::optional<Index<formalism::Metric>> metric,
          IndexList<formalism::Axiom> axioms) :
         index(index),

@@ -37,19 +37,16 @@ struct Data<formalism::GroundRule>
 
     Index<formalism::GroundRule> index;
     Index<formalism::Rule> rule;
-    Index<formalism::Binding> binding;
     Index<formalism::GroundConjunctiveCondition> body;
     Index<formalism::GroundAtom<formalism::FluentTag>> head;
 
     Data() = default;
     Data(Index<formalism::GroundRule> index,
          Index<formalism::Rule> rule,
-         Index<formalism::Binding> binding,
          Index<formalism::GroundConjunctiveCondition> body,
          Index<formalism::GroundAtom<formalism::FluentTag>> head) :
         index(index),
         rule(rule),
-        binding(binding),
         body(body),
         head(head)
     {
@@ -63,13 +60,12 @@ struct Data<formalism::GroundRule>
     {
         tyr::clear(index);
         tyr::clear(rule);
-        tyr::clear(binding);
         tyr::clear(body);
         tyr::clear(head);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, rule, binding, body, head); }
-    auto identifying_members() const noexcept { return std::tie(rule, binding, body, head); }
+    auto cista_members() const noexcept { return std::tie(index, rule, body, head); }
+    auto identifying_members() const noexcept { return std::tie(rule, body, head); }
 };
 
 }
