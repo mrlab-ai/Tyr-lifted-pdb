@@ -137,21 +137,13 @@ void ProgramResultsExecutionContext::clear() noexcept { rule_binding_pairs.clear
  * ProgramToTaskExecutionContext
  */
 
-void ProgramToTaskExecutionContext::clear() noexcept
-{
-    merge_cache.clear();
-    compile_cache.clear();
-}
+void ProgramToTaskExecutionContext::clear() noexcept { merge_cache.clear(); }
 
 /**
  * TaskToProgramExecutionContext
  */
 
-void TaskToProgramExecutionContext::clear() noexcept
-{
-    merge_cache.clear();
-    compile_cache.clear();
-}
+void TaskToProgramExecutionContext::clear() noexcept { merge_cache.clear(); }
 
 /**
  * ProgramExecutionContext

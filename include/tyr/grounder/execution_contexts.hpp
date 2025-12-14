@@ -22,7 +22,6 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/formalism/builder.hpp"
-#include "tyr/formalism/compile.hpp"
 #include "tyr/formalism/merge.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -200,7 +199,6 @@ struct ProgramResultsExecutionContext
 struct ProgramToTaskExecutionContext
 {
     formalism::MergeCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> merge_cache;
-    formalism::CompileCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> compile_cache;
 
     void clear() noexcept;
 };
@@ -208,7 +206,6 @@ struct ProgramToTaskExecutionContext
 struct TaskToProgramExecutionContext
 {
     formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> merge_cache;
-    formalism::CompileCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> compile_cache;
 
     void clear() noexcept;
 };
