@@ -79,12 +79,13 @@ template void FactsExecutionContext::insert(View<IndexList<formalism::GroundFunc
  * RuleStageExecutionContext
  */
 
-RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<formalism::Repository>()), bindings() {}
+RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<formalism::Repository>()), bindings(), merge_cache() {}
 
 void RuleStageExecutionContext::clear() noexcept
 {
     repository->clear();
     bindings.clear();
+    merge_cache.clear();
 }
 
 /**
@@ -123,8 +124,7 @@ void RuleExecutionContext::initialize(const AssignmentSets<formalism::Repository
 void ThreadExecutionContext::clear() noexcept
 {
     binding.clear();
-    local_merge_cache.clear();
-    global_merge_cache.clear();
+    merge_cache.clear();
 }
 
 /**

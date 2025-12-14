@@ -65,6 +65,8 @@ struct RuleStageExecutionContext
     formalism::RepositoryPtr repository;  // backup for sequential merge
     UnorderedSet<View<Index<formalism::Binding>, formalism::Repository>> bindings;
 
+    formalism::MergeCache<formalism::Repository, formalism::Repository> merge_cache;
+
     RuleStageExecutionContext();
 
     void clear() noexcept;
@@ -171,8 +173,7 @@ struct ThreadExecutionContext
     IndexList<formalism::Object> binding;
 
     formalism::Builder builder;
-    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::OverlayRepository<formalism::Repository>> local_merge_cache;
-    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> global_merge_cache;
+    formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> merge_cache;
 
     ThreadExecutionContext() = default;
 

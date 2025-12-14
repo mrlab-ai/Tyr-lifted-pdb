@@ -46,7 +46,10 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
 
     auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 
-    const auto merge_binding = formalism::merge(ground_rule.get_binding(), thread_execution_context.builder, *rule_stage_execution_context.repository);
+    const auto merge_binding = formalism::merge(ground_rule.get_binding(),
+                                                thread_execution_context.builder,
+                                                *rule_stage_execution_context.repository,
+                                                thread_execution_context.merge_cache);
 
     if (!rule_stage_execution_context.bindings.contains(merge_binding))
     {
@@ -81,7 +84,10 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
 
         auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 
-        const auto merge_binding = formalism::merge(ground_rule.get_binding(), thread_execution_context.builder, *rule_stage_execution_context.repository);
+        const auto merge_binding = formalism::merge(ground_rule.get_binding(),
+                                                    thread_execution_context.builder,
+                                                    *rule_stage_execution_context.repository,
+                                                    thread_execution_context.merge_cache);
 
         if (!rule_stage_execution_context.bindings.contains(merge_binding))
         {
@@ -123,7 +129,10 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
 
             auto ground_rule = formalism::ground(rule_execution_context.rule, binding, thread_execution_context.builder, rule_execution_context.repository);
 
-            const auto merge_binding = formalism::merge(ground_rule.get_binding(), thread_execution_context.builder, *rule_stage_execution_context.repository);
+            const auto merge_binding = formalism::merge(ground_rule.get_binding(),
+                                                        thread_execution_context.builder,
+                                                        *rule_stage_execution_context.repository,
+                                                        thread_execution_context.merge_cache);
 
             if (!rule_stage_execution_context.bindings.contains(merge_binding))
             {

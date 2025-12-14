@@ -88,10 +88,12 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                 const auto i = stratum[j].get_index().get_value();
 
                 const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
+                auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
 
                 for (const auto binding : rule_execution_context.bindings)
                 {
-                    const auto merge_binding = merge(binding, program_execution_context.builder, *program_execution_context.repository);
+                    const auto merge_binding =
+                        merge(binding, program_execution_context.builder, *program_execution_context.repository, rule_stage_execution_context.merge_cache);
 
                     /// --- Insert (rule, binding) pair
                     program_execution_context.program_results_execution_context.rule_binding_pairs.emplace(rule_execution_context.rule, merge_binding);
@@ -119,6 +121,7 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 void solve_bottom_up(grounder::ProgramExecutionContext& program_execution_context)
 {
     program_execution_context.program_results_execution_context.clear();
+
     for (auto& rule_stage_execution_context : program_execution_context.rule_stage_execution_contexts)
         rule_stage_execution_context.clear();
 

@@ -52,7 +52,8 @@ static auto create_fdr_conjunctive_condition(View<Index<GroundConjunctiveConditi
                                              const UnorderedMap<Index<GroundAtom<FluentTag>>, Data<FDRFact<FluentTag>>>& fluent_variables_mapping,
                                              const UnorderedMap<Index<GroundAtom<DerivedTag>>, Data<FDRFact<DerivedTag>>>& derived_variables_mapping,
                                              Builder& builder,
-                                             OverlayRepository<Repository>& repository)
+                                             OverlayRepository<Repository>& repository,
+                                             MergeCache<OverlayRepository<Repository>, OverlayRepository<Repository>>& merge_cache)
 {
     auto fdr_conj_cond_ptr = builder.get_builder<FDRConjunctiveCondition>();
     auto& fdr_conj_cond = *fdr_conj_cond_ptr;
@@ -65,7 +66,7 @@ static auto create_fdr_conjunctive_condition(View<Index<GroundConjunctiveConditi
         fdr_conj_cond.derived_facts.push_back(create_fdr_fact(literal, derived_atoms_mapping, derived_variables_mapping));
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
-        fdr_conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, repository).get_data());
+        fdr_conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, repository, merge_cache).get_data());
 
     canonicalize(fdr_conj_cond);
     return repository.get_or_create(fdr_conj_cond, builder.get_buffer()).first;
@@ -75,7 +76,8 @@ static auto create_fdr_conjunctive_effect(View<Index<GroundConjunctiveEffect>, O
                                           const UnorderedMap<Index<GroundAtom<FluentTag>>, Index<GroundAtom<FluentTag>>>& fluent_atoms_mapping,
                                           const UnorderedMap<Index<GroundAtom<FluentTag>>, Data<FDRFact<FluentTag>>>& fluent_variables_mapping,
                                           Builder& builder,
-                                          OverlayRepository<Repository>& repository)
+                                          OverlayRepository<Repository>& repository,
+                                          MergeCache<OverlayRepository<Repository>, OverlayRepository<Repository>>& merge_cache)
 {
     auto fdr_conj_eff_ptr = builder.get_builder<FDRConjunctiveEffect>();
     auto& fdr_conj_eff = *fdr_conj_eff_ptr;
@@ -104,10 +106,10 @@ static auto create_fdr_conjunctive_effect(View<Index<GroundConjunctiveEffect>, O
         fdr_conj_eff.facts.push_back(Data<FDRFact<FluentTag>>(var, val));
 
     for (const auto numeric_effect : element.get_numeric_effects())
-        fdr_conj_eff.numeric_effects.push_back(merge(numeric_effect, builder, repository).get_data());
+        fdr_conj_eff.numeric_effects.push_back(merge(numeric_effect, builder, repository, merge_cache).get_data());
 
     if (element.get_auxiliary_numeric_effect().has_value())
-        fdr_conj_eff.auxiliary_numeric_effect = merge(element.get_auxiliary_numeric_effect().value(), builder, repository).get_data();
+        fdr_conj_eff.auxiliary_numeric_effect = merge(element.get_auxiliary_numeric_effect().value(), builder, repository, merge_cache).get_data();
 
     canonicalize(fdr_conj_eff);
     return repository.get_or_create(fdr_conj_eff, builder.get_buffer()).first;
@@ -119,7 +121,8 @@ static auto create_fdr_conditional_effect(View<Index<GroundConditionalEffect>, O
                                           const UnorderedMap<Index<GroundAtom<FluentTag>>, Data<FDRFact<FluentTag>>>& fluent_variables_mapping,
                                           const UnorderedMap<Index<GroundAtom<DerivedTag>>, Data<FDRFact<DerivedTag>>>& derived_variables_mapping,
                                           Builder& builder,
-                                          OverlayRepository<Repository>& repository)
+                                          OverlayRepository<Repository>& repository,
+                                          MergeCache<OverlayRepository<Repository>, OverlayRepository<Repository>>& merge_cache)
 {
     auto fdr_cond_eff_ptr = builder.get_builder<FDRConditionalEffect>();
     auto& fdr_cond_eff = *fdr_cond_eff_ptr;
@@ -131,9 +134,11 @@ static auto create_fdr_conditional_effect(View<Index<GroundConditionalEffect>, O
                                                               fluent_variables_mapping,
                                                               derived_variables_mapping,
                                                               builder,
-                                                              repository)
+                                                              repository,
+                                                              merge_cache)
                                  .get_index();
-    fdr_cond_eff.effect = create_fdr_conjunctive_effect(element.get_effect(), fluent_atoms_mapping, fluent_variables_mapping, builder, repository).get_index();
+    fdr_cond_eff.effect =
+        create_fdr_conjunctive_effect(element.get_effect(), fluent_atoms_mapping, fluent_variables_mapping, builder, repository, merge_cache).get_index();
 
     canonicalize(fdr_cond_eff);
     return repository.get_or_create(fdr_cond_eff, builder.get_buffer()).first;
@@ -145,7 +150,8 @@ static auto create_fdr_action(View<Index<GroundAction>, OverlayRepository<Reposi
                               const UnorderedMap<Index<GroundAtom<FluentTag>>, Data<FDRFact<FluentTag>>>& fluent_variables_mapping,
                               const UnorderedMap<Index<GroundAtom<DerivedTag>>, Data<FDRFact<DerivedTag>>>& derived_variables_mapping,
                               Builder& builder,
-                              OverlayRepository<Repository>& repository)
+                              OverlayRepository<Repository>& repository,
+                              MergeCache<OverlayRepository<Repository>, OverlayRepository<Repository>>& merge_cache)
 {
     auto fdr_action_ptr = builder.get_builder<FDRAction>();
     auto& fdr_action = *fdr_action_ptr;
@@ -158,7 +164,8 @@ static auto create_fdr_action(View<Index<GroundAction>, OverlayRepository<Reposi
                                                             fluent_variables_mapping,
                                                             derived_variables_mapping,
                                                             builder,
-                                                            repository)
+                                                            repository,
+                                                            merge_cache)
                                .get_index();
     for (const auto cond_eff : element.get_effects())
     {
@@ -168,7 +175,8 @@ static auto create_fdr_action(View<Index<GroundAction>, OverlayRepository<Reposi
                                                                    fluent_variables_mapping,
                                                                    derived_variables_mapping,
                                                                    builder,
-                                                                   repository)
+                                                                   repository,
+                                                                   merge_cache)
                                          .get_index());
     }
 
@@ -182,7 +190,8 @@ static auto create_fdr_axiom(View<Index<GroundAxiom>, OverlayRepository<Reposito
                              const UnorderedMap<Index<GroundAtom<FluentTag>>, Data<FDRFact<FluentTag>>>& fluent_variables_mapping,
                              const UnorderedMap<Index<GroundAtom<DerivedTag>>, Data<FDRFact<DerivedTag>>>& derived_variables_mapping,
                              Builder& builder,
-                             OverlayRepository<Repository>& repository)
+                             OverlayRepository<Repository>& repository,
+                             MergeCache<OverlayRepository<Repository>, OverlayRepository<Repository>>& merge_cache)
 {
     auto fdr_axiom_ptr = builder.get_builder<FDRAxiom>();
     auto& fdr_axiom = *fdr_axiom_ptr;
@@ -195,7 +204,8 @@ static auto create_fdr_axiom(View<Index<GroundAxiom>, OverlayRepository<Reposito
                                                       fluent_variables_mapping,
                                                       derived_variables_mapping,
                                                       builder,
-                                                      repository)
+                                                      repository,
+                                                      merge_cache)
                          .get_index();
     fdr_axiom.head = create_fdr_fact(element.get_head(), derived_atoms_mapping, derived_variables_mapping);
 
@@ -246,37 +256,38 @@ auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
 
     auto fluent_atoms_mapping = UnorderedMap<Index<GroundAtom<FluentTag>>, Index<GroundAtom<FluentTag>>> {};
     auto derived_atoms_mapping = UnorderedMap<Index<GroundAtom<DerivedTag>>, Index<GroundAtom<DerivedTag>>> {};
+    auto merge_cache = MergeCache<OverlayRepository<Repository>, OverlayRepository<Repository>> {};
 
     fdr_task.name = task.get_name();
     fdr_task.domain = task.get_domain().get_index();
     for (const auto predicate : task.get_derived_predicates())
-        fdr_task.derived_predicates.push_back(merge(predicate, builder, repository).get_index());
+        fdr_task.derived_predicates.push_back(merge(predicate, builder, repository, merge_cache).get_index());
     for (const auto object : task.get_objects())
-        fdr_task.objects.push_back(merge(object, builder, repository).get_index());
+        fdr_task.objects.push_back(merge(object, builder, repository, merge_cache).get_index());
     for (const auto atom : task.get_atoms<StaticTag>())
-        fdr_task.static_atoms.push_back(merge(atom, builder, repository).get_index());
+        fdr_task.static_atoms.push_back(merge(atom, builder, repository, merge_cache).get_index());
     for (const auto atom : fluent_atoms)
     {
-        const auto new_atom = merge(atom, builder, repository);
+        const auto new_atom = merge(atom, builder, repository, merge_cache);
         fdr_task.fluent_atoms.push_back(new_atom.get_index());
         fluent_atoms_mapping.emplace(atom.get_index(), new_atom.get_index());
     }
     for (const auto atom : derived_atoms)
     {
-        const auto new_atom = merge(atom, builder, repository);
+        const auto new_atom = merge(atom, builder, repository, merge_cache);
         fdr_task.derived_atoms.push_back(new_atom.get_index());
         derived_atoms_mapping.emplace(atom.get_index(), new_atom.get_index());
     }
     for (const auto fterm_value : task.get_fterm_values<StaticTag>())
-        fdr_task.static_fterm_values.push_back(merge(fterm_value, builder, repository).get_index());
+        fdr_task.static_fterm_values.push_back(merge(fterm_value, builder, repository, merge_cache).get_index());
     for (const auto fterm_value : task.get_fterm_values<FluentTag>())
-        fdr_task.fluent_fterm_values.push_back(merge(fterm_value, builder, repository).get_index());
+        fdr_task.fluent_fterm_values.push_back(merge(fterm_value, builder, repository, merge_cache).get_index());
     if (task.get_auxiliary_fterm_value().has_value())
-        fdr_task.auxiliary_fterm_value = merge(task.get_auxiliary_fterm_value().value(), builder, repository).get_index();
+        fdr_task.auxiliary_fterm_value = merge(task.get_auxiliary_fterm_value().value(), builder, repository, merge_cache).get_index();
     if (task.get_metric())
-        fdr_task.metric = merge(task.get_metric().value(), builder, repository).get_index();
+        fdr_task.metric = merge(task.get_metric().value(), builder, repository, merge_cache).get_index();
     for (const auto axiom : task.get_axioms())
-        fdr_task.axioms.push_back(merge(axiom, builder, repository).get_index());
+        fdr_task.axioms.push_back(merge(axiom, builder, repository, merge_cache).get_index());
 
     /// --- Create binary mutex groups as baseline; TODO: compute stronger mutex groups
     auto fluent_mutex_groups = std::vector<IndexList<GroundAtom<FluentTag>>> {};
@@ -305,18 +316,31 @@ auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
                                                      fluent_variable_mapping,
                                                      derived_variable_mapping,
                                                      builder,
-                                                     repository)
+                                                     repository,
+                                                     merge_cache)
                         .get_index();
 
     /// --- Create FDR actions and axioms
     for (const auto action : actions)
-        fdr_task.ground_actions.push_back(
-            create_fdr_action(action, fluent_atoms_mapping, derived_atoms_mapping, fluent_variable_mapping, derived_variable_mapping, builder, repository)
-                .get_index());
+        fdr_task.ground_actions.push_back(create_fdr_action(action,
+                                                            fluent_atoms_mapping,
+                                                            derived_atoms_mapping,
+                                                            fluent_variable_mapping,
+                                                            derived_variable_mapping,
+                                                            builder,
+                                                            repository,
+                                                            merge_cache)
+                                              .get_index());
     for (const auto axiom : axioms)
-        fdr_task.ground_axioms.push_back(
-            create_fdr_axiom(axiom, fluent_atoms_mapping, derived_atoms_mapping, fluent_variable_mapping, derived_variable_mapping, builder, repository)
-                .get_index());
+        fdr_task.ground_axioms.push_back(create_fdr_axiom(axiom,
+                                                          fluent_atoms_mapping,
+                                                          derived_atoms_mapping,
+                                                          fluent_variable_mapping,
+                                                          derived_variable_mapping,
+                                                          builder,
+                                                          repository,
+                                                          merge_cache)
+                                             .get_index());
 
     canonicalize(fdr_task);
     return repository.get_or_create(fdr_task, builder.get_buffer()).first;
@@ -346,7 +370,7 @@ GroundTask::GroundTask(DomainPtr domain,
     m_fluent_layout(create_layouts<FluentTag, OverlayRepository<Repository>, uint_t>(m_task.get_variables<FluentTag>())),
     m_derived_layout(create_layouts<DerivedTag, OverlayRepository<Repository>, uint_t>(m_task.get_variables<DerivedTag>()))
 {
-    std::cout << m_task << std::endl;
+    // std::cout << m_task << std::endl;
 }
 
 Node<GroundTask> get_initial_node() {}
