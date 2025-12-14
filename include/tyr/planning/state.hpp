@@ -27,14 +27,6 @@
 
 namespace tyr::planning
 {
-template<typename T>
-concept StateConcept = requires(T state) {
-    typename T::TaskType;
-    { state.get_index() } -> std::same_as<StateIndex>;
-    { state.get_task() } -> std::same_as<typename T::TaskType&>;
-    { state.get_unpacked_state() } -> std::same_as<const UnpackedState<typename T::TaskType>&>;
-};
-
 template<typename Task>
 class State
 {

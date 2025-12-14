@@ -15,25 +15,44 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_STATE_HPP_
-#define TYR_PLANNING_GROUND_TASK_STATE_HPP_
+#ifndef TYR_PLANNING_VIEWS_HPP_
+#define TYR_PLANNING_VIEWS_HPP_
 
-#include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground_task/unpacked_state.hpp"
-#include "tyr/planning/state.hpp"
+#include "tyr/formalism/planning/fdr_value.hpp"
+
+#include <boost/dynamic_bitset.hpp>
+#include <vector>
 
 namespace tyr::planning
 {
-template<>
-class State<GroundTask>
-{
-public:
-    using TaskType = GroundTask;
 
-private:
-    SharedObjectPoolPtr<UnpackedState<GroundTask>> m_unpacked;
-    GroundTask* m_task;
+template<typename T>
+class FDRFactListView
+{
 };
+
+class FDRFactListView<boost::dynamic_bitset<>>
+{
+private:
+    const boost::dynamic_bitset<>* data;
+
+public:
+    FDRFactListView(const boost::dynamic_bitset<>& data) : data(&data) {}
+
+    size_t size() const noexcept { return data->size(); }
+};
+
+class FDRFactListView<std::vector<formalism::FDRValue>>
+{
+private:
+    const std::vector<formalism::FDRValue>* data;
+
+public:
+    FDRFactListView(const std::vector<formalism::FDRValue>& data) : data(&data) {}
+
+    size_t size() const noexcept { return data->size(); }
+};
+
 }
 
 #endif

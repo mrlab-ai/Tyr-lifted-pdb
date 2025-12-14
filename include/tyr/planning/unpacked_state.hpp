@@ -24,6 +24,7 @@
 #include "tyr/formalism/planning/fdr_value.hpp"
 #include "tyr/planning/state_index.hpp"
 
+#include <boost/dynamic_bitset.hpp>
 #include <concepts>
 
 namespace tyr::planning
@@ -46,14 +47,17 @@ public:
     // Fluent facts
     formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const { return self().get_impl(index); }
     void set(Data<formalism::FDRFact<formalism::FluentTag>> fact) { self().set_impl(fact); }
+    auto get_fluent_facts() const { self().get_fluent_facts_impl(); }
 
     // Derived atoms
     bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return self().test_impl(index); }
     void set(Index<formalism::GroundAtom<formalism::DerivedTag>> index) { self().set_impl(index); }
+    const boost::dynamic_bitset<>& get_derived_atoms() const { return self().get_derived_atoms_impl(); }
 
     // Numeric variables
     float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const { return self().get_impl(index); }
     void set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value) { self().set_impl(index, value); }
+    const std::vector<float_t>& get_numeric_variables() const { return self().get_numeric_variables_impl(); }
 };
 
 template<typename Task>

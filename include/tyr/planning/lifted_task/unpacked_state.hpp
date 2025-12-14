@@ -27,6 +27,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/unpacked_state.hpp"
+#include "tyr/planning/views.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <vector>
@@ -34,7 +35,7 @@
 namespace tyr::planning
 {
 template<>
-class UnpackedState<LiftedTask> : public UnpackedStateMixin<UnpackedState<GroundTask>>
+class UnpackedState<LiftedTask> : public UnpackedStateMixin<UnpackedState<LiftedTask>>
 {
 public:
     using TaskType = LiftedTask;
@@ -57,6 +58,7 @@ public:
             m_fluent_atoms.resize(fact.variable.get_value() + 1, false);
         m_fluent_atoms[fact.variable.get_value()] = uint_t(fact.value);
     }
+    auto get_fluent_facts_impl() const { return FDRFactListView<boost::dynamic_bitset<>>(m_fluent_atoms); }
 
     // Derived atoms
     bool test_impl(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const
@@ -71,6 +73,7 @@ public:
             m_derived_atoms.resize(index.get_value() + 1, false);
         m_derived_atoms.set(index.get_value());
     }
+    const boost::dynamic_bitset<>& get_derived_atoms_impl() const { return m_derived_atoms; }
 
     // Numeric variables
     float_t get_impl(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const
@@ -85,6 +88,7 @@ public:
             m_numeric_variables.resize(index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
         m_numeric_variables[index.get_value()] = value;
     }
+    const std::vector<float_t>& get_numeric_variables_impl() const { return m_numeric_variables; }
 
     void clear_impl()
     {
