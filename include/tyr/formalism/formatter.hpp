@@ -682,8 +682,6 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::ConjunctiveCo
 
         os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
 
-        os << print_indent << "derived literals = " << el.derived_literals << "\n";
-
         os << print_indent << "numeric constraints = " << el.numeric_constraints << "\n";
     }
     os << print_indent << ")";
@@ -703,8 +701,6 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Conjunc
         os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
         os << print_indent << "fluent literals = " << el.template get_literals<formalism::FluentTag>() << "\n";
-
-        os << print_indent << "derived literals = " << el.template get_literals<formalism::DerivedTag>() << "\n";
 
         os << print_indent << "numeric constraints = " << el.get_numeric_constraints() << "\n";
     }
@@ -1461,6 +1457,49 @@ std::ostream& print(std::ostream& os, const View<Data<formalism::FDRFact<T>>, C>
     return os;
 }
 
+inline std::ostream& print(std::ostream& os, const Data<formalism::FDRConjunctiveCondition>& el)
+{
+    os << "ConjunctiveCondition(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "variables = " << el.variables << "\n";
+
+        os << print_indent << "static literals = " << el.static_literals << "\n";
+
+        os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
+
+        os << print_indent << "derived literals = " << el.derived_literals << "\n";
+
+        os << print_indent << "numeric constraints = " << el.numeric_constraints << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<formalism::Context C>
+inline std::ostream& print(std::ostream& os, const View<Index<formalism::FDRConjunctiveCondition>, C>& el)
+{
+    os << "ConjunctiveCondition(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "variables = " << el.get_variables() << "\n";
+
+        os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
+
+        os << print_indent << "fluent literals = " << el.template get_literals<formalism::FluentTag>() << "\n";
+
+        os << print_indent << "derived literals = " << el.template get_literals<formalism::DerivedTag>() << "\n";
+
+        os << print_indent << "numeric constraints = " << el.get_numeric_constraints() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
 inline std::ostream& print(std::ostream& os, const Data<formalism::GroundFDRConjunctiveCondition>& el)
 {
     os << "GroundFDRConjunctiveCondition(\n";
@@ -2045,6 +2084,14 @@ inline std::ostream& operator<<(std::ostream& os, const Data<FDRFact<T>>& el)
 
 template<FactKind T, Context C>
 std::ostream& operator<<(std::ostream& os, const View<Data<FDRFact<T>>, C>& el)
+{
+    return tyr::print(os, el);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Data<FDRConjunctiveCondition>& el) { return tyr::print(os, el); }
+
+template<Context C>
+inline std::ostream& operator<<(std::ostream& os, const View<Index<FDRConjunctiveCondition>, C>& el)
 {
     return tyr::print(os, el);
 }

@@ -76,7 +76,7 @@ struct RuleExecutionContext
     /// --- Thread
     const View<Index<formalism::Rule>, formalism::Repository> rule;
     const View<Index<formalism::GroundConjunctiveCondition>, formalism::Repository> nullary_condition;
-    const StaticConsistencyGraph<formalism::Repository> static_consistency_graph;
+    const StaticConsistencyGraph<formalism::Repository, formalism::ConjunctiveCondition> static_consistency_graph;
 
     kpkc::DenseKPartiteGraph consistency_graph;
     kpkc::Workspace kpkc_workspace;

@@ -365,6 +365,10 @@ struct FDRFact
 {
 };
 
+struct FDRConjunctiveCondition
+{
+};
+
 struct GroundFDRConjunctiveCondition
 {
 };

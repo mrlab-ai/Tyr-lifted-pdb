@@ -21,9 +21,9 @@
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/atom_index.hpp"
-#include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/axiom_index.hpp"
+#include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
 
 namespace tyr
 {
@@ -34,11 +34,11 @@ struct Data<formalism::Axiom>
     using Tag = formalism::Axiom;
 
     Index<formalism::Axiom> index;
-    Index<formalism::ConjunctiveCondition> body;
+    Index<formalism::FDRConjunctiveCondition> body;
     Index<formalism::Atom<formalism::DerivedTag>> head;
 
     Data() = default;
-    Data(Index<formalism::Axiom> index, Index<formalism::ConjunctiveCondition> body, Index<formalism::Atom<formalism::DerivedTag>> head) :
+    Data(Index<formalism::Axiom> index, Index<formalism::FDRConjunctiveCondition> body, Index<formalism::Atom<formalism::DerivedTag>> head) :
         index(index),
         body(body),
         head(head)

@@ -51,6 +51,9 @@ template<Context C_SRC, Context C_DST>
 auto merge(View<Data<FDRFact<FluentTag>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
 
 template<Context C_SRC, Context C_DST>
+auto merge(View<Index<FDRConjunctiveCondition>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
+
+template<Context C_SRC, Context C_DST>
 auto merge(View<Index<Axiom>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
 
 template<Context C_SRC, Context C_DST>
@@ -166,6 +169,32 @@ template<Context C_SRC, Context C_DST>
 auto merge(View<Data<FDRFact<FluentTag>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
 {
     return make_view(Data<FDRFact<FluentTag>>(merge(element.get_variable(), builder, destination, cache).get_index(), element.get_value()), destination);
+}
+
+template<Context C_SRC, Context C_DST>
+auto merge(View<Index<FDRConjunctiveCondition>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
+{
+    return with_cache<FDRConjunctiveCondition, FDRConjunctiveCondition>(
+        element,
+        cache,
+        [&]()
+        {
+            auto conj_cond_ptr = builder.template get_builder<FDRConjunctiveCondition>();
+            auto& conj_cond = *conj_cond_ptr;
+            conj_cond.clear();
+
+            for (const auto literal : element.template get_literals<StaticTag>())
+                conj_cond.static_literals.push_back(merge(literal, builder, destination, cache).get_index());
+            for (const auto literal : element.template get_literals<FluentTag>())
+                conj_cond.fluent_literals.push_back(merge(literal, builder, destination, cache).get_index());
+            for (const auto literal : element.template get_literals<DerivedTag>())
+                conj_cond.derived_literals.push_back(merge(literal, builder, destination, cache).get_index());
+            for (const auto numeric_constraint : element.get_numeric_constraints())
+                conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, destination, cache).get_data());
+
+            canonicalize(conj_cond);
+            return destination.get_or_create(conj_cond, builder.get_buffer()).first;
+        });
 }
 
 template<Context C_SRC, Context C_DST>

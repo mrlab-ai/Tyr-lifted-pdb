@@ -122,6 +122,8 @@ private:
                                     MapEntryType<GroundNumericEffect<OpScaleUp, FluentTag>>,
                                     MapEntryType<GroundNumericEffect<OpScaleDown, FluentTag>>,
                                     MapEntryType<GroundNumericEffect<OpIncrease, AuxiliaryTag>>,
+                                    MapEntryType<FDRConjunctiveCondition>,
+                                    MapEntryType<GroundFDRConjunctiveCondition>,
                                     MapEntryType<ConditionalEffect>,
                                     MapEntryType<GroundConditionalEffect>,
                                     MapEntryType<ConjunctiveEffect>,
@@ -642,8 +644,6 @@ auto merge(View<Index<ConjunctiveCondition>, C_SRC> element, Builder& builder, C
                 conj_cond.static_literals.push_back(merge(literal, builder, destination, cache).get_index());
             for (const auto literal : element.template get_literals<FluentTag>())
                 conj_cond.fluent_literals.push_back(merge(literal, builder, destination, cache).get_index());
-            for (const auto literal : element.template get_literals<DerivedTag>())
-                conj_cond.derived_literals.push_back(merge(literal, builder, destination, cache).get_index());
             for (const auto numeric_constraint : element.get_numeric_constraints())
                 conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, destination, cache).get_data());
 

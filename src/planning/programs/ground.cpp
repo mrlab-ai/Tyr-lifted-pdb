@@ -29,7 +29,7 @@ using namespace tyr::formalism;
 namespace tyr::planning
 {
 
-void append_from_condition(View<Index<ConjunctiveCondition>, OverlayRepository<Repository>> cond,
+void append_from_condition(View<Index<FDRConjunctiveCondition>, OverlayRepository<Repository>> cond,
                            Builder& builder,
                            Repository& repository,
                            MergeCache<OverlayRepository<Repository>, Repository>& merge_cache,
@@ -176,7 +176,7 @@ static void translate_action_to_delete_free_rules(View<Index<Action>, OverlayRep
     }
 }
 
-static void process_delete_free_axiom_body(View<Index<ConjunctiveCondition>, OverlayRepository<Repository>> axiom_body,
+static void process_delete_free_axiom_body(View<Index<FDRConjunctiveCondition>, OverlayRepository<Repository>> axiom_body,
                                            Builder& builder,
                                            Repository& repository,
                                            MergeCache<OverlayRepository<Repository>, Repository>& merge_cache,

@@ -125,7 +125,7 @@ ground_planning(View<Index<Literal<FluentTag>>, C_SRC> element, View<IndexList<O
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR, C_DST>
 View<Index<GroundFDRConjunctiveCondition>, C_DST>
-ground_planning(View<Index<ConjunctiveCondition>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination, FDR& fdr)
+ground_planning(View<Index<FDRConjunctiveCondition>, C_SRC> element, View<IndexList<Object>, C_DST> binding, Builder& builder, C_DST& destination, FDR& fdr)
 {
     // Fetch and clear
     auto conj_cond_ptr = builder.get_builder<GroundFDRConjunctiveCondition>();

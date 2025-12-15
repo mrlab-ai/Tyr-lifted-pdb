@@ -135,6 +135,7 @@ struct Builder
                                       BuilderEntry<FDRVariable<formalism::DerivedTag>>,
                                       BuilderEntry<FDRFact<formalism::FluentTag>>,
                                       BuilderEntry<FDRFact<formalism::DerivedTag>>,
+                                      BuilderEntry<FDRConjunctiveCondition>,
                                       BuilderEntry<GroundFDRConjunctiveCondition>,
                                       BuilderEntry<FDRTask>>;
 

@@ -43,6 +43,7 @@
 #include "tyr/formalism/planning/conditional_effect_view.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_view.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
+#include "tyr/formalism/planning/fdr_conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_task_view.hpp"
 #include "tyr/formalism/planning/fdr_variable_view.hpp"

@@ -606,13 +606,14 @@ template class Edge<formalism::OverlayRepository<formalism::Repository>>;
  * StaticConsistencyGraph
  */
 
-template<formalism::Context C>
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
 std::pair<details::Vertices<C>, std::vector<std::vector<uint_t>>>
-StaticConsistencyGraph<C>::compute_vertices(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                                            const analysis::DomainListList& parameter_domains,
-                                            uint_t begin_parameter_index,
-                                            uint_t end_parameter_index,
-                                            const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets)
+StaticConsistencyGraph<C, ConditionTag>::compute_vertices(ConditionView<ConditionTag, C> condition,
+                                                          const analysis::DomainListList& parameter_domains,
+                                                          uint_t begin_parameter_index,
+                                                          uint_t end_parameter_index,
+                                                          const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets)
 {
     auto vertices = details::Vertices<C> {};
 
@@ -645,11 +646,12 @@ StaticConsistencyGraph<C>::compute_vertices(View<Index<formalism::ConjunctiveCon
     return { std::move(vertices), std::move(partitions) };
 }
 
-template<formalism::Context C>
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
 std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
-StaticConsistencyGraph<C>::compute_edges(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                                         const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets,
-                                         const details::Vertices<C>& vertices)
+StaticConsistencyGraph<C, ConditionTag>::compute_edges(ConditionView<ConditionTag, C> condition,
+                                                       const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets,
+                                                       const details::Vertices<C>& vertices)
 {
     auto sources = std::vector<uint_t> {};
 
@@ -689,12 +691,13 @@ StaticConsistencyGraph<C>::compute_edges(View<Index<formalism::ConjunctiveCondit
     return { std::move(sources), std::move(target_offsets), std::move(targets) };
 }
 
-template<formalism::Context C>
-StaticConsistencyGraph<C>::StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                                                  const analysis::DomainListList& parameter_domains,
-                                                  uint_t begin_parameter_index,
-                                                  uint_t end_parameter_index,
-                                                  const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets) :
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+StaticConsistencyGraph<C, ConditionTag>::StaticConsistencyGraph(ConditionView<ConditionTag, C> condition,
+                                                                const analysis::DomainListList& parameter_domains,
+                                                                uint_t begin_parameter_index,
+                                                                uint_t end_parameter_index,
+                                                                const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets) :
     m_condition(condition)
 {
     auto [vertices_, partitions_] = compute_vertices(condition, parameter_domains, begin_parameter_index, end_parameter_index, static_assignment_sets);
@@ -708,100 +711,114 @@ StaticConsistencyGraph<C>::StaticConsistencyGraph(View<Index<formalism::Conjunct
     m_targets = std::move(targets_);
 }
 
-template<formalism::Context C>
-const details::Vertex<C>& StaticConsistencyGraph<C>::get_vertex(uint_t index) const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+const details::Vertex<C>& StaticConsistencyGraph<C, ConditionTag>::get_vertex(uint_t index) const noexcept
 {
     return m_vertices[index];
 }
 
-template<formalism::Context C>
-size_t StaticConsistencyGraph<C>::get_num_vertices() const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+size_t StaticConsistencyGraph<C, ConditionTag>::get_num_vertices() const noexcept
 {
     return m_vertices.size();
 }
 
-template<formalism::Context C>
-size_t StaticConsistencyGraph<C>::get_num_edges() const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+size_t StaticConsistencyGraph<C, ConditionTag>::get_num_edges() const noexcept
 {
     return m_targets.size();
 }
 
-template<formalism::Context C>
-View<Index<formalism::ConjunctiveCondition>, C> StaticConsistencyGraph<C>::get_condition() const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+ConditionView<ConditionTag, C> StaticConsistencyGraph<C, ConditionTag>::get_condition() const noexcept
 {
     return m_condition;
 }
 
-template<formalism::Context C>
-const std::vector<std::vector<uint_t>>& StaticConsistencyGraph<C>::get_partitions() const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+const std::vector<std::vector<uint_t>>& StaticConsistencyGraph<C, ConditionTag>::get_partitions() const noexcept
 {
     return m_partitions;
 }
 
-template<formalism::Context C>
-const StaticConsistencyGraph<C>& StaticConsistencyGraph<C>::EdgeIterator::get_graph() const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+const StaticConsistencyGraph<C, ConditionTag>& StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::get_graph() const noexcept
 {
     assert(m_graph);
     return *m_graph;
 }
 
-template<formalism::Context C>
-void StaticConsistencyGraph<C>::EdgeIterator::advance() noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+void StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::advance() noexcept
 {
     if (++m_targets_pos >= get_graph().m_target_offsets[m_sources_pos])
         ++m_sources_pos;
 }
 
-template<formalism::Context C>
-StaticConsistencyGraph<C>::EdgeIterator::EdgeIterator() noexcept : m_graph(nullptr), m_sources_pos(0), m_targets_pos(0)
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::EdgeIterator() noexcept : m_graph(nullptr), m_sources_pos(0), m_targets_pos(0)
 {
 }
 
-template<formalism::Context C>
-StaticConsistencyGraph<C>::EdgeIterator::EdgeIterator(const StaticConsistencyGraph<C>& graph, bool begin) noexcept :
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::EdgeIterator(const StaticConsistencyGraph<C, ConditionTag>& graph, bool begin) noexcept :
     m_graph(&graph),
     m_sources_pos(begin ? 0 : graph.m_sources.size()),
     m_targets_pos(begin ? 0 : graph.m_targets.size())
 {
 }
 
-template<formalism::Context C>
-StaticConsistencyGraph<C>::EdgeIterator::value_type StaticConsistencyGraph<C>::EdgeIterator::operator*() const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::value_type StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::operator*() const noexcept
 {
     assert(m_sources_pos < get_graph().m_sources.size());
     assert(m_targets_pos < get_graph().m_targets.size());
     return details::Edge(get_graph().m_vertices[get_graph().m_sources[m_sources_pos]], get_graph().m_vertices[get_graph().m_targets[m_targets_pos]]);
 }
 
-template<formalism::Context C>
-StaticConsistencyGraph<C>::EdgeIterator& StaticConsistencyGraph<C>::EdgeIterator::operator++() noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+StaticConsistencyGraph<C, ConditionTag>::EdgeIterator& StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::operator++() noexcept
 {
     advance();
     return *this;
 }
 
-template<formalism::Context C>
-StaticConsistencyGraph<C>::EdgeIterator StaticConsistencyGraph<C>::EdgeIterator::operator++(int) noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+StaticConsistencyGraph<C, ConditionTag>::EdgeIterator StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::operator++(int) noexcept
 {
     EdgeIterator tmp = *this;
     ++(*this);
     return tmp;
 }
 
-template<formalism::Context C>
-bool StaticConsistencyGraph<C>::EdgeIterator::operator==(const StaticConsistencyGraph<C>::EdgeIterator& other) const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+bool StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::operator==(const StaticConsistencyGraph<C, ConditionTag>::EdgeIterator& other) const noexcept
 {
     return m_targets_pos == other.m_targets_pos && m_sources_pos == other.m_sources_pos;
 }
 
-template<formalism::Context C>
-bool StaticConsistencyGraph<C>::EdgeIterator::operator!=(const StaticConsistencyGraph<C>::EdgeIterator& other) const noexcept
+template<formalism::Context C, class ConditionTag>
+    requires ConjunctiveConditionConcept<ConditionTag, C>
+bool StaticConsistencyGraph<C, ConditionTag>::EdgeIterator::operator!=(const StaticConsistencyGraph<C, ConditionTag>::EdgeIterator& other) const noexcept
 {
     return !(*this == other);
 }
 
-template class StaticConsistencyGraph<formalism::Repository>;
-template class StaticConsistencyGraph<formalism::OverlayRepository<formalism::Repository>>;
+template class StaticConsistencyGraph<formalism::Repository, formalism::ConjunctiveCondition>;
+template class StaticConsistencyGraph<formalism::OverlayRepository<formalism::Repository>, formalism::FDRConjunctiveCondition>;
 
 namespace details
 {

@@ -252,6 +252,12 @@ bool is_canonical(const Data<FDRFact<T>>& data)
     return true;
 }
 
+inline bool is_canonical(const Data<FDRConjunctiveCondition>& data)
+{
+    return is_canonical(data.static_literals) && is_canonical(data.fluent_literals) && is_canonical(data.derived_literals)
+           && is_canonical(data.numeric_constraints);
+}
+
 inline bool is_canonical(const Data<GroundFDRConjunctiveCondition>& data)
 {
     return is_canonical(data.static_literals) && is_canonical(data.fluent_facts) && is_canonical(data.derived_literals)
@@ -538,6 +544,14 @@ template<FactKind T>
 void canonicalize(Data<FDRFact<T>>& data)
 {
     // Trivially canonical
+}
+
+inline void canonicalize(Data<FDRConjunctiveCondition>& data)
+{
+    canonicalize(data.static_literals);
+    canonicalize(data.fluent_literals);
+    canonicalize(data.derived_literals);
+    canonicalize(data.numeric_constraints);
 }
 
 inline void canonicalize(Data<GroundFDRConjunctiveCondition>& data)

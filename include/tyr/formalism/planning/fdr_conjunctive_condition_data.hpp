@@ -15,40 +15,43 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_CONJUNCTIVE_CONDITION_DATA_HPP_
-#define TYR_FORMALISM_CONJUNCTIVE_CONDITION_DATA_HPP_
+#ifndef TYR_FORMALISM_PLANNING_FDR_CONJUNCTIVE_CONDITION_DATA_HPP_
+#define TYR_FORMALISM_PLANNING_FDR_CONJUNCTIVE_CONDITION_DATA_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/boolean_operator_data.hpp"
-#include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/literal_index.hpp"
+#include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
 namespace tyr
 {
 template<>
-struct Data<formalism::ConjunctiveCondition>
+struct Data<formalism::FDRConjunctiveCondition>
 {
-    using Tag = formalism::ConjunctiveCondition;
+    using Tag = formalism::FDRConjunctiveCondition;
 
-    Index<formalism::ConjunctiveCondition> index;
+    Index<formalism::FDRConjunctiveCondition> index;
     IndexList<formalism::Variable> variables;
     IndexList<formalism::Literal<formalism::StaticTag>> static_literals;
     IndexList<formalism::Literal<formalism::FluentTag>> fluent_literals;
+    IndexList<formalism::Literal<formalism::DerivedTag>> derived_literals;
     DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>> numeric_constraints;
 
     Data() = default;
-    Data(Index<formalism::ConjunctiveCondition> index,
+    Data(Index<formalism::FDRConjunctiveCondition> index,
          IndexList<formalism::Variable> variables,
          IndexList<formalism::Literal<formalism::StaticTag>> static_literals,
          IndexList<formalism::Literal<formalism::FluentTag>> fluent_literals,
+         IndexList<formalism::Literal<formalism::DerivedTag>> derived_literals,
          DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>> numeric_constraints) :
         index(index),
         variables(std::move(variables)),
         static_literals(std::move(static_literals)),
         fluent_literals(std::move(fluent_literals)),
+        derived_literals(std::move(derived_literals)),
         numeric_constraints(std::move(numeric_constraints))
     {
     }
@@ -63,6 +66,7 @@ struct Data<formalism::ConjunctiveCondition>
         tyr::clear(variables);
         tyr::clear(static_literals);
         tyr::clear(fluent_literals);
+        tyr::clear(derived_literals);
         tyr::clear(numeric_constraints);
     }
 
@@ -73,12 +77,14 @@ struct Data<formalism::ConjunctiveCondition>
             return static_literals;
         else if constexpr (std::same_as<T, formalism::FluentTag>)
             return fluent_literals;
+        else if constexpr (std::same_as<T, formalism::DerivedTag>)
+            return derived_literals;
         else
             static_assert(dependent_false<T>::value, "Missing case");
     }
 
-    auto cista_members() const noexcept { return std::tie(index, variables, static_literals, fluent_literals, numeric_constraints); }
-    auto identifying_members() const noexcept { return std::tie(variables, static_literals, fluent_literals, numeric_constraints); }
+    auto cista_members() const noexcept { return std::tie(index, variables, static_literals, fluent_literals, derived_literals, numeric_constraints); }
+    auto identifying_members() const noexcept { return std::tie(variables, static_literals, fluent_literals, derived_literals, numeric_constraints); }
 };
 }
 

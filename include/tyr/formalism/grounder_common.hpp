@@ -20,6 +20,7 @@
 
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/itertools.hpp"
+#include "tyr/common/tuple.hpp"
 #include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/declarations.hpp"
@@ -75,6 +76,7 @@ private:
                                        MapEntryType<NumericEffect<OpScaleUp, FluentTag>, GroundNumericEffect<OpScaleUp, FluentTag>>,
                                        MapEntryType<NumericEffect<OpScaleDown, FluentTag>, GroundNumericEffect<OpScaleDown, FluentTag>>,
                                        MapEntryType<NumericEffect<OpIncrease, AuxiliaryTag>, GroundNumericEffect<OpIncrease, AuxiliaryTag>>,
+                                       MapEntryType<FDRConjunctiveCondition, GroundFDRConjunctiveCondition>,
                                        MapEntryType<ConditionalEffect, GroundConditionalEffect>,
                                        MapEntryType<ConjunctiveEffect, GroundConjunctiveEffect>,
                                        MapEntryType<Action, GroundAction>,

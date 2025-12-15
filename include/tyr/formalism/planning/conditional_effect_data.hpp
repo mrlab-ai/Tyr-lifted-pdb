@@ -20,10 +20,10 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/conjunctive_condition_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/planning/conditional_effect_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
+#include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
 
 namespace tyr
 {
@@ -34,11 +34,11 @@ struct Data<formalism::ConditionalEffect>
     using Tag = formalism::ConditionalEffect;
 
     Index<formalism::ConditionalEffect> index;
-    Index<formalism::ConjunctiveCondition> condition;
+    Index<formalism::FDRConjunctiveCondition> condition;
     Index<formalism::ConjunctiveEffect> effect;
 
     Data() = default;
-    Data(Index<formalism::ConditionalEffect> index, Index<formalism::ConjunctiveCondition> condition, Index<formalism::ConjunctiveEffect> effect) :
+    Data(Index<formalism::ConditionalEffect> index, Index<formalism::FDRConjunctiveCondition> condition, Index<formalism::ConjunctiveEffect> effect) :
         index(index),
         condition(condition),
         effect(effect)

@@ -60,8 +60,8 @@ std::ostream& print(std::ostream& os, const grounder::details::Edge<C>& el)
 template std::ostream& print(std::ostream& os, const grounder::details::Edge<formalism::Repository>& el);
 template std::ostream& print(std::ostream& os, const grounder::details::Edge<formalism::OverlayRepository<formalism::Repository>>& el);
 
-template<formalism::Context C>
-std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<C>& el)
+template<formalism::Context C, class ConditionTag>
+std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<C, ConditionTag>& el)
 {
     fmt::print(
         os,
@@ -75,8 +75,9 @@ std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<C>&
     return os;
 }
 
-template std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<formalism::Repository>& el);
-template std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<formalism::OverlayRepository<formalism::Repository>>& el);
+template std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<formalism::Repository, formalism::ConjunctiveCondition>& el);
+template std::ostream&
+print(std::ostream& os, const grounder::StaticConsistencyGraph<formalism::OverlayRepository<formalism::Repository>, formalism::FDRConjunctiveCondition>& el);
 
 namespace grounder
 {
@@ -105,13 +106,14 @@ std::ostream& operator<<(std::ostream& os, const VertexAssignment& el) { return 
 
 std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el) { return print(os, el); }
 
-template<formalism::Context C>
-std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<C>& el)
+template<formalism::Context C, class ConditionTag>
+std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<C, ConditionTag>& el)
 {
     return print(os, el);
 }
 
-template std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<formalism::Repository>& el);
-template std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<formalism::OverlayRepository<formalism::Repository>>& el);
+template std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<formalism::Repository, formalism::ConjunctiveCondition>& el);
+template std::ostream& operator<<(std::ostream& os,
+                                  const StaticConsistencyGraph<formalism::OverlayRepository<formalism::Repository>, formalism::FDRConjunctiveCondition>& el);
 }  // end namespace grounder
 }

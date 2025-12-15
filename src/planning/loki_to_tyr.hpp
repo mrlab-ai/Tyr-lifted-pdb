@@ -642,10 +642,10 @@ private:
     }
 
     template<formalism::Context C>
-    Index<formalism::ConjunctiveCondition>
+    Index<formalism::FDRConjunctiveCondition>
     translate_lifted(loki::Condition element, const IndexList<formalism::Variable>& parameters, formalism::Builder& builder, C& context)
     {
-        auto conj_condition_ptr = builder.template get_builder<formalism::ConjunctiveCondition>();
+        auto conj_condition_ptr = builder.template get_builder<formalism::FDRConjunctiveCondition>();
         auto& conj_condition = *conj_condition_ptr;
         conj_condition.clear();
 
@@ -674,7 +674,7 @@ private:
         };
 
         return std::visit(
-            [&](auto&& condition) -> Index<formalism::ConjunctiveCondition>
+            [&](auto&& condition) -> Index<formalism::FDRConjunctiveCondition>
             {
                 using ConditionT = std::decay_t<decltype(condition)>;
 
@@ -812,7 +812,7 @@ private:
     template<formalism::Context C>
     IndexList<formalism::ConditionalEffect> translate_lifted(loki::Effect element, formalism::Builder& builder, C& context)
     {
-        using ConditionalEffectData = UnorderedMap<Index<formalism::ConjunctiveCondition>,
+        using ConditionalEffectData = UnorderedMap<Index<formalism::FDRConjunctiveCondition>,
                                                    std::tuple<IndexList<formalism::Literal<formalism::FluentTag>>,
                                                               DataList<formalism::NumericEffectOperator<formalism::FluentTag>>,
                                                               ::cista::optional<Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>>>>;
@@ -858,7 +858,7 @@ private:
                         else
                         {
                             // Create empty conjunctive condition for unconditional effects
-                            auto conj_cond_ptr = builder.template get_builder<formalism::ConjunctiveCondition>();
+                            auto conj_cond_ptr = builder.template get_builder<formalism::FDRConjunctiveCondition>();
                             auto& conj_cond = *conj_cond_ptr;
                             conj_cond.clear();
                             formalism::canonicalize(conj_cond);
@@ -1010,7 +1010,7 @@ private:
         ///---------- Push parameters and parse scope -------------
         m_param_map.push_parameters(parameters);
         {
-            auto conjunctive_condition = Index<formalism::ConjunctiveCondition>::max();
+            auto conjunctive_condition = Index<formalism::FDRConjunctiveCondition>::max();
             if (element->get_condition().has_value())
             {
                 conjunctive_condition = translate_lifted(element->get_condition().value(), parameters, builder, context);
@@ -1018,7 +1018,7 @@ private:
             else
             {
                 // Create empty one
-                auto conj_cond_ptr = builder.template get_builder<formalism::ConjunctiveCondition>();
+                auto conj_cond_ptr = builder.template get_builder<formalism::FDRConjunctiveCondition>();
                 auto& conj_cond = *conj_cond_ptr;
                 conj_cond.clear();
                 formalism::canonicalize(conj_cond);

@@ -27,7 +27,7 @@ using namespace tyr::formalism;
 
 namespace tyr::planning
 {
-static void process_axiom_body(View<Index<ConjunctiveCondition>, OverlayRepository<Repository>> axiom_body,
+static void process_axiom_body(View<Index<FDRConjunctiveCondition>, OverlayRepository<Repository>> axiom_body,
                                Builder& builder,
                                Repository& repository,
                                MergeCache<OverlayRepository<Repository>, Repository>& merge_cache,

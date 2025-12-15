@@ -15,42 +15,44 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_ACTION_VIEW_HPP_
-#define TYR_FORMALISM_PLANNING_ACTION_VIEW_HPP_
+#ifndef TYR_FORMALISM_PLANNING_FDR_CONJUNCTIVE_CONDITION_VIEW_HPP_
+#define TYR_FORMALISM_PLANNING_FDR_CONJUNCTIVE_CONDITION_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/vector.hpp"
+#include "tyr/formalism/boolean_operator_view.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/action_index.hpp"
-#include "tyr/formalism/planning/conditional_effect_view.hpp"
-#include "tyr/formalism/planning/fdr_conjunctive_condition_view.hpp"
+#include "tyr/formalism/literal_view.hpp"
+#include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
+#include "tyr/formalism/variable_view.hpp"
 
 namespace tyr
 {
-
 template<formalism::Context C>
-class View<Index<formalism::Action>, C>
+class View<Index<formalism::FDRConjunctiveCondition>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::Action> m_handle;
+    Index<formalism::FDRConjunctiveCondition> m_handle;
 
 public:
-    using Tag = formalism::Action;
+    using Tag = formalism::FDRConjunctiveCondition;
 
-    View(Index<formalism::Action> handle, const C& context) : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::FDRConjunctiveCondition> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    const auto& get_name() const noexcept { return get_data().name; }
-    auto get_original_arity() const noexcept { return get_data().original_arity; }
-    auto get_arity() const noexcept { return get_condition().get_arity(); }
-    auto get_variables() const noexcept { return get_condition().get_variables(); }
-    auto get_condition() const noexcept { return make_view(get_data().condition, *m_context); }
-    auto get_effects() const noexcept { return make_view(get_data().effects, *m_context); }
+    auto get_variables() const noexcept { return make_view(get_data().variables, *m_context); }
+    template<formalism::FactKind T>
+    auto get_literals() const
+    {
+        return make_view(get_data().template get_literals<T>(), *m_context);
+    }
+    auto get_numeric_constraints() const { return make_view(get_data().numeric_constraints, *m_context); }
+    auto get_arity() const { return get_data().variables.size(); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
