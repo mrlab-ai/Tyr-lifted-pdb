@@ -142,14 +142,10 @@ void ground(const FactsExecutionContext& fact_execution_context,
             RuleStageExecutionContext& rule_stage_execution_context,
             ThreadExecutionContext& thread_execution_context)
 {
-    const auto rule = rule_execution_context.rule;
-    const auto& fact_sets = fact_execution_context.fact_sets;
+    if (!is_applicable(rule_execution_context.nullary_condition, fact_execution_context.fact_sets))
+        return;
 
-    // TODO: readd this. create a ground fdr conjunctive condition in the rule execution context
-    // if (!nullary_conditions_hold(rule.get_body(), fact_sets))
-    //    return;
-
-    const auto arity = rule.get_body().get_arity();
+    const auto arity = rule_execution_context.rule.get_arity();
 
     if (arity == 0)
         ground_nullary_case(fact_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);

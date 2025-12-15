@@ -369,7 +369,8 @@ auto merge(View<Index<Binding>, C_SRC> element, Builder& builder, C_DST& destina
                                             auto& binding = *binding_ptr;
                                             binding.clear();
 
-                                            binding.objects = element.get_objects().get_data();
+                                            for (const auto object : element.get_objects())
+                                                binding.objects.push_back(merge(object, builder, destination, cache).get_index());
 
                                             canonicalize(binding);
                                             return destination.get_or_create(binding, builder.get_buffer()).first;
@@ -383,7 +384,8 @@ View<Index<Binding>, C_DST> merge(View<IndexList<Object>, C_SRC> element, Builde
     auto& binding = *binding_ptr;
     binding.clear();
 
-    binding.objects = element.get_data();
+    for (const auto object : element)
+        binding.objects.push_back(merge(object, builder, destination, cache).get_index());
 
     canonicalize(binding);
     return destination.get_or_create(binding, builder.get_buffer()).first;
@@ -437,11 +439,8 @@ auto merge(View<Index<Atom<T_SRC>>, C_SRC> element, Builder& builder, C_DST& des
                                                     auto& atom = *atom_ptr;
                                                     atom.clear();
 
-                                                    if constexpr (std::is_same_v<T_SRC, T_DST>)
-                                                        atom.predicate = element.get_predicate().get_index();
-                                                    else
-                                                        atom.predicate =
-                                                            merge<T_SRC, C_SRC, C_DST, T_DST>(element.get_predicate(), builder, destination, cache).get_index();
+                                                    atom.predicate =
+                                                        merge<T_SRC, C_SRC, C_DST, T_DST>(element.get_predicate(), builder, destination, cache).get_index();
                                                     for (const auto term : element.get_terms())
                                                         atom.terms.push_back(merge(term, builder, destination, cache).get_data());
 
@@ -462,10 +461,7 @@ auto merge(View<Index<GroundAtom<T_SRC>>, C_SRC> element, Builder& builder, C_DS
             auto& atom = *atom_ptr;
             atom.clear();
 
-            if constexpr (std::is_same_v<T_SRC, T_DST>)
-                atom.predicate = element.get_predicate().get_index();
-            else
-                atom.predicate = merge<T_SRC, C_SRC, C_DST, T_DST>(element.get_predicate(), builder, destination, cache).get_index();
+            atom.predicate = merge<T_SRC, C_SRC, C_DST, T_DST>(element.get_predicate(), builder, destination, cache).get_index();
             atom.binding = merge(element.get_binding(), builder, destination, cache).get_index();
 
             canonicalize(atom);

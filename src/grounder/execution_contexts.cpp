@@ -18,6 +18,9 @@
 #include "tyr/grounder/execution_contexts.hpp"
 
 #include "tyr/formalism/formatter.hpp"
+#include "tyr/formalism/grounder_datalog.hpp"
+
+using namespace tyr::formalism;
 
 namespace tyr::grounder
 {
@@ -25,29 +28,29 @@ namespace tyr::grounder
  * FactsExecutionContext
  */
 
-FactsExecutionContext::FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::ProgramVariableDomains& domains) :
+FactsExecutionContext::FactsExecutionContext(View<Index<Program>, Repository> program, const analysis::ProgramVariableDomains& domains) :
     fact_sets(program),
     assignment_sets(program, domains, fact_sets)
 {
 }
 
-FactsExecutionContext::FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
-                                             TaggedFactSets<formalism::FluentTag, formalism::Repository> fluent_facts,
+FactsExecutionContext::FactsExecutionContext(View<Index<Program>, Repository> program,
+                                             TaggedFactSets<FluentTag, Repository> fluent_facts,
                                              const analysis::ProgramVariableDomains& domains) :
     fact_sets(program, fluent_facts),
     assignment_sets(program, domains, fact_sets)
 {
 }
 
-template<formalism::FactKind T>
+template<FactKind T>
 void FactsExecutionContext::reset() noexcept
 {
     fact_sets.template reset<T>();
     assignment_sets.template reset<T>();
 }
 
-template void FactsExecutionContext::reset<formalism::StaticTag>() noexcept;
-template void FactsExecutionContext::reset<formalism::FluentTag>() noexcept;
+template void FactsExecutionContext::reset<StaticTag>() noexcept;
+template void FactsExecutionContext::reset<FluentTag>() noexcept;
 
 void FactsExecutionContext::reset() noexcept
 {
@@ -55,31 +58,31 @@ void FactsExecutionContext::reset() noexcept
     assignment_sets.reset();
 }
 
-template<formalism::FactKind T>
-void FactsExecutionContext::insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view)
+template<FactKind T>
+void FactsExecutionContext::insert(View<IndexList<GroundAtom<T>>, Repository> view)
 {
     fact_sets.insert(view);
     assignment_sets.insert(fact_sets.template get<T>());
 }
 
-template void FactsExecutionContext::insert(View<IndexList<formalism::GroundAtom<formalism::StaticTag>>, formalism::Repository> view);
-template void FactsExecutionContext::insert(View<IndexList<formalism::GroundAtom<formalism::FluentTag>>, formalism::Repository> view);
+template void FactsExecutionContext::insert(View<IndexList<GroundAtom<StaticTag>>, Repository> view);
+template void FactsExecutionContext::insert(View<IndexList<GroundAtom<FluentTag>>, Repository> view);
 
-template<formalism::FactKind T>
-void FactsExecutionContext::insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view)
+template<FactKind T>
+void FactsExecutionContext::insert(View<IndexList<GroundFunctionTermValue<T>>, Repository> view)
 {
     fact_sets.insert(view);
     assignment_sets.insert(fact_sets.template get<T>());
 }
 
-template void FactsExecutionContext::insert(View<IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>>, formalism::Repository> view);
-template void FactsExecutionContext::insert(View<IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>>, formalism::Repository> view);
+template void FactsExecutionContext::insert(View<IndexList<GroundFunctionTermValue<StaticTag>>, Repository> view);
+template void FactsExecutionContext::insert(View<IndexList<GroundFunctionTermValue<FluentTag>>, Repository> view);
 
 /**
  * RuleStageExecutionContext
  */
 
-RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<formalism::Repository>()), bindings(), merge_cache() {}
+RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<Repository>()), bindings(), merge_cache() {}
 
 void RuleStageExecutionContext::clear() noexcept
 {
@@ -92,15 +95,17 @@ void RuleStageExecutionContext::clear() noexcept
  * RuleExecutionContext
  */
 
-RuleExecutionContext::RuleExecutionContext(View<Index<formalism::Rule>, formalism::Repository> rule,
+RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
+                                           View<Index<GroundConjunctiveCondition>, Repository> nullary_condition,
                                            const analysis::DomainListList& parameter_domains,
-                                           const TaggedAssignmentSets<formalism::StaticTag, formalism::Repository>& static_assignment_sets,
-                                           const formalism::Repository& parent) :
+                                           const TaggedAssignmentSets<StaticTag, Repository>& static_assignment_sets,
+                                           const Repository& parent) :
     rule(rule),
+    nullary_condition(nullary_condition),
     static_consistency_graph(rule.get_body(), parameter_domains, 0, rule.get_arity(), static_assignment_sets),
     consistency_graph(grounder::kpkc::allocate_dense_graph(static_consistency_graph)),
     kpkc_workspace(grounder::kpkc::allocate_workspace(static_consistency_graph)),
-    local(std::make_shared<formalism::Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
+    local(std::make_shared<Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
     repository(parent, *local),
     bindings()
 {
@@ -112,7 +117,7 @@ void RuleExecutionContext::clear() noexcept
     bindings.clear();
 }
 
-void RuleExecutionContext::initialize(const AssignmentSets<formalism::Repository>& assignment_sets)
+void RuleExecutionContext::initialize(const AssignmentSets<Repository>& assignment_sets)
 {
     grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
 }
@@ -149,8 +154,34 @@ void TaskToProgramExecutionContext::clear() noexcept { merge_cache.clear(); }
  * ProgramExecutionContext
  */
 
-ProgramExecutionContext::ProgramExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
-                                                 formalism::RepositoryPtr repository,
+static View<Index<GroundConjunctiveCondition>, Repository>
+ground_nullary_condition(View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
+{
+    auto conj_cond_ptr = builder.get_builder<GroundConjunctiveCondition>();
+    auto& conj_cond = *conj_cond_ptr;
+    conj_cond.clear();
+
+    auto binding = IndexList<Object> {};
+    auto binding_view = make_view(binding, context);
+
+    for (const auto literal : condition.get_literals<StaticTag>())
+        if (literal.get_atom().get_predicate().get_arity() == 0)
+            conj_cond.static_literals.push_back(ground_datalog(literal, binding_view, builder, context).get_index());
+
+    for (const auto literal : condition.get_literals<FluentTag>())
+        if (literal.get_atom().get_predicate().get_arity() == 0)
+            conj_cond.fluent_literals.push_back(ground_datalog(literal, binding_view, builder, context).get_index());
+
+    for (const auto numeric_constraint : condition.get_numeric_constraints())
+        if (numeric_constraint.get_arity() == 0)
+            conj_cond.numeric_constraints.push_back(ground_common(numeric_constraint, binding_view, builder, context).get_data());
+
+    canonicalize(conj_cond);
+    return context.get_or_create(conj_cond, builder.get_buffer()).first;
+}
+
+ProgramExecutionContext::ProgramExecutionContext(View<Index<Program>, Repository> program,
+                                                 RepositoryPtr repository,
                                                  const analysis::ProgramVariableDomains& domains,
                                                  const analysis::RuleStrata& strata,
                                                  const analysis::Listeners& listeners) :
@@ -171,7 +202,11 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<formalism::Program>,
 {
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
-        rule_execution_contexts.emplace_back(program.get_rules()[i], domains.rule_domains[i], facts_execution_context.assignment_sets.static_sets, *repository);
+        rule_execution_contexts.emplace_back(program.get_rules()[i],
+                                             ground_nullary_condition(program.get_rules()[i].get_body(), builder, *repository),
+                                             domains.rule_domains[i],
+                                             facts_execution_context.assignment_sets.static_sets,
+                                             *repository);
         rule_execution_contexts.back().initialize(facts_execution_context.assignment_sets);
     }
     rule_stage_execution_contexts.resize(rule_execution_contexts.size());

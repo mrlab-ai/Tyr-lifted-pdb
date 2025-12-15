@@ -75,6 +75,7 @@ struct RuleExecutionContext
 {
     /// --- Thread
     const View<Index<formalism::Rule>, formalism::Repository> rule;
+    const View<Index<formalism::GroundConjunctiveCondition>, formalism::Repository> nullary_condition;
     const StaticConsistencyGraph<formalism::Repository> static_consistency_graph;
 
     kpkc::DenseKPartiteGraph consistency_graph;
@@ -158,6 +159,7 @@ struct RuleExecutionContext
     }
 
     RuleExecutionContext(View<Index<formalism::Rule>, formalism::Repository> rule,
+                         View<Index<formalism::GroundConjunctiveCondition>, formalism::Repository> nullary_condition,
                          const analysis::DomainListList& parameter_domains,
                          const TaggedAssignmentSets<formalism::StaticTag, formalism::Repository>& static_assignment_sets,
                          const formalism::Repository& parent);
