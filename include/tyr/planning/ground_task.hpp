@@ -78,7 +78,6 @@ private:
     formalism::GeneralFDRContext<formalism::OverlayRepository<formalism::Repository>> m_fdr_context;
 
     FDRVariablesLayout<formalism::FluentTag, uint_t> m_fluent_layout;
-    FDRVariablesLayout<formalism::DerivedTag, uint_t> m_derived_layout;
 };
 
 }

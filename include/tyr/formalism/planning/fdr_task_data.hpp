@@ -59,7 +59,6 @@ struct Data<formalism::FDRTask>
 
     /// FDR-related
     IndexList<formalism::FDRVariable<formalism::FluentTag>> fluent_variables;
-    IndexList<formalism::FDRVariable<formalism::DerivedTag>> derived_variables;
     DataList<formalism::FDRFact<formalism::FluentTag>> fluent_facts;
     Index<formalism::GroundFDRConjunctiveCondition> goal;
     IndexList<formalism::GroundAction> ground_actions;
@@ -80,7 +79,6 @@ struct Data<formalism::FDRTask>
          ::cista::optional<Index<formalism::Metric>> metric,
          IndexList<formalism::Axiom> axioms,
          IndexList<formalism::FDRVariable<formalism::FluentTag>> fluent_variables,
-         IndexList<formalism::FDRVariable<formalism::DerivedTag>> derived_variables,
          DataList<formalism::FDRFact<formalism::FluentTag>> fluent_facts,
          Index<formalism::GroundFDRConjunctiveCondition> goal,
          IndexList<formalism::GroundAction> ground_actions,
@@ -99,7 +97,6 @@ struct Data<formalism::FDRTask>
         metric(metric),
         axioms(std::move(axioms)),
         fluent_variables(std::move(fluent_variables)),
-        derived_variables(std::move(derived_variables)),
         fluent_facts(std::move(fluent_facts)),
         goal(goal),
         ground_actions(std::move(ground_actions)),
@@ -127,7 +124,6 @@ struct Data<formalism::FDRTask>
         tyr::clear(metric);
         tyr::clear(axioms);
         tyr::clear(fluent_variables);
-        tyr::clear(derived_variables);
         tyr::clear(fluent_facts);
         tyr::clear(goal);
         tyr::clear(ground_actions);
@@ -163,8 +159,6 @@ struct Data<formalism::FDRTask>
     {
         if constexpr (std::same_as<T, formalism::FluentTag>)
             return fluent_variables;
-        else if constexpr (std::same_as<T, formalism::DerivedTag>)
-            return derived_variables;
         else
             static_assert(dependent_false<T>::value, "Missing case");
     }
@@ -185,7 +179,6 @@ struct Data<formalism::FDRTask>
                         metric,
                         axioms,
                         fluent_variables,
-                        derived_variables,
                         fluent_facts,
                         goal,
                         ground_actions,
@@ -206,7 +199,6 @@ struct Data<formalism::FDRTask>
                         metric,
                         axioms,
                         fluent_variables,
-                        derived_variables,
                         fluent_facts,
                         goal,
                         ground_actions,

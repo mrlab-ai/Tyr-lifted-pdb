@@ -1569,8 +1569,6 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::FDRTask>& el)
 
         os << print_indent << "fluent facts = " << el.fluent_variables << "\n";
 
-        os << print_indent << "derived variables = " << el.derived_variables << "\n";
-
         os << print_indent << "fluent facts = " << el.fluent_facts << "\n";
 
         os << print_indent << "goal = " << el.goal << "\n";
