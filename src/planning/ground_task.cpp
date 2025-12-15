@@ -20,7 +20,7 @@
 #include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/merge.hpp"
+#include "tyr/formalism/merge_datalog.hpp"
 
 using namespace tyr::formalism;
 

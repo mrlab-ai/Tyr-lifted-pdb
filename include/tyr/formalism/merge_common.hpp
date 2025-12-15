@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_MERGE_HPP_
-#define TYR_FORMALISM_MERGE_HPP_
+#ifndef TYR_FORMALISM_MERGE_COMMON_HPP_
+#define TYR_FORMALISM_MERGE_COMMON_HPP_
 
 #include "tyr/common/tuple.hpp"
 #include "tyr/formalism/builder.hpp"
@@ -225,33 +225,6 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
 
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<ConjunctiveCondition>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
-auto merge(View<Index<NumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<FactKind T, Context C_SRC, Context C_DST>
-auto merge(View<Data<NumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
-auto merge(View<Index<GroundNumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<FactKind T, Context C_SRC, Context C_DST>
-auto merge(View<Data<GroundNumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<GroundConjunctiveCondition>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<Rule>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<Axiom>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<Metric>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache);
 
 /**
  * Implementations
@@ -657,68 +630,6 @@ auto merge(View<Data<GroundFunctionExpression>, C_SRC> element, Builder& builder
         element.get_variant());
 }
 
-template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
-auto merge(View<Index<NumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return with_cache<NumericEffect<O, T>, NumericEffect<O, T>>(element,
-                                                                cache,
-                                                                [&]()
-                                                                {
-                                                                    auto numeric_effect_ptr = builder.template get_builder<NumericEffect<O, T>>();
-                                                                    auto& numeric_effect = *numeric_effect_ptr;
-                                                                    numeric_effect.clear();
-
-                                                                    numeric_effect.fterm = merge(element.get_fterm(), builder, destination, cache).get_index();
-                                                                    numeric_effect.fexpr = merge(element.get_fexpr(), builder, destination, cache).get_data();
-
-                                                                    canonicalize(numeric_effect);
-                                                                    return destination.get_or_create(numeric_effect, builder.get_buffer()).first;
-                                                                });
-}
-
-template<FactKind T, Context C_SRC, Context C_DST>
-auto merge(View<Data<NumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return visit(
-        [&](auto&& arg) {
-            return View<Data<NumericEffectOperator<T>>, C_DST>(Data<NumericEffectOperator<T>>(merge(arg, builder, destination, cache).get_index()),
-                                                               destination);
-        },
-        element.get_variant());
-}
-
-template<NumericEffectOpKind O, FactKind T, Context C_SRC, Context C_DST>
-auto merge(View<Index<GroundNumericEffect<O, T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return with_cache<GroundNumericEffect<O, T>, GroundNumericEffect<O, T>>(
-        element,
-        cache,
-        [&]()
-        {
-            auto numeric_effect_ptr = builder.template get_builder<GroundNumericEffect<O, T>>();
-            auto& numeric_effect = *numeric_effect_ptr;
-            numeric_effect.clear();
-
-            numeric_effect.fterm = merge(element.get_fterm(), builder, destination, cache).get_index();
-            numeric_effect.fexpr = merge(element.get_fexpr(), builder, destination, cache).get_data();
-
-            canonicalize(numeric_effect);
-            return destination.get_or_create(numeric_effect, builder.get_buffer()).first;
-        });
-}
-
-template<FactKind T, Context C_SRC, Context C_DST>
-auto merge(View<Data<GroundNumericEffectOperator<T>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return visit(
-        [&](auto&& arg)
-        {
-            return View<Data<GroundNumericEffectOperator<T>>, C_DST>(Data<GroundNumericEffectOperator<T>>(merge(arg, builder, destination, cache).get_index()),
-                                                                     destination);
-        },
-        element.get_variant());
-}
-
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<ConjunctiveCondition>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
 {
@@ -743,135 +654,6 @@ auto merge(View<Index<ConjunctiveCondition>, C_SRC> element, Builder& builder, C
             canonicalize(conj_cond);
             return destination.get_or_create(conj_cond, builder.get_buffer()).first;
         });
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<GroundConjunctiveCondition>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return with_cache<GroundConjunctiveCondition, GroundConjunctiveCondition>(
-        element,
-        cache,
-        [&]()
-        {
-            auto conj_cond_ptr = builder.template get_builder<GroundConjunctiveCondition>();
-            auto& conj_cond = *conj_cond_ptr;
-            conj_cond.clear();
-
-            for (const auto literal : element.template get_literals<StaticTag>())
-                conj_cond.static_literals.push_back(merge(literal, builder, destination, cache).get_index());
-            for (const auto literal : element.template get_literals<FluentTag>())
-                conj_cond.fluent_literals.push_back(merge(literal, builder, destination, cache).get_index());
-            for (const auto literal : element.template get_literals<DerivedTag>())
-                conj_cond.derived_literals.push_back(merge(literal, builder, destination, cache).get_index());
-            for (const auto numeric_constraint : element.get_numeric_constraints())
-                conj_cond.numeric_constraints.push_back(merge(numeric_constraint, builder, destination, cache).get_data());
-
-            canonicalize(conj_cond);
-            return destination.get_or_create(conj_cond, builder.get_buffer()).first;
-        });
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<FDRVariable<FluentTag>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return with_cache<FDRVariable<FluentTag>, FDRVariable<FluentTag>>(element,
-                                                                      cache,
-                                                                      [&]()
-                                                                      {
-                                                                          auto variable_ptr = builder.get_builder<FDRVariable<FluentTag>>();
-                                                                          auto& variable = *variable_ptr;
-                                                                          variable.clear();
-
-                                                                          variable.domain_size = element.get_domain_size();
-                                                                          for (const auto atom : element.get_atoms())
-                                                                              variable.atoms.push_back(merge(atom, builder, destination).get_index());
-
-                                                                          canonicalize(variable);
-                                                                          return destination.get_or_create(variable, builder.get_buffer()).first;
-                                                                      });
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Data<FDRFact<FluentTag>>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return make_view(Data<FDRFact<FluentTag>>(merge(element.get_variable(), builder, destination, cache).get_index(), element.get_value()), destination);
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<Rule>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return with_cache<Rule, Rule>(element,
-                                  cache,
-                                  [&]()
-                                  {
-                                      auto rule_ptr = builder.template get_builder<Rule>();
-                                      auto& rule = *rule_ptr;
-                                      rule.clear();
-
-                                      rule.body = merge(element.get_body(), builder, destination, cache).get_index();
-                                      rule.head = merge(element.get_head(), builder, destination, cache).get_index();
-
-                                      canonicalize(rule);
-                                      return destination.get_or_create(rule, builder.get_buffer()).first;
-                                  });
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<GroundRule>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return with_cache<GroundRule, GroundRule>(element,
-                                              cache,
-                                              [&]()
-                                              {
-                                                  auto rule_ptr = builder.template get_builder<GroundRule>();
-                                                  auto& rule = *rule_ptr;
-                                                  rule.clear();
-
-                                                  rule.rule = element.get_rule().get_index();
-                                                  rule.body = merge(element.get_body(), builder, destination, cache).get_index();
-                                                  rule.head = merge(element.get_head(), builder, destination, cache).get_index();
-
-                                                  canonicalize(rule);
-                                                  return destination.get_or_create(rule, builder.get_buffer()).first;
-                                              });
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<Axiom>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return with_cache<Axiom, Axiom>(element,
-                                    cache,
-                                    [&]()
-                                    {
-                                        auto axiom_ptr = builder.template get_builder<Axiom>();
-                                        auto& axiom = *axiom_ptr;
-                                        axiom.clear();
-
-                                        axiom.body = merge(element.get_body(), builder, destination, cache).get_index();
-                                        axiom.head = merge(element.get_head(), builder, destination, cache).get_index();
-
-                                        canonicalize(axiom);
-                                        return destination.get_or_create(axiom, builder.get_buffer()).first;
-                                    });
-}
-
-template<Context C_SRC, Context C_DST>
-auto merge(View<Index<Metric>, C_SRC> element, Builder& builder, C_DST& destination, MergeCache<C_SRC, C_DST>& cache)
-{
-    return with_cache<Metric, Metric>(element,
-                                      cache,
-                                      [&]()
-                                      {
-                                          auto metric_ptr = builder.template get_builder<Metric>();
-                                          auto& metric = *metric_ptr;
-                                          metric.clear();
-
-                                          metric.objective = element.get_objective();
-                                          metric.fexpr = merge(element.get_fexpr(), builder, destination, cache).get_data();
-
-                                          canonicalize(metric);
-                                          return destination.get_or_create(metric, builder.get_buffer()).first;
-                                      });
 }
 }
 

@@ -754,8 +754,6 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::GroundConjunc
 
         os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
 
-        os << print_indent << "derived literals = " << el.derived_literals << "\n";
-
         os << print_indent << "numeric constraints = " << el.numeric_constraints << "\n";
     }
     os << print_indent << ")";
@@ -773,8 +771,6 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::GroundC
         os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
         os << print_indent << "fluent literals = " << el.template get_literals<formalism::FluentTag>() << "\n";
-
-        os << print_indent << "derived literals = " << el.template get_literals<formalism::DerivedTag>() << "\n";
 
         os << print_indent << "numeric constraints = " << el.get_numeric_constraints() << "\n";
     }

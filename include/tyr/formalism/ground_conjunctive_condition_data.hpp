@@ -70,8 +70,6 @@ struct Data<formalism::GroundConjunctiveCondition>
             return static_literals;
         else if constexpr (std::same_as<T, formalism::FluentTag>)
             return fluent_literals;
-        else if constexpr (std::same_as<T, formalism::DerivedTag>)
-            return derived_literals;
         else
             static_assert(dependent_false<T>::value, "Missing case");
     }

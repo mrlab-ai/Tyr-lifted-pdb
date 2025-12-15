@@ -24,7 +24,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/grounder_common.hpp"
-#include "tyr/formalism/merge.hpp"
+#include "tyr/formalism/merge_datalog.hpp"
 #include "tyr/formalism/views.hpp"
 
 namespace tyr::formalism
