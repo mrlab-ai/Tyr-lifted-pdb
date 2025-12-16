@@ -26,13 +26,13 @@
 namespace tyr::analysis
 {
 
-Listeners compute_listeners(const RuleStrata& strata)
+ListenerStrata compute_listeners(const RuleStrata& strata)
 {
-    auto listeners = Listeners();
+    auto listeners = ListenerStrata();
 
-    for (const auto& stratum : strata.strata)
+    for (const auto& stratum : strata.data)
     {
-        auto listeners_in_stratum = ListenersPerStratum {};
+        auto listeners_in_stratum = ListenerStratum {};
 
         for (const auto rule : stratum)
         {
@@ -42,10 +42,10 @@ Listeners compute_listeners(const RuleStrata& strata)
             }
         }
 
-        listeners.positive_listeners_per_stratum.push_back(std::move(listeners_in_stratum));
+        listeners.data.push_back(std::move(listeners_in_stratum));
     }
 
-    // std::cout << listeners.positive_listeners_per_stratum << std::endl;
+    // std::cout << listeners.data << std::endl;
 
     return listeners;
 }

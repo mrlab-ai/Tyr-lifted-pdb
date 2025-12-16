@@ -30,6 +30,7 @@
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/kpkc_utils.hpp"
+#include "tyr/grounder/rule_scheduler.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <chrono>
@@ -250,7 +251,8 @@ struct ProgramExecutionContext
     const formalism::RepositoryPtr repository;
     const analysis::ProgramVariableDomains& domains;
     const analysis::RuleStrata& strata;
-    const analysis::Listeners& listeners;
+    const analysis::ListenerStrata& listeners;
+    RuleSchedulerStrata rule_scheduler_strata;
 
     /// --- Builder
     formalism::Builder builder;
@@ -282,7 +284,7 @@ struct ProgramExecutionContext
                             formalism::RepositoryPtr repository,
                             const analysis::ProgramVariableDomains& domains,
                             const analysis::RuleStrata& strata,
-                            const analysis::Listeners& listeners);
+                            const analysis::ListenerStrata& listeners);
 };
 
 }

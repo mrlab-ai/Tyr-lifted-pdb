@@ -26,14 +26,14 @@ using namespace tyr::formalism;
 namespace tyr::tests
 {
 
-TEST(TyrTests, TyrAnalysisListeners)
+TEST(TyrTests, TyrAnalysisListenerStrata)
 {
     auto [program, repository] = create_example_problem();
 
     auto rule_strata = analysis::compute_rule_stratification(program);
     auto listeners = analysis::compute_listeners(rule_strata);
 
-    for (const auto& listeners_in_stratum : listeners.positive_listeners_per_stratum)
+    for (const auto& listeners_in_stratum : listeners.data)
     {
         std::cout << to_string(listeners_in_stratum) << std::endl;
     }

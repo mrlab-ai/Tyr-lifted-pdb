@@ -31,7 +31,7 @@ using RuleStratum = std::vector<View<Index<formalism::Rule>, formalism::Reposito
 
 struct RuleStrata
 {
-    std::vector<RuleStratum> strata;
+    std::vector<RuleStratum> data;
 };
 
 /// @brief Compute the rule stratification for the rules in the given program.

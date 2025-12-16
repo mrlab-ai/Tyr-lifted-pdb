@@ -215,12 +215,13 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<Program>, Repository
                                                  RepositoryPtr repository,
                                                  const analysis::ProgramVariableDomains& domains,
                                                  const analysis::RuleStrata& strata,
-                                                 const analysis::Listeners& listeners) :
+                                                 const analysis::ListenerStrata& listeners) :
     program(program),
     repository(repository),
     domains(domains),
     strata(strata),
     listeners(listeners),
+    rule_scheduler_strata(create_rule_scheduler_strata(strata, listeners, *repository)),
     builder(),
     grounder_cache(),
     facts_execution_context(program, domains),

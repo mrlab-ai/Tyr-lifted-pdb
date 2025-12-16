@@ -162,5 +162,5 @@ const analysis::ProgramVariableDomains& AxiomEvaluatorProgram::get_domains() con
 
 const analysis::RuleStrata& AxiomEvaluatorProgram::get_strata() const noexcept { return m_strata; }
 
-const analysis::Listeners& AxiomEvaluatorProgram::get_listeners() const noexcept { return m_listeners; }
+const analysis::ListenerStrata& AxiomEvaluatorProgram::get_listeners() const noexcept { return m_listeners; }
 }

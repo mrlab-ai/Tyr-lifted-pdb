@@ -303,6 +303,6 @@ const analysis::ProgramVariableDomains& GroundTaskProgram::get_domains() const n
 
 const analysis::RuleStrata& GroundTaskProgram::get_strata() const noexcept { return m_strata; }
 
-const analysis::Listeners& GroundTaskProgram::get_listeners() const noexcept { return m_listeners; }
+const analysis::ListenerStrata& GroundTaskProgram::get_listeners() const noexcept { return m_listeners; }
 
 }

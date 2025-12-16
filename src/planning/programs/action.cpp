@@ -158,6 +158,6 @@ const analysis::ProgramVariableDomains& ApplicableActionProgram::get_domains() c
 
 const analysis::RuleStrata& ApplicableActionProgram::get_strata() const noexcept { return m_strata; }
 
-const analysis::Listeners& ApplicableActionProgram::get_listeners() const noexcept { return m_listeners; }
+const analysis::ListenerStrata& ApplicableActionProgram::get_listeners() const noexcept { return m_listeners; }
 
 }

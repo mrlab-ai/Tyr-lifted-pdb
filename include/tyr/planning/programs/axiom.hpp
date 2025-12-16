@@ -46,7 +46,7 @@ public:
     const formalism::RepositoryPtr& get_repository() const noexcept;
     const analysis::ProgramVariableDomains& get_domains() const noexcept;
     const analysis::RuleStrata& get_strata() const noexcept;
-    const analysis::Listeners& get_listeners() const noexcept;
+    const analysis::ListenerStrata& get_listeners() const noexcept;
 
 private:
     PredicateToPredicateMapping m_prediate_to_predicate;
@@ -56,7 +56,7 @@ private:
 
     analysis::ProgramVariableDomains m_domains;
     analysis::RuleStrata m_strata;
-    analysis::Listeners m_listeners;
+    analysis::ListenerStrata m_listeners;
 };
 
 }

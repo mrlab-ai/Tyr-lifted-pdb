@@ -32,6 +32,6 @@ TEST(TyrTests, TyrAnalysisStratification)
 
     auto rule_strata = analysis::compute_rule_stratification(program);
 
-    std::cout << to_string(rule_strata.strata) << std::endl;
+    std::cout << to_string(rule_strata.data) << std::endl;
 }
 }

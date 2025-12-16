@@ -19,6 +19,9 @@
 
 #include "tyr/analysis/analysis.hpp"
 #include "tyr/common/chrono.hpp"
+#include "tyr/common/declarations.hpp"
+#include "tyr/common/types.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/grounder_datalog.hpp"
 #include "tyr/formalism/views.hpp"
@@ -30,15 +33,19 @@
 
 namespace tyr::solver
 {
-static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& program_execution_context, const analysis::RuleStratum& stratum)
+static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& program_execution_context, grounder::RuleSchedulerStratum& scheduler)
 {
+    scheduler.activate_all();
+
     while (true)
     {
         /**
          * Parallel evaluation.
          */
 
-        const uint_t num_rules = stratum.size();
+        const auto active_rules = scheduler.active_rules();
+
+        const uint_t num_rules = active_rules.size();
 
         {
             auto stopwatch = StopwatchScope(program_execution_context.statistics.ground_seq_total_time);
@@ -47,7 +54,7 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                               num_rules,
                               [&](uint_t j)
                               {
-                                  const auto i = stratum[j].get_index().get_value();
+                                  const auto i = active_rules[j].get_index().get_value();
                                   auto& facts_execution_context = program_execution_context.facts_execution_context;
                                   auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
                                   auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
@@ -89,9 +96,9 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                 program_execution_context.stage_to_program_execution_context.merge_cache
             };
 
-            for (uint_t j = 0; j < stratum.size(); ++j)
+            for (uint_t j = 0; j < num_rules; ++j)
             {
-                const auto i = stratum[j].get_index().get_value();
+                const auto i = active_rules[j].get_index().get_value();
 
                 const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
 
@@ -114,12 +121,18 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
                     // Insert new fact into fact sets and assigment sets
                     if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head))
+                    {
                         discovered_new_fact = true;
+
+                        scheduler.on_generate(ground_head.get_predicate());
+                    }
 
                     program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(ground_head);
                     program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head);
                 }
             }
+
+            scheduler.clear();
 
             if (!discovered_new_fact)
                 break;  ///< Reached fixed point
@@ -135,9 +148,9 @@ void solve_bottom_up(grounder::ProgramExecutionContext& program_execution_contex
     for (auto& rule_stage_execution_context : program_execution_context.rule_stage_execution_contexts)
         rule_stage_execution_context.clear();
 
-    for (const auto& stratum : program_execution_context.strata.strata)
+    for (auto& scheduler : program_execution_context.rule_scheduler_strata.data)
     {
-        solve_bottom_up_for_stratum(program_execution_context, stratum);
+        solve_bottom_up_for_stratum(program_execution_context, scheduler);
     }
 }
 }

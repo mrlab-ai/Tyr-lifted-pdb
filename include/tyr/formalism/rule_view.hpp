@@ -20,6 +20,7 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/vector.hpp"
+#include "tyr/formalism/atom_view.hpp"
 #include "tyr/formalism/conjunctive_condition_view.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/rule_index.hpp"

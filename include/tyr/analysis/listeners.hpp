@@ -30,15 +30,15 @@
 namespace tyr::analysis
 {
 
-using ListenersPerStratum = UnorderedMap<View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository>,
-                                         std::vector<View<Index<formalism::Rule>, formalism::Repository>>>;
+using ListenerStratum = UnorderedMap<View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository>,
+                                     std::vector<View<Index<formalism::Rule>, formalism::Repository>>>;
 
-struct Listeners
+struct ListenerStrata
 {
-    std::vector<ListenersPerStratum> positive_listeners_per_stratum;
+    std::vector<ListenerStratum> data;
 };
 
-extern Listeners compute_listeners(const RuleStrata& strata);
+extern ListenerStrata compute_listeners(const RuleStrata& strata);
 }
 
 #endif

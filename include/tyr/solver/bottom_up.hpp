@@ -18,9 +18,6 @@
 #ifndef TYR_SOLVER_BOTTOM_UP_HPP_
 #define TYR_SOLVER_BOTTOM_UP_HPP_
 
-#include "tyr/common/declarations.hpp"
-#include "tyr/common/types.hpp"
-#include "tyr/formalism/declarations.hpp"
 #include "tyr/grounder/declarations.hpp"
 
 namespace tyr::solver
