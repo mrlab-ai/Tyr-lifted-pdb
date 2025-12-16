@@ -44,6 +44,7 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
          */
 
         const auto active_rules = scheduler.active_rules();
+        scheduler.clear();
 
         const uint_t num_rules = active_rules.size();
 
@@ -131,8 +132,6 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                     program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head);
                 }
             }
-
-            scheduler.clear();
 
             if (!discovered_new_fact)
                 break;  ///< Reached fixed point

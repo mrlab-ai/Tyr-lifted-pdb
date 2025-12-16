@@ -39,14 +39,15 @@ public:
 
     void on_generate(View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository> predicate);
 
-    View<IndexList<formalism::Rule>, formalism::Repository> active_rules() const;
+    View<IndexList<formalism::Rule>, formalism::Repository> active_rules();
 
 private:
     const analysis::RuleStratum& m_rules;
     const analysis::ListenerStratum& m_listeners;
     const formalism::Repository& m_context;
 
-    IndexList<formalism::Rule> m_active;
+    UnorderedSet<Index<formalism::Rule>> m_active_set;  ///< build active set
+    IndexList<formalism::Rule> m_active;                ///< final active set
 };
 
 struct RuleSchedulerStrata

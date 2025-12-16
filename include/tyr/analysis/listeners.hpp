@@ -31,7 +31,7 @@ namespace tyr::analysis
 {
 
 using ListenerStratum = UnorderedMap<View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository>,
-                                     std::vector<View<Index<formalism::Rule>, formalism::Repository>>>;
+                                     UnorderedSet<View<Index<formalism::Rule>, formalism::Repository>>>;
 
 struct ListenerStrata
 {

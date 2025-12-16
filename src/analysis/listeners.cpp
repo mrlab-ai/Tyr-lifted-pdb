@@ -35,12 +35,9 @@ ListenerStrata compute_listeners(const RuleStrata& strata)
         auto listeners_in_stratum = ListenerStratum {};
 
         for (const auto rule : stratum)
-        {
             for (const auto literal : rule.get_body().get_literals<formalism::FluentTag>())
-            {
-                listeners_in_stratum[literal.get_atom().get_predicate()].push_back(rule);
-            }
-        }
+                if (literal.get_polarity())
+                    listeners_in_stratum[literal.get_atom().get_predicate()].insert(rule);
 
         listeners.data.push_back(std::move(listeners_in_stratum));
     }

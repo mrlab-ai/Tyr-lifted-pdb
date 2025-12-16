@@ -17,6 +17,8 @@
 
 #include "tyr/grounder/rule_scheduler.hpp"
 
+#include "tyr/formalism/formatter.hpp"
+
 namespace tyr::grounder
 {
 
@@ -26,26 +28,37 @@ RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules,
     m_rules(rules),
     m_listeners(listeners),
     m_context(context),
+    m_active_set(),
     m_active()
 {
 }
 
 void RuleSchedulerStratum::activate_all()
 {
+    m_active_set.clear();
     for (const auto rule : m_rules)
-        m_active.push_back(rule.get_index());
+        m_active_set.insert(rule.get_index());
 }
 
-void RuleSchedulerStratum::clear() noexcept { m_active.clear(); }
+void RuleSchedulerStratum::clear() noexcept { m_active_set.clear(); }
 
 void RuleSchedulerStratum::on_generate(View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository> predicate)
 {
     if (const auto it = m_listeners.find(predicate); it != m_listeners.end())
         for (const auto rule : it->second)
-            m_active.push_back(rule.get_index());
+            m_active_set.insert(rule.get_index());
 }
 
-View<IndexList<formalism::Rule>, formalism::Repository> RuleSchedulerStratum::active_rules() const { return make_view(m_active, m_context); }
+View<IndexList<formalism::Rule>, formalism::Repository> RuleSchedulerStratum::active_rules()
+{
+    m_active.clear();
+    for (const auto rule : m_active_set)
+        m_active.push_back(rule);
+
+    m_active_set.clear();
+
+    return make_view(m_active, m_context);
+}
 
 RuleSchedulerStrata
 create_rule_scheduler_strata(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const formalism::Repository& context)
