@@ -133,21 +133,24 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
                                                     OverlayRepository<Repository>& task_repository,
                                                     ProgramExecutionContext& axiom_context)
 {
+    assert(derived_atoms.empty());
+
     axiom_context.program_to_task_execution_context.clear();
 
     /// --- Initialize derived atoms in unpacked state
 
-    for (const auto& [rule, binding_program] : axiom_context.program_results_execution_context.rule_binding_pairs)
+    auto merge_context = MergeContext { axiom_context.builder, task_repository, axiom_context.program_to_task_execution_context.merge_cache };
+
+    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_predicate_mapping, then facts of the predicate
+    for (const auto fact : axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
     {
-        auto merge_context = MergeContext { axiom_context.builder, task_repository, axiom_context.program_to_task_execution_context.merge_cache };
+        if (axiom_program.get_predicate_to_predicate_mapping().contains(fact.get_predicate()))
+        {
+            // TODO: pass the predicate mapping here so that we can skip merging the predicate :)
+            const auto ground_atom = merge<FluentTag, Repository, OverlayRepository<Repository>, DerivedTag>(fact, merge_context);
 
-        axiom_context.program_to_task_execution_context.binding = binding_program.get_data().objects;
-        auto grounder_context = GrounderContext { axiom_context.builder, task_repository, axiom_context.program_to_task_execution_context.binding };
-
-        const auto ground_atom =
-            ground_planning<FluentTag, Repository, OverlayRepository<Repository>, DerivedTag>(rule.get_head(), merge_context, grounder_context);
-
-        set(ground_atom.get_index().get_value(), derived_atoms);
+            set(ground_atom.get_index().get_value(), derived_atoms);
+        }
     }
 }
 
@@ -167,21 +170,25 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
 
     action_context.task_to_task_execution_context.clear();
 
-    for (const auto& [rule, binding_program] : action_context.program_results_execution_context.rule_binding_pairs)
+    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over predicate_to_actions_mapping, then facts of the predicate
+    for (const auto fact : action_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
     {
-        for (const auto action : action_program.get_rule_to_actions_mapping().at(rule))
+        if (action_program.get_predicate_to_actions_mapping().contains(fact.get_predicate()))
         {
-            const auto action_index = action.get_index().get_value();
+            for (const auto action : action_program.get_predicate_to_actions_mapping().at(fact.get_predicate()))
+            {
+                const auto action_index = action.get_index().get_value();
 
-            action_context.program_to_task_execution_context.binding = binding_program.get_data().objects;
-            auto grounder_context = GrounderContext { action_context.builder, task_repository, action_context.program_to_task_execution_context.binding };
+                action_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
+                auto grounder_context = GrounderContext { action_context.builder, task_repository, action_context.program_to_task_execution_context.binding };
 
-            const auto ground_action =
-                ground_planning(action, grounder_context, parameter_domains_per_cond_effect_per_action[action_index], assign, fdr_context);
+                const auto ground_action =
+                    ground_planning(action, grounder_context, parameter_domains_per_cond_effect_per_action[action_index], assign, fdr_context);
 
-            effect_families.clear();
-            if (is_applicable(ground_action, state_context, effect_families))
-                out_successors.emplace_back(ground_action, apply_action(state_context, ground_action));
+                effect_families.clear();
+                if (is_applicable(ground_action, state_context, effect_families))
+                    out_successors.emplace_back(ground_action, apply_action(state_context, ground_action));
+            }
         }
     }
 }
@@ -489,14 +496,15 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
 
-    for (const auto& [rule, binding_program] : ground_context.program_results_execution_context.rule_binding_pairs)
+    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_actions_mapping, then facts of the predicate
+    for (const auto fact : ground_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
     {
-        if (m_ground_program.get_rule_to_actions_mapping().contains(rule))
+        if (m_ground_program.get_predicate_to_actions_mapping().contains(fact.get_predicate()))
         {
-            ground_context.program_to_task_execution_context.binding = binding_program.get_data().objects;
+            ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
             auto grounder_context = GrounderContext { ground_context.builder, *m_overlay_repository, ground_context.program_to_task_execution_context.binding };
 
-            for (const auto action : m_ground_program.get_rule_to_actions_mapping().at(rule))
+            for (const auto action : m_ground_program.get_predicate_to_actions_mapping().at(fact.get_predicate()))
             {
                 const auto action_index = action.get_index().get_value();
 
@@ -536,14 +544,15 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto ground_axioms_set = UnorderedSet<Index<GroundAxiom>> {};
 
-    for (const auto& [rule, binding_program] : ground_context.program_results_execution_context.rule_binding_pairs)
+    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_axioms_mapping, then facts of the predicate
+    for (const auto fact : ground_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
     {
-        if (m_ground_program.get_rule_to_axioms_mapping().contains(rule))
+        if (m_ground_program.get_predicate_to_axioms_mapping().contains(fact.get_predicate()))
         {
-            ground_context.program_to_task_execution_context.binding = binding_program.get_data().objects;
+            ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
             auto grounder_context = GrounderContext { ground_context.builder, *m_overlay_repository, ground_context.program_to_task_execution_context.binding };
 
-            for (const auto axiom : m_ground_program.get_rule_to_axioms_mapping().at(rule))
+            for (const auto axiom : m_ground_program.get_predicate_to_axioms_mapping().at(fact.get_predicate()))
             {
                 const auto ground_axiom = ground_planning(axiom, grounder_context, m_fdr_context);
 

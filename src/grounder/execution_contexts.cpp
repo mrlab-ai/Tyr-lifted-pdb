@@ -131,18 +131,6 @@ void RuleExecutionContext::initialize(const AssignmentSets<Repository>& assignme
 void ThreadExecutionContext::clear() noexcept { merge_cache.clear(); }
 
 /**
- * StageToProgramExecutionContext
- */
-
-void StageToProgramExecutionContext::clear() noexcept { merge_cache.clear(); }
-
-/**
- * ProgramResultsExecutionContext
- */
-
-void ProgramResultsExecutionContext::clear() noexcept { rule_binding_pairs.clear(); }
-
-/**
  * ProgramToTaskExecutionContext
  */
 
@@ -208,8 +196,6 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<Program>, Repository
     rule_stage_execution_contexts(),
     thread_execution_contexts(),
     planning_execution_context(),
-    stage_to_program_execution_context(),
-    program_results_execution_context(),
     program_to_task_execution_context(),
     task_to_task_execution_context(),
     task_to_program_execution_context()

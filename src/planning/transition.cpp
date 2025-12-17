@@ -77,6 +77,8 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
 
     // Copy state into mutable buffer
     succ_unpacked_state = tmp_state_context.unpacked_state;
+    // Clear derived atoms
+    succ_unpacked_state.template get_atoms<formalism::DerivedTag>().clear();
 
     process_effects(action, succ_unpacked_state, tmp_state_context);
 

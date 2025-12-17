@@ -91,29 +91,20 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
             auto discovered_new_fact = bool { false };
 
-            auto merge_context_program = formalism::MergeContext { program_execution_context.builder,
-                                                                   *program_execution_context.repository,
-                                                                   program_execution_context.stage_to_program_execution_context.merge_cache };
-
             for (uint_t j = 0; j < num_rules; ++j)
             {
                 const auto i = active_rules[j].get_index().get_value();
 
                 const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
 
-                for (const auto binding : rule_execution_context.bindings)
+                for (const auto binding : rule_execution_context.bindings)  ///< TODO: rename to novel bindings
                 {
-                    /// --- Stage -> Program
-                    const auto binding_program = formalism::merge(binding, merge_context_program);
-
                     /// --- Program
-                    program_execution_context.binding = binding_program.get_data().objects;
+                    program_execution_context.binding = binding.get_data().objects;
+
                     auto ground_context_program = formalism::GrounderContext { program_execution_context.builder,
                                                                                *program_execution_context.repository,
                                                                                program_execution_context.binding };
-
-                    /// --- Insert (rule, binding) pair
-                    program_execution_context.program_results_execution_context.rule_binding_pairs.emplace(rule_execution_context.rule, binding_program);
 
                     const auto ground_head = formalism::ground_datalog(rule_execution_context.rule.get_head(), ground_context_program);
 
@@ -125,6 +116,7 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                         scheduler.on_generate(ground_head.get_predicate());
                     }
 
+                    /// TODO: if nobody listens on this predicate, we can skip insertion.
                     program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(ground_head);
                     program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head);
                 }
@@ -138,9 +130,6 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
 void solve_bottom_up(grounder::ProgramExecutionContext& program_execution_context)
 {
-    program_execution_context.program_results_execution_context.clear();
-    program_execution_context.stage_to_program_execution_context.clear();
-
     for (auto& rule_stage_execution_context : program_execution_context.rule_stage_execution_contexts)
         rule_stage_execution_context.clear();
 

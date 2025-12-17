@@ -17,6 +17,7 @@
 
 #include "tyr/planning/programs/action.hpp"
 
+#include "common.hpp"
 #include "tyr/formalism/merge_datalog.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -27,8 +28,9 @@ using namespace tyr::formalism;
 
 namespace tyr::planning
 {
+
 static View<Index<Program>, Repository>
-create(const LiftedTask& task, ApplicableActionProgram::RuleToActionsMapping& rule_to_actions_mapping, Repository& repository)
+create(const LiftedTask& task, ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping, Repository& repository)
 {
     auto merge_cache = MergeCache<OverlayRepository<Repository>, Repository>();
     auto builder = Builder();
@@ -73,18 +75,11 @@ create(const LiftedTask& task, ApplicableActionProgram::RuleToActionsMapping& ru
 
     for (const auto action : task.get_task().get_domain().get_actions())
     {
-        auto predicate_ptr = builder.get_builder<Predicate<FluentTag>>();
-        auto& predicate = *predicate_ptr;
-        predicate.clear();
+        const auto applicability_predicate = create_applicability_predicate(action, context);
 
-        predicate.name = action.get_name();
-        predicate.arity = action.get_arity();
+        predicate_to_actions_mapping[applicability_predicate].emplace_back(action);
 
-        canonicalize(predicate);
-        const auto new_predicate = repository.get_or_create(predicate, builder.get_buffer()).first;
-
-        if (std::find(program.fluent_predicates.begin(), program.fluent_predicates.end(), new_predicate.get_index()) == program.fluent_predicates.end())
-            program.fluent_predicates.push_back(new_predicate.get_index());
+        program.fluent_predicates.push_back(applicability_predicate.get_index());
 
         auto rule_ptr = builder.get_builder<Rule>();
         auto& rule = *rule_ptr;
@@ -112,24 +107,14 @@ create(const LiftedTask& task, ApplicableActionProgram::RuleToActionsMapping& ru
         canonicalize(conj_cond);
         const auto new_conj_cond = repository.get_or_create(conj_cond, builder.get_buffer()).first;
 
-        auto atom_ptr = builder.get_builder<Atom<FluentTag>>();
-        auto& atom = *atom_ptr;
-        atom.clear();
-
-        atom.predicate = new_predicate.get_index();
-        for (uint_t i = 0; i < action.get_arity(); ++i)
-            atom.terms.push_back(Data<Term>(ParameterIndex(i)));
-
-        canonicalize(atom);
-        const auto new_head = repository.get_or_create(atom, builder.get_buffer()).first;
-
         rule.body = new_conj_cond.get_index();
-        rule.head = new_head.get_index();
+
+        const auto applicability_atom = create_applicability_atom(action, context);
+
+        rule.head = applicability_atom.get_index();
 
         canonicalize(rule);
         const auto new_rule = repository.get_or_create(rule, builder.get_buffer()).first;
-
-        rule_to_actions_mapping[new_rule].emplace_back(action);
 
         program.rules.push_back(new_rule.get_index());
     }
@@ -139,16 +124,19 @@ create(const LiftedTask& task, ApplicableActionProgram::RuleToActionsMapping& ru
 }
 
 ApplicableActionProgram::ApplicableActionProgram(const LiftedTask& task) :
-    m_rule_to_actions(),
+    m_predicate_to_actions(),
     m_repository(std::make_shared<Repository>()),
-    m_program(create(task, m_rule_to_actions, *m_repository)),
+    m_program(create(task, m_predicate_to_actions, *m_repository)),
     m_domains(analysis::compute_variable_domains(m_program)),
     m_strata(analysis::compute_rule_stratification(m_program)),
     m_listeners(analysis::compute_listeners(m_strata))
 {
 }
 
-const ApplicableActionProgram::RuleToActionsMapping& ApplicableActionProgram::get_rule_to_actions_mapping() const noexcept { return m_rule_to_actions; }
+const ApplicableActionProgram::AppPredicateToActionsMapping& ApplicableActionProgram::get_predicate_to_actions_mapping() const noexcept
+{
+    return m_predicate_to_actions;
+}
 
 View<Index<Program>, Repository> ApplicableActionProgram::get_program() const noexcept { return m_program; }
 

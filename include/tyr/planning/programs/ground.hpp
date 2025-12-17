@@ -35,16 +35,16 @@ class GroundTaskProgram
 {
 public:
     // Mapping from program rule to task action; there may be multiple actions
-    using RuleToActionsMapping = UnorderedMap<View<Index<formalism::Rule>, formalism::Repository>,
-                                              std::vector<View<Index<formalism::Action>, formalism::OverlayRepository<formalism::Repository>>>>;
+    using AppPredicateToActionsMapping = UnorderedMap<View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository>,
+                                                      std::vector<View<Index<formalism::Action>, formalism::OverlayRepository<formalism::Repository>>>>;
 
-    using RuleToAxiomsMapping = UnorderedMap<View<Index<formalism::Rule>, formalism::Repository>,
-                                             std::vector<View<Index<formalism::Axiom>, formalism::OverlayRepository<formalism::Repository>>>>;
+    using AppPredicateToAxiomsMapping = UnorderedMap<View<Index<formalism::Predicate<formalism::FluentTag>>, formalism::Repository>,
+                                                     std::vector<View<Index<formalism::Axiom>, formalism::OverlayRepository<formalism::Repository>>>>;
 
     explicit GroundTaskProgram(const LiftedTask& task);
 
-    const RuleToActionsMapping& get_rule_to_actions_mapping() const noexcept;
-    const RuleToAxiomsMapping& get_rule_to_axioms_mapping() const noexcept;
+    const AppPredicateToActionsMapping& get_predicate_to_actions_mapping() const noexcept;
+    const AppPredicateToAxiomsMapping& get_predicate_to_axioms_mapping() const noexcept;
     View<Index<formalism::Program>, formalism::Repository> get_program() const noexcept;
     const formalism::RepositoryPtr& get_repository() const noexcept;
     const analysis::ProgramVariableDomains& get_domains() const noexcept;
@@ -52,8 +52,8 @@ public:
     const analysis::ListenerStrata& get_listeners() const noexcept;
 
 private:
-    RuleToActionsMapping m_rule_to_actions;
-    RuleToAxiomsMapping m_rule_to_axioms;
+    AppPredicateToActionsMapping m_predicate_to_actions;
+    AppPredicateToAxiomsMapping m_predicate_to_axioms;
 
     formalism::RepositoryPtr m_repository;
     View<Index<formalism::Program>, formalism::Repository> m_program;

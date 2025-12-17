@@ -195,24 +195,6 @@ struct PlanningExecutionContext
     PlanningExecutionContext() = default;
 };
 
-struct StageToProgramExecutionContext
-{
-    StageToProgramExecutionContext() = default;
-
-    formalism::MergeCache<formalism::Repository, formalism::Repository> merge_cache;
-
-    void clear() noexcept;
-};
-
-struct ProgramResultsExecutionContext
-{
-    ProgramResultsExecutionContext() = default;
-
-    UnorderedSet<std::pair<View<Index<formalism::Rule>, formalism::Repository>, View<Index<formalism::Binding>, formalism::Repository>>> rule_binding_pairs;
-
-    void clear() noexcept;
-};
-
 struct ProgramToTaskExecutionContext
 {
     ProgramToTaskExecutionContext() = default;
@@ -266,8 +248,6 @@ struct ProgramExecutionContext
 
     PlanningExecutionContext planning_execution_context;
 
-    StageToProgramExecutionContext stage_to_program_execution_context;
-    ProgramResultsExecutionContext program_results_execution_context;
     ProgramToTaskExecutionContext program_to_task_execution_context;
     TaskToTaskExecutionContext task_to_task_execution_context;
     TaskToProgramExecutionContext task_to_program_execution_context;
