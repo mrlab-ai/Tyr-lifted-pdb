@@ -18,33 +18,34 @@
 #ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_MATCH_TREE_HPP_
 #define TYR_PLANNING_GROUND_TASK_MATCH_TREE_MATCH_TREE_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
-#include "tyr/planning/ground_task/match_tree/node_splitters/interface.hpp"
-#include "tyr/planning/ground_task/match_tree/nodes/interface.hpp"
 #include "tyr/planning/ground_task/match_tree/options.hpp"
+#include "tyr/planning/ground_task/match_tree/repository.hpp"
 #include "tyr/planning/ground_task/match_tree/statistics.hpp"
 
 namespace tyr::planning::match_tree
 {
 /* MatchTree */
-template<HasConjunctiveCondition E>
+template<typename Tag>
 class MatchTreeImpl
 {
 private:
-    std::vector<E> m_elements;  ///< ATTENTION: must remain persistent. Swapping elements is allowed.
+    RepositoryPtr<Tag> m_context;
     Options m_options;
 
-    Node<E> m_root;
+    View<Index<Node<Tag>>, Repository<Tag>> m_root;
     Statistics m_statistics;
 
-    std::vector<const INode<E>*> m_evaluate_stack;  ///< temporary during evaluation.
+    std::vector<View<Index<Node<Tag>>, Repository<Tag>>> m_evaluate_stack;  ///< temporary during evaluation.
 
     MatchTreeImpl();
 
-    MatchTreeImpl(std::vector<E> elements, const Options& options = Options());
+    // MatchTreeImpl(View<IndexList<Tag>, C> elements, const Options& options = Options());
 
 public:
-    static std::unique_ptr<MatchTreeImpl<E>> create(std::vector<E> elements, const Options& options = Options());
+    template<typename formalism::Context C>
+    static std::unique_ptr<MatchTreeImpl<Tag>> create(View<IndexList<Tag>, C> elements, const Options& options = Options());
 
     // Uncopieable and unmoveable to prohibit invalidating spans on m_elements.
     MatchTreeImpl(const MatchTreeImpl& other) = delete;
@@ -52,7 +53,7 @@ public:
     MatchTreeImpl(MatchTreeImpl&& other) = delete;
     MatchTreeImpl& operator=(MatchTreeImpl&& other) = delete;
 
-    void generate_applicable_elements_iteratively(const UnpackedStateImpl& state, std::vector<E>& out_applicable_elements);
+    void generate_applicable_elements_iteratively(const UnpackedStateImpl& state, IndexList<Tag>& out_applicable_elements);
 
     const Statistics& get_statistics() const;
 };

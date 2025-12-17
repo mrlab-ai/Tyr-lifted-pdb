@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,21 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_OPTIONS_HPP_
-#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_OPTIONS_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_CONSTRUCTION_HELPERS_PLACEHOLDER_INDEX_HPP_
+#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_CONSTRUCTION_HELPERS_PLACEHOLDER_INDEX_HPP_
 
+#include "tyr/common/index_mixins.hpp"
+#include "tyr/common/types.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 
-namespace tyr::planning::match_tree
+namespace tyr
 {
-struct Options
+template<typename Tag>
+struct Index<planning::match_tree::PlaceholderNode<Tag>> : IndexMixin<Index<planning::match_tree::PlaceholderNode<Tag>>>
 {
-    // bool enable_dump_dot_file = false;
-    // fs::path output_dot_file = "match_tree.dot";
-    // size_t max_num_nodes = std::numeric_limits<size_t>::max();
-    // SplitStrategyEnum split_strategy = SplitStrategyEnum::DYNAMIC;
-    // SplitMetricEnum split_metric = SplitMetricEnum::FREQUENCY;
-    // OptimizationDirectionEnum optimization_direction = OptimizationDirectionEnum::MAXIMIZE;
+    using Tag = planning::match_tree::PlaceholderNode<Tag>;
+
+    // Inherit constructors
+    using Base = IndexMixin<Index<planning::match_tree::PlaceholderNode<Tag>>>;
+    using Base::Base;
 };
 
 }

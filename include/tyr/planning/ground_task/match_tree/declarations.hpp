@@ -24,111 +24,114 @@
 
 namespace tyr::planning::match_tree
 {
-
-template<typename T>
-concept HasConjunctiveCondition = requires(T a) {
-    { a.get_condition() };
-};
-
 /**
  * Forward declarations
  */
 
-template<HasConjunctiveCondition E>
-class PlaceholderNodeImpl;
+template<typename Tag>
+struct PlaceholderNode
+{
+};
 
 /**
  * InverseNode
  */
 
-template<HasConjunctiveCondition E>
-class IInverseNode;
+template<typename Tag>
+struct InverseAtomSelectorNode
+{
+};
 
-template<HasConjunctiveCondition E, bool TrueChild, bool FalseChild, bool DontCareChild>
-class InverseAtomSelectorNode_TFX;
-template<HasConjunctiveCondition E>
-class InverseAtomSelectorNode_General;
+template<typename Tag>
+struct InverseFactSelectorNode
+{
+};
 
-template<HasConjunctiveCondition E, bool TrueChild, bool FalseChild, bool DontCareChild>
-class InverseFactSelectorNode_Binary;
-template<HasConjunctiveCondition E>
-class InverseFactSelectorNode_General;
+template<typename Tag>
+struct InverseNumericConstraintSelectorNode
+{
+};
 
-template<HasConjunctiveCondition E>
-class InverseNumericConstraintSelectorNode_TX;
-template<HasConjunctiveCondition E>
-class InverseNumericConstraintSelectorNode_T;
-template<HasConjunctiveCondition E>
+template<typename Tag>
+struct InverseElementGeneratorNode
+{
+};
 
-class InverseElementGeneratorNode_Perfect;
-template<HasConjunctiveCondition E>
-class InverseElementGeneratorNode_Imperfect;
+template<typename Tag>
+struct InverseNode
+{
+};
 
 /**
  * Node
  */
 
-template<HasConjunctiveCondition E>
-class INode;
+template<typename Tag>
+struct AtomSelectorNode
+{
+};
 
-template<HasConjunctiveCondition E, bool TrueChild, bool FalseChild, bool DontCareChild>
-class AtomSelectorNode_Binary;
-template<HasConjunctiveCondition E>
-class AtomSelectorNode_General;
+template<typename Tag>
+struct FactSelectorNode
+{
+};
 
-template<HasConjunctiveCondition E, bool TrueChild, bool FalseChild, bool DontCareChild>
-class FactSelectorNode_Binary;
-template<HasConjunctiveCondition E>
-class FactSelectorNode_General;
+template<typename Tag>
+struct NumericConstraintSelectorNode
+{
+};
 
-template<HasConjunctiveCondition E>
-class NumericConstraintSelectorNode_TX;
-template<HasConjunctiveCondition E>
-class NumericConstraintSelectorNode_T;
+template<typename Tag>
+struct ElementGeneratorNode
+{
+};
 
-template<HasConjunctiveCondition E>
-class ElementGeneratorNode_Perfect;
-template<HasConjunctiveCondition E>
-class ElementGeneratorNode_Imperfect;
+template<typename Tag>
+struct Node
+{
+};
 
-template<HasConjunctiveCondition E>
+/**
+ * NodeScoreFunction
+ */
+
+template<typename Tag>
 class INodeScoreFunction;
 
-template<HasConjunctiveCondition E>
+/**
+ * NodeSplitter
+ */
+
+template<typename Tag>
 class INodeSplitter;
 
 struct Options;
 struct Statistics;
 
-template<HasConjunctiveCondition E>
+template<typename Tag>
 class MatchTreeImpl;
-template<HasConjunctiveCondition E>
+template<typename Tag>
 using MatchTree = std::unique_ptr<MatchTreeImpl<E>>;
-template<HasConjunctiveCondition E>
+template<typename Tag>
 using MatchTreeList = std::vector<MatchTree<E>>;
 
 /**
  * Aliases
  */
 
-template<HasConjunctiveCondition E>
-using PlaceholderNode = std::unique_ptr<PlaceholderNodeImpl<E>>;
-template<HasConjunctiveCondition E>
+template<typename Tag>
 using PlaceholderNodeList = std::vector<PlaceholderNode<E>>;
 
-template<HasConjunctiveCondition E>
-using InverseNode = std::unique_ptr<IInverseNode<E>>;
-template<HasConjunctiveCondition E>
-using InverseNodeList = std::vector<InverseNode<E>>;
-
-template<HasConjunctiveCondition E>
-using Node = std::unique_ptr<INode<E>>;
-
-template<HasConjunctiveCondition E>
+template<typename Tag>
 using NodeScoreFunction = std::unique_ptr<INodeScoreFunction<E>>;
 
-template<HasConjunctiveCondition E>
+template<typename Tag>
 using NodeSplitter = std::unique_ptr<INodeSplitter<E>>;
+
+template<typename Tag>
+class Repository;
+template<typename Tag>
+using RepositoryPtr = std::unique_ptr<Repository>;
 }
 
 #endif
