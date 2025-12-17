@@ -28,21 +28,6 @@ using namespace tyr::formalism;
 
 namespace tyr::planning
 {
-static IndexList<Variable> collect_free_variables() {}
-
-/**
- * Assume each pre and eff is a set of literals
- *
- * Action = [pre, [<c1_pre,c1_eff>,...,cn_pre,cn_eff>]]
- * App_pre :- pre
- * App_c1_pre :- App_pre and ci_pre    forall i=1,...,n
- * e :- App_ci_pre                     forall i=1,...,n forall e in ci_eff
- */
-template<formalism::Context C>
-struct Mappings
-{
-    UnorderedMap<View<Index<FDRConjunctiveCondition>, C>, View<Index<Atom<FluentTag>>, C>> condition;
-};
 
 void append_from_condition(View<Index<FDRConjunctiveCondition>, OverlayRepository<Repository>> cond,
                            MergeContext<OverlayRepository<Repository>, Repository>& context,
@@ -61,26 +46,159 @@ void append_from_condition(View<Index<FDRConjunctiveCondition>, OverlayRepositor
             conj_cond.fluent_literals.push_back(merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, context).get_index());
 };
 
-static View<Index<ConjunctiveCondition>, Repository> make_delete_free_body(View<Index<Action>, OverlayRepository<Repository>> action,
-                                                                           MergeContext<OverlayRepository<Repository>, Repository>& context)
+/**
+ * Assume each pre and eff is a set of literals
+ *
+ * Action = [pre, [<c1_pre,c1_eff>,...,cn_pre,cn_eff>]]
+ * App_pre :- pre
+ * App_c1_pre :- App_pre and ci_pre    forall i=1,...,n
+ * e :- App_ci_pre                     forall i=1,...,n forall e in ci_eff
+ */
+
+static ::cista::offset::string create_applicability_name(View<Index<Action>, OverlayRepository<Repository>> action)
 {
+    return ::cista::offset::string { std::string { "@" } + action.get_name().str() };
+}
+
+static ::cista::offset::string create_triggered_name(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                     View<Index<ConditionalEffect>, OverlayRepository<Repository>> cond_eff)
+{
+    return ::cista::offset::string { std::string { "@" } + action.get_name().str() + std::string("_") + std::to_string(cond_eff.get_index().get_value()) };
+}
+
+static ::cista::offset::string create_applicability_name(View<Index<Axiom>, OverlayRepository<Repository>> axiom)
+{
+    return ::cista::offset::string { std::string { "@" } + axiom.get_head().get_predicate().get_name().str() + std::string("/")
+                                     + std::to_string(axiom.get_head().get_predicate().get_arity()) };
+}
+
+static View<Index<Predicate<FluentTag>>, Repository> create_applicability_predicate(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                                                    MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto predicate_ptr = context.builder.get_builder<Predicate<FluentTag>>();
+    auto& predicate = *predicate_ptr;
+    predicate.clear();
+
+    predicate.name = create_applicability_name(action);
+    predicate.arity = action.get_arity();
+
+    canonicalize(predicate);
+    return context.destination.get_or_create(predicate, context.builder.get_buffer()).first;
+}
+
+static View<Index<Atom<FluentTag>>, Repository> create_applicability_atom(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                                          MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto atom_ptr = context.builder.get_builder<Atom<FluentTag>>();
+    auto& atom = *atom_ptr;
+    atom.clear();
+
+    const auto applicability_predicate = create_applicability_predicate(action, context);
+
+    atom.predicate = applicability_predicate.get_index();
+    for (uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
+        atom.terms.push_back(Data<Term>(ParameterIndex(i)));
+
+    canonicalize(atom);
+    return context.destination.get_or_create(atom, context.builder.get_buffer()).first;
+}
+
+static View<Index<Literal<FluentTag>>, Repository> create_applicability_literal(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                                                MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto literal_ptr = context.builder.get_builder<Literal<FluentTag>>();
+    auto& literal = *literal_ptr;
+    literal.clear();
+
+    literal.polarity = true;
+    literal.atom = create_applicability_atom(action, context).get_index();
+
+    canonicalize(literal);
+    return context.destination.get_or_create(literal, context.builder.get_buffer()).first;
+}
+
+static View<Index<Rule>, Repository> create_applicability_rule(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                               MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto rule_ptr = context.builder.get_builder<Rule>();
+    auto& rule = *rule_ptr;
+    rule.clear();
+
     auto conj_cond_ptr = context.builder.get_builder<ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
     for (const auto variable : action.get_variables())
         conj_cond.variables.push_back(merge(variable, context).get_index());
-
     append_from_condition(action.get_condition(), context, conj_cond);
 
     canonicalize(conj_cond);
-    return context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first;
+    const auto new_conj_cond = context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first;
+
+    rule.variables = new_conj_cond.get_variables().get_data();
+    rule.body = new_conj_cond.get_index();
+    rule.head = create_applicability_atom(action, context).get_index();
+
+    canonicalize(rule);
+    return context.destination.get_or_create(rule, context.builder.get_buffer()).first;
 }
 
-static View<Index<ConjunctiveCondition>, Repository> make_delete_free_body(View<Index<Action>, OverlayRepository<Repository>> action,
-                                                                           View<Index<ConditionalEffect>, OverlayRepository<Repository>> cond_eff,
-                                                                           MergeContext<OverlayRepository<Repository>, Repository>& context)
+static View<Index<Predicate<FluentTag>>, Repository> create_triggered_predicate(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                                                View<Index<ConditionalEffect>, OverlayRepository<Repository>> cond_eff,
+                                                                                MergeContext<OverlayRepository<Repository>, Repository>& context)
 {
+    auto predicate_ptr = context.builder.get_builder<Predicate<FluentTag>>();
+    auto& predicate = *predicate_ptr;
+    predicate.clear();
+
+    predicate.name = create_triggered_name(action, cond_eff);
+    predicate.arity = action.get_arity() + cond_eff.get_arity();
+
+    canonicalize(predicate);
+    return context.destination.get_or_create(predicate, context.builder.get_buffer()).first;
+}
+
+static View<Index<Atom<FluentTag>>, Repository> create_triggered_atom(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                                      View<Index<ConditionalEffect>, OverlayRepository<Repository>> cond_eff,
+                                                                      MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto atom_ptr = context.builder.get_builder<Atom<FluentTag>>();
+    auto& atom = *atom_ptr;
+    atom.clear();
+
+    const auto triggered_predicate = create_triggered_predicate(action, cond_eff, context);
+
+    atom.predicate = triggered_predicate.get_index();
+    for (uint_t i = 0; i < triggered_predicate.get_arity(); ++i)
+        atom.terms.push_back(Data<Term>(ParameterIndex(i)));
+
+    canonicalize(atom);
+    return context.destination.get_or_create(atom, context.builder.get_buffer()).first;
+}
+
+static View<Index<Literal<FluentTag>>, Repository> create_triggered_literal(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                                            View<Index<ConditionalEffect>, OverlayRepository<Repository>> cond_eff,
+                                                                            MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto literal_ptr = context.builder.get_builder<Literal<FluentTag>>();
+    auto& literal = *literal_ptr;
+    literal.clear();
+
+    literal.polarity = true;
+    literal.atom = create_triggered_atom(action, cond_eff, context).get_index();
+
+    canonicalize(literal);
+    return context.destination.get_or_create(literal, context.builder.get_buffer()).first;
+}
+
+static View<Index<Rule>, Repository> create_triggered_rule(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                           View<Index<ConditionalEffect>, OverlayRepository<Repository>> cond_eff,
+                                                           MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto rule_ptr = context.builder.get_builder<Rule>();
+    auto& rule = *rule_ptr;
+    rule.clear();
+
     auto conj_cond_ptr = context.builder.get_builder<ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
@@ -89,118 +207,97 @@ static View<Index<ConjunctiveCondition>, Repository> make_delete_free_body(View<
         conj_cond.variables.push_back(merge(variable, context).get_index());
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge(variable, context).get_index());
-
-    append_from_condition(action.get_condition(), context, conj_cond);
     append_from_condition(cond_eff.get_condition(), context, conj_cond);
+    conj_cond.fluent_literals.push_back(create_applicability_literal(action, context).get_index());
 
     canonicalize(conj_cond);
-    return context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first;
+    const auto new_conj_cond = context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first;
+
+    rule.variables = new_conj_cond.get_variables().get_data();
+    rule.body = new_conj_cond.get_index();
+    rule.head = create_triggered_atom(action, cond_eff, context).get_index();
+
+    canonicalize(rule);
+    return context.destination.get_or_create(rule, context.builder.get_buffer()).first;
 }
 
-static void translate_action_to_delete_free_rules(View<Index<Action>, OverlayRepository<Repository>> action,
-                                                  Data<Program>& program,
-                                                  MergeContext<OverlayRepository<Repository>, Repository>& context,
-                                                  GroundTaskProgram::RuleToActionsMapping& rule_to_actions_mapping)
+static View<Index<Rule>, Repository> create_effect_rule(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                        View<Index<ConditionalEffect>, OverlayRepository<Repository>> cond_eff,
+                                                        View<Index<Atom<FluentTag>>, Repository> effect,
+                                                        MergeContext<OverlayRepository<Repository>, Repository>& context)
 {
-    // Check whether we need special instantiation
-    auto instantiated_through_literals = std::any_of(action.get_effects().begin(),
-                                                     action.get_effects().end(),
-                                                     [&](auto&& cond_eff)
-                                                     {
-                                                         return std::any_of(cond_eff.get_effect().get_literals().begin(),
-                                                                            cond_eff.get_effect().get_literals().end(),
-                                                                            [](auto&& literal) { return literal.get_polarity(); });
-                                                     });
+    auto rule_ptr = context.builder.get_builder<Rule>();
+    auto& rule = *rule_ptr;
+    rule.clear();
 
-    if (instantiated_through_literals)
-        for (const auto cond_eff : action.get_effects())
-        {
-            // 1) Build shared body: Pre(a) ∧ Cond(ce)
-            auto body = make_delete_free_body(action, cond_eff, context);
+    auto conj_cond_ptr = context.builder.get_builder<ConjunctiveCondition>();
+    auto& conj_cond = *conj_cond_ptr;
+    conj_cond.clear();
 
-            // 2) For each positive fluent literal in ce.effect, create a rule:
-            //    Body -> head_atom
-            for (const auto literal : cond_eff.get_effect().get_literals())
-            {
-                if (!literal.get_polarity())
-                    continue;  /// ignore delete effects
+    for (const auto variable : action.get_variables())
+        conj_cond.variables.push_back(merge(variable, context).get_index());
+    for (const auto variable : cond_eff.get_variables())
+        conj_cond.variables.push_back(merge(variable, context).get_index());
+    conj_cond.fluent_literals.push_back(create_triggered_literal(action, cond_eff, context).get_index());
 
-                auto rule_ptr = context.builder.get_builder<Rule>();
-                auto& rule = *rule_ptr;
-                rule.clear();
+    canonicalize(conj_cond);
+    const auto new_conj_cond = context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first;
 
-                rule.body = body.get_index();
-                rule.head = merge(literal.get_atom(), context).get_index();
+    rule.variables = new_conj_cond.get_variables().get_data();
+    rule.body = new_conj_cond.get_index();
+    rule.head = effect.get_index();
 
-                canonicalize(rule);
-                auto new_rule = context.destination.get_or_create(rule, context.builder.get_buffer()).first;
-
-                rule_to_actions_mapping[new_rule].emplace_back(action);
-
-                program.rules.push_back(new_rule.get_index());
-            }
-        }
-    else
-    {
-        auto predicate_ptr = context.builder.get_builder<Predicate<FluentTag>>();
-        auto& predicate = *predicate_ptr;
-        predicate.clear();
-
-        predicate.name = ::cista::offset::string { std::string { "@" } + action.get_name().str() };
-        predicate.arity = action.get_arity();
-
-        canonicalize(predicate);
-        const auto new_predicate = context.destination.get_or_create(predicate, context.builder.get_buffer()).first;
-        program.fluent_predicates.push_back(new_predicate.get_index());
-
-        auto atom_ptr = context.builder.get_builder<Atom<FluentTag>>();
-        auto& atom = *atom_ptr;
-        atom.clear();
-
-        atom.predicate = new_predicate.get_index();
-        for (uint_t i = 0; i < action.get_arity(); ++i)
-            atom.terms.push_back(Data<Term>(ParameterIndex(i)));
-
-        canonicalize(atom);
-        const auto new_atom = context.destination.get_or_create(atom, context.builder.get_buffer()).first;
-
-        auto body = make_delete_free_body(action, context);
-
-        auto rule_ptr = context.builder.get_builder<Rule>();
-        auto& rule = *rule_ptr;
-        rule.clear();
-
-        rule.body = body.get_index();
-        rule.head = new_atom.get_index();
-
-        canonicalize(rule);
-        auto new_rule = context.destination.get_or_create(rule, context.builder.get_buffer()).first;
-
-        rule_to_actions_mapping[new_rule].emplace_back(action);
-
-        program.rules.push_back(new_rule.get_index());
-    }
+    canonicalize(rule);
+    return context.destination.get_or_create(rule, context.builder.get_buffer()).first;
 }
 
-static void process_delete_free_axiom_body(View<Index<FDRConjunctiveCondition>, OverlayRepository<Repository>> axiom_body,
-                                           MergeContext<OverlayRepository<Repository>, Repository>& context,
-                                           Data<ConjunctiveCondition>& conj_cond)
+static View<Index<Predicate<FluentTag>>, Repository> create_applicability_predicate(View<Index<Axiom>, OverlayRepository<Repository>> axiom,
+                                                                                    MergeContext<OverlayRepository<Repository>, Repository>& context)
 {
-    for (const auto literal : axiom_body.get_literals<StaticTag>())
-        if (literal.get_polarity())
-            conj_cond.static_literals.push_back(merge(literal, context).get_index());
+    auto predicate_ptr = context.builder.get_builder<Predicate<FluentTag>>();
+    auto& predicate = *predicate_ptr;
+    predicate.clear();
 
-    for (const auto literal : axiom_body.get_literals<FluentTag>())
-        if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge(literal, context).get_index());
+    predicate.name = create_applicability_name(axiom);
+    predicate.arity = axiom.get_arity();
 
-    for (const auto literal : axiom_body.get_literals<DerivedTag>())
-        if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, context).get_index());
+    canonicalize(predicate);
+    return context.destination.get_or_create(predicate, context.builder.get_buffer()).first;
 }
 
-View<Index<Rule>, Repository> static create_delete_free_axiom_rule(View<Index<Axiom>, OverlayRepository<Repository>> axiom,
-                                                                   MergeContext<OverlayRepository<Repository>, Repository>& context)
+static View<Index<Atom<FluentTag>>, Repository> create_applicability_atom(View<Index<Axiom>, OverlayRepository<Repository>> axiom,
+                                                                          MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto atom_ptr = context.builder.get_builder<Atom<FluentTag>>();
+    auto& atom = *atom_ptr;
+    atom.clear();
+
+    const auto applicability_predicate = create_applicability_predicate(axiom, context);
+
+    atom.predicate = applicability_predicate.get_index();
+    for (uint_t i = 0; i < applicability_predicate.get_arity(); ++i)
+        atom.terms.push_back(Data<Term>(ParameterIndex(i)));
+
+    canonicalize(atom);
+    return context.destination.get_or_create(atom, context.builder.get_buffer()).first;
+}
+
+static View<Index<Literal<FluentTag>>, Repository> create_applicability_literal(View<Index<Axiom>, OverlayRepository<Repository>> axiom,
+                                                                                MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto literal_ptr = context.builder.get_builder<Literal<FluentTag>>();
+    auto& literal = *literal_ptr;
+    literal.clear();
+
+    literal.polarity = true;
+    literal.atom = create_applicability_atom(axiom, context).get_index();
+
+    canonicalize(literal);
+    return context.destination.get_or_create(literal, context.builder.get_buffer()).first;
+}
+
+static View<Index<Rule>, Repository> create_applicability_rule(View<Index<Axiom>, OverlayRepository<Repository>> axiom,
+                                                               MergeContext<OverlayRepository<Repository>, Repository>& context)
 {
     auto rule_ptr = context.builder.get_builder<Rule>();
     auto& rule = *rule_ptr;
@@ -212,20 +309,90 @@ View<Index<Rule>, Repository> static create_delete_free_axiom_rule(View<Index<Ax
 
     for (const auto variable : axiom.get_variables())
         conj_cond.variables.push_back(merge(variable, context).get_index());
-
-    process_delete_free_axiom_body(axiom.get_body(), context, conj_cond);
+    append_from_condition(axiom.get_body(), context, conj_cond);
 
     canonicalize(conj_cond);
     const auto new_conj_cond = context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first;
 
+    rule.variables = new_conj_cond.get_variables().get_data();
     rule.body = new_conj_cond.get_index();
-
-    const auto new_head = merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(axiom.get_head(), context);
-
-    rule.head = new_head.get_index();
+    rule.head = create_applicability_atom(axiom, context).get_index();
 
     canonicalize(rule);
     return context.destination.get_or_create(rule, context.builder.get_buffer()).first;
+}
+
+static View<Index<Rule>, Repository> create_effect_rule(View<Index<Axiom>, OverlayRepository<Repository>> axiom,
+                                                        View<Index<Atom<FluentTag>>, Repository> effect,
+                                                        MergeContext<OverlayRepository<Repository>, Repository>& context)
+{
+    auto rule_ptr = context.builder.get_builder<Rule>();
+    auto& rule = *rule_ptr;
+    rule.clear();
+
+    auto conj_cond_ptr = context.builder.get_builder<ConjunctiveCondition>();
+    auto& conj_cond = *conj_cond_ptr;
+    conj_cond.clear();
+
+    for (const auto variable : axiom.get_variables())
+        conj_cond.variables.push_back(merge(variable, context).get_index());
+    conj_cond.fluent_literals.push_back(create_applicability_literal(axiom, context).get_index());
+
+    canonicalize(conj_cond);
+    const auto new_conj_cond = context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first;
+
+    rule.variables = new_conj_cond.get_variables().get_data();
+    rule.body = new_conj_cond.get_index();
+    rule.head = effect.get_index();
+
+    canonicalize(rule);
+    return context.destination.get_or_create(rule, context.builder.get_buffer()).first;
+}
+
+static void translate_action_to_delete_free_rules(View<Index<Action>, OverlayRepository<Repository>> action,
+                                                  Data<Program>& program,
+                                                  MergeContext<OverlayRepository<Repository>, Repository>& context,
+                                                  GroundTaskProgram::RuleToActionsMapping& rule_to_actions_mapping)
+{
+    program.fluent_predicates.push_back(create_applicability_predicate(action, context).get_index());
+
+    const auto applicability_rule = create_applicability_rule(action, context);
+
+    rule_to_actions_mapping[applicability_rule].emplace_back(action);
+
+    program.rules.push_back(applicability_rule.get_index());
+
+    for (const auto cond_eff : action.get_effects())
+    {
+        program.fluent_predicates.push_back(create_triggered_predicate(action, cond_eff, context).get_index());
+
+        program.rules.push_back(create_triggered_rule(action, cond_eff, context).get_index());
+
+        for (const auto literal : cond_eff.get_effect().get_literals())
+        {
+            if (!literal.get_polarity())
+                continue;  /// ignore delete effects
+
+            program.rules.push_back(create_effect_rule(action, cond_eff, merge(literal.get_atom(), context), context).get_index());
+        }
+    }
+}
+
+static void translate_axiom_to_delete_free_axiom_rules(View<Index<Axiom>, OverlayRepository<Repository>> axiom,
+                                                       Data<Program>& program,
+                                                       MergeContext<OverlayRepository<Repository>, Repository>& context,
+                                                       GroundTaskProgram::RuleToAxiomsMapping& rule_to_axioms_mapping)
+{
+    program.fluent_predicates.push_back(create_applicability_predicate(axiom, context).get_index());
+
+    const auto applicability_rule = create_applicability_rule(axiom, context);
+
+    rule_to_axioms_mapping[applicability_rule].emplace_back(axiom);
+
+    program.rules.push_back(applicability_rule.get_index());
+
+    program.rules.push_back(
+        create_effect_rule(axiom, merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(axiom.get_head(), context), context).get_index());
 }
 
 static View<Index<Program>, Repository> create(const LiftedTask& task,
@@ -278,18 +445,10 @@ static View<Index<Program>, Repository> create(const LiftedTask& task,
         translate_action_to_delete_free_rules(action, program, context, rule_to_actions_mapping);
 
     for (const auto axiom : task.get_task().get_domain().get_axioms())
-    {
-        auto new_rule = create_delete_free_axiom_rule(axiom, context);
-        rule_to_axioms_mapping[new_rule].emplace_back(axiom);
-        program.rules.push_back(new_rule.get_index());
-    }
+        translate_axiom_to_delete_free_axiom_rules(axiom, program, context, rule_to_axioms_mapping);
 
     for (const auto axiom : task.get_task().get_axioms())
-    {
-        auto new_rule = create_delete_free_axiom_rule(axiom, context);
-        rule_to_axioms_mapping[new_rule].emplace_back(axiom);
-        program.rules.push_back(new_rule.get_index());
-    }
+        translate_axiom_to_delete_free_axiom_rules(axiom, program, context, rule_to_axioms_mapping);
 
     canonicalize(program);
     return repository.get_or_create(program, builder.get_buffer()).first;

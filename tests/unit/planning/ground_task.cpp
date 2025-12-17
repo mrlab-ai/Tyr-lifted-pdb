@@ -41,7 +41,7 @@ TEST(TyrTests, TyrPlanningGroundTaskAirport)
 
     EXPECT_EQ(ground_task->get_num_atoms<FluentTag>(), 59);
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 379);
-    EXPECT_EQ(ground_task->get_num_actions(), 63);
+    EXPECT_EQ(ground_task->get_num_actions(), 43);
     EXPECT_EQ(ground_task->get_num_axioms(), 420);
 }
 
@@ -191,7 +191,7 @@ TEST(TyrTests, TyrPlanningGroundTaskMiconicFulladl)
 
     EXPECT_EQ(ground_task->get_num_atoms<FluentTag>(), 9);
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 22);
-    EXPECT_EQ(ground_task->get_num_actions(), 14);
+    EXPECT_EQ(ground_task->get_num_actions(), 10);
     EXPECT_EQ(ground_task->get_num_axioms(), 15);
 }
 
