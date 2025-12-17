@@ -88,10 +88,9 @@ struct RuleExecutionContext
     std::shared_ptr<formalism::Repository> repository;
     formalism::OverlayRepository<formalism::Repository> overlay_repository;
     formalism::MergeCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> merge_cache;
-    // Ground program rule in rule execution context
-    formalism::GrounderCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> grounder_cache;
 
     /// Bindings kept from iteration in stage
+    IndexList<formalism::Object> binding;
     std::vector<View<Index<formalism::Binding>, formalism::Repository>> bindings;
 
     struct Statistics
@@ -219,7 +218,7 @@ struct ProgramToTaskExecutionContext
     ProgramToTaskExecutionContext() = default;
 
     formalism::MergeCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> merge_cache;
-    formalism::GrounderCache<formalism::Repository, formalism::OverlayRepository<formalism::Repository>> grounder_cache;
+    IndexList<formalism::Object> binding;
 
     void clear() noexcept;
 };
@@ -229,7 +228,6 @@ struct TaskToProgramExecutionContext
     TaskToProgramExecutionContext() = default;
 
     formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> merge_cache;
-    formalism::GrounderCache<formalism::OverlayRepository<formalism::Repository>, formalism::Repository> grounder_cache;
 
     void clear() noexcept;
 };
@@ -239,7 +237,7 @@ struct TaskToTaskExecutionContext
     TaskToTaskExecutionContext() = default;
 
     formalism::MergeCache<formalism::OverlayRepository<formalism::Repository>, formalism::OverlayRepository<formalism::Repository>> merge_cache;
-    formalism::GrounderCache<formalism::OverlayRepository<formalism::Repository>, formalism::OverlayRepository<formalism::Repository>> grounder_cache;
+    IndexList<formalism::Object> binding;
 
     void clear() noexcept;
 };
@@ -256,7 +254,7 @@ struct ProgramExecutionContext
 
     /// --- Builder
     formalism::Builder builder;
-    formalism::GrounderCache<formalism::Repository, formalism::Repository> grounder_cache;
+    IndexList<formalism::Object> binding;
 
     /// --- Execution contexts
     FactsExecutionContext facts_execution_context;

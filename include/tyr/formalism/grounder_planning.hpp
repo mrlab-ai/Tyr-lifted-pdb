@@ -31,7 +31,7 @@ namespace tyr::formalism
 {
 template<FactKind T_SRC, Context C_SRC, Context C_DST, FactKind T_DST>
 View<Index<GroundAtom<T_DST>>, C_DST>
-ground_planning(View<Index<Atom<T_SRC>>, C_SRC> element, MergeContext<C_SRC, C_DST>& merge_context, GrounderContext<C_SRC, C_DST>& grounder_context)
+ground_planning(View<Index<Atom<T_SRC>>, C_SRC> element, MergeContext<C_SRC, C_DST>& merge_context, GrounderContext<C_DST>& grounder_context)
 {
     // Fetch and clear
     auto atom_ptr = grounder_context.builder.template get_builder<GroundAtom<T_DST>>();
@@ -48,7 +48,7 @@ ground_planning(View<Index<Atom<T_SRC>>, C_SRC> element, MergeContext<C_SRC, C_D
 }
 
 template<FactKind T_SRC, Context C_SRC, Context C_DST, FactKind T_DST = T_SRC>
-View<Index<GroundAtom<T_DST>>, C_DST> ground_planning(View<Index<Atom<T_SRC>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<GroundAtom<T_DST>>, C_DST> ground_planning(View<Index<Atom<T_SRC>>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto atom_ptr = context.builder.template get_builder<GroundAtom<T_DST>>();
@@ -66,13 +66,13 @@ View<Index<GroundAtom<T_DST>>, C_DST> ground_planning(View<Index<Atom<T_SRC>>, C
 
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR, C_DST>
-View<Data<FDRFact<FluentTag>>, C_DST> ground_planning(View<Index<Atom<FluentTag>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context, FDR& fdr)
+View<Data<FDRFact<FluentTag>>, C_DST> ground_planning(View<Index<Atom<FluentTag>>, C_SRC> element, GrounderContext<C_DST>& context, FDR& fdr)
 {
     return fdr.get_fact(ground_planning(element, context));
 }
 
 template<FactKind T, Context C_SRC, Context C_DST>
-View<Index<GroundLiteral<T>>, C_DST> ground_planning(View<Index<Literal<T>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<GroundLiteral<T>>, C_DST> ground_planning(View<Index<Literal<T>>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto ground_literal_ptr = context.builder.template get_builder<GroundLiteral<T>>();
@@ -90,7 +90,7 @@ View<Index<GroundLiteral<T>>, C_DST> ground_planning(View<Index<Literal<T>>, C_S
 
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR, C_DST>
-View<Data<FDRFact<FluentTag>>, C_DST> ground_planning(View<Index<Literal<FluentTag>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context, FDR& fdr)
+View<Data<FDRFact<FluentTag>>, C_DST> ground_planning(View<Index<Literal<FluentTag>>, C_SRC> element, GrounderContext<C_DST>& context, FDR& fdr)
 {
     auto fact = ground_planning(element.get_atom(), context, fdr).get_data();
     if (!element.get_polarity())
@@ -102,7 +102,7 @@ View<Data<FDRFact<FluentTag>>, C_DST> ground_planning(View<Index<Literal<FluentT
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR, C_DST>
 View<Index<GroundFDRConjunctiveCondition>, C_DST>
-ground_planning(View<Index<FDRConjunctiveCondition>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context, FDR& fdr)
+ground_planning(View<Index<FDRConjunctiveCondition>, C_SRC> element, GrounderContext<C_DST>& context, FDR& fdr)
 {
     // Fetch and clear
     auto conj_cond_ptr = context.builder.template get_builder<GroundFDRConjunctiveCondition>();
@@ -125,7 +125,7 @@ ground_planning(View<Index<FDRConjunctiveCondition>, C_SRC> element, GrounderCon
 }
 
 template<NumericEffectOpKind Op, FactKind T, Context C_SRC, Context C_DST>
-View<Index<GroundNumericEffect<Op, T>>, C_DST> ground_planning(View<Index<NumericEffect<Op, T>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<GroundNumericEffect<Op, T>>, C_DST> ground_planning(View<Index<NumericEffect<Op, T>>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto numeric_effect_ptr = context.builder.template get_builder<GroundNumericEffect<Op, T>>();
@@ -142,7 +142,7 @@ View<Index<GroundNumericEffect<Op, T>>, C_DST> ground_planning(View<Index<Numeri
 }
 
 template<FactKind T, Context C_SRC, Context C_DST>
-View<Data<GroundNumericEffectOperator<T>>, C_DST> ground_planning(View<Data<NumericEffectOperator<T>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Data<GroundNumericEffectOperator<T>>, C_DST> ground_planning(View<Data<NumericEffectOperator<T>>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     return visit([&](auto&& arg) { return make_view(Data<GroundNumericEffectOperator<T>>(ground_planning(arg, context).get_index()), context.destination); },
                  element.get_variant());
@@ -151,7 +151,7 @@ View<Data<GroundNumericEffectOperator<T>>, C_DST> ground_planning(View<Data<Nume
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR, C_DST>
 View<Index<GroundConjunctiveEffect>, C_DST> ground_planning(View<Index<ConjunctiveEffect>, C_SRC> element,
-                                                            GrounderContext<C_SRC, C_DST>& context,
+                                                            GrounderContext<C_DST>& context,
                                                             UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign,
                                                             FDR& fdr)
 {
@@ -194,7 +194,7 @@ View<Index<GroundConjunctiveEffect>, C_DST> ground_planning(View<Index<Conjuncti
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR, C_DST>
 View<Index<GroundConditionalEffect>, C_DST> ground_planning(View<Index<ConditionalEffect>, C_SRC> element,
-                                                            GrounderContext<C_SRC, C_DST>& context,
+                                                            GrounderContext<C_DST>& context,
                                                             UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign,
                                                             FDR& fdr)
 {
@@ -215,7 +215,7 @@ View<Index<GroundConditionalEffect>, C_DST> ground_planning(View<Index<Condition
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR, C_DST>
 View<Index<GroundAction>, C_DST> ground_planning(View<Index<Action>, C_SRC> element,
-                                                 GrounderContext<C_SRC, C_DST>& context,
+                                                 GrounderContext<C_DST>& context,
                                                  const analysis::DomainListListList& cond_effect_domains,
                                                  UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign,
                                                  FDR& fdr)
@@ -227,11 +227,10 @@ View<Index<GroundAction>, C_DST> ground_planning(View<Index<Action>, C_SRC> elem
 
     // Fill data
     action.action = element.get_index();
-    action.binding = context.binding.get_index();
+    action.binding = ground_common(context.binding, context).get_index();
     action.condition = ground_planning(element.get_condition(), context, fdr).get_index();
 
-    auto binding_full_ptr = context.builder.template get_builder<Binding>();
-    auto& binding_full = *binding_full_ptr;
+    auto binding_size = context.binding.size();
 
     for (uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
@@ -245,16 +244,11 @@ View<Index<GroundAction>, C_DST> ground_planning(View<Index<Action>, C_SRC> elem
                                      parameter_domains.end(),
                                      [&](auto&& binding_cond)
                                      {
-                                         binding_full.clear();
-                                         binding_full.objects = context.binding.get_data().objects;
-                                         binding_full.objects.insert(binding_full.objects.end(), binding_cond.begin(), binding_cond.end());
+                                         // push the additional parameters to the end
+                                         context.binding.resize(binding_size);
+                                         context.binding.insert(context.binding.end(), binding_cond.begin(), binding_cond.end());
 
-                                         canonicalize(binding_full);
-                                         const auto new_binding_full = context.destination.get_or_create(binding_full, context.builder.get_buffer()).first;
-
-                                         auto new_context = GrounderContext { context.builder, context.destination, new_binding_full, context.cache };
-
-                                         action.effects.push_back(ground_planning(cond_effect, new_context, assign, fdr).get_index());
+                                         action.effects.push_back(ground_planning(cond_effect, context, assign, fdr).get_index());
                                      });
     }
 
@@ -265,7 +259,7 @@ View<Index<GroundAction>, C_DST> ground_planning(View<Index<Action>, C_SRC> elem
 
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR, C_DST>
-View<Index<GroundAxiom>, C_DST> ground_planning(View<Index<Axiom>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context, FDR& fdr)
+View<Index<GroundAxiom>, C_DST> ground_planning(View<Index<Axiom>, C_SRC> element, GrounderContext<C_DST>& context, FDR& fdr)
 {
     // Fetch and clear
     auto axiom_ptr = context.builder.template get_builder<GroundAxiom>();
@@ -274,7 +268,7 @@ View<Index<GroundAxiom>, C_DST> ground_planning(View<Index<Axiom>, C_SRC> elemen
 
     // Fill data
     axiom.axiom = element.get_index();
-    axiom.binding = context.binding.get_index();
+    axiom.binding = ground_common(context.binding, context).get_index();
     axiom.body = ground_planning(element.get_body(), context, fdr).get_index();
     axiom.head = ground_planning(element.get_head(), context).get_index();
 

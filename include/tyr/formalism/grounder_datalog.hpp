@@ -29,7 +29,7 @@
 namespace tyr::formalism
 {
 template<FactKind T, Context C_SRC, Context C_DST>
-View<Index<GroundAtom<T>>, C_DST> ground_datalog(View<Index<Atom<T>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<GroundAtom<T>>, C_DST> ground_datalog(View<Index<Atom<T>>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto atom_ptr = context.builder.template get_builder<GroundAtom<T>>();
@@ -46,7 +46,7 @@ View<Index<GroundAtom<T>>, C_DST> ground_datalog(View<Index<Atom<T>>, C_SRC> ele
 }
 
 template<FactKind T, Context C_SRC, Context C_DST>
-View<Index<GroundLiteral<T>>, C_DST> ground_datalog(View<Index<Literal<T>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<GroundLiteral<T>>, C_DST> ground_datalog(View<Index<Literal<T>>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto ground_literal_ptr = context.builder.template get_builder<GroundLiteral<T>>();
@@ -63,7 +63,7 @@ View<Index<GroundLiteral<T>>, C_DST> ground_datalog(View<Index<Literal<T>>, C_SR
 }
 
 template<Context C_SRC, Context C_DST>
-View<Index<GroundConjunctiveCondition>, C_DST> ground_datalog(View<Index<ConjunctiveCondition>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<GroundConjunctiveCondition>, C_DST> ground_datalog(View<Index<ConjunctiveCondition>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto conj_cond_ptr = context.builder.template get_builder<GroundConjunctiveCondition>();
@@ -84,7 +84,7 @@ View<Index<GroundConjunctiveCondition>, C_DST> ground_datalog(View<Index<Conjunc
 }
 
 template<Context C_SRC, Context C_DST>
-View<Index<GroundRule>, C_DST> ground_datalog(View<Index<Rule>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<GroundRule>, C_DST> ground_datalog(View<Index<Rule>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto rule_ptr = context.builder.template get_builder<GroundRule>();
@@ -93,7 +93,7 @@ View<Index<GroundRule>, C_DST> ground_datalog(View<Index<Rule>, C_SRC> element, 
 
     // Fill data
     rule.rule = element.get_index();
-    rule.binding = context.binding.get_index();
+    rule.binding = ground_common(context.binding, context).get_index();
     rule.body = ground_datalog(element.get_body(), context).get_index();
     rule.head = ground_datalog(element.get_head(), context).get_index();
 

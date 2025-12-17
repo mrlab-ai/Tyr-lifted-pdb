@@ -29,116 +29,21 @@
 
 namespace tyr::formalism
 {
-template<Context C_SRC, Context C_DST>
-class GrounderCache
-{
-private:
-    template<typename T_SRC, typename T_DST = T_SRC>
-    struct MapEntryType
-    {
-        using value_type = std::pair<T_SRC, T_DST>;
-        using container_type = UnorderedMap<std::pair<View<Index<T_SRC>, C_SRC>, View<Index<Binding>, C_DST>>, View<Index<T_DST>, C_DST>>;
-
-        container_type container;
-    };
-
-    using GrounderStorage = std::tuple<MapEntryType<Atom<StaticTag>, GroundAtom<StaticTag>>,
-                                       MapEntryType<Atom<FluentTag>, GroundAtom<FluentTag>>,
-                                       MapEntryType<Atom<DerivedTag>, GroundAtom<DerivedTag>>,
-                                       MapEntryType<Atom<FluentTag>, GroundAtom<DerivedTag>>,
-                                       MapEntryType<Atom<DerivedTag>, GroundAtom<FluentTag>>,
-                                       MapEntryType<Literal<StaticTag>, GroundLiteral<StaticTag>>,
-                                       MapEntryType<Literal<FluentTag>, GroundLiteral<FluentTag>>,
-                                       MapEntryType<Literal<DerivedTag>, GroundLiteral<DerivedTag>>,
-                                       MapEntryType<Literal<FluentTag>, GroundLiteral<DerivedTag>>,
-                                       MapEntryType<Literal<DerivedTag>, GroundLiteral<FluentTag>>,
-                                       MapEntryType<FunctionTerm<StaticTag>, GroundFunctionTerm<StaticTag>>,
-                                       MapEntryType<FunctionTerm<FluentTag>, GroundFunctionTerm<FluentTag>>,
-                                       MapEntryType<FunctionTerm<AuxiliaryTag>, GroundFunctionTerm<AuxiliaryTag>>,
-                                       MapEntryType<UnaryOperator<OpSub, Data<FunctionExpression>>, UnaryOperator<OpSub, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpAdd, Data<FunctionExpression>>, BinaryOperator<OpAdd, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpSub, Data<FunctionExpression>>, BinaryOperator<OpSub, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpMul, Data<FunctionExpression>>, BinaryOperator<OpMul, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpDiv, Data<FunctionExpression>>, BinaryOperator<OpDiv, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<MultiOperator<OpAdd, Data<FunctionExpression>>, MultiOperator<OpAdd, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<MultiOperator<OpMul, Data<FunctionExpression>>, MultiOperator<OpMul, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpEq, Data<FunctionExpression>>, BinaryOperator<OpEq, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpNe, Data<FunctionExpression>>, BinaryOperator<OpNe, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpLe, Data<FunctionExpression>>, BinaryOperator<OpLe, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpLt, Data<FunctionExpression>>, BinaryOperator<OpLt, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpGe, Data<FunctionExpression>>, BinaryOperator<OpGe, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<BinaryOperator<OpGt, Data<FunctionExpression>>, BinaryOperator<OpGt, Data<GroundFunctionExpression>>>,
-                                       MapEntryType<ConjunctiveCondition, GroundConjunctiveCondition>,
-                                       MapEntryType<Rule, GroundRule>,
-                                       MapEntryType<NumericEffect<OpAssign, FluentTag>, GroundNumericEffect<OpAssign, FluentTag>>,
-                                       MapEntryType<NumericEffect<OpIncrease, FluentTag>, GroundNumericEffect<OpIncrease, FluentTag>>,
-                                       MapEntryType<NumericEffect<OpDecrease, FluentTag>, GroundNumericEffect<OpDecrease, FluentTag>>,
-                                       MapEntryType<NumericEffect<OpScaleUp, FluentTag>, GroundNumericEffect<OpScaleUp, FluentTag>>,
-                                       MapEntryType<NumericEffect<OpScaleDown, FluentTag>, GroundNumericEffect<OpScaleDown, FluentTag>>,
-                                       MapEntryType<NumericEffect<OpIncrease, AuxiliaryTag>, GroundNumericEffect<OpIncrease, AuxiliaryTag>>,
-                                       MapEntryType<FDRConjunctiveCondition, GroundFDRConjunctiveCondition>,
-                                       MapEntryType<ConditionalEffect, GroundConditionalEffect>,
-                                       MapEntryType<ConjunctiveEffect, GroundConjunctiveEffect>,
-                                       MapEntryType<Action, GroundAction>,
-                                       MapEntryType<Axiom, GroundAxiom>>;
-
-    GrounderStorage m_maps;
-
-public:
-    GrounderCache() = default;
-
-    template<typename T_SRC, typename T_DST = T_SRC>
-    auto& get() noexcept
-    {
-        using Key = std::pair<T_SRC, T_DST>;
-        return get_container<Key>(m_maps);
-    }
-    template<typename T_SRC, typename T_DST = T_SRC>
-    const auto& get() const noexcept
-    {
-        using Key = std::pair<T_SRC, T_DST>;
-        return get_container<Key>(m_maps);
-    }
-
-    void clear() noexcept
-    {
-        std::apply([](auto&... slots) { (slots.container.clear(), ...); }, m_maps);
-    }
-};
-
-template<Context C_SRC, Context C_DST>
+template<Context C>
 struct GrounderContext
 {
     Builder& builder;
-    C_DST& destination;
-    View<Index<Binding>, C_DST> binding;
-    GrounderCache<C_SRC, C_DST>& cache;
+    C& destination;
+    IndexList<Object>& binding;
 };
 
-template<typename T_SRC, typename T_DST, Context C_SRC, Context C_DST, typename F>
-auto with_cache(View<Index<T_SRC>, C_SRC> element, View<Index<Binding>, C_DST> binding, GrounderCache<C_SRC, C_DST>& cache, F&& compute)
-{
-    auto& m = cache.template get<T_SRC, T_DST>();
-
-    auto key = std::pair { element, binding };
-
-    if (auto it = m.find(key); it != m.end())
-        return it->second;
-
-    auto result = compute();  // compute the merged element
-
-    m.emplace(std::move(key), result);
-
-    return result;
-}
-
 template<Context C_SRC, Context C_DST>
-View<Index<Binding>, C_DST> ground_common(View<DataList<Term>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<Binding>, C_DST> ground_common(View<DataList<Term>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
-    auto result_binding_ptr = context.builder.template get_builder<Binding>();
-    auto& result_binding = *result_binding_ptr;
-    result_binding.clear();
+    auto binding_ptr = context.builder.template get_builder<Binding>();
+    auto& binding = *binding_ptr;
+    binding.clear();
 
     // Fill data
     for (const auto term : element)
@@ -149,9 +54,9 @@ View<Index<Binding>, C_DST> ground_common(View<DataList<Term>, C_SRC> element, G
                 using Alternative = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    result_binding.objects.push_back(context.binding.get_data().objects[uint_t(arg)]);
+                    binding.objects.push_back(context.binding[uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, View<Index<Object>, C_SRC>>)
-                    result_binding.objects.push_back(arg.get_index());
+                    binding.objects.push_back(arg.get_index());
                 else
                     static_assert(dependent_false<Alternative>::value, "Missing case");
             },
@@ -159,12 +64,28 @@ View<Index<Binding>, C_DST> ground_common(View<DataList<Term>, C_SRC> element, G
     }
 
     // Canonicalize and Serialize
-    canonicalize(result_binding);
-    return context.destination.get_or_create(result_binding, context.builder.get_buffer()).first;
+    canonicalize(binding);
+    return context.destination.get_or_create(binding, context.builder.get_buffer()).first;
+}
+
+template<Context C>
+View<Index<Binding>, C> ground_common(const IndexList<Object>& element, GrounderContext<C>& context)
+{
+    // Fetch and clear
+    auto binding_ptr = context.builder.template get_builder<Binding>();
+    auto& binding = *binding_ptr;
+    binding.clear();
+
+    // Fill data
+    binding.objects = element;
+
+    // Canonicalize and Serialize
+    canonicalize(binding);
+    return context.destination.get_or_create(binding, context.builder.get_buffer()).first;
 }
 
 template<FactKind T, Context C_SRC, Context C_DST>
-View<Index<GroundFunctionTerm<T>>, C_DST> ground_common(View<Index<FunctionTerm<T>>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Index<GroundFunctionTerm<T>>, C_DST> ground_common(View<Index<FunctionTerm<T>>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto fterm_ptr = context.builder.template get_builder<GroundFunctionTerm<T>>();
@@ -181,7 +102,7 @@ View<Index<GroundFunctionTerm<T>>, C_DST> ground_common(View<Index<FunctionTerm<
 }
 
 template<Context C_SRC, Context C_DST>
-View<Data<GroundFunctionExpression>, C_DST> ground_common(View<Data<FunctionExpression>, C_SRC> element, GrounderContext<C_SRC, C_DST>& context)
+View<Data<GroundFunctionExpression>, C_DST> ground_common(View<Data<FunctionExpression>, C_SRC> element, GrounderContext<C_DST>& context)
 {
     return visit(
         [&](auto&& arg)
@@ -200,7 +121,7 @@ View<Data<GroundFunctionExpression>, C_DST> ground_common(View<Data<FunctionExpr
 
 template<OpKind O, Context C_SRC, Context C_DST>
 View<Index<UnaryOperator<O, Data<GroundFunctionExpression>>>, C_DST> ground_common(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C_SRC> element,
-                                                                                   GrounderContext<C_SRC, C_DST>& context)
+                                                                                   GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto unary_ptr = context.builder.template get_builder<UnaryOperator<O, Data<GroundFunctionExpression>>>();
@@ -217,7 +138,7 @@ View<Index<UnaryOperator<O, Data<GroundFunctionExpression>>>, C_DST> ground_comm
 
 template<OpKind O, Context C_SRC, Context C_DST>
 View<Index<BinaryOperator<O, Data<GroundFunctionExpression>>>, C_DST> ground_common(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C_SRC> element,
-                                                                                    GrounderContext<C_SRC, C_DST>& context)
+                                                                                    GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto binary_ptr = context.builder.template get_builder<BinaryOperator<O, Data<GroundFunctionExpression>>>();
@@ -235,7 +156,7 @@ View<Index<BinaryOperator<O, Data<GroundFunctionExpression>>>, C_DST> ground_com
 
 template<OpKind O, Context C_SRC, Context C_DST>
 View<Index<MultiOperator<O, Data<GroundFunctionExpression>>>, C_DST> ground_common(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C_SRC> element,
-                                                                                   GrounderContext<C_SRC, C_DST>& context)
+                                                                                   GrounderContext<C_DST>& context)
 {
     // Fetch and clear
     auto multi_ptr = context.builder.template get_builder<MultiOperator<O, Data<GroundFunctionExpression>>>();
@@ -253,7 +174,7 @@ View<Index<MultiOperator<O, Data<GroundFunctionExpression>>>, C_DST> ground_comm
 
 template<Context C_SRC, Context C_DST>
 View<Data<BooleanOperator<Data<GroundFunctionExpression>>>, C_DST> ground_common(View<Data<BooleanOperator<Data<FunctionExpression>>>, C_SRC> element,
-                                                                                 GrounderContext<C_SRC, C_DST>& context)
+                                                                                 GrounderContext<C_DST>& context)
 {
     return visit(
         [&](auto&& arg) {
@@ -265,13 +186,12 @@ View<Data<BooleanOperator<Data<GroundFunctionExpression>>>, C_DST> ground_common
 
 template<Context C_SRC, Context C_DST>
 View<Data<ArithmeticOperator<Data<GroundFunctionExpression>>>, C_DST> ground_common(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C_SRC> element,
-                                                                                    GrounderContext<C_SRC, C_DST>& context)
+                                                                                    GrounderContext<C_DST>& context)
 {
     return visit([&](auto&& arg)
                  { return make_view(Data<ArithmeticOperator<Data<GroundFunctionExpression>>>(ground_common(arg, context).get_index()), context.destination); },
                  element.get_variant());
 }
-
 }
 
 #endif

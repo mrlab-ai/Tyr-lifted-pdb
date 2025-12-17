@@ -91,11 +91,9 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
 
             auto discovered_new_fact = bool { false };
 
-            auto merge_context_program = formalism::MergeContext<formalism::Repository, formalism::Repository> {
-                program_execution_context.builder,
-                *program_execution_context.repository,
-                program_execution_context.stage_to_program_execution_context.merge_cache
-            };
+            auto merge_context_program = formalism::MergeContext { program_execution_context.builder,
+                                                                   *program_execution_context.repository,
+                                                                   program_execution_context.stage_to_program_execution_context.merge_cache };
 
             for (uint_t j = 0; j < num_rules; ++j)
             {
@@ -109,11 +107,10 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                     const auto binding_program = formalism::merge(binding, merge_context_program);
 
                     /// --- Program
-                    auto ground_context_program =
-                        formalism::GrounderContext<formalism::Repository, formalism::Repository> { program_execution_context.builder,
-                                                                                                   *program_execution_context.repository,
-                                                                                                   binding_program,
-                                                                                                   program_execution_context.grounder_cache };
+                    program_execution_context.binding = binding_program.get_data().objects;
+                    auto ground_context_program = formalism::GrounderContext { program_execution_context.builder,
+                                                                               *program_execution_context.repository,
+                                                                               program_execution_context.binding };
 
                     /// --- Insert (rule, binding) pair
                     program_execution_context.program_results_execution_context.rule_binding_pairs.emplace(rule_execution_context.rule, binding_program);

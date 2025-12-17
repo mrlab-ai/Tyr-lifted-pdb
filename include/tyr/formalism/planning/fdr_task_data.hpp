@@ -154,14 +154,7 @@ struct Data<formalism::FDRTask>
             static_assert(dependent_false<T>::value, "Missing case");
     }
 
-    template<formalism::FactKind T>
-    const auto& get_variables() const
-    {
-        if constexpr (std::same_as<T, formalism::FluentTag>)
-            return fluent_variables;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
+    const auto& get_fluent_variables() const { return fluent_variables; }
 
     auto cista_members() const noexcept
     {

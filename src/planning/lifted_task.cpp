@@ -141,10 +141,8 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
     {
         auto merge_context = MergeContext { axiom_context.builder, task_repository, axiom_context.program_to_task_execution_context.merge_cache };
 
-        auto binding_task = merge(binding_program, merge_context);
-
-        auto grounder_context =
-            GrounderContext { axiom_context.builder, task_repository, binding_task, axiom_context.program_to_task_execution_context.grounder_cache };
+        axiom_context.program_to_task_execution_context.binding = binding_program.get_data().objects;
+        auto grounder_context = GrounderContext { axiom_context.builder, task_repository, axiom_context.program_to_task_execution_context.binding };
 
         const auto ground_atom =
             ground_planning<FluentTag, Repository, OverlayRepository<Repository>, DerivedTag>(rule.get_head(), merge_context, grounder_context);
@@ -175,12 +173,8 @@ static void read_solution_and_instantiate_labeled_successor_nodes(
         {
             const auto action_index = action.get_index().get_value();
 
-            auto merge_context = MergeContext { action_context.builder, task_repository, action_context.program_to_task_execution_context.merge_cache };
-
-            auto binding_task = merge(binding_program, merge_context);
-
-            auto grounder_context =
-                GrounderContext { action_context.builder, task_repository, binding_task, action_context.task_to_task_execution_context.grounder_cache };
+            action_context.program_to_task_execution_context.binding = binding_program.get_data().objects;
+            auto grounder_context = GrounderContext { action_context.builder, task_repository, action_context.program_to_task_execution_context.binding };
 
             const auto ground_action =
                 ground_planning(action, grounder_context, parameter_domains_per_cond_effect_per_action[action_index], assign, fdr_context);
@@ -495,16 +489,12 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
 
-    auto merge_context = MergeContext { ground_context.builder, *m_overlay_repository, ground_context.program_to_task_execution_context.merge_cache };
-
     for (const auto& [rule, binding_program] : ground_context.program_results_execution_context.rule_binding_pairs)
     {
         if (m_ground_program.get_rule_to_actions_mapping().contains(rule))
         {
-            auto binding_task = merge(binding_program, merge_context);
-
-            auto grounder_context =
-                GrounderContext { ground_context.builder, *m_overlay_repository, binding_task, ground_context.task_to_task_execution_context.grounder_cache };
+            ground_context.program_to_task_execution_context.binding = binding_program.get_data().objects;
+            auto grounder_context = GrounderContext { ground_context.builder, *m_overlay_repository, ground_context.program_to_task_execution_context.binding };
 
             for (const auto action : m_ground_program.get_rule_to_actions_mapping().at(rule))
             {
@@ -550,10 +540,8 @@ GroundTaskPtr LiftedTask::get_ground_task()
     {
         if (m_ground_program.get_rule_to_axioms_mapping().contains(rule))
         {
-            auto binding_task = merge(binding_program, merge_context);
-
-            auto grounder_context =
-                GrounderContext { ground_context.builder, *m_overlay_repository, binding_task, ground_context.task_to_task_execution_context.grounder_cache };
+            ground_context.program_to_task_execution_context.binding = binding_program.get_data().objects;
+            auto grounder_context = GrounderContext { ground_context.builder, *m_overlay_repository, ground_context.program_to_task_execution_context.binding };
 
             for (const auto axiom : m_ground_program.get_rule_to_axioms_mapping().at(rule))
             {

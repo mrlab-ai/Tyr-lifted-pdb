@@ -1567,7 +1567,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::FDRTask>& el)
 
         os << print_indent << "axioms = " << el.axioms << "\n";
 
-        os << print_indent << "fluent facts = " << el.fluent_variables << "\n";
+        os << print_indent << "fluent variables = " << el.fluent_variables << "\n";
 
         os << print_indent << "fluent facts = " << el.fluent_facts << "\n";
 
@@ -1613,9 +1613,7 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::FDRTask>, C>& 
 
         os << print_indent << "axioms = " << el.get_axioms() << "\n";
 
-        os << print_indent << "fluent facts = " << el.template get_variables<formalism::FluentTag>() << "\n";
-
-        os << print_indent << "derived variables = " << el.template get_variables<formalism::DerivedTag>() << "\n";
+        os << print_indent << "fluent variables = " << el.get_fluent_variables() << "\n";
 
         os << print_indent << "fluent facts = " << el.get_fluent_facts() << "\n";
 

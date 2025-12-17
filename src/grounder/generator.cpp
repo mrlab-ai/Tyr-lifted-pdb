@@ -86,10 +86,6 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
                          RuleStageExecutionContext& rule_stage_execution_context,
                          ThreadExecutionContext& thread_execution_context)
 {
-    auto merge_context_rule = MergeContext<Repository, OverlayRepository<Repository>> { thread_execution_context.builder,
-                                                                                        rule_execution_context.overlay_repository,
-                                                                                        rule_execution_context.merge_cache };
-
     auto merge_context_stage = MergeContext<OverlayRepository<Repository>, Repository> { thread_execution_context.builder,
                                                                                          *rule_stage_execution_context.repository,
                                                                                          rule_stage_execution_context.merge_cache };
@@ -102,12 +98,9 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
         rule_stage_execution_context.bindings.insert(binding_stage);
 
         /// --- Rule stage -> Rule
-        const auto binding_rule = merge(binding_stage, merge_context_rule);
-
-        auto ground_context_rule = GrounderContext<Repository, OverlayRepository<Repository>> { thread_execution_context.builder,
-                                                                                                rule_execution_context.overlay_repository,
-                                                                                                binding_rule,
-                                                                                                rule_execution_context.grounder_cache };
+        rule_execution_context.binding = binding_stage.get_data().objects;
+        auto ground_context_rule =
+            GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_execution_context.binding };
 
         /// --- Rule
         auto ground_rule = ground_datalog(rule_execution_context.rule, ground_context_rule);
@@ -126,10 +119,6 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
                        RuleStageExecutionContext& rule_stage_execution_context,
                        ThreadExecutionContext& thread_execution_context)
 {
-    auto merge_context_rule = MergeContext<Repository, OverlayRepository<Repository>> { thread_execution_context.builder,
-                                                                                        rule_execution_context.overlay_repository,
-                                                                                        rule_execution_context.merge_cache };
-
     auto merge_context_stage = MergeContext<OverlayRepository<Repository>, Repository> { thread_execution_context.builder,
                                                                                          *rule_stage_execution_context.repository,
                                                                                          rule_stage_execution_context.merge_cache };
@@ -144,12 +133,9 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
             rule_stage_execution_context.bindings.insert(binding_stage);
 
             /// --- Rule stage -> Rule
-            const auto binding_rule = merge(binding_stage, merge_context_rule);
-
-            auto ground_context_rule = GrounderContext<Repository, OverlayRepository<Repository>> { thread_execution_context.builder,
-                                                                                                    rule_execution_context.overlay_repository,
-                                                                                                    binding_rule,
-                                                                                                    rule_execution_context.grounder_cache };
+            rule_execution_context.binding = binding_stage.get_data().objects;
+            auto ground_context_rule =
+                GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_execution_context.binding };
 
             /// --- Rule
             auto ground_rule = ground_datalog(rule_execution_context.rule, ground_context_rule);
@@ -169,46 +155,38 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
                          RuleStageExecutionContext& rule_stage_execution_context,
                          ThreadExecutionContext& thread_execution_context)
 {
-    auto merge_context_rule = MergeContext<Repository, OverlayRepository<Repository>> { thread_execution_context.builder,
-                                                                                        rule_execution_context.overlay_repository,
-                                                                                        rule_execution_context.merge_cache };
-
     auto merge_context_stage = MergeContext<OverlayRepository<Repository>, Repository> { thread_execution_context.builder,
                                                                                          *rule_stage_execution_context.repository,
                                                                                          rule_stage_execution_context.merge_cache };
 
-    kpkc::for_each_k_clique(rule_execution_context.consistency_graph,
-                            rule_execution_context.kpkc_workspace,
-                            [&](auto&& clique)
-                            {
-                                /// --- Rule stage
-                                const auto binding_stage =
-                                    create_general_binding_in_stage(clique, rule_execution_context.static_consistency_graph, merge_context_stage);
+    kpkc::for_each_k_clique(
+        rule_execution_context.consistency_graph,
+        rule_execution_context.kpkc_workspace,
+        [&](auto&& clique)
+        {
+            /// --- Rule stage
+            const auto binding_stage = create_general_binding_in_stage(clique, rule_execution_context.static_consistency_graph, merge_context_stage);
 
-                                if (!rule_stage_execution_context.bindings.contains(binding_stage))
-                                {
-                                    rule_stage_execution_context.bindings.insert(binding_stage);
+            if (!rule_stage_execution_context.bindings.contains(binding_stage))
+            {
+                rule_stage_execution_context.bindings.insert(binding_stage);
 
-                                    /// --- Rule stage -> Rule
-                                    const auto binding_rule = merge(binding_stage, merge_context_rule);
+                /// --- Rule stage -> Rule
+                rule_execution_context.binding = binding_stage.get_data().objects;
+                auto ground_context_rule =
+                    GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_execution_context.binding };
 
-                                    auto ground_context_rule =
-                                        GrounderContext<Repository, OverlayRepository<Repository>> { thread_execution_context.builder,
-                                                                                                     rule_execution_context.overlay_repository,
-                                                                                                     binding_rule,
-                                                                                                     rule_execution_context.grounder_cache };
+                /// --- Rule
+                auto ground_rule = ground_datalog(rule_execution_context.rule, ground_context_rule);
 
-                                    /// --- Rule
-                                    auto ground_rule = ground_datalog(rule_execution_context.rule, ground_context_rule);
+                if (is_applicable(ground_rule, fact_execution_context.fact_sets))
+                {
+                    // std::cout << ground_rule << std::endl;
 
-                                    if (is_applicable(ground_rule, fact_execution_context.fact_sets))
-                                    {
-                                        // std::cout << ground_rule << std::endl;
-
-                                        rule_execution_context.bindings.push_back(binding_stage);
-                                    }
-                                }
-                            });
+                    rule_execution_context.bindings.push_back(binding_stage);
+                }
+            }
+        });
 }
 
 void ground(const FactsExecutionContext& fact_execution_context,

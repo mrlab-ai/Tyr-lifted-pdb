@@ -108,7 +108,6 @@ RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
     repository(std::make_shared<Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
     overlay_repository(parent, *repository),
     merge_cache(),
-    grounder_cache(),
     bindings()
 {
 }
@@ -118,7 +117,6 @@ void RuleExecutionContext::clear() noexcept
     repository->clear();
     bindings.clear();
     merge_cache.clear();
-    grounder_cache.clear();
 }
 
 void RuleExecutionContext::initialize(const AssignmentSets<Repository>& assignment_sets)
@@ -148,31 +146,19 @@ void ProgramResultsExecutionContext::clear() noexcept { rule_binding_pairs.clear
  * ProgramToTaskExecutionContext
  */
 
-void ProgramToTaskExecutionContext::clear() noexcept
-{
-    merge_cache.clear();
-    grounder_cache.clear();
-}
+void ProgramToTaskExecutionContext::clear() noexcept { merge_cache.clear(); }
 
 /**
  * TaskToProgramExecutionContext
  */
 
-void TaskToProgramExecutionContext::clear() noexcept
-{
-    merge_cache.clear();
-    grounder_cache.clear();
-}
+void TaskToProgramExecutionContext::clear() noexcept { merge_cache.clear(); }
 
 /**
  * TaskToTaskExecutionContext
  */
 
-void TaskToTaskExecutionContext::clear() noexcept
-{
-    merge_cache.clear();
-    grounder_cache.clear();
-}
+void TaskToTaskExecutionContext::clear() noexcept { merge_cache.clear(); }
 
 /**
  * ProgramExecutionContext
@@ -185,15 +171,8 @@ ground_nullary_condition(View<Index<ConjunctiveCondition>, Repository> condition
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
-    // Create nullary binding
-    auto binding_ptr = builder.get_builder<Binding>();
-    auto& binding = *binding_ptr;
-    binding.clear();
-    canonicalize(binding);
-    const auto new_binding = context.get_or_create(binding, builder.get_buffer()).first;
-
-    auto grounder_cache = GrounderCache<Repository, Repository> {};
-    auto grounder_context = GrounderContext { builder, context, new_binding, grounder_cache };
+    auto binding_empty = IndexList<Object> {};
+    auto grounder_context = GrounderContext { builder, context, binding_empty };
 
     for (const auto literal : condition.get_literals<StaticTag>())
         if (literal.get_atom().get_predicate().get_arity() == 0)
@@ -223,7 +202,7 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<Program>, Repository
     listeners(listeners),
     rule_scheduler_strata(create_rule_scheduler_strata(strata, listeners, *repository)),
     builder(),
-    grounder_cache(),
+    binding(),
     facts_execution_context(program, domains),
     rule_execution_contexts(),
     rule_stage_execution_contexts(),

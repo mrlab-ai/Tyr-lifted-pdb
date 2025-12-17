@@ -76,11 +76,7 @@ public:
     auto get_goal() const noexcept { return make_view(get_data().goal, *m_context); }
     auto get_metric() const noexcept { return make_view(get_data().metric, *m_context); }
     auto get_axioms() const noexcept { return make_view(get_data().axioms, *m_context); }
-    template<formalism::FactKind T>
-    auto get_variables() const noexcept
-    {
-        return make_view(get_data().template get_variables<T>(), *m_context);
-    }
+    auto get_fluent_variables() const noexcept { return make_view(get_data().fluent_variables, *m_context); }
     auto get_fluent_facts() const noexcept { return make_view(get_data().fluent_facts, *m_context); }
     auto get_ground_actions() const noexcept { return make_view(get_data().ground_actions, *m_context); }
     auto get_ground_axioms() const noexcept { return make_view(get_data().ground_axioms, *m_context); }
