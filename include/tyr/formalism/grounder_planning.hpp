@@ -251,6 +251,7 @@ View<Index<GroundAction>, C_DST> ground_planning(View<Index<Action>, C_SRC> elem
                                          action.effects.push_back(ground_planning(cond_effect, context, assign, fdr).get_index());
                                      });
     }
+    context.binding.resize(binding_size);  ///< important to restore the binding in case of grounding other actions
 
     // Canonicalize and Serialize
     canonicalize(action);
