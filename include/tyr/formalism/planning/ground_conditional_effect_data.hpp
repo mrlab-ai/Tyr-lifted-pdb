@@ -31,8 +31,6 @@ namespace tyr
 template<>
 struct Data<formalism::GroundConditionalEffect>
 {
-    using Tag = formalism::GroundConditionalEffect;
-
     Index<formalism::GroundConditionalEffect> index;
     Index<formalism::GroundFDRConjunctiveCondition> condition;
     Index<formalism::GroundConjunctiveEffect> effect;

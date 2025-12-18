@@ -32,8 +32,6 @@ private:
     Data<formalism::ArithmeticOperator<T>> m_handle;
 
 public:
-    using Tag = formalism::ArithmeticOperator<T>;
-
     View(Data<formalism::ArithmeticOperator<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return m_handle; }

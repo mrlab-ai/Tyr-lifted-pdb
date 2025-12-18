@@ -27,8 +27,6 @@ namespace tyr
 template<>
 struct Index<formalism::GroundAction> : IndexMixin<Index<formalism::GroundAction>>
 {
-    using Tag = formalism::GroundAction;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::GroundAction>>;
     using Base::Base;

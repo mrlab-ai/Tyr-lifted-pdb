@@ -27,8 +27,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Index<formalism::GroundAtom<T>> : IndexMixin<Index<formalism::GroundAtom<T>>>
 {
-    using Tag = formalism::GroundAtom<T>;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::GroundAtom<T>>>;
     using Base::Base;

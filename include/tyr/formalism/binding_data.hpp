@@ -29,8 +29,6 @@ namespace tyr
 template<>
 struct Data<formalism::Binding>
 {
-    using Tag = formalism::Binding;
-
     Index<formalism::Binding> index;
     IndexList<formalism::Object> objects;
 

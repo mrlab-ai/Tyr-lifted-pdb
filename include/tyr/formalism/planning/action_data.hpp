@@ -32,8 +32,6 @@ namespace tyr
 template<>
 struct Data<formalism::Action>
 {
-    using Tag = formalism::Action;
-
     Index<formalism::Action> index;
     ::cista::offset::string name;
     uint_t original_arity;

@@ -32,8 +32,6 @@ namespace tyr
 template<>
 struct Data<formalism::GroundFDRConjunctiveCondition>
 {
-    using Tag = formalism::GroundFDRConjunctiveCondition;
-
     Index<formalism::GroundFDRConjunctiveCondition> index;
     IndexList<formalism::GroundLiteral<formalism::StaticTag>> static_literals;
     DataList<formalism::FDRFact<formalism::FluentTag>> fluent_facts;

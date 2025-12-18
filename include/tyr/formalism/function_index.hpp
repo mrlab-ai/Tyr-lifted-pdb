@@ -27,8 +27,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Index<formalism::Function<T>> : IndexMixin<Index<formalism::Function<T>>>
 {
-    using Tag = formalism::Function<T>;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::Function<T>>>;
     using Base::Base;

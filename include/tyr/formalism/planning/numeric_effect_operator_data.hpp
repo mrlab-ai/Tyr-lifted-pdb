@@ -30,8 +30,6 @@ namespace tyr
 template<>
 struct Data<formalism::NumericEffectOperator<formalism::FluentTag>>
 {
-    using Tag = formalism::NumericEffectOperator<formalism::FluentTag>;
-
     using Variant = ::cista::offset::variant<Index<formalism::NumericEffect<formalism::OpAssign, formalism::FluentTag>>,
                                              Index<formalism::NumericEffect<formalism::OpIncrease, formalism::FluentTag>>,
                                              Index<formalism::NumericEffect<formalism::OpDecrease, formalism::FluentTag>>,
@@ -52,8 +50,6 @@ struct Data<formalism::NumericEffectOperator<formalism::FluentTag>>
 template<>
 struct Data<formalism::NumericEffectOperator<formalism::AuxiliaryTag>>
 {
-    using Tag = formalism::NumericEffectOperator<formalism::AuxiliaryTag>;
-
     using Variant = ::cista::offset::variant<Index<formalism::NumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>>;
 
     Variant value;

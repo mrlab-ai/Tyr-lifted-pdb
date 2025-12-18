@@ -30,8 +30,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::GroundLiteral<T>>
 {
-    using Tag = formalism::GroundLiteral<T>;
-
     Index<formalism::GroundLiteral<T>> index;
     Index<formalism::GroundAtom<T>> atom;
     bool polarity;

@@ -27,8 +27,6 @@ namespace tyr
 template<>
 struct Index<formalism::GroundRule> : IndexMixin<Index<formalism::GroundRule>>
 {
-    using Tag = formalism::GroundRule;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::GroundRule>>;
     using Base::Base;

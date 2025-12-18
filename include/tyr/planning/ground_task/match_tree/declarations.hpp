@@ -18,6 +18,8 @@
 #ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_DECLARATIONS_HPP_
 #define TYR_PLANNING_GROUND_TASK_MATCH_TREE_DECLARATIONS_HPP_
 
+#include "tyr/formalism/declarations.hpp"
+
 #include <concepts>
 #include <variant>
 #include <vector>
@@ -128,9 +130,9 @@ using NodeScoreFunction = std::unique_ptr<INodeScoreFunction<E>>;
 template<typename Tag>
 using NodeSplitter = std::unique_ptr<INodeSplitter<E>>;
 
-template<typename Tag>
+template<formalism::Context C, typename Tag>
 class Repository;
-template<typename Tag>
+template<formalism::Context C, typename Tag>
 using RepositoryPtr = std::unique_ptr<Repository>;
 }
 

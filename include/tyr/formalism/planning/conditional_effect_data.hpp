@@ -32,8 +32,6 @@ namespace tyr
 template<>
 struct Data<formalism::ConditionalEffect>
 {
-    using Tag = formalism::ConditionalEffect;
-
     Index<formalism::ConditionalEffect> index;
     IndexList<formalism::Variable> variables;
     Index<formalism::FDRConjunctiveCondition> condition;

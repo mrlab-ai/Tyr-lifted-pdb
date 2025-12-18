@@ -27,7 +27,6 @@ namespace tyr
 template<formalism::OpKind Op, typename T>
 struct Index<formalism::BinaryOperator<Op, T>> : IndexMixin<Index<formalism::BinaryOperator<Op, T>>>
 {
-    using Tag = formalism::BinaryOperator<Op, T>;
     using OpType = Op;
 
     // Inherit constructors

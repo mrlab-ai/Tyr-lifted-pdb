@@ -35,8 +35,6 @@ private:
     Index<formalism::Atom<T>> m_handle;
 
 public:
-    using Tag = formalism::Atom<T>;
-
     View(Index<formalism::Atom<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

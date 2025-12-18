@@ -31,8 +31,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::GroundFunctionTerm<T>>
 {
-    using Tag = formalism::GroundFunctionTerm<T>;
-
     Index<formalism::GroundFunctionTerm<T>> index;
     Index<formalism::Function<T>> function;
     Index<formalism::Binding> binding;

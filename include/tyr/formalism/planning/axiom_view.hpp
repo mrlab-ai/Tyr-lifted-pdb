@@ -36,8 +36,6 @@ private:
     Index<formalism::Axiom> m_handle;
 
 public:
-    using Tag = formalism::Axiom;
-
     View(Index<formalism::Axiom> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

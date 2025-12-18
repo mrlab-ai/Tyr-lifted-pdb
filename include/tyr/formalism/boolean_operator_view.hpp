@@ -32,8 +32,6 @@ private:
     Data<formalism::BooleanOperator<T>> m_handle;
 
 public:
-    using Tag = formalism::BooleanOperator<T>;
-
     View(Data<formalism::BooleanOperator<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return m_handle; }

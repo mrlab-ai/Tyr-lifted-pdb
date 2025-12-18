@@ -37,8 +37,6 @@ private:
     Index<formalism::GroundAxiom> m_handle;
 
 public:
-    using Tag = formalism::GroundAxiom;
-
     View(Index<formalism::GroundAxiom> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

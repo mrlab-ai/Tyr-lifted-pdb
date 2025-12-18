@@ -34,8 +34,6 @@ private:
     Index<formalism::GroundLiteral<T>> m_handle;
 
 public:
-    using Tag = formalism::GroundLiteral<T>;
-
     View(Index<formalism::GroundLiteral<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

@@ -27,8 +27,6 @@ namespace tyr
 template<>
 struct Index<formalism::GroundConjunctiveCondition> : IndexMixin<Index<formalism::GroundConjunctiveCondition>>
 {
-    using Tag = formalism::GroundConjunctiveCondition;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::GroundConjunctiveCondition>>;
     using Base::Base;

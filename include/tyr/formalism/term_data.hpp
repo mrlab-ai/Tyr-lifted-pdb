@@ -30,8 +30,6 @@ namespace tyr
 template<>
 struct Data<formalism::Term>
 {
-    using Tag = formalism::Term;
-
     using Variant = ::cista::offset::variant<Index<formalism::Object>, formalism::ParameterIndex>;
 
     Variant value;

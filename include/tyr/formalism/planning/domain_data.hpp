@@ -35,8 +35,6 @@ namespace tyr
 template<>
 struct Data<formalism::Domain>
 {
-    using Tag = formalism::Domain;
-
     Index<formalism::Domain> index;
     ::cista::offset::string name;
     IndexList<formalism::Predicate<formalism::StaticTag>> static_predicates;

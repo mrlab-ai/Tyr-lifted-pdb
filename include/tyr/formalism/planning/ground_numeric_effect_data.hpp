@@ -34,8 +34,6 @@ struct Data<formalism::GroundNumericEffect<Op, T>>
     static_assert(std::same_as<T, formalism::FluentTag> || (std::same_as<T, formalism::AuxiliaryTag> && std::same_as<Op, formalism::OpIncrease>),
                   "Unsupported NumericEffect<Op, T> combination.");
 
-    using Tag = formalism::GroundNumericEffect<Op, T>;
-
     Index<formalism::GroundNumericEffect<Op, T>> index;
     Index<formalism::GroundFunctionTerm<T>> fterm;
     Data<formalism::GroundFunctionExpression> fexpr;

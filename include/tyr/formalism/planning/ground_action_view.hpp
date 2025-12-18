@@ -38,8 +38,6 @@ private:
     Index<formalism::GroundAction> m_handle;
 
 public:
-    using Tag = formalism::GroundAction;
-
     View(Index<formalism::GroundAction> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

@@ -32,8 +32,6 @@ namespace tyr
 template<>
 struct Data<formalism::GroundConjunctiveEffect>
 {
-    using Tag = formalism::GroundConjunctiveEffect;
-
     Index<formalism::GroundConjunctiveEffect> index;
     DataList<formalism::FDRFact<formalism::FluentTag>> facts;
     DataList<formalism::GroundNumericEffectOperator<formalism::FluentTag>> numeric_effects;

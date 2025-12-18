@@ -33,8 +33,6 @@ private:
     Index<formalism::FunctionTerm<T>> m_handle;
 
 public:
-    using Tag = formalism::FunctionTerm<T>;
-
     View(Index<formalism::FunctionTerm<T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

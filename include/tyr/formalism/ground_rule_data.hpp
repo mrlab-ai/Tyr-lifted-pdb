@@ -34,8 +34,6 @@ namespace tyr
 template<>
 struct Data<formalism::GroundRule>
 {
-    using Tag = formalism::GroundRule;
-
     Index<formalism::GroundRule> index;
     Index<formalism::Rule> rule;
     Index<formalism::Binding> binding;

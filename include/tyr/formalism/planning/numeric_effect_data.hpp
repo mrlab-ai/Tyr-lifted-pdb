@@ -34,8 +34,6 @@ struct Data<formalism::NumericEffect<Op, T>>
     static_assert(std::same_as<T, formalism::FluentTag> || (std::same_as<T, formalism::AuxiliaryTag> && std::same_as<Op, formalism::OpIncrease>),
                   "Unsupported NumericEffect<Op, T> combination.");
 
-    using Tag = formalism::NumericEffect<Op, T>;
-
     Index<formalism::NumericEffect<Op, T>> index;
     Index<formalism::FunctionTerm<T>> fterm;
     Data<formalism::FunctionExpression> fexpr;

@@ -30,8 +30,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::FDRFact<T>>
 {
-    using Tag = formalism::FDRFact<T>;
-
     Index<formalism::FDRVariable<T>> variable;
     formalism::FDRValue value;
 

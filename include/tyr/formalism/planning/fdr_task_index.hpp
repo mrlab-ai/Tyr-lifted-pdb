@@ -27,8 +27,6 @@ namespace tyr
 template<>
 struct Index<formalism::FDRTask> : IndexMixin<Index<formalism::FDRTask>>
 {
-    using Tag = formalism::FDRTask;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::FDRTask>>;
     using Base::Base;

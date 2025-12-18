@@ -27,7 +27,6 @@ namespace tyr
 template<formalism::OpKind Op, typename T>
 struct Index<formalism::UnaryOperator<Op, T>> : IndexMixin<Index<formalism::UnaryOperator<Op, T>>>
 {
-    using Tag = formalism::UnaryOperator<Op, T>;
     using OpType = Op;
 
     // Inherit constructors

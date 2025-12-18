@@ -30,8 +30,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::Atom<T>>
 {
-    using Tag = formalism::Atom<T>;
-
     Index<formalism::Atom<T>> index;
     Index<formalism::Predicate<T>> predicate;
     DataList<formalism::Term> terms;

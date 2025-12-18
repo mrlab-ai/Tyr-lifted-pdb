@@ -34,7 +34,6 @@ private:
     Index<formalism::MultiOperator<Op, T>> m_handle;
 
 public:
-    using Tag = formalism::MultiOperator<Op, T>;
     using OpType = Op;
 
     View(Index<formalism::MultiOperator<Op, T>> handle, const C& context) : m_context(&context), m_handle(handle) {}

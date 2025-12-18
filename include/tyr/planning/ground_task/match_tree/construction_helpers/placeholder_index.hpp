@@ -27,8 +27,6 @@ namespace tyr
 template<typename Tag>
 struct Index<planning::match_tree::PlaceholderNode<Tag>> : IndexMixin<Index<planning::match_tree::PlaceholderNode<Tag>>>
 {
-    using Tag = planning::match_tree::PlaceholderNode<Tag>;
-
     // Inherit constructors
     using Base = IndexMixin<Index<planning::match_tree::PlaceholderNode<Tag>>>;
     using Base::Base;

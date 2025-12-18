@@ -32,8 +32,6 @@ namespace tyr
 template<>
 struct Data<formalism::Axiom>
 {
-    using Tag = formalism::Axiom;
-
     Index<formalism::Axiom> index;
     IndexList<formalism::Variable> variables;
     Index<formalism::FDRConjunctiveCondition> body;

@@ -27,8 +27,6 @@ namespace tyr
 template<typename Tag>
 struct Index<planning::match_tree::InverseFactSelectorNode<Tag>> : IndexMixin<Index<planning::match_tree::InverseFactSelectorNode<Tag>>>
 {
-    using Tag = planning::match_tree::InverseFactSelectorNode<Tag>;
-
     // Inherit constructors
     using Base = IndexMixin<Index<planning::match_tree::InverseFactSelectorNode<Tag>>>;
     using Base::Base;

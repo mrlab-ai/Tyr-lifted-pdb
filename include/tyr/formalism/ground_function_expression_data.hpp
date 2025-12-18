@@ -29,8 +29,6 @@ namespace tyr
 template<>
 struct Data<formalism::GroundFunctionExpression>
 {
-    using Tag = formalism::GroundFunctionExpression;
-
     using Variant = ::cista::offset::variant<float_t,
                                              Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>,
                                              Index<formalism::GroundFunctionTerm<formalism::StaticTag>>,

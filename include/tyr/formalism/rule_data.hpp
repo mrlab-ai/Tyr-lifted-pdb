@@ -30,8 +30,6 @@ namespace tyr
 template<>
 struct Data<formalism::Rule>
 {
-    using Tag = formalism::Rule;
-
     Index<formalism::Rule> index;
     IndexList<formalism::Variable> variables;
     Index<formalism::ConjunctiveCondition> body;

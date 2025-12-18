@@ -31,8 +31,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::GroundFunctionTermValue<T>>
 {
-    using Tag = formalism::GroundFunctionTermValue<T>;
-
     Index<formalism::GroundFunctionTermValue<T>> index;
     Index<formalism::GroundFunctionTerm<T>> fterm;
     float_t value;

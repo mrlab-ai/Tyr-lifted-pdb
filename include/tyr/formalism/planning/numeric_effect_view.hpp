@@ -39,8 +39,6 @@ private:
     Index<formalism::NumericEffect<Op, T>> m_handle;
 
 public:
-    using Tag = formalism::NumericEffect<Op, T>;
-
     View(Index<formalism::NumericEffect<Op, T>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

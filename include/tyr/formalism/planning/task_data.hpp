@@ -37,8 +37,6 @@ namespace tyr
 template<>
 struct Data<formalism::Task>
 {
-    using Tag = formalism::Task;
-
     Index<formalism::Task> index;
     ::cista::offset::string name;
     Index<formalism::Domain> domain;

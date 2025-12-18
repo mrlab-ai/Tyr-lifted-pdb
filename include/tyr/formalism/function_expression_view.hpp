@@ -33,8 +33,6 @@ private:
     Data<formalism::FunctionExpression> m_handle;
 
 public:
-    using Tag = formalism::FunctionExpression;
-
     View(Data<formalism::FunctionExpression> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return m_handle; }

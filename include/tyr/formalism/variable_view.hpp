@@ -32,8 +32,6 @@ private:
     Index<formalism::Variable> m_handle;
 
 public:
-    using Tag = formalism::Variable;
-
     View(Index<formalism::Variable> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return formalism::get_repository(*m_context)[m_handle]; }

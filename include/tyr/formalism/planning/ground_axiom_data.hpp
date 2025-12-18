@@ -32,8 +32,6 @@ namespace tyr
 template<>
 struct Data<formalism::GroundAxiom>
 {
-    using Tag = formalism::GroundAxiom;
-
     Index<formalism::GroundAxiom> index;
     Index<formalism::Axiom> axiom;
     Index<formalism::Binding> binding;

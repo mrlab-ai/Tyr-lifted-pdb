@@ -29,8 +29,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::FDRVariable<T>>
 {
-    using Tag = formalism::FDRVariable<T>;
-
     Index<formalism::FDRVariable<T>> index;
     uint_t domain_size;
     IndexList<formalism::GroundAtom<T>> atoms;

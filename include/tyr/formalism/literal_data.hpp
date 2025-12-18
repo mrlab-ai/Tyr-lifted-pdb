@@ -29,8 +29,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::Literal<T>>
 {
-    using Tag = formalism::Literal<T>;
-
     Index<formalism::Literal<T>> index;
     Index<formalism::Atom<T>> atom;
     bool polarity;

@@ -32,8 +32,6 @@ private:
     Index<formalism::FDRVariable<T>> m_handle;
 
 public:
-    using Tag = formalism::FDRVariable<T>;
-
     View(Index<formalism::FDRVariable<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }

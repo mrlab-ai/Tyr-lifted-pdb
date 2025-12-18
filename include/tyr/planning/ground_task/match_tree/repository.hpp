@@ -37,7 +37,7 @@
 namespace tyr::planning::match_tree
 {
 
-template<typename Tag>
+template<formalism::Context C, typename Tag>
 class Repository
 {
 private:
@@ -64,8 +64,12 @@ private:
 
     RepositoryStorage m_repository;
 
+    const C& m_formalism_repository;
+
 public:
-    Repository() = default;
+    explicit Repository(const C& formalism_repository) : m_formalism_repository(formalism_repository) {}
+
+    const C& get_formalism_repository() const noexcept { return formalism_repository; }
 
     template<typename T>
     std::optional<View<Index<T>, Repository<Tag>>> find(const Data<T>& builder) const noexcept

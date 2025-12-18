@@ -38,8 +38,6 @@ private:
     Index<formalism::Program> m_handle;
 
 public:
-    using Tag = formalism::Program;
-
     View(Index<formalism::Program> data, const C& context) : m_context(&context), m_handle(data) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }

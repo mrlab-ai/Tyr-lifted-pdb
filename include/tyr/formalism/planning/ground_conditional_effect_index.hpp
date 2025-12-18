@@ -27,8 +27,6 @@ namespace tyr
 template<>
 struct Index<formalism::GroundConditionalEffect> : IndexMixin<Index<formalism::GroundConditionalEffect>>
 {
-    using Tag = formalism::GroundConditionalEffect;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::GroundConditionalEffect>>;
     using Base::Base;

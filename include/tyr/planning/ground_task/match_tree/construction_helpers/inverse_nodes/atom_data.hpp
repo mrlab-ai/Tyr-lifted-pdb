@@ -21,6 +21,7 @@
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/atom_index.hpp"
 #include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/node_data.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 
@@ -29,8 +30,6 @@ namespace tyr
 template<typename Tag>
 struct Data<planning::match_tree::InverseAtomSelectorNode<Tag>>
 {
-    using Tag = planning::match_tree::InverseAtomSelectorNode<Tag>;
-
     Index<planning::match_tree::InverseAtomSelectorNode<Tag>> index;
     Index<formalism::GroundAtom<formalism::DerivedTag>> atom;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> true_child;

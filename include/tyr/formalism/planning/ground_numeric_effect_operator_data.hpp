@@ -29,8 +29,6 @@ namespace tyr
 template<>
 struct Data<formalism::GroundNumericEffectOperator<formalism::FluentTag>>
 {
-    using Tag = formalism::GroundNumericEffectOperator<formalism::FluentTag>;
-
     using Variant = ::cista::offset::variant<Index<formalism::GroundNumericEffect<formalism::OpAssign, formalism::FluentTag>>,
                                              Index<formalism::GroundNumericEffect<formalism::OpIncrease, formalism::FluentTag>>,
                                              Index<formalism::GroundNumericEffect<formalism::OpDecrease, formalism::FluentTag>>,
@@ -58,8 +56,6 @@ struct Data<formalism::GroundNumericEffectOperator<formalism::FluentTag>>
 template<>
 struct Data<formalism::GroundNumericEffectOperator<formalism::AuxiliaryTag>>
 {
-    using Tag = formalism::GroundNumericEffectOperator<formalism::AuxiliaryTag>;
-
     using Variant = ::cista::offset::variant<Index<formalism::GroundNumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>>;
 
     Variant value;

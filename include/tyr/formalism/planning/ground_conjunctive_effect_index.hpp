@@ -27,8 +27,6 @@ namespace tyr
 template<>
 struct Index<formalism::GroundConjunctiveEffect> : IndexMixin<Index<formalism::GroundConjunctiveEffect>>
 {
-    using Tag = formalism::GroundConjunctiveEffect;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::GroundConjunctiveEffect>>;
     using Base::Base;

@@ -30,8 +30,6 @@ namespace tyr
 template<>
 struct Data<formalism::Metric>
 {
-    using Tag = formalism::Metric;
-
     using ObjectiveVariant = ::cista::offset::variant<formalism::Minimize, formalism::Maximize>;
 
     Index<formalism::Metric> index;

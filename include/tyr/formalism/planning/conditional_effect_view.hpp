@@ -36,8 +36,6 @@ private:
     Index<formalism::ConditionalEffect> m_handle;
 
 public:
-    using Tag = formalism::ConditionalEffect;
-
     View(Index<formalism::ConditionalEffect> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }

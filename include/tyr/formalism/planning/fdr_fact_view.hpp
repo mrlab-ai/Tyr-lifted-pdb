@@ -33,8 +33,6 @@ private:
     Data<formalism::FDRFact<T>> m_handle;
 
 public:
-    using Tag = formalism::FDRFact<T>;
-
     View(Data<formalism::FDRFact<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return m_handle; }

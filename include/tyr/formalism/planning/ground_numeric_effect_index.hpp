@@ -30,8 +30,6 @@ struct Index<formalism::GroundNumericEffect<Op, T>> : IndexMixin<Index<formalism
     static_assert(std::same_as<T, formalism::FluentTag> || (std::same_as<T, formalism::AuxiliaryTag> && std::same_as<Op, formalism::OpIncrease>),
                   "Unsupported NumericEffect<Op, T> combination.");
 
-    using Tag = formalism::GroundNumericEffect<Op, T>;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::GroundNumericEffect<Op, T>>>;
     using Base::Base;

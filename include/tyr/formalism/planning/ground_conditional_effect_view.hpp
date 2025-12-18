@@ -35,8 +35,6 @@ private:
     Index<formalism::GroundConditionalEffect> m_handle;
 
 public:
-    using Tag = formalism::GroundConditionalEffect;
-
     View(Index<formalism::GroundConditionalEffect> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

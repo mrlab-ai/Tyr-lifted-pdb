@@ -20,28 +20,29 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
+#include "tyr/formalism/ground_atom_view.hpp"
 #include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/atom_data.hpp"
+#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/atom_index.hpp"
 #include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/node_view.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 
 namespace tyr
 {
 template<typename Tag, typename C>
-class View<planning::match_tree::InverseAtomSelectorNode<Tag>, C>
+class View<Index<planning::match_tree::InverseAtomSelectorNode<Tag>>, C>
 {
 private:
     const C* m_context;
     Index<planning::match_tree::InverseAtomSelectorNode<Tag>> m_handle;
 
 public:
-    using Tag = planning::match_tree::InverseAtomSelectorNode<Tag>;
-
     View(Index<planning::match_tree::InverseAtomSelectorNode<Tag>> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
-    const auto& get_data() const { return get_repository(*m_context)[m_handle]; }
+    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
+    auto get_atom() const noexcept { return make_view(get_data().atom, m_context->get_formalism_repository()); }
     auto get_true_child() const noexcept { return make_view(get_data().true_child, *m_context); }
     auto get_false_child() const noexcept { return make_view(get_data().false_child, *m_context); }
     auto get_dontcare_child() const noexcept { return make_view(get_data().dontcare_child, *m_context); }

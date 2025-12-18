@@ -27,8 +27,6 @@ namespace tyr
 template<>
 struct Index<formalism::Object> : IndexMixin<Index<formalism::Object>>
 {
-    using Tag = formalism::Object;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::Object>>;
     using Base::Base;

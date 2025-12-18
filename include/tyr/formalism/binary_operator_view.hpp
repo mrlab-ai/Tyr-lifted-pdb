@@ -33,7 +33,6 @@ private:
     Index<formalism::BinaryOperator<Op, T>> m_handle;
 
 public:
-    using Tag = formalism::BinaryOperator<Op, T>;
     using OpType = Op;
 
     View(Index<formalism::BinaryOperator<Op, T>> handle, const C& context) : m_context(&context), m_handle(handle) {}

@@ -28,8 +28,6 @@ namespace tyr
 template<>
 struct Data<formalism::Object>
 {
-    using Tag = formalism::Object;
-
     Index<formalism::Object> index;
     ::cista::offset::string name;
 

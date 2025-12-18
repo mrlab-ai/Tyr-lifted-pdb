@@ -31,8 +31,6 @@ namespace tyr
 template<>
 struct Data<formalism::ConjunctiveCondition>
 {
-    using Tag = formalism::ConjunctiveCondition;
-
     Index<formalism::ConjunctiveCondition> index;
     IndexList<formalism::Variable> variables;
     IndexList<formalism::Literal<formalism::StaticTag>> static_literals;

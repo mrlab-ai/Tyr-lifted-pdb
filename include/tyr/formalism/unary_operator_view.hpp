@@ -33,7 +33,6 @@ private:
     Index<formalism::UnaryOperator<Op, T>> m_handle;
 
 public:
-    using Tag = formalism::UnaryOperator<Op, T>;
     using OpType = Op;
 
     View(Index<formalism::UnaryOperator<Op, T>> handle, const C& context) : m_context(&context), m_handle(handle) {}

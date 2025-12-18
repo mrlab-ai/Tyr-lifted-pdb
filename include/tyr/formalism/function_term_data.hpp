@@ -30,8 +30,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::FunctionTerm<T>>
 {
-    using Tag = formalism::FunctionTerm<T>;
-
     Index<formalism::FunctionTerm<T>> index;
     Index<formalism::Function<T>> function;
     DataList<formalism::Term> terms;

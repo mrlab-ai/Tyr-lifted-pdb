@@ -28,8 +28,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::Predicate<T>>
 {
-    using Tag = formalism::Predicate<T>;
-
     Index<formalism::Predicate<T>> index;
     ::cista::offset::string name;
     uint_t arity;

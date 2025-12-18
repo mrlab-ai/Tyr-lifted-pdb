@@ -30,8 +30,6 @@ namespace tyr
 template<typename T>
 struct Data<formalism::ArithmeticOperator<T>>
 {
-    using Tag = formalism::ArithmeticOperator<T>;
-
     using Variant = ::cista::offset::variant<Index<formalism::UnaryOperator<formalism::OpSub, T>>,
                                              Index<formalism::BinaryOperator<formalism::OpAdd, T>>,
                                              Index<formalism::BinaryOperator<formalism::OpSub, T>>,

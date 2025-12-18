@@ -27,8 +27,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Index<formalism::FDRVariable<T>> : IndexMixin<Index<formalism::FDRVariable<T>>>
 {
-    using Tag = formalism::FDRVariable<T>;
-
     // Inherit constructors
     using Base = IndexMixin<Index<formalism::FDRVariable<T>>>;
     using Base::Base;

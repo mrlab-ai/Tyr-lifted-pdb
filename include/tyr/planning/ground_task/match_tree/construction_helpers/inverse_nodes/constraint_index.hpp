@@ -28,8 +28,6 @@ template<typename Tag>
 struct Index<planning::match_tree::InverseNumericConstraintSelectorNode<Tag>> :
     IndexMixin<Index<planning::match_tree::InverseNumericConstraintSelectorNode<Tag>>>
 {
-    using Tag = planning::match_tree::InverseNumericConstraintSelectorNode<Tag>;
-
     // Inherit constructors
     using Base = IndexMixin<Index<planning::match_tree::InverseNumericConstraintSelectorNode<Tag>>>;
     using Base::Base;

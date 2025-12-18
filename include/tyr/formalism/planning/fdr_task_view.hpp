@@ -49,8 +49,6 @@ private:
     Index<formalism::FDRTask> m_handle;
 
 public:
-    using Tag = formalism::FDRTask;
-
     View(Index<formalism::FDRTask> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return get_repository(*m_context)[m_handle]; }

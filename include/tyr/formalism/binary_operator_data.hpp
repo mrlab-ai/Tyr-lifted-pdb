@@ -28,7 +28,6 @@ namespace tyr
 template<formalism::OpKind Op, typename T>
 struct Data<formalism::BinaryOperator<Op, T>>
 {
-    using Tag = formalism::BinaryOperator<Op, T>;
     using OpType = Op;
 
     Index<formalism::BinaryOperator<Op, T>> index;

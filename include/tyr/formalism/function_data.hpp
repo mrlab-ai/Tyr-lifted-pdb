@@ -29,8 +29,6 @@ namespace tyr
 template<formalism::FactKind T>
 struct Data<formalism::Function<T>>
 {
-    using Tag = formalism::Function<T>;
-
     Index<formalism::Function<T>> index;
     ::cista::offset::string name;
     uint_t arity;

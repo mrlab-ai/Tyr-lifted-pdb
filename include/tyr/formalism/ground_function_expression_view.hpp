@@ -34,8 +34,6 @@ private:
     Data<formalism::GroundFunctionExpression> m_handle;
 
 public:
-    using Tag = formalism::GroundFunctionExpression;
-
     View(Data<formalism::GroundFunctionExpression> handle, const C& context) : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const { return m_handle; }
