@@ -82,11 +82,12 @@ template void FactsExecutionContext::insert(View<IndexList<GroundFunctionTermVal
  * RuleStageExecutionContext
  */
 
-RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<Repository>()), binding(), merge_cache() {}
+RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<Repository>()), binding(), ground_heads(), merge_cache() {}
 
 void RuleStageExecutionContext::clear() noexcept
 {
     repository->clear();
+    ground_heads.clear();
     merge_cache.clear();
 }
 

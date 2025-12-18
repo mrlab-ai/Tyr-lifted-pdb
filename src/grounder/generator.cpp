@@ -81,9 +81,9 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
         GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
 
     /// --- Rule stage
-    const auto [ground_head, inserted] = create_nullary_ground_head_in_stage(rule_execution_context.rule.get_head(), ground_context_stage);
+    const auto ground_head = create_nullary_ground_head_in_stage(rule_execution_context.rule.get_head(), ground_context_stage).first;
 
-    if (inserted)
+    if (!rule_stage_execution_context.ground_heads.contains(ground_head))
     {
         /// --- Rule
         auto ground_context_rule =
@@ -95,6 +95,7 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
         {
             // std::cout << ground_rule << std::endl;
 
+            rule_stage_execution_context.ground_heads.insert(ground_head);
             rule_execution_context.ground_heads.push_back(ground_head);
         }
     }
@@ -111,12 +112,13 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
     for (const auto vertex_index : rule_execution_context.kpkc_workspace.consistent_vertices_vec)
     {
         /// --- Rule stage
-        const auto [ground_head, inserted] = create_unary_ground_head_in_stage(vertex_index,
-                                                                               rule_execution_context.static_consistency_graph,
-                                                                               rule_execution_context.rule.get_head(),
-                                                                               ground_context_stage);
+        const auto ground_head = create_unary_ground_head_in_stage(vertex_index,
+                                                                   rule_execution_context.static_consistency_graph,
+                                                                   rule_execution_context.rule.get_head(),
+                                                                   ground_context_stage)
+                                     .first;
 
-        if (inserted)
+        if (!rule_stage_execution_context.ground_heads.contains(ground_head))
         {
             /// --- Rule
             auto ground_context_rule =
@@ -128,6 +130,7 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
             {
                 // std::cout << ground_rule << std::endl;
 
+                rule_stage_execution_context.ground_heads.insert(ground_head);
                 rule_execution_context.ground_heads.push_back(ground_head);
             }
         }
@@ -148,12 +151,13 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
         [&](auto&& clique)
         {
             /// --- Rule stage
-            const auto [ground_head, inserted] = create_general_ground_head_in_stage(clique,
-                                                                                     rule_execution_context.static_consistency_graph,
-                                                                                     rule_execution_context.rule.get_head(),
-                                                                                     ground_context_stage);
+            const auto ground_head = create_general_ground_head_in_stage(clique,
+                                                                         rule_execution_context.static_consistency_graph,
+                                                                         rule_execution_context.rule.get_head(),
+                                                                         ground_context_stage)
+                                         .first;
 
-            if (inserted)
+            if (!rule_stage_execution_context.ground_heads.contains(ground_head))
             {
                 /// --- Rule
                 auto ground_context_rule =
@@ -165,6 +169,7 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
                 {
                     // std::cout << ground_rule << std::endl;
 
+                    rule_stage_execution_context.ground_heads.insert(ground_head);
                     rule_execution_context.ground_heads.push_back(ground_head);
                 }
             }

@@ -68,6 +68,7 @@ struct RuleStageExecutionContext
 
     /// Ground heads encountered across iterations
     IndexList<formalism::Object> binding;
+    UnorderedSet<Index<formalism::GroundAtom<formalism::FluentTag>>> ground_heads;
     formalism::MergeCache merge_cache;
 
     RuleStageExecutionContext();
