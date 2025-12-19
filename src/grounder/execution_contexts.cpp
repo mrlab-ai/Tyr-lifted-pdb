@@ -122,6 +122,8 @@ RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
     binding(),
     ground_heads()
 {
+    std::cout << rule.get_index() << std::endl;
+    std::cout << parameter_domains << std::endl;
 }
 
 void RuleExecutionContext::clear() noexcept
@@ -132,6 +134,7 @@ void RuleExecutionContext::clear() noexcept
 
 void RuleExecutionContext::initialize(const AssignmentSets<Repository>& assignment_sets)
 {
+    std::cout << "initialize_dense_graph_and_workspace: " << rule.get_index() << std::endl;
     grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
 }
 

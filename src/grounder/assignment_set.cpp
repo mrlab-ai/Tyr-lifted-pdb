@@ -22,9 +22,9 @@
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
-#include "tyr/grounder/assignment.hpp"
 #include "tyr/grounder/assignment_sets.hpp"
 #include "tyr/grounder/fact_sets.hpp"
+#include "tyr/grounder/formatter.hpp"
 
 #include <algorithm>
 #include <boost/dynamic_bitset.hpp>
@@ -36,11 +36,30 @@
 namespace tyr::grounder
 {
 
+static bool contains(const analysis::DomainListList& parameter_domains, const VertexAssignment& assignment)
+{
+    const auto& domain = parameter_domains[uint_t(assignment.index)];
+    if (std::find(domain.begin(), domain.end(), assignment.object) == domain.end())
+    {
+        std::cout << parameter_domains << " " << assignment.index << " " << assignment << std::endl;
+    }
+    return std::find(domain.begin(), domain.end(), assignment.object) != domain.end();
+}
+
+static bool contains(const analysis::DomainListList& parameter_domains, const EdgeAssignment& assignment)
+{
+    return contains(parameter_domains, VertexAssignment(assignment.first_index, assignment.first_object))
+           && contains(parameter_domains, VertexAssignment(assignment.second_index, assignment.second_object));
+}
+
 PerfectAssignmentHash::PerfectAssignmentHash(const analysis::DomainListList& parameter_domains, size_t num_objects) :
     m_num_assignments(0),
     m_remapping(),
-    m_offsets()
+    m_offsets(),
+    m_parameter_domains(parameter_domains)
 {
+    std::cout << "PerfectAssignmentHash: " << parameter_domains << std::endl;
+
     const auto num_parameters = parameter_domains.size();
 
     m_remapping.resize(num_parameters + 1);
@@ -67,6 +86,7 @@ PerfectAssignmentHash::PerfectAssignmentHash(const analysis::DomainListList& par
 size_t PerfectAssignmentHash::get_assignment_rank(const VertexAssignment& assignment) const noexcept
 {
     assert(assignment.is_valid());
+    assert(contains(m_parameter_domains, assignment));
 
     const auto o = m_remapping[uint_t(assignment.index) + 1][uint_t(assignment.object) + 1];
 
@@ -80,6 +100,7 @@ size_t PerfectAssignmentHash::get_assignment_rank(const VertexAssignment& assign
 size_t PerfectAssignmentHash::get_assignment_rank(const EdgeAssignment& assignment) const noexcept
 {
     assert(assignment.is_valid());
+    assert(contains(m_parameter_domains, assignment));
 
     const auto o1 = m_remapping[uint_t(assignment.first_index) + 1][uint_t(assignment.first_object) + 1];
     const auto o2 = m_remapping[uint_t(assignment.second_index) + 1][uint_t(assignment.second_object) + 1];
@@ -120,6 +141,8 @@ void PredicateAssignmentSet<T, C>::insert(View<Index<formalism::GroundAtom<T>>, 
 
     assert(ground_atom.get_predicate().get_index() == m_predicate);
 
+    // std::cout << "Predicate: " << ground_atom.get_predicate() << std::endl;
+
     for (uint_t first_index = 0; first_index < arity; ++first_index)
     {
         const auto first_object = objects[first_index];
@@ -127,9 +150,25 @@ void PredicateAssignmentSet<T, C>::insert(View<Index<formalism::GroundAtom<T>>, 
         // Complete vertex.
         m_set.set(m_hash.get_assignment_rank(VertexAssignment(formalism::ParameterIndex(first_index), first_object.get_index())));
 
+        // std::cout << "Vertex Assignment: " << VertexAssignment(formalism::ParameterIndex(first_index), first_object.get_index())
+        //           << " rank: " << m_hash.get_assignment_rank(VertexAssignment(formalism::ParameterIndex(first_index), first_object.get_index())) <<
+        //           std::endl;
+
         for (uint_t second_index = first_index + 1; second_index < arity; ++second_index)
         {
             const auto second_object = objects[second_index];
+
+            // std::cout << "Edge Assignment: "
+            //           << EdgeAssignment(formalism::ParameterIndex(first_index),
+            //                             first_object.get_index(),
+            //                             formalism::ParameterIndex(second_index),
+            //                             second_object.get_index())
+            //           << " rank: "
+            //           << m_hash.get_assignment_rank(EdgeAssignment(formalism::ParameterIndex(first_index),
+            //                                                        first_object.get_index(),
+            //                                                        formalism::ParameterIndex(second_index),
+            //                                                        second_object.get_index()))
+            //           << std::endl;
 
             // Ordered complete edge.
             m_set.set(m_hash.get_assignment_rank(EdgeAssignment(formalism::ParameterIndex(first_index),
@@ -156,6 +195,12 @@ template<formalism::FactKind T, formalism::Context C>
 size_t PredicateAssignmentSet<T, C>::size() const noexcept
 {
     return m_set.size();
+}
+
+template<formalism::FactKind T, formalism::Context C>
+const PerfectAssignmentHash& PredicateAssignmentSet<T, C>::get_hash() const noexcept
+{
+    return m_hash;
 }
 
 template class PredicateAssignmentSet<formalism::StaticTag, formalism::Repository>;
@@ -296,6 +341,12 @@ template<formalism::FactKind T, formalism::Context C>
 size_t FunctionAssignmentSet<T, C>::size() const noexcept
 {
     return m_set.size();
+}
+
+template<formalism::FactKind T, formalism::Context C>
+const PerfectAssignmentHash& FunctionAssignmentSet<T, C>::get_hash() const noexcept
+{
+    return m_hash;
 }
 
 template class FunctionAssignmentSet<formalism::StaticTag, formalism::Repository>;

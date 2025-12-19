@@ -189,6 +189,10 @@ inline auto create_triggered_rule(View<Index<formalism::Action>, formalism::Over
         conj_cond.variables.push_back(merge(variable, context).first);
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge(variable, context).first);
+    for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
+        conj_cond.static_literals.push_back(merge(literal, context).first);
+    for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
+        conj_cond.static_literals.push_back(merge(literal, context).first);
     append_from_condition(cond_eff.get_condition(), context, conj_cond);
     conj_cond.fluent_literals.push_back(create_applicability_literal(action, context).first);
 
@@ -250,6 +254,8 @@ inline auto create_cond_effect_rule(View<Index<formalism::Action>, formalism::Ov
         conj_cond.variables.push_back(merge(variable, context).first);
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge(variable, context).first);
+    for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
+        conj_cond.static_literals.push_back(merge(literal, context).first);
     append_from_condition(cond_eff.get_condition(), context, conj_cond);
     conj_cond.fluent_literals.push_back(create_applicability_literal(action, context).first);
 
@@ -380,6 +386,8 @@ inline auto create_effect_rule(View<Index<formalism::Axiom>, formalism::OverlayR
 
     for (const auto variable : axiom.get_variables())
         conj_cond.variables.push_back(merge(variable, context).first);
+    for (const auto literal : axiom.get_body().get_literals<formalism::StaticTag>())
+        conj_cond.static_literals.push_back(merge(literal, context).first);
     conj_cond.fluent_literals.push_back(create_applicability_literal(axiom, context).first);
 
     canonicalize(conj_cond);

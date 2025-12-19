@@ -18,6 +18,7 @@
 #include "tyr/planning/programs/action.hpp"
 
 #include "common.hpp"
+#include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/merge_planning.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -90,6 +91,9 @@ create(const LiftedTask& task, ApplicableActionProgram::AppPredicateToActionsMap
         conj_cond.clear();
 
         for (const auto variable : action.get_variables())
+            rule.variables.push_back(merge(variable, context).first);
+
+        for (const auto variable : action.get_condition().get_variables())
             conj_cond.variables.push_back(merge(variable, context).first);
 
         for (const auto literal : action.get_condition().get_literals<StaticTag>())
@@ -131,6 +135,7 @@ ApplicableActionProgram::ApplicableActionProgram(const LiftedTask& task) :
     m_strata(analysis::compute_rule_stratification(m_program)),
     m_listeners(analysis::compute_listeners(m_strata))
 {
+    std::cout << m_program << std::endl;
 }
 
 const ApplicableActionProgram::AppPredicateToActionsMapping& ApplicableActionProgram::get_predicate_to_actions_mapping() const noexcept

@@ -17,6 +17,7 @@
 
 #include "tyr/planning/programs/axiom.hpp"
 
+#include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/merge_planning.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
@@ -146,6 +147,7 @@ AxiomEvaluatorProgram::AxiomEvaluatorProgram(const LiftedTask& task) :
     m_strata(analysis::compute_rule_stratification(m_program)),
     m_listeners(analysis::compute_listeners(m_strata))
 {
+    std::cout << m_program << std::endl;
 }
 
 const AxiomEvaluatorProgram::PredicateToPredicateMapping& AxiomEvaluatorProgram::get_predicate_to_predicate_mapping() const noexcept

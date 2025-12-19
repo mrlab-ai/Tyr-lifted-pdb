@@ -39,6 +39,7 @@ struct PerfectAssignmentHash
     size_t m_num_assignments;                      ///< The number of type legal [i/o] including a sentinel for each i
     std::vector<std::vector<uint_t>> m_remapping;  ///< The remapping of o in O to index for each type legal [i/o]
     std::vector<uint_t> m_offsets;                 ///< The offsets of i
+    analysis::DomainListList m_parameter_domains;
 
     PerfectAssignmentHash(const analysis::DomainListList& parameter_domains, size_t num_objects);
 
@@ -69,6 +70,7 @@ public:
     bool operator[](const EdgeAssignment& assignment) const noexcept;
 
     size_t size() const noexcept;
+    const PerfectAssignmentHash& get_hash() const noexcept;
 };
 
 template<formalism::FactKind T, formalism::Context C>
@@ -118,6 +120,7 @@ public:
     ClosedInterval<float_t> operator[](const EdgeAssignment& assignment) const noexcept;
 
     size_t size() const noexcept;
+    const PerfectAssignmentHash& get_hash() const noexcept;
 };
 
 template<formalism::FactKind T, formalism::Context C>

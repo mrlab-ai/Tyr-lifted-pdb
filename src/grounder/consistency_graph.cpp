@@ -349,9 +349,17 @@ bool Vertex<C>::consistent_literals(View<IndexList<Literal<T>>, C> literals, con
 
             const auto true_assignment = predicate_assignment_set[assignment];
 
+            // std::cout << "Vertex Assignment: " << assignment << " rank: " << predicate_assignment_set.get_hash().get_assignment_rank(assignment) << " "
+            //           << true_assignment << std::endl;
+
             if (negated == true_assignment)
+            {
+                // std::cout << "Inconsistent literal: " << literal << std::endl;
                 return false;
+            }
         }
+
+        // std::cout << "Consistent literal: " << literal << std::endl;
     }
 
     return true;
@@ -468,9 +476,17 @@ bool Edge<C>::consistent_literals(View<IndexList<Literal<T>>, C> literals, const
 
             const auto true_assignment = predicate_assignment_set[assignment];
 
+            // std::cout << "Edge Assignment: " << assignment << " rank: " << predicate_assignment_set.get_hash().get_assignment_rank(assignment) << " "
+            //           << true_assignment << std::endl;
+
             if (negated == true_assignment)
+            {
+                // std::cout << "Inconsistent literal: " << literal << std::endl;
                 return false;
+            }
         }
+
+        // std::cout << "Consistent literal: " << literal << std::endl;
     }
 
     return true;

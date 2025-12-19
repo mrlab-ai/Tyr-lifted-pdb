@@ -19,6 +19,7 @@
 
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/declarations.hpp"
+#include "tyr/grounder/formatter.hpp"
 
 namespace tyr::grounder::kpkc
 {
@@ -103,6 +104,7 @@ void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<C, Condit
     {
         ref_workspace.consistent_vertices.set(vertex.get_index());
         ref_workspace.consistent_vertices_vec.push_back(vertex.get_index());
+        // std::cout << "Consistent vertex: " << vertex << std::endl;
     }
 
     // Clear the adj matrix
@@ -120,6 +122,7 @@ void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<C, Condit
         auto& second_row = ref_graph.adjacency_matrix[second_index];
         first_row.set(second_index);
         second_row.set(first_index);
+        // std::cout << "Consistent edge: " << edge << std::endl;
     }
 
     // Initialize compatible vertices: Set bits for depth = 0 because kpkc copies depth i into depth i + 1 before recursive call.
