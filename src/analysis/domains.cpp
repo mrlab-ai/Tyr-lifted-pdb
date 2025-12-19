@@ -224,6 +224,7 @@ void restrict_parameter_domain(View<Index<formalism::FunctionTerm<formalism::Flu
                                DomainSetList& parameter_domains,
                                const DomainSetListList& function_domain_sets)
 {
+    // Dont restrict for fluent fterm
 }
 
 template<formalism::Context C>

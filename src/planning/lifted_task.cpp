@@ -204,16 +204,7 @@ static std::vector<analysis::DomainListListList> compute_parameter_domains_per_c
 {
     auto result = std::vector<analysis::DomainListListList> {};
 
-    const auto num_objects = task.get_domain().get_constants().size() + task.get_objects().size();
     const auto variable_domains = analysis::compute_variable_domains(task);
-    const auto static_fact_sets = TaggedFactSets(task.get_atoms<StaticTag>(), task.get_fterm_values<StaticTag>());
-    auto static_assignment_sets = TaggedAssignmentSets(task.get_domain().get_predicates<StaticTag>(),
-                                                       task.get_domain().get_functions<StaticTag>(),
-                                                       variable_domains.static_predicate_domains,
-                                                       variable_domains.static_function_domains,
-                                                       num_objects);
-
-    static_assignment_sets.insert(static_fact_sets);
 
     for (uint_t action_index = 0; action_index < task.get_domain().get_actions().size(); ++action_index)
     {
@@ -225,25 +216,12 @@ static std::vector<analysis::DomainListListList> compute_parameter_domains_per_c
         {
             const auto cond_effect = action.get_effects()[cond_effect_index];
 
-            // Compute static consistency graph to filter consistent vertices
             assert(variable_domains.action_domains[action_index].second[cond_effect_index].size() == action.get_arity() + cond_effect.get_arity());
 
-            auto static_consistency_graph = StaticConsistencyGraph(cond_effect.get_condition(),
-                                                                   variable_domains.action_domains[action_index].second[cond_effect_index],
-                                                                   action.get_arity(),
-                                                                   action.get_arity() + cond_effect.get_arity(),
-                                                                   static_assignment_sets);
-
             auto parameter_domains = analysis::DomainListList {};
-            for (const auto& partition : static_consistency_graph.get_partitions())
-            {
-                auto domain = analysis::DomainList {};
-                for (const auto vertex_index : partition)
-                {
-                    domain.push_back(static_consistency_graph.get_vertex(vertex_index).get_object_index());
-                }
-                parameter_domains.push_back(std::move(domain));
-            }
+
+            for (uint_t i = action.get_arity(); i < action.get_arity() + cond_effect.get_arity(); ++i)
+                parameter_domains.push_back(variable_domains.action_domains[action_index].second[cond_effect_index][i]);
 
             parameter_domains_per_cond_effect.push_back(std::move(parameter_domains));
         }

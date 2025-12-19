@@ -39,10 +39,10 @@ public:
     std::optional<Index<T>> find(const Data<T>& builder) const noexcept
     {
         if (auto ptr = parent_scope.find(builder))
-            return *ptr;
+            return ptr;
 
         if (auto ptr = local_scope.find(builder))
-            return *ptr;
+            return ptr;
 
         return std::nullopt;
     }
@@ -82,6 +82,9 @@ public:
     {
         return parent_scope.template size<T>() + local_scope.template size<T>();
     }
+
+    const C& get_parent_scope() const noexcept { return parent_scope; }
+    const C& get_local_scope() const noexcept { return local_scope; }
 };
 
 // Domain + Task

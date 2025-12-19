@@ -82,20 +82,12 @@ template void FactsExecutionContext::insert(View<IndexList<GroundFunctionTermVal
  * RuleStageExecutionContext
  */
 
-RuleStageExecutionContext::RuleStageExecutionContext() :
-    repository(std::make_shared<Repository>()),
-    binding(),
-    ground_heads(),
-    ground_heads_inapplicable(),
-    merge_cache()
-{
-}
+RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<Repository>()), binding(), ground_heads(), merge_cache() {}
 
 void RuleStageExecutionContext::clear() noexcept
 {
     repository->clear();
     ground_heads.clear();
-    ground_heads_inapplicable.clear();
     merge_cache.clear();
 }
 
@@ -105,11 +97,17 @@ void RuleStageExecutionContext::clear() noexcept
 
 RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
                                            View<Index<GroundConjunctiveCondition>, Repository> nullary_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> geq_arity_1_sound_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> geq_arity_2_sound_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> arity_conflicting_condition,
                                            const analysis::DomainListList& parameter_domains,
                                            const TaggedAssignmentSets<StaticTag, Repository>& static_assignment_sets,
                                            const Repository& parent) :
     rule(rule),
     nullary_condition(nullary_condition),
+    geq_arity_1_sound_condition(geq_arity_1_sound_condition),
+    geq_arity_2_sound_condition(geq_arity_2_sound_condition),
+    arity_conflicting_condition(arity_conflicting_condition),
     static_consistency_graph(rule.get_body(), parameter_domains, 0, rule.get_arity(), static_assignment_sets),
     consistency_graph(grounder::kpkc::allocate_dense_graph(static_consistency_graph)),
     kpkc_workspace(grounder::kpkc::allocate_workspace(static_consistency_graph)),
@@ -159,7 +157,94 @@ void TaskToTaskExecutionContext::clear() noexcept { merge_cache.clear(); }
  * ProgramExecutionContext
  */
 
-static auto ground_nullary_condition(View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
+struct MaxArityResult
+{
+    size_t constraint = 0;
+    size_t fterm = 0;
+
+    friend MaxArityResult max_arity(const MaxArityResult& lhs, const MaxArityResult& rhs) noexcept
+    {
+        return MaxArityResult { std::max(lhs.constraint, rhs.constraint), std::max(lhs.fterm, rhs.fterm) };
+    }
+
+    bool is_geq_arity_k_sound(size_t k) const { return is_sound() && (constraint >= k || fterm >= k); }
+    bool is_sound() const noexcept { return constraint <= 2 && fterm <= 2; }
+    bool is_nullary() const noexcept { return constraint == 0 && fterm == 0; }
+};
+
+inline MaxArityResult max_arity(float_t element);
+
+template<ArithmeticOpKind O, Context C>
+MaxArityResult max_arity(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C> element);
+
+template<OpKind O, Context C>
+MaxArityResult max_arity(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C> element);
+
+template<ArithmeticOpKind O, Context C>
+MaxArityResult max_arity(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C> element);
+
+template<FactKind T, Context C>
+MaxArityResult max_arity(View<Index<FunctionTerm<T>>, C> element);
+
+template<Context C>
+MaxArityResult max_arity(View<Data<FunctionExpression>, C> element);
+
+template<Context C>
+MaxArityResult max_arity(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element);
+
+template<Context C>
+MaxArityResult max_arity(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element);
+
+inline MaxArityResult max_arity(float_t element) { return MaxArityResult(); }
+
+template<ArithmeticOpKind O, Context C>
+MaxArityResult max_arity(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C> element)
+{
+    return max_arity(element.get_arg());
+}
+
+template<OpKind O, Context C>
+MaxArityResult max_arity(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C> element)
+{
+    return max_arity(max_arity(element.get_lhs()), max_arity(element.get_rhs()));
+}
+
+template<ArithmeticOpKind O, Context C>
+MaxArityResult max_arity(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C> element)
+{
+    const auto child_fexprs = element.get_args();
+
+    return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
+                           child_fexprs.end(),
+                           max_arity(child_fexprs.front()),
+                           [&](const auto& value, const auto& child_expr) { return max_arity(value, max_arity(child_expr)); });
+}
+
+template<FactKind T, Context C>
+MaxArityResult max_arity(View<Index<FunctionTerm<T>>, C> element)
+{
+    return MaxArityResult { 0, element.get_function().get_arity() };
+}
+
+template<Context C>
+MaxArityResult max_arity(View<Data<FunctionExpression>, C> element)
+{
+    return visit([&](auto&& arg) { return max_arity(arg); }, element.get_variant());
+}
+
+template<Context C>
+MaxArityResult max_arity(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element)
+{
+    return visit([&](auto&& arg) { return max_arity(arg); }, element.get_variant());
+}
+
+template<Context C>
+MaxArityResult max_arity(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element)
+{
+    return visit([&](auto&& arg) { return max_arity(arg); }, element.get_variant());
+}
+
+static auto create_ground_nullary_condition(View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
 {
     auto conj_cond_ptr = builder.get_builder<GroundConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -177,8 +262,53 @@ static auto ground_nullary_condition(View<Index<ConjunctiveCondition>, Repositor
             conj_cond.fluent_literals.push_back(ground_datalog(literal, grounder_context).first);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (numeric_constraint.get_arity() == 0)
+        if (max_arity(numeric_constraint).is_nullary())
             conj_cond.numeric_constraints.push_back(ground_common(numeric_constraint, grounder_context));
+
+    canonicalize(conj_cond);
+    return context.get_or_create(conj_cond, builder.get_buffer());
+}
+
+static auto
+create_geq_arity_k_sound_conjunctive_condition(size_t k, View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
+{
+    auto conj_cond_ptr = builder.get_builder<ConjunctiveCondition>();
+    auto& conj_cond = *conj_cond_ptr;
+    conj_cond.clear();
+
+    for (const auto literal : condition.get_literals<StaticTag>())
+        if ((!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() == k) || literal.get_atom().get_predicate().get_arity() >= k)
+            conj_cond.static_literals.push_back(literal.get_index());
+
+    for (const auto literal : condition.get_literals<FluentTag>())
+        if ((!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() == k) || literal.get_atom().get_predicate().get_arity() >= k)
+            conj_cond.fluent_literals.push_back(literal.get_index());
+
+    for (const auto numeric_constraint : condition.get_numeric_constraints())
+        if (!max_arity(numeric_constraint).is_geq_arity_k_sound(k))
+            conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
+
+    canonicalize(conj_cond);
+    return context.get_or_create(conj_cond, builder.get_buffer());
+}
+
+static auto create_arity_conflicting_conjunctive_condition(View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
+{
+    auto conj_cond_ptr = builder.get_builder<ConjunctiveCondition>();
+    auto& conj_cond = *conj_cond_ptr;
+    conj_cond.clear();
+
+    for (const auto literal : condition.get_literals<StaticTag>())
+        if (!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() > 2)
+            conj_cond.static_literals.push_back(literal.get_index());
+
+    for (const auto literal : condition.get_literals<FluentTag>())
+        if (!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() > 2)
+            conj_cond.fluent_literals.push_back(literal.get_index());
+
+    for (const auto numeric_constraint : condition.get_numeric_constraints())
+        if (!max_arity(numeric_constraint).is_sound())
+            conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
     return context.get_or_create(conj_cond, builder.get_buffer());
@@ -207,11 +337,15 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<Program>, Repository
 {
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
-        rule_execution_contexts.emplace_back(program.get_rules()[i],
-                                             make_view(ground_nullary_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository),
-                                             domains.rule_domains[i],
-                                             facts_execution_context.assignment_sets.static_sets,
-                                             *repository);
+        rule_execution_contexts.emplace_back(
+            program.get_rules()[i],
+            make_view(create_ground_nullary_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository),
+            make_view(create_geq_arity_k_sound_conjunctive_condition(1, program.get_rules()[i].get_body(), builder, *repository).first, *repository),
+            make_view(create_geq_arity_k_sound_conjunctive_condition(2, program.get_rules()[i].get_body(), builder, *repository).first, *repository),
+            make_view(create_arity_conflicting_conjunctive_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository),
+            domains.rule_domains[i],
+            facts_execution_context.assignment_sets.static_sets,
+            *repository);
         rule_execution_contexts.back().initialize(facts_execution_context.assignment_sets);
     }
     rule_stage_execution_contexts.resize(rule_execution_contexts.size());
