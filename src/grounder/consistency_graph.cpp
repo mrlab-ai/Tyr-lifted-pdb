@@ -331,17 +331,11 @@ bool Vertex<C>::consistent_literals(View<IndexList<formalism::Literal<T>>, C> li
         const auto predicate = atom.get_predicate();
         const auto arity = predicate.get_arity();
 
-        if (arity < 1)
-        {
-            continue;  ///< We test nullary literals separately
-        }
+        assert(arity >= 1);  ///< We test nullary literals separately
 
         const auto negated = !literal.get_polarity();
 
-        if (negated && arity != 1)
-        {
-            continue;  ///< Can only handly unary negated literals due to overapproximation
-        }
+        assert(!negated || arity == 1);  ///< Can only handly unary negated literals due to overapproximation
 
         const auto& predicate_assignment_set = predicate_assignment_sets.get_set(predicate.get_index());
         const auto terms = atom.get_terms();
@@ -352,15 +346,8 @@ bool Vertex<C>::consistent_literals(View<IndexList<formalism::Literal<T>>, C> li
 
             const auto true_assignment = predicate_assignment_set[assignment];
 
-            if (!negated && !true_assignment)
-            {
+            if (negated == true_assignment)
                 return false;
-            }
-
-            if (negated && true_assignment && (1 == arity))  ///< Due to overapproximation can only test valid assigned unary literals.
-            {
-                return false;
-            }
         }
     }
 
@@ -388,15 +375,10 @@ bool Vertex<C>::consistent_numeric_constraints(View<DataList<formalism::BooleanO
     {
         const auto arity = numeric_constraint.get_arity();
 
-        if (arity < 1)
-        {
-            continue;  ///< We test nullary constraints separately.
-        }
+        assert(arity >= 1);  ///< We test nullary constraints separately.
 
         if (!is_satisfiable(numeric_constraint, *this, assignment_sets))
-        {
             return false;
-        }
     }
 
     return true;
@@ -473,17 +455,11 @@ bool Edge<C>::consistent_literals(View<IndexList<formalism::Literal<T>>, C> lite
         const auto predicate = atom.get_predicate();
         const auto arity = predicate.get_arity();
 
-        if (arity < 2)
-        {
-            continue;  ///< We test nullary and unary literals separately.
-        }
+        assert(arity >= 2);  ///< We test nullary and unary literals separately.
 
         const auto negated = !literal.get_polarity();
 
-        if (negated && arity != 2)
-        {
-            continue;  ///< Can only handly binary negated literals due to overapproximation
-        }
+        assert(!negated || arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
         const auto& predicate_assignment_set = predicate_assignment_sets.get_set(predicate.get_index());
         const auto terms = atom.get_terms();
@@ -496,15 +472,8 @@ bool Edge<C>::consistent_literals(View<IndexList<formalism::Literal<T>>, C> lite
 
             const auto true_assignment = predicate_assignment_set[assignment];
 
-            if (!negated && !true_assignment)
-            {
+            if (negated == true_assignment)
                 return false;
-            }
-
-            if (negated && true_assignment && (2 == arity))  ///< Due to overapproximation can only test valid assigned binary literals.
-            {
-                return false;
-            }
         }
     }
 
@@ -532,15 +501,10 @@ bool Edge<C>::consistent_numeric_constraints(View<DataList<formalism::BooleanOpe
     {
         const auto arity = numeric_constraint.get_arity();
 
-        if (arity < 2)
-        {
-            continue;  ///< We test nullary and unary constraints separately.
-        }
+        assert(arity >= 2);  ///< We test nullary and unary constraints separately.
 
         if (!is_satisfiable(numeric_constraint, *this, assignment_sets))
-        {
             return false;
-        }
     }
 
     return true;
@@ -694,17 +658,22 @@ StaticConsistencyGraph<C, ConditionTag>::compute_edges(ConditionView<ConditionTa
 template<formalism::Context C, class ConditionTag>
     requires ConjunctiveConditionConcept<ConditionTag, C>
 StaticConsistencyGraph<C, ConditionTag>::StaticConsistencyGraph(ConditionView<ConditionTag, C> condition,
+                                                                ConditionView<ConditionTag, C> arity_geq_1_overapproximation_condition,
+                                                                ConditionView<ConditionTag, C> arity_geq_2_overapproximation_condition,
                                                                 const analysis::DomainListList& parameter_domains,
                                                                 uint_t begin_parameter_index,
                                                                 uint_t end_parameter_index,
                                                                 const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets) :
-    m_condition(condition)
+    m_condition(condition),
+    m_arity_geq_1_overapproximation_condition(arity_geq_1_overapproximation_condition),
+    m_arity_geq_2_overapproximation_condition(arity_geq_2_overapproximation_condition)
 {
-    auto [vertices_, partitions_] = compute_vertices(condition, parameter_domains, begin_parameter_index, end_parameter_index, static_assignment_sets);
+    auto [vertices_, partitions_] =
+        compute_vertices(arity_geq_1_overapproximation_condition, parameter_domains, begin_parameter_index, end_parameter_index, static_assignment_sets);
     m_vertices = std::move(vertices_);
     m_partitions = std::move(partitions_);
 
-    auto [sources_, target_offsets_, targets_] = compute_edges(condition, static_assignment_sets, m_vertices);
+    auto [sources_, target_offsets_, targets_] = compute_edges(arity_geq_2_overapproximation_condition, static_assignment_sets, m_vertices);
 
     m_sources = std::move(sources_);
     m_target_offsets = std::move(target_offsets_);

@@ -97,18 +97,24 @@ void RuleStageExecutionContext::clear() noexcept
 
 RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
                                            View<Index<GroundConjunctiveCondition>, Repository> nullary_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> geq_arity_1_sound_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> geq_arity_2_sound_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> arity_conflicting_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> arity_geq_1_overapproximation_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> arity_geq_2_overapproximation_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> conflicting_overapproximation_condition,
                                            const analysis::DomainListList& parameter_domains,
                                            const TaggedAssignmentSets<StaticTag, Repository>& static_assignment_sets,
                                            const Repository& parent) :
     rule(rule),
     nullary_condition(nullary_condition),
-    geq_arity_1_sound_condition(geq_arity_1_sound_condition),
-    geq_arity_2_sound_condition(geq_arity_2_sound_condition),
-    arity_conflicting_condition(arity_conflicting_condition),
-    static_consistency_graph(rule.get_body(), parameter_domains, 0, rule.get_arity(), static_assignment_sets),
+    arity_geq_1_overapproximation_condition(arity_geq_1_overapproximation_condition),
+    arity_geq_2_overapproximation_condition(arity_geq_2_overapproximation_condition),
+    conflicting_overapproximation_condition(conflicting_overapproximation_condition),
+    static_consistency_graph(rule.get_body(),
+                             arity_geq_1_overapproximation_condition,
+                             arity_geq_2_overapproximation_condition,
+                             parameter_domains,
+                             0,
+                             rule.get_arity(),
+                             static_assignment_sets),
     consistency_graph(grounder::kpkc::allocate_dense_graph(static_consistency_graph)),
     kpkc_workspace(grounder::kpkc::allocate_workspace(static_consistency_graph)),
     repository(std::make_shared<Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
@@ -167,8 +173,7 @@ struct MaxArityResult
         return MaxArityResult { std::max(lhs.constraint, rhs.constraint), std::max(lhs.fterm, rhs.fterm) };
     }
 
-    bool is_geq_arity_k_sound(size_t k) const { return is_sound() && (constraint >= k || fterm >= k); }
-    bool is_sound() const noexcept { return constraint <= 2 && fterm <= 2; }
+    size_t arity() const noexcept { return std::max(constraint, fterm); }
     bool is_nullary() const noexcept { return constraint == 0 && fterm == 0; }
 };
 
@@ -269,45 +274,50 @@ static auto create_ground_nullary_condition(View<Index<ConjunctiveCondition>, Re
     return context.get_or_create(conj_cond, builder.get_buffer());
 }
 
-static auto
-create_geq_arity_k_sound_conjunctive_condition(size_t k, View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
+static auto create_arity_geq_k_overapproximation_conjunctive_condition(size_t k,
+                                                                       View<Index<ConjunctiveCondition>, Repository> condition,
+                                                                       Builder& builder,
+                                                                       Repository& context)
 {
     auto conj_cond_ptr = builder.get_builder<ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
     for (const auto literal : condition.get_literals<StaticTag>())
-        if ((!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() == k) || literal.get_atom().get_predicate().get_arity() >= k)
+        if ((!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() == k)
+            || (literal.get_polarity() && literal.get_atom().get_predicate().get_arity() >= k))
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<FluentTag>())
-        if ((!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() == k) || literal.get_atom().get_predicate().get_arity() >= k)
+        if ((!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() == k)
+            || (literal.get_polarity() && literal.get_atom().get_predicate().get_arity() >= k))
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (!max_arity(numeric_constraint).is_geq_arity_k_sound(k))
+        if (max_arity(numeric_constraint).arity() >= k)
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
     return context.get_or_create(conj_cond, builder.get_buffer());
 }
 
-static auto create_arity_conflicting_conjunctive_condition(View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
+static auto
+create_overapproximation_conflicting_conjunctive_condition(View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
 {
     auto conj_cond_ptr = builder.get_builder<ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
     for (const auto literal : condition.get_literals<StaticTag>())
-        if (!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() > 2)
+        if (literal.get_atom().get_predicate().get_arity() > 2)
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<FluentTag>())
-        if (!literal.get_polarity() && literal.get_atom().get_predicate().get_arity() > 2)
+        if (literal.get_atom().get_predicate().get_arity() > 2)
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (!max_arity(numeric_constraint).is_sound())
+        if (max_arity(numeric_constraint).arity() >= 2)
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
@@ -340,9 +350,11 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<Program>, Repository
         rule_execution_contexts.emplace_back(
             program.get_rules()[i],
             make_view(create_ground_nullary_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository),
-            make_view(create_geq_arity_k_sound_conjunctive_condition(1, program.get_rules()[i].get_body(), builder, *repository).first, *repository),
-            make_view(create_geq_arity_k_sound_conjunctive_condition(2, program.get_rules()[i].get_body(), builder, *repository).first, *repository),
-            make_view(create_arity_conflicting_conjunctive_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository),
+            make_view(create_arity_geq_k_overapproximation_conjunctive_condition(1, program.get_rules()[i].get_body(), builder, *repository).first,
+                      *repository),
+            make_view(create_arity_geq_k_overapproximation_conjunctive_condition(2, program.get_rules()[i].get_body(), builder, *repository).first,
+                      *repository),
+            make_view(create_overapproximation_conflicting_conjunctive_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository),
             domains.rule_domains[i],
             facts_execution_context.assignment_sets.static_sets,
             *repository);

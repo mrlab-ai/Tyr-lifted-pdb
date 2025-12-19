@@ -133,7 +133,7 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
         auto ground_context_rule =
             GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
 
-        if (is_valid_binding(rule_execution_context.rule.get_body(), fact_execution_context.fact_sets, ground_context_rule))
+        if (is_valid_binding(rule_execution_context.conflicting_overapproximation_condition, fact_execution_context.fact_sets, ground_context_rule))
         {
             // Ensure that ground rule is truly applicable
             assert(is_applicable(make_view(ground_datalog(rule_execution_context.rule, ground_context_rule).first, rule_execution_context.overlay_repository),
@@ -170,12 +170,12 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
             auto ground_context_rule =
                 GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
 
-            if (is_valid_binding(rule_execution_context.arity_conflicting_condition, fact_execution_context.fact_sets, ground_context_rule))
+            if (is_valid_binding(rule_execution_context.conflicting_overapproximation_condition, fact_execution_context.fact_sets, ground_context_rule))
             {
                 // Ensure that ground rule is truly applicable
-                assert(is_applicable(
-                    make_view(ground_datalog(rule_execution_context.rule.get_body(), ground_context_rule).first, rule_execution_context.overlay_repository),
-                    fact_execution_context.fact_sets));
+                assert(
+                    is_applicable(make_view(ground_datalog(rule_execution_context.rule, ground_context_rule).first, rule_execution_context.overlay_repository),
+                                  fact_execution_context.fact_sets));
 
                 // std::cout << ground_rule << std::endl;
 
@@ -194,38 +194,38 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
     auto ground_context_stage =
         GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
 
-    kpkc::for_each_k_clique(rule_execution_context.consistency_graph,
-                            rule_execution_context.kpkc_workspace,
-                            [&](auto&& clique)
-                            {
-                                /// --- Rule stage
-                                const auto ground_head = create_general_ground_head_in_stage(clique,
-                                                                                             rule_execution_context.static_consistency_graph,
-                                                                                             rule_execution_context.rule.get_head(),
-                                                                                             ground_context_stage)
-                                                             .first;
+    kpkc::for_each_k_clique(
+        rule_execution_context.consistency_graph,
+        rule_execution_context.kpkc_workspace,
+        [&](auto&& clique)
+        {
+            /// --- Rule stage
+            const auto ground_head = create_general_ground_head_in_stage(clique,
+                                                                         rule_execution_context.static_consistency_graph,
+                                                                         rule_execution_context.rule.get_head(),
+                                                                         ground_context_stage)
+                                         .first;
 
-                                if (!rule_stage_execution_context.ground_heads.contains(ground_head))
-                                {
-                                    /// --- Rule
-                                    auto ground_context_rule = GrounderContext { thread_execution_context.builder,
-                                                                                 rule_execution_context.overlay_repository,
-                                                                                 rule_stage_execution_context.binding };
+            if (!rule_stage_execution_context.ground_heads.contains(ground_head))
+            {
+                /// --- Rule
+                auto ground_context_rule =
+                    GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
 
-                                    if (is_valid_binding(rule_execution_context.rule.get_body(), fact_execution_context.fact_sets, ground_context_rule))
-                                    {
-                                        // Ensure that ground rule is truly applicable
-                                        assert(is_applicable(make_view(ground_datalog(rule_execution_context.rule, ground_context_rule).first,
-                                                                       rule_execution_context.overlay_repository),
-                                                             fact_execution_context.fact_sets));
+                if (is_valid_binding(rule_execution_context.conflicting_overapproximation_condition, fact_execution_context.fact_sets, ground_context_rule))
+                {
+                    // Ensure that ground rule is truly applicable
+                    assert(is_applicable(
+                        make_view(ground_datalog(rule_execution_context.rule, ground_context_rule).first, rule_execution_context.overlay_repository),
+                        fact_execution_context.fact_sets));
 
-                                        // std::cout << ground_rule << std::endl;
+                    // std::cout << ground_rule << std::endl;
 
-                                        rule_stage_execution_context.ground_heads.insert(ground_head);
-                                        rule_execution_context.ground_heads.push_back(ground_head);
-                                    }
-                                }
-                            });
+                    rule_stage_execution_context.ground_heads.insert(ground_head);
+                    rule_execution_context.ground_heads.push_back(ground_head);
+                }
+            }
+        });
 }
 
 void ground(const FactsExecutionContext& fact_execution_context,

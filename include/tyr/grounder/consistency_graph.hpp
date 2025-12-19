@@ -116,6 +116,8 @@ private:
 
 public:
     StaticConsistencyGraph(ConditionView<ConditionTag, C> condition,
+                           ConditionView<ConditionTag, C> arity_geq_1_overapproximation_condition,
+                           ConditionView<ConditionTag, C> arity_geq_2_overapproximation_condition,
                            const analysis::DomainListList& parameter_domains,
                            uint_t begin_parameter_index,
                            uint_t end_parameter_index,
@@ -159,8 +161,9 @@ public:
                | std::views::filter(
                    [this, &assignment_sets](auto&& vertex)
                    {
-                       return vertex.consistent_literals(m_condition.template get_literals<formalism::FluentTag>(), assignment_sets.fluent_sets.predicate)
-                              && vertex.consistent_numeric_constraints(m_condition.get_numeric_constraints(), assignment_sets);
+                       return vertex.consistent_literals(m_arity_geq_1_overapproximation_condition.template get_literals<formalism::FluentTag>(),
+                                                         assignment_sets.fluent_sets.predicate)
+                              && vertex.consistent_numeric_constraints(m_arity_geq_1_overapproximation_condition.get_numeric_constraints(), assignment_sets);
                    });
     }
 
@@ -171,8 +174,9 @@ public:
                    [this, &consistent_vertices, &assignment_sets](auto&& edge)
                    {
                        return consistent_vertices.test(edge.get_src().get_index()) && consistent_vertices.test(edge.get_dst().get_index())
-                              && edge.consistent_literals(m_condition.template get_literals<formalism::FluentTag>(), assignment_sets.fluent_sets.predicate)
-                              && edge.consistent_numeric_constraints(m_condition.get_numeric_constraints(), assignment_sets);
+                              && edge.consistent_literals(m_arity_geq_2_overapproximation_condition.template get_literals<formalism::FluentTag>(),
+                                                          assignment_sets.fluent_sets.predicate)
+                              && edge.consistent_numeric_constraints(m_arity_geq_2_overapproximation_condition.get_numeric_constraints(), assignment_sets);
                    });
     }
 
@@ -186,6 +190,8 @@ public:
 
 private:
     ConditionView<ConditionTag, C> m_condition;
+    ConditionView<ConditionTag, C> m_arity_geq_1_overapproximation_condition;
+    ConditionView<ConditionTag, C> m_arity_geq_2_overapproximation_condition;
 
     /* The data member of the consistency graph. */
     details::Vertices<C> m_vertices;
