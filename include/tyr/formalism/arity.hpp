@@ -71,27 +71,15 @@ size_t effective_arity(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C
 }
 
 template<FactKind T, Context C>
+size_t effective_arity(View<Index<Function<T>>, C> element)
+{
+    return element.get_arity();
+}
+
+template<FactKind T, Context C>
 size_t effective_arity(View<Index<FunctionTerm<T>>, C> element)
 {
-    auto arity = 0;
-
-    for (const auto term : element.get_terms())
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>) {}
-                else if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    ++arity;
-                else
-                    static_assert(dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
-
-    return arity;
+    return effective_arity(element.get_function());
 }
 
 template<Context C>
@@ -113,27 +101,15 @@ size_t effective_arity(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> 
 }
 
 template<FactKind T, Context C>
+size_t effective_arity(View<Index<Predicate<T>>, C> element)
+{
+    return element.get_arity();
+}
+
+template<FactKind T, Context C>
 size_t effective_arity(View<Index<Atom<T>>, C> element)
 {
-    size_t arity = 0;
-
-    for (const auto term : element.get_terms())
-    {
-        visit(
-            [&](auto&& arg)
-            {
-                using Alternative = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>) {}
-                else if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    ++arity;
-                else
-                    static_assert(dependent_false<Alternative>::value, "Missing case");
-            },
-            term.get_variant());
-    }
-
-    return arity;
+    return effective_arity(element.get_predicate());
 }
 
 template<FactKind T, Context C>
@@ -141,6 +117,7 @@ size_t effective_arity(View<Index<Literal<T>>, C> element)
 {
     return effective_arity(element.get_atom());
 }
+
 }
 
 #endif

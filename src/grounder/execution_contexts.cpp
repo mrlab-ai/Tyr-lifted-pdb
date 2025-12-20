@@ -17,6 +17,7 @@
 
 #include "tyr/grounder/execution_contexts.hpp"
 
+#include "tyr/formalism/arity.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/grounder_datalog.hpp"
 
@@ -97,20 +98,22 @@ void RuleStageExecutionContext::clear() noexcept
 
 RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
                                            View<Index<GroundConjunctiveCondition>, Repository> nullary_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> arity_geq_1_overapproximation_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> arity_geq_2_overapproximation_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> conflicting_overapproximation_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_overapproximation_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_overapproximation_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_conflicting_overapproximation_condition,
+                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_conflicting_overapproximation_condition,
                                            const analysis::DomainListList& parameter_domains,
                                            const TaggedAssignmentSets<StaticTag, Repository>& static_assignment_sets,
                                            const Repository& parent) :
     rule(rule),
     nullary_condition(nullary_condition),
-    arity_geq_1_overapproximation_condition(arity_geq_1_overapproximation_condition),
-    arity_geq_2_overapproximation_condition(arity_geq_2_overapproximation_condition),
-    conflicting_overapproximation_condition(conflicting_overapproximation_condition),
+    unary_overapproximation_condition(unary_overapproximation_condition),
+    binary_overapproximation_condition(binary_overapproximation_condition),
+    unary_conflicting_overapproximation_condition(unary_conflicting_overapproximation_condition),
+    binary_conflicting_overapproximation_condition(binary_conflicting_overapproximation_condition),
     static_consistency_graph(rule.get_body(),
-                             arity_geq_1_overapproximation_condition,
-                             arity_geq_2_overapproximation_condition,
+                             unary_overapproximation_condition,
+                             binary_overapproximation_condition,
                              parameter_domains,
                              0,
                              rule.get_arity(),
@@ -186,27 +189,15 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<Program>, Repository
 {
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
-        std::cout << domains.rule_domains[i] << std::endl;
-        std::cout << make_view(create_ground_nullary_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository) << std::endl;
-        std::cout << make_view(create_arity_geq_k_overapproximation_conjunctive_condition(1, program.get_rules()[i].get_body(), builder, *repository).first,
-                               *repository)
-                  << std::endl;
-        std::cout << make_view(create_arity_geq_k_overapproximation_conjunctive_condition(2, program.get_rules()[i].get_body(), builder, *repository).first,
-                               *repository)
-                  << std::endl;
-        std::cout << make_view(create_overapproximation_conflicting_conjunctive_condition(program.get_rules()[i].get_body(), builder, *repository).first,
-                               *repository)
-                  << std::endl
-                  << std::endl;
-
         rule_execution_contexts.emplace_back(
             program.get_rules()[i],
             make_view(create_ground_nullary_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository),
-            make_view(create_arity_geq_k_overapproximation_conjunctive_condition(1, program.get_rules()[i].get_body(), builder, *repository).first,
+            make_view(create_overapproximation_conjunctive_condition(1, program.get_rules()[i].get_body(), builder, *repository).first, *repository),
+            make_view(create_overapproximation_conjunctive_condition(2, program.get_rules()[i].get_body(), builder, *repository).first, *repository),
+            make_view(create_overapproximation_conflicting_conjunctive_condition(1, program.get_rules()[i].get_body(), builder, *repository).first,
                       *repository),
-            make_view(create_arity_geq_k_overapproximation_conjunctive_condition(2, program.get_rules()[i].get_body(), builder, *repository).first,
+            make_view(create_overapproximation_conflicting_conjunctive_condition(2, program.get_rules()[i].get_body(), builder, *repository).first,
                       *repository),
-            make_view(create_overapproximation_conflicting_conjunctive_condition(program.get_rules()[i].get_body(), builder, *repository).first, *repository),
             domains.rule_domains[i],
             facts_execution_context.assignment_sets.static_sets,
             *repository);

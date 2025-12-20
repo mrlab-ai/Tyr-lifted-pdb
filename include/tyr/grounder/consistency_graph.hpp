@@ -115,8 +115,8 @@ private:
 
 public:
     StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                           View<Index<formalism::ConjunctiveCondition>, C> arity_geq_1_overapproximation_condition,
-                           View<Index<formalism::ConjunctiveCondition>, C> arity_geq_2_overapproximation_condition,
+                           View<Index<formalism::ConjunctiveCondition>, C> unary_overapproximation_condition,
+                           View<Index<formalism::ConjunctiveCondition>, C> binary_overapproximation_condition,
                            const analysis::DomainListList& parameter_domains,
                            uint_t begin_parameter_index,
                            uint_t end_parameter_index,
@@ -160,9 +160,9 @@ public:
                | std::views::filter(
                    [this, &assignment_sets](auto&& vertex)
                    {
-                       return vertex.consistent_literals(m_arity_geq_1_overapproximation_condition.template get_literals<formalism::FluentTag>(),
+                       return vertex.consistent_literals(m_unary_overapproximation_condition.template get_literals<formalism::FluentTag>(),
                                                          assignment_sets.fluent_sets.predicate)
-                              && vertex.consistent_numeric_constraints(m_arity_geq_1_overapproximation_condition.get_numeric_constraints(), assignment_sets);
+                              && vertex.consistent_numeric_constraints(m_unary_overapproximation_condition.get_numeric_constraints(), assignment_sets);
                    });
     }
 
@@ -173,9 +173,9 @@ public:
                    [this, &consistent_vertices, &assignment_sets](auto&& edge)
                    {
                        return consistent_vertices.test(edge.get_src().get_index()) && consistent_vertices.test(edge.get_dst().get_index())
-                              && edge.consistent_literals(m_arity_geq_2_overapproximation_condition.template get_literals<formalism::FluentTag>(),
+                              && edge.consistent_literals(m_binary_overapproximation_condition.template get_literals<formalism::FluentTag>(),
                                                           assignment_sets.fluent_sets.predicate)
-                              && edge.consistent_numeric_constraints(m_arity_geq_2_overapproximation_condition.get_numeric_constraints(), assignment_sets);
+                              && edge.consistent_numeric_constraints(m_binary_overapproximation_condition.get_numeric_constraints(), assignment_sets);
                    });
     }
 
@@ -189,8 +189,8 @@ public:
 
 private:
     View<Index<formalism::ConjunctiveCondition>, C> m_condition;
-    View<Index<formalism::ConjunctiveCondition>, C> m_arity_geq_1_overapproximation_condition;
-    View<Index<formalism::ConjunctiveCondition>, C> m_arity_geq_2_overapproximation_condition;
+    View<Index<formalism::ConjunctiveCondition>, C> m_unary_overapproximation_condition;
+    View<Index<formalism::ConjunctiveCondition>, C> m_binary_overapproximation_condition;
 
     /* The data member of the consistency graph. */
     details::Vertices<C> m_vertices;
@@ -209,13 +209,14 @@ create_ground_nullary_condition(View<Index<formalism::ConjunctiveCondition>, for
                                 formalism::Repository& context);
 
 extern std::pair<Index<formalism::ConjunctiveCondition>, bool>
-create_arity_geq_k_overapproximation_conjunctive_condition(size_t k,
-                                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
-                                                           formalism::Builder& builder,
-                                                           formalism::Repository& context);
+create_overapproximation_conjunctive_condition(size_t k,
+                                               View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
+                                               formalism::Builder& builder,
+                                               formalism::Repository& context);
 
 extern std::pair<Index<formalism::ConjunctiveCondition>, bool>
-create_overapproximation_conflicting_conjunctive_condition(View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
+create_overapproximation_conflicting_conjunctive_condition(size_t k,
+                                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
                                                            formalism::Builder& builder,
                                                            formalism::Repository& context);
 }

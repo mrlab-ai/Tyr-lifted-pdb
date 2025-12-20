@@ -690,13 +690,13 @@ ProgramVariableDomains compute_variable_domains(View<Index<formalism::Program>, 
     auto fluent_function_domains = to_list(fluent_function_domain_sets);
     auto rule_domains = to_list(rule_domain_sets);
 
-    std::cout << std::endl;
-    std::cout << "static_predicate_domains: " << static_predicate_domains << std::endl;
-    std::cout << "fluent_predicate_domains: " << fluent_predicate_domains << std::endl;
-    std::cout << "static_function_domains: " << static_function_domains << std::endl;
-    std::cout << "fluent_function_domains: " << fluent_function_domains << std::endl;
-    std::cout << "rule_domains: " << rule_domains << std::endl;
-    std::cout << std::endl;
+    // std::cout << std::endl;
+    // std::cout << "static_predicate_domains: " << static_predicate_domains << std::endl;
+    // std::cout << "fluent_predicate_domains: " << fluent_predicate_domains << std::endl;
+    // std::cout << "static_function_domains: " << static_function_domains << std::endl;
+    // std::cout << "fluent_function_domains: " << fluent_function_domains << std::endl;
+    // std::cout << "rule_domains: " << rule_domains << std::endl;
+    // std::cout << std::endl;
 
     return ProgramVariableDomains { std::move(static_predicate_domains),
                                     std::move(fluent_predicate_domains),
@@ -747,6 +747,9 @@ TaskVariableDomains compute_variable_domains(View<Index<formalism::Task>, formal
         {
             for (const auto literal : c_effect.get_condition().get_literals<formalism::StaticTag>())
                 insert_constants_into_parameter_domain(literal.get_atom(), static_predicate_domain_sets);
+
+            for (const auto literal : c_effect.get_condition().get_literals<formalism::FluentTag>())
+                insert_constants_into_parameter_domain(literal.get_atom(), fluent_predicate_domain_sets);
 
             for (const auto op : c_effect.get_condition().get_numeric_constraints())
                 insert_constants_into_parameter_domain(op, static_function_domain_sets);
@@ -940,15 +943,15 @@ TaskVariableDomains compute_variable_domains(View<Index<formalism::Task>, formal
     auto action_domains = to_list(action_domain_sets);
     auto axiom_domains = to_list(axiom_domain_sets);
 
-    std::cout << std::endl;
-    std::cout << "static_predicate_domains: " << static_predicate_domains << std::endl;
-    std::cout << "fluent_predicate_domains: " << fluent_predicate_domains << std::endl;
-    std::cout << "derived_predicate_domains: " << derived_predicate_domains << std::endl;
-    std::cout << "static_function_domains: " << static_function_domains << std::endl;
-    std::cout << "fluent_function_domains: " << fluent_function_domains << std::endl;
-    std::cout << "action_domains: " << action_domains << std::endl;
-    std::cout << "axiom_domains: " << axiom_domains << std::endl;
-    std::cout << std::endl;
+    // std::cout << std::endl;
+    // std::cout << "static_predicate_domains: " << static_predicate_domains << std::endl;
+    // std::cout << "fluent_predicate_domains: " << fluent_predicate_domains << std::endl;
+    // std::cout << "derived_predicate_domains: " << derived_predicate_domains << std::endl;
+    // std::cout << "static_function_domains: " << static_function_domains << std::endl;
+    // std::cout << "fluent_function_domains: " << fluent_function_domains << std::endl;
+    // std::cout << "action_domains: " << action_domains << std::endl;
+    // std::cout << "axiom_domains: " << axiom_domains << std::endl;
+    // std::cout << std::endl;
 
     return TaskVariableDomains { std::move(static_predicate_domains),
                                  std::move(fluent_predicate_domains),

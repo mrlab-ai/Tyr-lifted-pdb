@@ -639,22 +639,22 @@ StaticConsistencyGraph<C>::compute_edges(View<Index<ConjunctiveCondition>, C> co
 
 template<Context C>
 StaticConsistencyGraph<C>::StaticConsistencyGraph(View<Index<ConjunctiveCondition>, C> condition,
-                                                  View<Index<ConjunctiveCondition>, C> arity_geq_1_overapproximation_condition,
-                                                  View<Index<ConjunctiveCondition>, C> arity_geq_2_overapproximation_condition,
+                                                  View<Index<ConjunctiveCondition>, C> unary_overapproximation_condition,
+                                                  View<Index<ConjunctiveCondition>, C> binary_overapproximation_condition,
                                                   const analysis::DomainListList& parameter_domains,
                                                   uint_t begin_parameter_index,
                                                   uint_t end_parameter_index,
                                                   const TaggedAssignmentSets<StaticTag, C>& static_assignment_sets) :
     m_condition(condition),
-    m_arity_geq_1_overapproximation_condition(arity_geq_1_overapproximation_condition),
-    m_arity_geq_2_overapproximation_condition(arity_geq_2_overapproximation_condition)
+    m_unary_overapproximation_condition(unary_overapproximation_condition),
+    m_binary_overapproximation_condition(binary_overapproximation_condition)
 {
     auto [vertices_, partitions_] =
-        compute_vertices(arity_geq_1_overapproximation_condition, parameter_domains, begin_parameter_index, end_parameter_index, static_assignment_sets);
+        compute_vertices(unary_overapproximation_condition, parameter_domains, begin_parameter_index, end_parameter_index, static_assignment_sets);
     m_vertices = std::move(vertices_);
     m_partitions = std::move(partitions_);
 
-    auto [sources_, target_offsets_, targets_] = compute_edges(arity_geq_2_overapproximation_condition, static_assignment_sets, m_vertices);
+    auto [sources_, target_offsets_, targets_] = compute_edges(binary_overapproximation_condition, static_assignment_sets, m_vertices);
 
     m_sources = std::move(sources_);
     m_target_offsets = std::move(target_offsets_);
@@ -919,10 +919,8 @@ create_ground_nullary_condition(View<Index<ConjunctiveCondition>, Repository> co
     return context.get_or_create(conj_cond, builder.get_buffer());
 }
 
-std::pair<Index<ConjunctiveCondition>, bool> create_arity_geq_k_overapproximation_conjunctive_condition(size_t k,
-                                                                                                        View<Index<ConjunctiveCondition>, Repository> condition,
-                                                                                                        Builder& builder,
-                                                                                                        Repository& context)
+std::pair<Index<ConjunctiveCondition>, bool>
+create_overapproximation_conjunctive_condition(size_t k, View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
 {
     auto conj_cond_ptr = builder.get_builder<ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -947,8 +945,10 @@ std::pair<Index<ConjunctiveCondition>, bool> create_arity_geq_k_overapproximatio
     return context.get_or_create(conj_cond, builder.get_buffer());
 }
 
-std::pair<Index<ConjunctiveCondition>, bool>
-create_overapproximation_conflicting_conjunctive_condition(View<Index<ConjunctiveCondition>, Repository> condition, Builder& builder, Repository& context)
+std::pair<Index<ConjunctiveCondition>, bool> create_overapproximation_conflicting_conjunctive_condition(size_t k,
+                                                                                                        View<Index<ConjunctiveCondition>, Repository> condition,
+                                                                                                        Builder& builder,
+                                                                                                        Repository& context)
 {
     auto conj_cond_ptr = builder.get_builder<ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -958,15 +958,15 @@ create_overapproximation_conflicting_conjunctive_condition(View<Index<Conjunctiv
         conj_cond.variables.push_back(variable.get_index());
 
     for (const auto literal : condition.get_literals<StaticTag>())
-        if (effective_arity(literal) > 2)
+        if (effective_arity(literal) > k)
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<FluentTag>())
-        if (effective_arity(literal) > 2)
+        if (effective_arity(literal) > k)
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (effective_arity(numeric_constraint) > 2)
+        if (effective_arity(numeric_constraint) > k)
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
