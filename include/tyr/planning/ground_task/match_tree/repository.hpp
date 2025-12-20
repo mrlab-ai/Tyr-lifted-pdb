@@ -19,8 +19,16 @@
 #define TYR_FORMALISM_REPOSITORY_HPP_
 
 // Include specialization headers first
-#include "tyr/planning/ground_task/match_tree/datas.hpp"
-#include "tyr/planning/ground_task/match_tree/indices.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/atom_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/atom_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/constraint_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/constraint_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/fact_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/fact_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/generator_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/generator_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/node_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/node_view.hpp"
 //
 #include "tyr/buffer/declarations.hpp"
 #include "tyr/buffer/indexed_hash_set.hpp"
@@ -50,12 +58,11 @@ private:
         container_type container;
     };
 
-    using RepositoryStorage = std::tuple<RepositoryEntry<PlaceholderNode<Tag>>,
-                                         RepositoryEntry<InverseAtomSelectorNode<Tag>>,
-                                         RepositoryEntry<InverseFactSelectorNode<Tag>>,
-                                         RepositoryEntry<InverseNumericConstraintSelectorNode<Tag>>,
-                                         RepositoryEntry<InverseElementGeneratorNode<Tag>>,
-                                         RepositoryEntry<InverseNode<Tag>>,
+    using RepositoryStorage = std::tuple<RepositoryEntry<AtomSelectorNode<Tag>>,
+                                         RepositoryEntry<FactSelectorNode<Tag>>,
+                                         RepositoryEntry<NumericConstraintSelectorNode<Tag>>,
+                                         RepositoryEntry<ElementGeneratorNode<Tag>>,
+                                         RepositoryEntry<Node<Tag>>,
                                          RepositoryEntry<AtomSelectorNode<Tag>>,
                                          RepositoryEntry<FactSelectorNode<Tag>>,
                                          RepositoryEntry<NumericConstraintSelectorNode<Tag>>,

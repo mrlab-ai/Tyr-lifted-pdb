@@ -39,13 +39,13 @@
 namespace tyr::grounder
 {
 
-static bool contains(const analysis::DomainListList& parameter_domains, const VertexAssignment& assignment)
+[[maybe_unused]] inline bool contains(const analysis::DomainListList& parameter_domains, const VertexAssignment& assignment)
 {
     const auto& domain = parameter_domains[uint_t(assignment.index)];
     return std::find(domain.begin(), domain.end(), assignment.object) != domain.end();
 }
 
-static bool contains(const analysis::DomainListList& parameter_domains, const EdgeAssignment& assignment)
+[[maybe_unused]] inline bool contains(const analysis::DomainListList& parameter_domains, const EdgeAssignment& assignment)
 {
     return contains(parameter_domains, VertexAssignment(assignment.first_index, assignment.first_object))
            && contains(parameter_domains, VertexAssignment(assignment.second_index, assignment.second_object));

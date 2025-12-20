@@ -29,36 +29,6 @@ using namespace tyr::grounder;
 namespace tyr::tests
 {
 
-TEST(TyrTests, TyrGrounderAssignmentHash)
-{
-    /*
-    Predicate: location/2
-    Vertex Assignment: [0/39] rank: 41
-    Edge Assignment: [0/39, 1/15] rank: 1929
-    Vertex Assignment: [1/15] rank: 43
-    Predicate: location/2
-    Vertex Assignment: [0/39] rank: 41
-    Edge Assignment: [0/39, 1/14] rank: 1929
-    Vertex Assignment: [1/14] rank: 43
-    */
-    auto num_objects = size_t(41);
-    auto o_3 = Index<Object> { 3 };
-    auto o_4 = Index<Object> { 4 };
-    auto o_14 = Index<Object> { 14 };
-    auto o_15 = Index<Object> { 15 };
-    auto o_39 = Index<Object> { 39 };
-    auto o_40 = Index<Object> { 40 };
-    auto p_0 = ParameterIndex { 0 };
-    auto p_1 = ParameterIndex { 1 };
-    auto p_2 = ParameterIndex { 2 };
-    // [[39], [3, 4], [40]]
-    auto domains = analysis::DomainListList { { o_39 }, { o_3, o_4 }, { o_40 } };
-    auto hash = PerfectAssignmentHash(domains, num_objects);
-
-    // Both are mapped to the same index. We now have assertions that guard against this unintended behavior, resulting from illformed variable domain analysis.
-    EXPECT_EQ(hash.get_rank<true>(EdgeAssignment(p_0, o_39, p_1, o_15)), hash.get_rank<true>(EdgeAssignment(p_0, o_39, p_1, o_14)));
-}
-
 TEST(TyrTests, TyrGrounderAssignmentSets)
 {
     auto [program, repository] = create_example_problem();

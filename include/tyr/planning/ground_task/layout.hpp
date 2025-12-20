@@ -86,7 +86,7 @@ struct VariableReference
 
         assert(std::popcount(p.data.mask) == std::popcount(p.value.mask));
 
-        constexpr int W = std::numeric_limits<Block>::digits;
+        [[maybe_unused]] constexpr int W = std::numeric_limits<Block>::digits;
         assert(p.data.rshift < W);
         assert(p.value.rshift < W);
 

@@ -15,27 +15,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_CONSTRUCTION_HELPERS_INVERSE_NODES_NODE_DATA_HPP_
-#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_CONSTRUCTION_HELPERS_INVERSE_NODES_NODE_DATA_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_NODE_DATA_HPP_
+#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_NODE_DATA_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
 #include "tyr/common/variant.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/atom_index.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/constraint_index.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/fact_index.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/generator_index.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/atom_index.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/constraint_index.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/fact_index.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/generator_index.hpp"
 
 namespace tyr
 {
 template<typename Tag>
-struct Data<planning::match_tree::InverseNode<Tag>>
+struct Data<planning::match_tree::Node<Tag>>
 {
-    using Variant = ::cista::offset::variant<Index<planning::match_tree::InverseAtomSelectorNode<Tag>>,
-                                             Index<planning::match_tree::InverseNumericConstraintSelectorNode<Tag>>,
-                                             Index<planning::match_tree::InverseFactSelectorNode<Tag>>,
-                                             Index<planning::match_tree::InverseElementGeneratorNode<Tag>>>;
+    using Variant = ::cista::offset::variant<Index<planning::match_tree::AtomSelectorNode<Tag>>,
+                                             Index<planning::match_tree::NumericConstraintSelectorNode<Tag>>,
+                                             Index<planning::match_tree::FactSelectorNode<Tag>>,
+                                             Index<planning::match_tree::ElementGeneratorNode<Tag>>>;
 
     Variant value;
 

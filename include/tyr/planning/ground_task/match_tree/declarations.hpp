@@ -27,45 +27,7 @@
 namespace tyr::planning::match_tree
 {
 /**
- * Forward declarations
- */
-
-template<typename Tag>
-struct PlaceholderNode
-{
-};
-
-/**
- * InverseNode
- */
-
-template<typename Tag>
-struct InverseAtomSelectorNode
-{
-};
-
-template<typename Tag>
-struct InverseFactSelectorNode
-{
-};
-
-template<typename Tag>
-struct InverseNumericConstraintSelectorNode
-{
-};
-
-template<typename Tag>
-struct InverseElementGeneratorNode
-{
-};
-
-template<typename Tag>
-struct InverseNode
-{
-};
-
-/**
- * Node
+ * Nodes
  */
 
 template<typename Tag>
@@ -94,21 +56,8 @@ struct Node
 };
 
 /**
- * NodeScoreFunction
+ * MatchTree
  */
-
-template<typename Tag>
-class INodeScoreFunction;
-
-/**
- * NodeSplitter
- */
-
-template<typename Tag>
-class INodeSplitter;
-
-struct Options;
-struct Statistics;
 
 template<typename Tag>
 class MatchTree;
@@ -118,9 +67,6 @@ using MatchTreePtr = std::unique_ptr<MatchTree<Tag>>;
 /**
  * Aliases
  */
-
-template<typename Tag>
-using PlaceholderNodeList = std::vector<PlaceholderNode<Tag>>;
 
 template<formalism::Context C, typename Tag>
 class Repository;
@@ -139,16 +85,14 @@ concept HasFormalismRepository = requires(const T& r) {
 
 template<typename T>
 concept RepositoryConcept =
-    HasFormalismRepository<T> && RepositoryAccess<T, PlaceholderNode<formalism::GroundAction>>
-    && RepositoryAccess<T, InverseAtomSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, InverseFactSelectorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, InverseNumericConstraintSelectorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, InverseElementGeneratorNode<formalism::GroundAction>> && RepositoryAccess<T, InverseNode<formalism::GroundAction>>
+    HasFormalismRepository<T> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAction>>
+    && RepositoryAccess<T, FactSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAction>>
+    && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAction>> && RepositoryAccess<T, Node<formalism::GroundAction>>
     && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, FactSelectorNode<formalism::GroundAction>>
     && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, Node<formalism::GroundAction>> && RepositoryAccess<T, PlaceholderNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, InverseAtomSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, InverseFactSelectorNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, InverseNumericConstraintSelectorNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, InverseElementGeneratorNode<formalism::GroundAxiom>> && RepositoryAccess<T, InverseNode<formalism::GroundAxiom>>
+    && RepositoryAccess<T, Node<formalism::GroundAction>> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>>
+    && RepositoryAccess<T, FactSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAxiom>>
+    && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAxiom>> && RepositoryAccess<T, Node<formalism::GroundAxiom>>
     && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, FactSelectorNode<formalism::GroundAxiom>>
     && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAxiom>>
     && RepositoryAccess<T, Node<formalism::GroundAxiom>>;

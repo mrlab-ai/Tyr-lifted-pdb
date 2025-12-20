@@ -15,29 +15,29 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_CONSTRUCTION_HELPERS_INVERSE_NODES_NODE_VIEW_HPP_
-#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_CONSTRUCTION_HELPERS_INVERSE_NODES_NODE_VIEW_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_NODE_VIEW_HPP_
+#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_NODE_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/variant.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/atom_view.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/constraint_view.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/fact_view.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/generator_view.hpp"
-#include "tyr/planning/ground_task/match_tree/construction_helpers/inverse_nodes/node_data.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/atom_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/constraint_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/fact_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/generator_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/node_data.hpp"
 
 namespace tyr
 {
 template<typename Tag, planning::match_tree::Context C>
-class View<Data<planning::match_tree::InverseNode<Tag>>, C>
+class View<Data<planning::match_tree::Node<Tag>>, C>
 {
 private:
     const C* m_context;
-    Data<planning::match_tree::InverseNode<Tag>> m_handle;
+    Data<planning::match_tree::Node<Tag>> m_handle;
 
 public:
-    View(Data<planning::match_tree::InverseNode<Tag>> data, const C& context) noexcept : m_context(&context), m_handle(data) {}
+    View(Data<planning::match_tree::Node<Tag>> data, const C& context) noexcept : m_context(&context), m_handle(data) {}
 
     const auto& get_data() const noexcept { return m_handle; }
     const auto& get_context() const noexcept { return *m_context; }

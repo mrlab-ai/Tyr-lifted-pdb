@@ -142,7 +142,7 @@ TEST(TyrTests, TyrFormalismView)
     atom_builder.terms.push_back(Data<Term>(object_0.get_index()));
     atom_builder.terms.push_back(Data<Term>(object_1.get_index()));
     canonicalize(atom_builder);
-    auto [atom_0, atom_success_0] = repository.get_or_create(atom_builder, buffer);
+    [[maybe_unused]] auto [atom_0, atom_success_0] = repository.get_or_create(atom_builder, buffer);
 }
 
 }
