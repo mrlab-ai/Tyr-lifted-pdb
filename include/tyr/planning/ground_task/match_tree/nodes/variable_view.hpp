@@ -15,34 +15,34 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_FACT_VIEW_HPP_
-#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_FACT_VIEW_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_VARIABLE_VIEW_HPP_
+#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_VARIABLE_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
-#include "tyr/planning/ground_task/match_tree/nodes/fact_data.hpp"
-#include "tyr/planning/ground_task/match_tree/nodes/fact_index.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/node_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/variable_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/variable_index.hpp"
 
 namespace tyr
 {
 template<typename Tag, planning::match_tree::Context C>
-class View<Index<planning::match_tree::FactSelectorNode<Tag>>, C>
+class View<Index<planning::match_tree::VariableSelectorNode<Tag>>, C>
 {
 private:
     const C* m_context;
-    Index<planning::match_tree::FactSelectorNode<Tag>> m_handle;
+    Index<planning::match_tree::VariableSelectorNode<Tag>> m_handle;
 
 public:
-    View(Index<planning::match_tree::FactSelectorNode<Tag>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(Index<planning::match_tree::VariableSelectorNode<Tag>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 
-    auto get_fact() const noexcept { return make_view(get_data().fact, m_context->get_formalism_repository()); }
+    auto get_variable() const noexcept { return make_view(get_data().variable, m_context->get_formalism_repository()); }
     auto get_children() const noexcept { return make_view(get_data().children, *m_context); }
     auto get_dontcare_child() const noexcept { return make_view(get_data().dontcare_child, *m_context); }
 

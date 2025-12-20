@@ -36,7 +36,7 @@ struct AtomSelectorNode
 };
 
 template<typename Tag>
-struct FactSelectorNode
+struct VariableSelectorNode
 {
 };
 
@@ -86,14 +86,14 @@ concept HasFormalismRepository = requires(const T& r) {
 template<typename T>
 concept RepositoryConcept =
     HasFormalismRepository<T> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, FactSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAction>>
+    && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAction>>
     && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAction>> && RepositoryAccess<T, Node<formalism::GroundAction>>
-    && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, FactSelectorNode<formalism::GroundAction>>
+    && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAction>>
     && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAction>>
     && RepositoryAccess<T, Node<formalism::GroundAction>> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, FactSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAxiom>>
+    && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAxiom>>
     && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAxiom>> && RepositoryAccess<T, Node<formalism::GroundAxiom>>
-    && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, FactSelectorNode<formalism::GroundAxiom>>
+    && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAxiom>>
     && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAxiom>>
     && RepositoryAccess<T, Node<formalism::GroundAxiom>>;
 

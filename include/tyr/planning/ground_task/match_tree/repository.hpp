@@ -23,12 +23,12 @@
 #include "tyr/planning/ground_task/match_tree/nodes/atom_view.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/constraint_data.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/constraint_view.hpp"
-#include "tyr/planning/ground_task/match_tree/nodes/fact_data.hpp"
-#include "tyr/planning/ground_task/match_tree/nodes/fact_view.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/generator_data.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/generator_view.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/node_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/variable_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/variable_view.hpp"
 //
 #include "tyr/buffer/declarations.hpp"
 #include "tyr/buffer/indexed_hash_set.hpp"
@@ -58,12 +58,12 @@ private:
     };
 
     using RepositoryStorage = std::tuple<RepositoryEntry<AtomSelectorNode<Tag>>,
-                                         RepositoryEntry<FactSelectorNode<Tag>>,
+                                         RepositoryEntry<VariableSelectorNode<Tag>>,
                                          RepositoryEntry<NumericConstraintSelectorNode<Tag>>,
                                          RepositoryEntry<ElementGeneratorNode<Tag>>,
                                          RepositoryEntry<Node<Tag>>,
                                          RepositoryEntry<AtomSelectorNode<Tag>>,
-                                         RepositoryEntry<FactSelectorNode<Tag>>,
+                                         RepositoryEntry<VariableSelectorNode<Tag>>,
                                          RepositoryEntry<NumericConstraintSelectorNode<Tag>>,
                                          RepositoryEntry<ElementGeneratorNode<Tag>>,
                                          RepositoryEntry<Node<Tag>>>;

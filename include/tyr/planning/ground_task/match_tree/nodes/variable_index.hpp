@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_FACT_INDEX_HPP_
-#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_FACT_INDEX_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_VARIABLE_INDEX_HPP_
+#define TYR_PLANNING_GROUND_TASK_MATCH_TREE_NODES_VARIABLE_INDEX_HPP_
 
 #include "tyr/common/index_mixins.hpp"
 #include "tyr/common/types.hpp"
@@ -25,10 +25,10 @@
 namespace tyr
 {
 template<typename Tag>
-struct Index<planning::match_tree::FactSelectorNode<Tag>> : IndexMixin<Index<planning::match_tree::FactSelectorNode<Tag>>>
+struct Index<planning::match_tree::VariableSelectorNode<Tag>> : IndexMixin<Index<planning::match_tree::VariableSelectorNode<Tag>>>
 {
     // Inherit constructors
-    using Base = IndexMixin<Index<planning::match_tree::FactSelectorNode<Tag>>>;
+    using Base = IndexMixin<Index<planning::match_tree::VariableSelectorNode<Tag>>>;
     using Base::Base;
 };
 

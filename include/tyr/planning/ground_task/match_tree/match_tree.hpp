@@ -18,9 +18,9 @@
 #ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_MATCH_TREE_HPP_
 #define TYR_PLANNING_GROUND_TASK_MATCH_TREE_MATCH_TREE_HPP_
 
+#include "tyr/buffer/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground_task/match_tree/builder.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/node_data.hpp"
 #include "tyr/planning/ground_task/match_tree/repository.hpp"
@@ -61,18 +61,22 @@ struct BaseEntry
 };
 
 template<typename Tag>
+struct GetResultContext
+{
+    Repository<formalism::OverlayRepository<formalism::Repository>, Tag>& destination;
+    buffer::Buffer& buffer;
+};
+
+template<typename Tag>
 struct AtomStackEntry
 {
     BaseEntry<Tag> base;
 
-    Index<formalism::GroundAtom<formalism::DerivedTag>> atom;
     std::span<Index<Tag>> true_elements;
     std::span<Index<Tag>> false_elements;
     std::span<Index<Tag>> dontcare_elements;
 
-    std::optional<Data<Node<Tag>>> true_child;
-    std::optional<Data<Node<Tag>>> false_child;
-    std::optional<Data<Node<Tag>>> dontcare_child;
+    Data<AtomSelectorNode<Tag>> result;
 
     AtomStackEntry(BaseEntry<Tag> base,
                    Index<formalism::GroundAtom<formalism::DerivedTag>> atom,
@@ -80,41 +84,35 @@ struct AtomStackEntry
                    std::span<Index<Tag>> false_elements,
                    std::span<Index<Tag>> dontcare_elements) :
         base(base),
-        atom(atom),
         true_elements(true_elements),
         false_elements(false_elements),
         dontcare_elements(dontcare_elements),
-        true_child(std::nullopt),
-        false_child(std::nullopt),
-        dontcare_child(std::nullopt)
+        result()
     {
+        result.atom = atom;
     }
 };
 
 template<typename Tag>
-struct FactStackEntry
+struct VariableStackEntry
 {
     BaseEntry<Tag> base;
 
-    Index<formalism::FDRVariable<formalism::FluentTag>> fact;
-    std::vector<uint_t> fact_to_child;
     std::vector<std::span<Index<Tag>>> child_elements;
     std::span<Index<Tag>> dontcare_elements;
 
-    std::vector<Data<Node<Tag>>> children;
-    std::optional<Data<Node<Tag>>> dontcare_child;
+    Data<VariableSelectorNode<Tag>> result;
 
-    FactStackEntry(BaseEntry<Tag> base,
-                   std::vector<uint_t> fact_to_child,
-                   std::vector<std::span<Index<Tag>>> child_elements,
-                   Index<formalism::FDRVariable<formalism::FluentTag>> fact) :
+    VariableStackEntry(BaseEntry<Tag> base,
+                       Index<formalism::FDRVariable<formalism::FluentTag>> variable,
+                       std::vector<Data<Node<Tag>>> child_elements,
+                       std::span<Index<Tag>> dontcare_elements) :
         base(base),
-        fact(fact),
-        fact_to_child(std::move(fact_to_child)),
         child_elements(std::move(child_elements)),
-        children(),
-        dontcare_child(std::nullopt)
+        dontcare_elements(dontcare_elements),
+        result()
     {
+        result.variable = variable;
     }
 };
 
@@ -127,11 +125,7 @@ struct ConstraintStackEntry
     std::span<Index<Tag>> true_elements;
     std::span<Index<Tag>> dontcare_elements;
 
-    std::optional<Data<Node<Tag>>> true_child;
-    std::optional<Data<Node<Tag>>> dontcare_child;
-
-    bool need_true;
-    bool need_dontcare;
+    Data<NumericConstraintSelectorNode<Tag>> result;
 
     ConstraintStackEntry(BaseEntry<Tag> base,
                          Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> constraint,
@@ -141,9 +135,9 @@ struct ConstraintStackEntry
         constraint(constraint),
         true_elements(true_elements),
         dontcare_elements(dontcare_elements),
-        true_child(std::nullopt),
-        dontcare_child(std::nullopt)
+        result()
     {
+        result.constraint = constraint;
     }
 };
 
@@ -152,78 +146,102 @@ struct GeneratorStackEntry
 {
     BaseEntry<Tag> base;
 
-    std::span<Index<Tag>> elements;
+    Data<planning::match_tree::ElementGeneratorNode<Tag>> result;
 
-    std::optional<Data<Node<Tag>>> node;
-
-    explicit GeneratorStackEntry(BaseEntry<Tag> base, std::span<Index<Tag>> elements) : base(base), elements(elements), node(std::nullopt) {}
+    explicit GeneratorStackEntry(BaseEntry<Tag> base, std::span<Index<Tag>> elements) : base(base), result()
+    {
+        result.insert(elements.begin(), elements.end());
+    }
 };
 
 template<typename Tag>
-using StackEntry = std::variant<AtomStackEntry<Tag>, FactStackEntry<Tag>, ConstraintStackEntry<Tag>, GeneratorStackEntry<Tag>>;
+using StackEntry = std::variant<AtomStackEntry<Tag>, VariableStackEntry<Tag>, ConstraintStackEntry<Tag>, GeneratorStackEntry<Tag>>;
 
 template<typename Tag>
 bool explored(const AtomStackEntry<Tag>& el) noexcept
 {
-    return (el.true_elements.empty() || el.true_child.has_value()) && (el.false_elements.empty() || el.false_child.has_value())
-           && (el.dontcare_elements.empty() || el.dontcare_child.has_value());
+    return (el.true_elements.empty() || el.result.true_child.has_value()) && (el.false_elements.empty() || el.result.false_child.has_value())
+           && (el.dontcare_elements.empty() || el.result.dontcare_child.has_value());
 }
 
 template<typename Tag>
-std::optional<StackEntry<Tag>> next_entry(const AtomStackEntry<Tag>& element)
+std::optional<StackEntry<Tag>> next_entry(const AtomStackEntry<Tag>& el)
 {
 }
 
 template<typename Tag>
-Data<Node<Tag>> get_result(const AtomStackEntry<Tag>& element)
+Data<Node<Tag>> get_result(const AtomStackEntry<Tag>& el, GetResultContext<Tag>& context)
+{
+    return Data<Node<Tag>>(context.destination.get_or_create(el.result, context.buffer).first);
+}
+
+template<typename Tag>
+void push_result(AtomStackEntry<Tag>& el, Data<Node<Tag>> node)
+{
+    if (!el.result.true_child && !el.true_elements.empty())
+        el.result.true_child = node;
+    else if (!el.result.false_child && !el.false_elements.empty())
+        el.result.false_child = node;
+    else if (!el.result.dontcare_child && !el.dontcare_elements.empty())
+        el.result.dontcare_child = node;
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+bool explored(const VariableStackEntry<Tag>& el) noexcept
+{
+    return el.children.size() == el.result.children.size() && (el.dontcare_elements.empty() || el.result.dontcare_child.has_value());
+}
+
+template<typename Tag>
+std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el)
 {
 }
 
 template<typename Tag>
-void push_result(AtomStackEntry<Tag>& element, Data<Node<Tag>> node)
+Data<Node<Tag>> get_result(const VariableStackEntry<Tag>& el, GetResultContext<Tag>& context)
 {
+    return Data<Node<Tag>>(context.destination.get_or_create(el.result, context.buffer).first);
 }
 
 template<typename Tag>
-bool explored(const FactStackEntry<Tag>& el) noexcept
+void push_result(VariableStackEntry<Tag>& el, Data<Node<Tag>> node)
 {
-    return el.children.size() == el.fact_to_child.size() && (el.dontcare_elements.empty() || el.dontcare_child.has_value());
-}
-
-template<typename Tag>
-std::optional<StackEntry<Tag>> next_entry(const FactStackEntry<Tag>& element)
-{
-}
-
-template<typename Tag>
-Data<Node<Tag>> get_result(const FactStackEntry<Tag>& element)
-{
-}
-
-template<typename Tag>
-void push_result(FactStackEntry<Tag>& element, Data<Node<Tag>> node)
-{
+    if (el.result.children.size() < el.child_elements.size())
+        el.result.children.push_back(node);
+    else if (!el.result.dontcare_child)
+        el.result.dontcare_child = node;
+    else
+        throw std::logic_error("Unexpected case.");
 }
 
 template<typename Tag>
 bool explored(const ConstraintStackEntry<Tag>& el) noexcept
 {
-    return (el.true_elements.empty() || el.true_child.has_value()) && (el.dontcare_elements.empty() || el.dontcare_child.has_value());
+    return (el.true_elements.empty() || el.result.true_child.has_value()) && (el.dontcare_elements.empty() || el.result.dontcare_child.has_value());
 }
 
 template<typename Tag>
-std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& element)
+std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el)
 {
 }
 
 template<typename Tag>
-Data<Node<Tag>> get_result(const ConstraintStackEntry<Tag>& element)
+Data<Node<Tag>> get_result(const ConstraintStackEntry<Tag>& el, GetResultContext<Tag>& context)
 {
+    return Data<Node<Tag>>(context.destination.get_or_create(el.result, context.buffer).first);
 }
 
 template<typename Tag>
-void push_result(ConstraintStackEntry<Tag>& element, Data<Node<Tag>> node)
+void push_result(ConstraintStackEntry<Tag>& el, Data<Node<Tag>> node)
 {
+    if (!el.result.true_child && !el.true_elements.empty())
+        el.result.true_child = node;
+    else if (!el.result.dontcare_child && !el.dontcare_elements.empty())
+        el.result.dontcare_child = node;
+    else
+        throw std::logic_error("Unexpected case.");
 }
 
 template<typename Tag>
@@ -233,31 +251,33 @@ bool explored(const GeneratorStackEntry<Tag>& el) noexcept
 }
 
 template<typename Tag>
-std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>& element)
+std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>& el)
 {
     return std::nullopt;
 }
 
 template<typename Tag>
-Data<Node<Tag>> get_result(const GeneratorStackEntry<Tag>& element)
+Data<Node<Tag>> get_result(const GeneratorStackEntry<Tag>& el, GetResultContext<Tag>& context)
 {
+    return Data<Node<Tag>>(context.destination.get_or_create(el.result, context.buffer).first);
 }
 
 template<typename Tag>
-void push_result(GeneratorStackEntry<Tag>& element, Data<Node<Tag>> node)
+void push_result(GeneratorStackEntry<Tag>& el, Data<Node<Tag>> node)
 {
+    throw std::logic_error("Unexpected case.");
 }
 
 template<formalism::Context C>
-auto get_condition(View<Index<formalism::GroundAxiom>, C> element)
+auto get_condition(View<Index<formalism::GroundAxiom>, C> el)
 {
-    return element.get_body();
+    return el.get_body();
 }
 
 template<formalism::Context C>
-auto get_condition(View<Index<formalism::GroundAction>, C> element)
+auto get_condition(View<Index<formalism::GroundAction>, C> el)
 {
-    return element.get_condition();
+    return el.get_condition();
 }
 
 template<typename Tag>
@@ -268,7 +288,7 @@ try_create_atom_stack_entry(Index<formalism::GroundAtom<formalism::DerivedTag>> 
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>>
-try_create_fact_stack_entry(Index<formalism::FDRVariable<formalism::FluentTag>> variable, BaseEntry<Tag> base, const PreconditionDetails<Tag>& details)
+try_create_variable_stack_entry(Index<formalism::FDRVariable<formalism::FluentTag>> variable, BaseEntry<Tag> base, const PreconditionDetails<Tag>& details)
 {
 }
 
@@ -295,7 +315,7 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
             using Alternative = std::decay_t<decltype(arg)>;
 
             if constexpr (std::same_as<Alternative, Index<formalism::FDRVariable<formalism::FluentTag>>>)
-                return try_create_fact_stack_entry(arg, base, details);
+                return try_create_variable_stack_entry(arg, base, details);
             else if constexpr (std::same_as<Alternative, Index<formalism::GroundAtom<formalism::DerivedTag>>>)
                 return try_create_atom_stack_entry(arg, base, details);
             else if constexpr (std::same_as<Alternative, Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>>)
@@ -346,13 +366,13 @@ public:
         {
             const auto condition = get_condition(element);
 
-            for (const auto fact : condition.template get_facts<formalism::FluentTag>())
+            for (const auto variable : condition.template get_variables<formalism::FluentTag>())
             {
-                const auto key = fact.get_variable().get_index();
-                occurences[key].push_back({ element.get_index(), fact.get_value() });
+                const auto key = variable.get_variable().get_index();
+                occurences[key].push_back({ element.get_index(), variable.get_value() });
             }
 
-            for (const auto literal : condition.template get_facts<formalism::DerivedTag>())
+            for (const auto literal : condition.template get_variables<formalism::DerivedTag>())
             {
                 const auto key = literal.get_atom().get_index();
                 occurences[key].push_back({ element.get_index(), literal.get_polarity() });
@@ -372,6 +392,9 @@ public:
         auto stack = std::deque<StackEntry<Tag>> {};
         stack.emplace_back(create_stack_entry(BaseEntry<Tag>(size_t(0), std::span(m_elements.begin(), m_elements.end())), sorted_preconditions, details));
 
+        auto buffer = buffer::Buffer {};
+        auto result_context = GetResultContext { *m_context, buffer };
+
         while (!stack.empty())
         {
             auto& entry = stack.back();
@@ -385,7 +408,7 @@ public:
                     if (!explored(frame))
                         next = next_entry(frame);
                     else
-                        produced = get_result(frame);
+                        produced = get_result(frame, result_context);
                 },
                 entry);
 

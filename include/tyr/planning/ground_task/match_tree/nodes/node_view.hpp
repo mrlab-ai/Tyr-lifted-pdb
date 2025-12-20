@@ -23,9 +23,9 @@
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/atom_view.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/constraint_view.hpp"
-#include "tyr/planning/ground_task/match_tree/nodes/fact_view.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/generator_view.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/node_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/variable_view.hpp"
 
 namespace tyr
 {
