@@ -25,10 +25,12 @@
 namespace tyr::planning
 {
 template<>
-class State<GroundTask> : public StateMixin<State<LiftedTask>, GroundTask>
+class State<GroundTask> : public StateMixin<State<GroundTask>, GroundTask>
 {
 public:
     using TaskType = GroundTask;
+
+    const UnpackedState<GroundTask>& get_unpacked_state_impl() const noexcept { return *m_unpacked; }
 
 private:
     SharedObjectPoolPtr<UnpackedState<GroundTask>> m_unpacked;

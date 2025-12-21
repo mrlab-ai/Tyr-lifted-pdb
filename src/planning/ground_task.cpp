@@ -279,7 +279,8 @@ GroundTask::GroundTask(DomainPtr domain,
     m_fdr_context(fdr_context),
     m_fluent_layout(std::move(fluent_layout)),
     m_action_match_tree(std::move(action_match_tree)),
-    m_axiom_match_tree_strata(std::move(axiom_match_tree_strata))
+    m_axiom_match_tree_strata(std::move(axiom_match_tree_strata)),
+    m_applicable_actions()
 {
     // std::cout << m_fdr_task << std::endl;
 }
@@ -292,12 +293,19 @@ std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, 
 GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node)
 {
     auto result = std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>> {};
+
+    get_labeled_successor_nodes(node, result);
+
     return result;
 }
 
 void GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node,
                                              std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>& out_nodes)
 {
+    const auto state = node.get_state();
+    const auto state_context = StateContext<GroundTask>(*this, state.get_unpacked_state(), node.get_state_metric());
+
+    m_action_match_tree->generate(state_context, m_applicable_actions);
 }
 
 template<FactKind T>

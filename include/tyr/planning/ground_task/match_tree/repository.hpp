@@ -44,7 +44,7 @@
 namespace tyr::planning::match_tree
 {
 
-template<formalism::Context C, typename Tag>
+template<typename Tag, formalism::Context C>
 class Repository
 {
 private:
@@ -136,9 +136,11 @@ public:
     }
 };
 
-// static_assert(RepositoryConcept<Repository>);
+static_assert(RepositoryConcept<Repository<formalism::GroundAction, formalism::Repository>>);
+static_assert(RepositoryConcept<Repository<formalism::GroundAction, formalism::OverlayRepository<formalism::Repository>>>);
 
-// static_assert(Context<Repository>);
+static_assert(Context<Repository<formalism::GroundAction, formalism::Repository>>);
+static_assert(Context<Repository<formalism::GroundAction, formalism::OverlayRepository<formalism::Repository>>>);
 
 }
 

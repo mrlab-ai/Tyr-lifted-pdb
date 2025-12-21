@@ -21,10 +21,15 @@
 #include "tyr/buffer/declarations.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
+#include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/canonicalization.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/atom_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/constraint_view.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/generator_view.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/node_data.hpp"
+#include "tyr/planning/ground_task/match_tree/nodes/variable_view.hpp"
 #include "tyr/planning/ground_task/match_tree/repository.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 
@@ -77,7 +82,7 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
 template<typename Tag>
 struct GetResultContext
 {
-    Repository<formalism::OverlayRepository<formalism::Repository>, Tag>& destination;
+    Repository<Tag, formalism::OverlayRepository<formalism::Repository>>& destination;
     buffer::Buffer& buffer;
 };
 
@@ -528,7 +533,7 @@ class MatchTree
 private:
     IndexList<Tag> m_elements;
 
-    RepositoryPtr<formalism::OverlayRepository<formalism::Repository>, Tag> m_context;
+    RepositoryPtr<Tag, formalism::OverlayRepository<formalism::Repository>> m_context;
 
     std::optional<Data<Node<Tag>>> m_root;
 
@@ -538,7 +543,7 @@ public:
     template<formalism::Context C>
     MatchTree(IndexList<Tag> elements_, const C& context_) :
         m_elements(std::move(elements_)),
-        m_context(std::make_unique<Repository<formalism::OverlayRepository<formalism::Repository>, Tag>>(context_)),
+        m_context(std::make_unique<Repository<Tag, formalism::OverlayRepository<formalism::Repository>>>(context_)),
         m_root(),
         m_evaluate_stack()
     {
@@ -661,7 +666,74 @@ public:
     MatchTree(MatchTree&& other) = delete;
     MatchTree& operator=(MatchTree&& other) = delete;
 
-    void generate_applicable_elements_iteratively(const UnpackedState<GroundTask>& state, IndexList<Tag>& out_applicable_elements);
+    void generate(const StateContext<GroundTask>& state, IndexList<Tag>& out_applicable_elements)
+    {
+        out_applicable_elements.clear();
+        m_evaluate_stack.clear();
+
+        if (m_root)
+            m_evaluate_stack.push_back(m_root.value());
+
+        while (!m_evaluate_stack.empty())
+        {
+            const auto node = m_evaluate_stack.back();
+            m_evaluate_stack.pop_back();
+
+            std::visit(
+                [&](auto&& arg)
+                {
+                    using Alternative = std::decay_t<decltype(arg)>;
+
+                    if constexpr (std::is_same_v<Alternative, Index<AtomSelectorNode<Tag>>>)
+                    {
+                        const auto& data = make_view(arg, *m_context).get_data();
+                        const auto holds = state.unpacked_state.test(data.atom);
+
+                        if (holds && data.true_child)
+                            m_evaluate_stack.push_back(data.true_child.value());
+                        else if (!holds && data.false_child)
+                            m_evaluate_stack.push_back(data.false_child.value());
+
+                        if (data.dontcare_child)
+                            m_evaluate_stack.push_back(data.dontcare_child.value());
+                    }
+                    else if constexpr (std::is_same_v<Alternative, Index<NumericConstraintSelectorNode<Tag>>>)
+                    {
+                        const auto view = make_view(arg, *m_context);
+                        const auto& data = view.get_data();
+                        const auto holds = evaluate(view.get_constraint(), state);
+
+                        if (holds && data.true_child)
+                            m_evaluate_stack.push_back(data.true_child.value());
+
+                        if (data.dontcare_child)
+                            m_evaluate_stack.push_back(data.dontcare_child.value());
+                    }
+                    else if constexpr (std::is_same_v<Alternative, Index<VariableSelectorNode<Tag>>>)
+                    {
+                        const auto& data = make_view(arg, *m_context).get_data();
+                        const auto value = state.unpacked_state.get(data.variable);
+                        assert(uint_t(value) < data.domain_children.size());
+
+                        if (data.domain_children[uint_t(value)])
+                            m_evaluate_stack.push_back(data.domain_children[uint_t(value)].value());
+
+                        if (data.dontcare_child)
+                            m_evaluate_stack.push_back(data.dontcare_child.value());
+                    }
+                    else if constexpr (std::is_same_v<Alternative, Index<ElementGeneratorNode<Tag>>>)
+                    {
+                        const auto& data = make_view(arg, *m_context).get_data();
+                        out_applicable_elements.insert(out_applicable_elements.end(), data.elements.begin(), data.elements.end());
+                    }
+                    else
+                    {
+                        static_assert(dependent_false<Alternative>::value, "Missing case");
+                    }
+                },
+                node.value);
+        }
+    }
 };
 
 }

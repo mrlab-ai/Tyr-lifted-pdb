@@ -72,6 +72,21 @@ public:
     size_t get_num_actions() const noexcept;
     size_t get_num_axioms() const noexcept;
 
+    const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
+    const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
+    bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const
+    {
+        if (index.get_value() >= m_static_atoms_bitset.size())
+            return false;
+        return m_static_atoms_bitset.test(index.get_value());
+    }
+    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const
+    {
+        if (index.get_value() >= m_static_numeric_variables.size())
+            return std::numeric_limits<float_t>::quiet_NaN();
+        return m_static_numeric_variables[index.get_value()];
+    }
+
 private:
     DomainPtr m_domain;
 
@@ -82,6 +97,14 @@ private:
     FDRVariablesLayout<formalism::FluentTag, uint_t> m_fluent_layout;
     match_tree::MatchTreePtr<formalism::GroundAction> m_action_match_tree;
     std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>> m_axiom_match_tree_strata;
+
+    /**
+     * States
+     */
+    boost::dynamic_bitset<> m_static_atoms_bitset;    ///< TODO: initialize
+    std::vector<float_t> m_static_numeric_variables;  ///< TODO: initialize
+
+    IndexList<formalism::GroundAction> m_applicable_actions;
 };
 
 }

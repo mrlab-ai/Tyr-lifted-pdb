@@ -73,7 +73,7 @@ public:
      * For lifted task
      */
 
-    const UnpackedState<LiftedTask>& get_unpacked_state() const noexcept { return *m_unpacked; }
+    const UnpackedState<LiftedTask>& get_unpacked_state_impl() const noexcept { return *m_unpacked; }
 
     template<formalism::FactKind T>
     const boost::dynamic_bitset<>& get_atoms() const noexcept;

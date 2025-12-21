@@ -68,10 +68,10 @@ using MatchTreePtr = std::unique_ptr<MatchTree<Tag>>;
  * Aliases
  */
 
-template<formalism::Context C, typename Tag>
+template<typename Tag, formalism::Context C>
 class Repository;
-template<formalism::Context C, typename Tag>
-using RepositoryPtr = std::unique_ptr<Repository<C, Tag>>;
+template<typename Tag, formalism::Context C>
+using RepositoryPtr = std::unique_ptr<Repository<Tag, C>>;
 
 template<typename Repo, typename Tag>
 concept RepositoryAccess = requires(const Repo& r, Index<Tag> idx) {
@@ -87,15 +87,9 @@ template<typename T>
 concept RepositoryConcept =
     HasFormalismRepository<T> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAction>>
     && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAction>> && RepositoryAccess<T, Node<formalism::GroundAction>>
-    && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, Node<formalism::GroundAction>> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>>
+    && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAction>> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>>
     && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAxiom>> && RepositoryAccess<T, Node<formalism::GroundAxiom>>
-    && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, Node<formalism::GroundAxiom>>;
+    && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAxiom>>;
 
 /// @brief Make Repository a trivial context.
 /// @param context
