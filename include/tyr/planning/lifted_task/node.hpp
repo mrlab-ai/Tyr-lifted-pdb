@@ -70,6 +70,8 @@ private:
     StateIndex m_state_index;
 };
 
+static_assert(NodeConcept<Node<LiftedTask>, LiftedTask>);
+
 }
 
 #endif
