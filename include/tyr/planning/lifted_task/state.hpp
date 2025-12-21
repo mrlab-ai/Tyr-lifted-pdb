@@ -30,50 +30,35 @@
 namespace tyr::planning
 {
 template<>
-class State<LiftedTask> : public StateMixin<State<LiftedTask>, LiftedTask>
+class State<LiftedTask>
 {
 public:
     using TaskType = LiftedTask;
 
-    State(LiftedTask& task, SharedObjectPoolPtr<UnpackedState<LiftedTask>> unpacked) noexcept : m_unpacked(std::move(unpacked)), m_task(&task) {}
+    State(LiftedTask& task, SharedObjectPoolPtr<UnpackedState<LiftedTask>> unpacked) noexcept;
 
-    StateIndex get_index_impl() const { return m_unpacked->get_index(); }
-
-    /**
-     * Static part
-     */
-
-    // Static atoms
-    bool test_impl(Index<formalism::GroundAtom<formalism::StaticTag>> index) const;
-
-    // Static numeric variables
-    float_t get_impl(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const;
+    StateIndex get_index() const;
 
     /**
-     * Fluent part
+     * StateConcept
      */
 
-    // Fluent facts
-    formalism::FDRValue get_impl(Index<formalism::FDRVariable<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
+    bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const;
+    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const;
 
-    // Fluent numeric variables
-    float_t get_impl(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
+    formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const;
+    float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const;
+
+    bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const;
+
+    LiftedTask& get_task() noexcept;
+    const LiftedTask& get_task() const noexcept;
 
     /**
-     * Derived part
+     * For LiftedTask
      */
 
-    // Derived atoms
-    bool test_impl(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return m_unpacked->test(index); }
-
-    LiftedTask& get_task_impl() noexcept { return *m_task; }
-    const LiftedTask& get_task_impl() const noexcept { return *m_task; }
-
-    /**
-     * For lifted task
-     */
-
-    const UnpackedState<LiftedTask>& get_unpacked_state_impl() const noexcept { return *m_unpacked; }
+    const UnpackedState<LiftedTask>& get_unpacked_state() const noexcept;
 
     template<formalism::FactKind T>
     const boost::dynamic_bitset<>& get_atoms() const noexcept;
@@ -85,6 +70,32 @@ private:
     SharedObjectPoolPtr<UnpackedState<LiftedTask>> m_unpacked;
     LiftedTask* m_task;
 };
+
+static_assert(StateConcept<State<LiftedTask>>);
+
+/**
+ * Implementations
+ */
+
+inline State<LiftedTask>::State(LiftedTask& task, SharedObjectPoolPtr<UnpackedState<LiftedTask>> unpacked) noexcept :
+    m_unpacked(std::move(unpacked)),
+    m_task(&task)
+{
+}
+
+inline StateIndex State<LiftedTask>::get_index() const { return m_unpacked->get_index(); }
+
+inline formalism::FDRValue State<LiftedTask>::get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
+
+inline float_t State<LiftedTask>::get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
+
+inline bool State<LiftedTask>::test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return m_unpacked->test(index); }
+
+inline LiftedTask& State<LiftedTask>::get_task() noexcept { return *m_task; }
+
+inline const LiftedTask& State<LiftedTask>::get_task() const noexcept { return *m_task; }
+
+inline const UnpackedState<LiftedTask>& State<LiftedTask>::get_unpacked_state() const noexcept { return *m_unpacked; }
 }
 
 #endif

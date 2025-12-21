@@ -25,17 +25,27 @@
 namespace tyr::planning
 {
 template<>
-class State<GroundTask> : public StateMixin<State<GroundTask>, GroundTask>
+class State<GroundTask>
 {
 public:
     using TaskType = GroundTask;
 
-    const UnpackedState<GroundTask>& get_unpacked_state_impl() const noexcept { return *m_unpacked; }
+    /**
+     * StateConcept
+     */
+
+    const UnpackedState<GroundTask>& get_unpacked_state() const noexcept { return *m_unpacked; }
+
+    /**
+     * For LiftedTask
+     */
 
 private:
     SharedObjectPoolPtr<UnpackedState<GroundTask>> m_unpacked;
     GroundTask* m_task;
 };
+
+// static_assert(StateConcept<State<GroundTask>>);
 }
 
 #endif

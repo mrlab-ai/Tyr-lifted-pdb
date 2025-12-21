@@ -30,39 +30,25 @@
 namespace tyr::planning
 {
 
-template<typename Derived>
-class UnpackedStateMixin
-{
-private:
-    /// @brief Helper to cast to Derived.
-    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
-    constexpr auto& self() { return static_cast<Derived&>(*this); }
-
-public:
-    void clear() { self().clear_impl(); }
-
-    StateIndex get_index() const { return self().get_index_impl(); }
-    void set(StateIndex index) { self().set_impl(index); }
-
-    /**
-     * Fluent part
-     */
-
-    // Fluent facts
-    formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const { return self().get_impl(index); }
-    void set(Data<formalism::FDRFact<formalism::FluentTag>> fact) { self().set_impl(fact); }
-
-    // Fluent numeric variables
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const { return self().get_impl(index); }
-    void set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value) { self().set_impl(index, value); }
-
-    /**
-     * Derived part
-     */
-
-    // Derived atoms
-    bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return self().test_impl(index); }
-    void set(Index<formalism::GroundAtom<formalism::DerivedTag>> index) { self().set_impl(index); }
+template<typename T>
+concept UnpackedStateConcept = requires(T& a,
+                                        const T& b,
+                                        StateIndex index,
+                                        Index<formalism::FDRVariable<formalism::FluentTag>> variable,
+                                        Data<formalism::FDRFact<formalism::FluentTag>> fact,
+                                        Index<formalism::GroundFunctionTerm<formalism::FluentTag>> fterm,
+                                        float_t value,
+                                        Index<formalism::GroundAtom<formalism::DerivedTag>> atom) {
+    typename T::TaskType;
+    { a.clear() };
+    { b.get_index() } -> std::same_as<StateIndex>;
+    { a.set(index) };
+    { b.get(variable) } -> std::same_as<formalism::FDRValue>;
+    { a.set(fact) };
+    { b.get(fterm) } -> std::same_as<float_t>;
+    { a.set(fterm, value) };
+    { b.test(atom) } -> std::same_as<bool>;
+    { a.set(atom) };
 };
 
 template<typename Task>

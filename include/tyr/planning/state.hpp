@@ -28,51 +28,23 @@
 namespace tyr::planning
 {
 
-template<typename Derived, typename Task>
-class StateMixin
-{
-private:
-    /// @brief Helper to cast to Derived.
-    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
-    constexpr auto& self() { return static_cast<Derived&>(*this); }
-
-public:
-    StateIndex get_index() const { return self().get_index_impl(); }
-
-    /**
-     * Static part
-     */
-
-    // Static atoms
-    bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const { return self().test_impl(index); }
-
-    // Static numeric variables
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const { return self().get_impl(index); }
-
-    /**
-     * Fluent part
-     */
-
-    // Fluent facts
-    formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const { return self().get_impl(index); }
-
-    // Fluent numeric variables
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const { return self().get_impl(index); }
-
-    /**
-     * Derived part
-     */
-
-    // Derived atoms
-    bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return self().test_impl(index); }
-
-    /**
-     * Unpacked State
-     */
-
-    const UnpackedState<Task>& get_unpacked_state() const { return self().get_unpacked_state_impl(); }
-    Task& get_task() noexcept { return self().get_task_impl(); }
-    const Task& get_task() const noexcept { return self().get_task_impl(); }
+template<typename T>
+concept StateConcept = requires(T& a,
+                                const T& b,
+                                Index<formalism::FDRVariable<formalism::FluentTag>> variable,
+                                Index<formalism::GroundFunctionTerm<formalism::StaticTag>> static_fterm,
+                                Index<formalism::GroundFunctionTerm<formalism::FluentTag>> fluent_fterm,
+                                Index<formalism::GroundAtom<formalism::StaticTag>> static_atom,
+                                Index<formalism::GroundAtom<formalism::DerivedTag>> derived_atom) {
+    typename T::TaskType;
+    { b.get_index() } -> std::same_as<StateIndex>;
+    { b.get(variable) } -> std::same_as<formalism::FDRValue>;
+    { b.get(static_fterm) } -> std::same_as<float_t>;
+    { b.get(fluent_fterm) } -> std::same_as<float_t>;
+    { b.test(static_atom) } -> std::same_as<bool>;
+    { b.test(derived_atom) } -> std::same_as<bool>;
+    { a.get_task() } -> std::same_as<typename T::TaskType&>;
+    { b.get_task() } -> std::same_as<const typename T::TaskType&>;
 };
 
 template<typename Task>

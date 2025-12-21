@@ -27,69 +27,41 @@
 #include "tyr/planning/unpacked_state.hpp"
 
 #include <boost/dynamic_bitset.hpp>
+#include <cassert>
+#include <limits>
 #include <vector>
 
 namespace tyr::planning
 {
 template<>
-class UnpackedState<GroundTask> : public UnpackedStateMixin<UnpackedState<GroundTask>>
+class UnpackedState<GroundTask>
 {
 public:
     using TaskType = GroundTask;
 
     UnpackedState() = default;
 
-    StateIndex get_index_impl() const { return m_index; }
-    void set_impl(StateIndex index) { m_index = index; }
+    /**
+     * UnpackedStateConcept
+     */
 
-    // Fluent facts
-    formalism::FDRValue get_impl(Index<formalism::FDRVariable<formalism::FluentTag>> index) const
-    {
-        if (index.get_value() >= m_fluent_values.size())
-            return formalism::FDRValue { 0 };
-        return m_fluent_values[index.get_value()];
-    }
-    void set_impl(Data<formalism::FDRFact<formalism::FluentTag>> fact)
-    {
-        if (fact.variable.get_value() >= m_fluent_values.size())
-            m_fluent_values.resize(fact.variable.get_value() + 1, formalism::FDRValue { 0 });
-        m_fluent_values[fact.variable.get_value()] = fact.value;
-    }
+    StateIndex get_index() const;
+    void set(StateIndex index);
 
-    // Fluent numeric variables
-    float_t get_impl(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const
-    {
-        if (index.get_value() >= m_numeric_variables.size())
-            return std::numeric_limits<float_t>::quiet_NaN();
-        return m_numeric_variables[index.get_value()];
-    }
-    void set_impl(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value)
-    {
-        if (index.get_value() >= m_numeric_variables.size())
-            m_numeric_variables.resize(index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
-        m_numeric_variables[index.get_value()] = value;
-    }
+    formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const;
+    void set(Data<formalism::FDRFact<formalism::FluentTag>> fact);
 
-    // Derived atoms
-    bool test_impl(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const
-    {
-        if (index.get_value() >= m_derived_atoms.size())
-            return false;
-        return m_derived_atoms.test(index.get_value());
-    }
-    void set_impl(Index<formalism::GroundAtom<formalism::DerivedTag>> index)
-    {
-        if (index.get_value() >= m_derived_atoms.size())
-            m_derived_atoms.resize(index.get_value() + 1, false);
-        m_derived_atoms.set(index.get_value());
-    }
+    float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const;
+    void set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value);
 
-    void clear_impl()
-    {
-        m_fluent_values.clear();
-        m_derived_atoms.clear();
-        m_numeric_variables.clear();
-    }
+    bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const;
+    void set(Index<formalism::GroundAtom<formalism::DerivedTag>> index);
+
+    void clear();
+
+    /**
+     * For GroundTask
+     */
 
 private:
     StateIndex m_index;
@@ -97,6 +69,68 @@ private:
     boost::dynamic_bitset<> m_derived_atoms;
     std::vector<float_t> m_numeric_variables;
 };
+
+static_assert(UnpackedStateConcept<UnpackedState<GroundTask>>);
+
+/**
+ * Implementations
+ */
+
+inline StateIndex UnpackedState<GroundTask>::get_index() const { return m_index; }
+
+inline void UnpackedState<GroundTask>::set(StateIndex index) { m_index = index; }
+
+// Fluent facts
+inline formalism::FDRValue UnpackedState<GroundTask>::get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const
+{
+    if (index.get_value() >= m_fluent_values.size())
+        return formalism::FDRValue { 0 };
+    return m_fluent_values[index.get_value()];
+}
+
+inline void UnpackedState<GroundTask>::set(Data<formalism::FDRFact<formalism::FluentTag>> fact)
+{
+    if (fact.variable.get_value() >= m_fluent_values.size())
+        m_fluent_values.resize(fact.variable.get_value() + 1, formalism::FDRValue { 0 });
+    m_fluent_values[fact.variable.get_value()] = fact.value;
+}
+
+// Fluent numeric variables
+inline float_t UnpackedState<GroundTask>::get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const
+{
+    if (index.get_value() >= m_numeric_variables.size())
+        return std::numeric_limits<float_t>::quiet_NaN();
+    return m_numeric_variables[index.get_value()];
+}
+
+inline void UnpackedState<GroundTask>::set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value)
+{
+    if (index.get_value() >= m_numeric_variables.size())
+        m_numeric_variables.resize(index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
+    m_numeric_variables[index.get_value()] = value;
+}
+
+// Derived atoms
+inline bool UnpackedState<GroundTask>::test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const
+{
+    if (index.get_value() >= m_derived_atoms.size())
+        return false;
+    return m_derived_atoms.test(index.get_value());
+}
+
+inline void UnpackedState<GroundTask>::set(Index<formalism::GroundAtom<formalism::DerivedTag>> index)
+{
+    if (index.get_value() >= m_derived_atoms.size())
+        m_derived_atoms.resize(index.get_value() + 1, false);
+    m_derived_atoms.set(index.get_value());
+}
+
+inline void UnpackedState<GroundTask>::clear()
+{
+    m_fluent_values.clear();
+    m_derived_atoms.clear();
+    m_numeric_variables.clear();
+}
 }
 
 #endif
