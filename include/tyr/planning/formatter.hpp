@@ -20,6 +20,12 @@
 
 #include "tyr/common/formatter.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/lifted_task/node.hpp"
+#include "tyr/planning/lifted_task/packed_state.hpp"
+#include "tyr/planning/lifted_task/state.hpp"
+#include "tyr/planning/lifted_task/unpacked_state.hpp"
+
+#include <ostream>
 
 namespace tyr
 {

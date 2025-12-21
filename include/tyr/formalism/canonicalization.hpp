@@ -20,6 +20,7 @@
 #ifndef TYR_FORMALISM_CANONICALIZATION_HPP_
 #define TYR_FORMALISM_CANONICALIZATION_HPP_
 
+#include "tyr/common/canonicalization.hpp"
 #include "tyr/common/comparators.hpp"
 #include "tyr/formalism/datas.hpp"
 
@@ -27,26 +28,6 @@
 
 namespace tyr::formalism
 {
-
-template<typename T>
-bool is_canonical(const IndexList<T>& list)
-{
-    return std::is_sorted(list.begin(), list.end());
-}
-
-template<typename T>
-bool is_canonical(const DataList<T>& list)
-{
-    return std::is_sorted(list.begin(), list.end());
-}
-
-template<typename T>
-bool is_canonical(const ::cista::optional<T>& element)
-{
-    if (!element.has_value())
-        return true;
-    return is_canonical(*element);
-}
 
 /**
  * Datalog

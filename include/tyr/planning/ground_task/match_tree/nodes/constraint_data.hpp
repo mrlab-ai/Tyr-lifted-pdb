@@ -30,13 +30,13 @@ template<typename Tag>
 struct Data<planning::match_tree::NumericConstraintSelectorNode<Tag>>
 {
     Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
-    Data<formalism::BooleanOperator<formalism::FluentTag>> constraint;
+    Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> constraint;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> true_child;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> index,
-         Data<formalism::BooleanOperator<formalism::FluentTag>> constraint,
+         Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> constraint,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> true_child,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child) :
         index(index),

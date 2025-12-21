@@ -32,17 +32,17 @@ struct Data<planning::match_tree::VariableSelectorNode<Tag>>
 {
     Index<planning::match_tree::VariableSelectorNode<Tag>> index;
     Index<formalism::FDRVariable<formalism::FluentTag>> variable;
-    ::cista::offset::vector<::cista::optional<Data<planning::match_tree::Node<Tag>>>> children;
+    ::cista::offset::vector<::cista::optional<Data<planning::match_tree::Node<Tag>>>> domain_children;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(Index<planning::match_tree::VariableSelectorNode<Tag>> index,
          Index<formalism::FDRVariable<formalism::FluentTag>> variable,
-         ::cista::offset::vector<::cista::optional<Data<planning::match_tree::Node<Tag>>>> children,
+         ::cista::offset::vector<::cista::optional<Data<planning::match_tree::Node<Tag>>>> domain_children,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child) :
         index(index),
         variable(variable),
-        children(std::move(children)),
+        domain_children(std::move(domain_children)),
         dontcare_child(dontcare_child)
     {
     }
@@ -55,12 +55,12 @@ struct Data<planning::match_tree::VariableSelectorNode<Tag>>
     {
         tyr::clear(index);
         tyr::clear(variable);
-        tyr::clear(children);
+        tyr::clear(domain_children);
         tyr::clear(dontcare_child);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, variable, children, dontcare_child); }
-    auto identifying_members() const noexcept { return std::tie(variable, children, dontcare_child); }
+    auto cista_members() const noexcept { return std::tie(index, variable, domain_children, dontcare_child); }
+    auto identifying_members() const noexcept { return std::tie(variable, domain_children, dontcare_child); }
 };
 }
 

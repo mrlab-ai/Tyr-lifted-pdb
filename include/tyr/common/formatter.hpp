@@ -86,6 +86,8 @@ std::ostream& operator<<(std::ostream& os, const IndexMixin<Derived>& el);
 template<typename Derived>
 std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& el);
 
+inline std::ostream& operator<<(std::ostream& os, const std::monostate& el);
+
 // cista
 
 template<typename T>
@@ -149,6 +151,8 @@ std::ostream& print(std::ostream& os, const IndexMixin<Derived>& el);
 
 template<typename Derived>
 std::ostream& print(std::ostream& os, const FixedUintMixin<Derived>& el);
+
+inline std::ostream& print(std::ostream& os, const std::monostate& el);
 
 // cista
 
@@ -325,6 +329,8 @@ std::ostream& operator<<(std::ostream& os, const FixedUintMixin<Derived>& el)
     return print(os, el);
 }
 
+inline std::ostream& operator<<(std::ostream& os, const std::monostate& el) { return print(os, el); }
+
 // cista
 
 template<typename T>
@@ -466,6 +472,12 @@ std::ostream& print(std::ostream& os, const ::cista::optional<T>& el)
         print(os, el.value());
     else
         os << "<nullopt>";
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const std::monostate& el)
+{
+    os << "monostate";
     return os;
 }
 
