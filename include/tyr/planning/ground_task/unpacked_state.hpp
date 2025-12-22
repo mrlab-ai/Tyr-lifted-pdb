@@ -63,6 +63,10 @@ public:
      * For GroundTask
      */
 
+    void reset(size_t num_fluent_facts, size_t num_numeric_variables, size_t num_derived_atoms);
+    void reset_unextended_part(size_t num_fluent_facts, size_t num_numeric_variables);
+    void reset_extended_part(size_t num_numeric_variables);
+
 private:
     StateIndex m_index;
     std::vector<formalism::FDRValue> m_fluent_values;
@@ -130,6 +134,26 @@ inline void UnpackedState<GroundTask>::clear()
     m_fluent_values.clear();
     m_derived_atoms.clear();
     m_numeric_variables.clear();
+}
+
+inline void UnpackedState<GroundTask>::reset(size_t num_fluent_facts, size_t num_numeric_variables, size_t num_derived_atoms)
+{
+    reset_unextended_part(num_fluent_facts, num_derived_atoms);
+    reset_extended_part(num_derived_atoms);
+}
+
+inline void UnpackedState<GroundTask>::reset_unextended_part(size_t num_fluent_facts, size_t num_numeric_variables)
+{
+    m_fluent_values.resize(num_fluent_facts);
+    std::fill(m_fluent_values.begin(), m_fluent_values.end(), formalism::FDRValue::none());
+    m_numeric_variables.resize(num_numeric_variables);
+    std::fill(m_numeric_variables.begin(), m_numeric_variables.end(), std::numeric_limits<float_t>::quiet_NaN());
+}
+
+inline void UnpackedState<GroundTask>::reset_extended_part(size_t num_derived_atoms)
+{
+    m_derived_atoms.resize(num_derived_atoms);
+    m_derived_atoms.reset();
 }
 }
 

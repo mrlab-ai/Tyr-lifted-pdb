@@ -18,6 +18,10 @@
 #ifndef TYR_PLANNING_GROUND_TASK_AXIOM_EVALUATOR_HPP_
 #define TYR_PLANNING_GROUND_TASK_AXIOM_EVALUATOR_HPP_
 
+#include "tyr/common/types.hpp"
+#include "tyr/common/types_utils.hpp"
+#include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/formalism/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 

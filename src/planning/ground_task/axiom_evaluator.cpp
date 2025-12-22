@@ -17,27 +17,35 @@
 
 #include "tyr/planning/ground_task/axiom_evaluator.hpp"
 
+#include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
 
 using namespace tyr::formalism;
 
 namespace tyr::planning
 {
-static void evaluate_axioms_bottomup_for_strata(UnpackedState<GroundTask>& state,
-                                                const GroundTask& task,
-                                                const match_tree::MatchTree<formalism::GroundAxiom>& match_tree,
+static void evaluate_axioms_bottomup_for_strata(UnpackedState<GroundTask>& unextended_state,
+                                                GroundTask& task,
+                                                match_tree::MatchTree<formalism::GroundAxiom>& match_tree,
                                                 IndexList<formalism::GroundAxiom>& applicable_axioms)
 {
+    auto state_context = StateContext<GroundTask> { task, unextended_state, float_t(0) };
+
     while (true)
     {
         auto discovered_new_atom = bool { false };
 
         applicable_axioms.clear();
-        match_tree.generate(state, applicable_axioms);
+        match_tree.generate(state_context, applicable_axioms);
 
         for (const auto axiom : applicable_axioms)
         {
-            const auto atom = make_view(axiom, task).get_atom().get_index();
+            const auto atom = make_view(axiom, *task.get_repository()).get_head().get_index();
+
+            if (!unextended_state.test(atom))
+                discovered_new_atom = true;
+
+            unextended_state.set(atom);
         }
 
         if (!discovered_new_atom)
@@ -45,11 +53,9 @@ static void evaluate_axioms_bottomup_for_strata(UnpackedState<GroundTask>& state
     }
 }
 
-void evaluate_axioms_bottomup(UnpackedState<GroundTask>& state, const GroundTask& task, IndexList<formalism::GroundAxiom>& applicable_axioms)
+void evaluate_axioms_bottomup(UnpackedState<GroundTask>& unextended_state, GroundTask& task, IndexList<formalism::GroundAxiom>& applicable_axioms)
 {
-    auto derived_atoms = state.get_atoms<DerivedTag>;
-
     for (const auto& match_tree : task.get_axiom_match_tree_strata())
-        evaluate_axioms_bottomup_for_strata(state, task, *match_tree, applicable_axioms);
+        evaluate_axioms_bottomup_for_strata(unextended_state, task, *match_tree, applicable_axioms);
 }
 }

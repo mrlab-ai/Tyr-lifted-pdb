@@ -25,8 +25,6 @@
 #include "tyr/formalism/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"
-#include "tyr/planning/ground_task/axiom_listeners.hpp"
-#include "tyr/planning/ground_task/axiom_scheduler.hpp"
 #include "tyr/planning/ground_task/layout.hpp"
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
 #include "tyr/planning/ground_task/node.hpp"
@@ -47,9 +45,7 @@ public:
                formalism::GeneralFDRContext<formalism::OverlayRepository<formalism::Repository>> fdr_context,
                FDRVariablesLayout<formalism::FluentTag, uint_t> fluent_layout,
                match_tree::MatchTreePtr<formalism::GroundAction> action_match_tree,
-               std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>>&& axiom_match_tree_strata,
-               GroundAxiomListenerStrata axiom_listener_strata,
-               GroundAxiomSchedulerStrata axiom_scheduler_strata);
+               std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>>&& axiom_match_tree_strata);
 
     static std::shared_ptr<GroundTask> create(DomainPtr domain,
                                               formalism::RepositoryPtr repository,
@@ -92,7 +88,9 @@ public:
         return m_static_numeric_variables[index.get_value()];
     }
 
-    const std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>>& get_axiom_match_tree_strata() const noexcept { return m_axiom_match_tree_strata; }
+    const auto& get_repository() const noexcept { return m_overlay_repository; }
+
+    const auto& get_axiom_match_tree_strata() const noexcept { return m_axiom_match_tree_strata; }
 
 private:
     DomainPtr m_domain;
@@ -104,8 +102,6 @@ private:
     FDRVariablesLayout<formalism::FluentTag, uint_t> m_fluent_layout;
     match_tree::MatchTreePtr<formalism::GroundAction> m_action_match_tree;
     std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>> m_axiom_match_tree_strata;
-    GroundAxiomListenerStrata m_axiom_listener_strata;
-    GroundAxiomSchedulerStrata m_axiom_scheduler_strata;
 
     /**
      * States
