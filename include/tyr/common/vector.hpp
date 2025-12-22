@@ -173,6 +173,14 @@ private:
     const Container* m_handle;
 };
 
+template<typename T>
+const T& get(size_t pos, const std::vector<T>& vec, const T& default_value) noexcept
+{
+    if (pos >= vec.size())
+        return default_value;
+    return vec[pos];
+}
+
 template<class T>
 void set(size_t pos, const T& value, std::vector<T>& vec, const T& default_value)
 {

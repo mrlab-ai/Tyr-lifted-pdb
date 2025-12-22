@@ -19,6 +19,8 @@
 #define TYR_PLANNING_LIFTED_TASK_UNPACKED_STATE_HPP_
 
 #include "tyr/common/config.hpp"
+#include "tyr/common/dynamic_bitset.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
 #include "tyr/formalism/ground_function_term_index.hpp"
@@ -58,6 +60,9 @@ public:
     void set(Index<formalism::GroundAtom<formalism::DerivedTag>> index);
 
     void clear();
+    void clear_unextended_part();
+    void clear_extended_part();
+    void assign_unextended_part(const UnpackedState<LiftedTask>& other);
 
     /**
      * For LiftedTask
@@ -92,54 +97,52 @@ inline void UnpackedState<LiftedTask>::set(StateIndex index) { m_index = index; 
 // Fluent facts
 inline formalism::FDRValue UnpackedState<LiftedTask>::get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const
 {
-    if (index.get_value() >= m_fluent_atoms.size())
-        return formalism::FDRValue { 0 };
-    return formalism::FDRValue { m_fluent_atoms.test(index.get_value()) };
+    return formalism::FDRValue(tyr::test(uint_t(index), m_fluent_atoms));
 }
 
 inline void UnpackedState<LiftedTask>::set(Data<formalism::FDRFact<formalism::FluentTag>> fact)
 {
     assert(uint_t(fact.value) < 2);  // can only handle binary using bitsets
-    if (fact.variable.get_value() >= m_fluent_atoms.size())
-        m_fluent_atoms.resize(fact.variable.get_value() + 1, false);
-    m_fluent_atoms[fact.variable.get_value()] = uint_t(fact.value);
+    tyr::set(bool(uint_t(fact.value)), m_fluent_atoms);
 }
 
 // Fluent numeric variables
 inline float_t UnpackedState<LiftedTask>::get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const
 {
-    if (index.get_value() >= m_numeric_variables.size())
-        return std::numeric_limits<float_t>::quiet_NaN();
-    return m_numeric_variables[index.get_value()];
+    return tyr::get(uint_t(index), m_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
 inline void UnpackedState<LiftedTask>::set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value)
 {
-    if (index.get_value() >= m_numeric_variables.size())
-        m_numeric_variables.resize(index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
-    m_numeric_variables[index.get_value()] = value;
+    tyr::set(uint_t(index), value, m_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
 // Derived atoms
 inline bool UnpackedState<LiftedTask>::test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const
 {
-    if (index.get_value() >= m_derived_atoms.size())
-        return false;
-    return m_derived_atoms.test(index.get_value());
+    return tyr::test(uint_t(index), m_derived_atoms);
 }
 
-inline void UnpackedState<LiftedTask>::set(Index<formalism::GroundAtom<formalism::DerivedTag>> index)
-{
-    if (index.get_value() >= m_derived_atoms.size())
-        m_derived_atoms.resize(index.get_value() + 1, false);
-    m_derived_atoms.set(index.get_value());
-}
+inline void UnpackedState<LiftedTask>::set(Index<formalism::GroundAtom<formalism::DerivedTag>> index) { tyr::set(uint_t(index), m_derived_atoms); }
 
 inline void UnpackedState<LiftedTask>::clear()
 {
+    clear_unextended_part();
+    clear_extended_part();
+}
+
+inline void UnpackedState<LiftedTask>::clear_unextended_part()
+{
     m_fluent_atoms.clear();
-    m_derived_atoms.clear();
     m_numeric_variables.clear();
+}
+
+inline void UnpackedState<LiftedTask>::clear_extended_part() { m_derived_atoms.clear(); }
+
+inline void UnpackedState<LiftedTask>::assign_unextended_part(const UnpackedState<LiftedTask>& other)
+{
+    m_fluent_atoms = other.m_fluent_atoms;
+    m_numeric_variables = other.m_numeric_variables;
 }
 
 /**

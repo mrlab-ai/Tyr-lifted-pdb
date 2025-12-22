@@ -17,6 +17,8 @@
 
 #include "tyr/planning/ground_task.hpp"
 
+#include "metric.hpp"
+#include "transition.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/builder.hpp"
@@ -289,10 +291,15 @@ GroundTask::GroundTask(DomainPtr domain,
     m_fluent_layout(std::move(fluent_layout)),
     m_action_match_tree(std::move(action_match_tree)),
     m_axiom_match_tree_strata(std::move(axiom_match_tree_strata)),
+    m_uint_nodes(),
+    m_float_nodes(),
+    m_packed_states(),
+    m_unpacked_state_pool(),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
     m_applicable_actions(),
-    m_applicable_axioms()
+    m_applicable_axioms(),
+    m_effect_families()
 {
     // std::cout << m_fdr_task << std::endl;
 
@@ -303,9 +310,37 @@ GroundTask::GroundTask(DomainPtr domain,
         set(fterm_value.get_fterm().get_index().get_value(), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
-Node<GroundTask> get_initial_node() {}
+Node<GroundTask> GroundTask::get_initial_node()
+{
+    auto unpacked_state_ptr = m_unpacked_state_pool.get_or_allocate();
+    auto& unpacked_state = *unpacked_state_ptr;
+    unpacked_state.clear_unextended_part();
 
-void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state) { evaluate_axioms_bottomup(unpacked_state, *this, m_applicable_axioms); }
+    unpacked_state.resize_fluent_facts(m_fdr_task.get_fluent_variables().size());
+    unpacked_state.resize_derived_atoms(m_fdr_task.get_atoms<DerivedTag>().size());
+
+    for (const auto fact : m_fdr_task.get_fluent_facts())
+        unpacked_state.set(fact.get_data());
+
+    for (const auto fterm_value : m_fdr_task.get_fterm_values<FluentTag>())
+        unpacked_state.set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
+
+    compute_extended_state(unpacked_state);
+
+    const auto state_index = register_state(unpacked_state);
+
+    const auto state_context = StateContext<GroundTask>(*this, unpacked_state, 0);
+
+    const auto state_metric = evaluate_metric(m_fdr_task.get_metric(), m_fdr_task.get_auxiliary_fterm_value(), state_context);
+
+    return Node<GroundTask>(state_index, state_metric, *this);
+}
+
+void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state)
+{
+    unpacked_state.clear_extended_part();
+    evaluate_axioms_bottomup(unpacked_state, *this, m_applicable_axioms);
+}
 
 std::vector<LabeledNode<GroundTask>> GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node)
 {
@@ -318,10 +353,19 @@ std::vector<LabeledNode<GroundTask>> GroundTask::get_labeled_successor_nodes(con
 
 void GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node, std::vector<LabeledNode<GroundTask>>& out_nodes)
 {
+    out_nodes.clear();
+
     const auto state = node.get_state();
     const auto state_context = StateContext<GroundTask>(*this, state.get_unpacked_state(), node.get_metric());
 
     m_action_match_tree->generate(state_context, m_applicable_actions);
+
+    for (const auto ground_action : make_view(m_applicable_actions, *m_overlay_repository))
+    {
+        m_effect_families.clear();
+        if (is_applicable(ground_action, state_context, m_effect_families))  // TODO: only need to check effect applicability
+            out_nodes.emplace_back(ground_action, apply_action(state_context, ground_action));
+    }
 }
 
 template<FactKind T>

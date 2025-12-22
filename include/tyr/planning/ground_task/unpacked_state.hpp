@@ -19,6 +19,8 @@
 #define TYR_PLANNING_GROUND_TASK_UNPACKED_STATE_HPP_
 
 #include "tyr/common/config.hpp"
+#include "tyr/common/dynamic_bitset.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
 #include "tyr/formalism/ground_function_term_index.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
@@ -58,14 +60,25 @@ public:
     void set(Index<formalism::GroundAtom<formalism::DerivedTag>> index);
 
     void clear();
+    void clear_unextended_part();
+    void clear_extended_part();
+    void assign_unextended_part(const UnpackedState<GroundTask>& other);
 
     /**
      * For GroundTask
      */
 
-    void reset(size_t num_fluent_facts, size_t num_numeric_variables, size_t num_derived_atoms);
-    void reset_unextended_part(size_t num_fluent_facts, size_t num_numeric_variables);
-    void reset_extended_part(size_t num_numeric_variables);
+    void resize_fluent_facts(size_t num_fluent_facts);
+    void resize_derived_atoms(size_t num_derived_atoms);
+
+    std::vector<formalism::FDRValue>& get_fluent_values() noexcept;
+    const std::vector<formalism::FDRValue>& get_fluent_values() const noexcept;
+
+    boost::dynamic_bitset<>& get_derived_atoms() noexcept;
+    const boost::dynamic_bitset<>& get_derived_atoms() const noexcept;
+
+    std::vector<float_t>& get_numeric_variables() noexcept;
+    const std::vector<float_t>& get_numeric_variables() const noexcept;
 
 private:
     StateIndex m_index;
@@ -87,74 +100,76 @@ inline void UnpackedState<GroundTask>::set(StateIndex index) { m_index = index; 
 // Fluent facts
 inline formalism::FDRValue UnpackedState<GroundTask>::get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const
 {
-    if (index.get_value() >= m_fluent_values.size())
-        return formalism::FDRValue { 0 };
-    return m_fluent_values[index.get_value()];
+    assert(uint_t(index) < m_fluent_values.size());
+    return m_fluent_values[uint_t(index)];
 }
 
 inline void UnpackedState<GroundTask>::set(Data<formalism::FDRFact<formalism::FluentTag>> fact)
 {
-    if (fact.variable.get_value() >= m_fluent_values.size())
-        m_fluent_values.resize(fact.variable.get_value() + 1, formalism::FDRValue { 0 });
-    m_fluent_values[fact.variable.get_value()] = fact.value;
+    assert(uint_t(fact.variable) < m_fluent_values.size());
+    m_fluent_values[uint_t(fact.variable)] = fact.value;
 }
 
 // Fluent numeric variables
 inline float_t UnpackedState<GroundTask>::get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const
 {
-    if (index.get_value() >= m_numeric_variables.size())
-        return std::numeric_limits<float_t>::quiet_NaN();
-    return m_numeric_variables[index.get_value()];
+    return tyr::get(uint_t(index), m_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
 inline void UnpackedState<GroundTask>::set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value)
 {
-    if (index.get_value() >= m_numeric_variables.size())
-        m_numeric_variables.resize(index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
-    m_numeric_variables[index.get_value()] = value;
+    tyr::set(uint_t(index), value, m_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
 // Derived atoms
 inline bool UnpackedState<GroundTask>::test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const
 {
-    if (index.get_value() >= m_derived_atoms.size())
-        return false;
-    return m_derived_atoms.test(index.get_value());
+    assert(uint_t(index) < m_derived_atoms.size());
+    return m_derived_atoms.test(uint_t(index));
 }
 
 inline void UnpackedState<GroundTask>::set(Index<formalism::GroundAtom<formalism::DerivedTag>> index)
 {
-    if (index.get_value() >= m_derived_atoms.size())
-        m_derived_atoms.resize(index.get_value() + 1, false);
-    m_derived_atoms.set(index.get_value());
+    assert(uint_t(index) < m_derived_atoms.size());
+    m_derived_atoms.set(uint_t(index));
 }
 
 inline void UnpackedState<GroundTask>::clear()
 {
-    m_fluent_values.clear();
-    m_derived_atoms.clear();
+    clear_unextended_part();
+    clear_extended_part();
+}
+
+inline void UnpackedState<GroundTask>::clear_unextended_part()
+{
+    std::fill(m_fluent_values.begin(), m_fluent_values.end(), formalism::FDRValue::none());
     m_numeric_variables.clear();
 }
 
-inline void UnpackedState<GroundTask>::reset(size_t num_fluent_facts, size_t num_numeric_variables, size_t num_derived_atoms)
+inline void UnpackedState<GroundTask>::clear_extended_part() { m_derived_atoms.reset(); }
+
+inline void UnpackedState<GroundTask>::assign_unextended_part(const UnpackedState<GroundTask>& other)
 {
-    reset_unextended_part(num_fluent_facts, num_derived_atoms);
-    reset_extended_part(num_derived_atoms);
+    m_fluent_values = other.m_fluent_values;
+    m_numeric_variables = other.m_numeric_variables;
 }
 
-inline void UnpackedState<GroundTask>::reset_unextended_part(size_t num_fluent_facts, size_t num_numeric_variables)
-{
-    m_fluent_values.resize(num_fluent_facts);
-    std::fill(m_fluent_values.begin(), m_fluent_values.end(), formalism::FDRValue::none());
-    m_numeric_variables.resize(num_numeric_variables);
-    std::fill(m_numeric_variables.begin(), m_numeric_variables.end(), std::numeric_limits<float_t>::quiet_NaN());
-}
+inline void UnpackedState<GroundTask>::resize_fluent_facts(size_t num_fluent_facts) { m_fluent_values.resize(num_fluent_facts); }
 
-inline void UnpackedState<GroundTask>::reset_extended_part(size_t num_derived_atoms)
-{
-    m_derived_atoms.resize(num_derived_atoms);
-    m_derived_atoms.reset();
-}
+inline void UnpackedState<GroundTask>::resize_derived_atoms(size_t num_derived_atoms) { m_derived_atoms.resize(num_derived_atoms); }
+
+inline std::vector<formalism::FDRValue>& UnpackedState<GroundTask>::get_fluent_values() noexcept { return m_fluent_values; }
+
+inline const std::vector<formalism::FDRValue>& UnpackedState<GroundTask>::get_fluent_values() const noexcept { return m_fluent_values; }
+
+inline boost::dynamic_bitset<>& UnpackedState<GroundTask>::get_derived_atoms() noexcept { return m_derived_atoms; }
+
+inline const boost::dynamic_bitset<>& UnpackedState<GroundTask>::get_derived_atoms() const noexcept { return m_derived_atoms; }
+
+inline std::vector<float_t>& UnpackedState<GroundTask>::get_numeric_variables() noexcept { return m_numeric_variables; }
+
+inline const std::vector<float_t>& UnpackedState<GroundTask>::get_numeric_variables() const noexcept { return m_numeric_variables; }
+
 }
 
 #endif

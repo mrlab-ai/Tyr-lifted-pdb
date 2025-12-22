@@ -47,6 +47,9 @@ concept UnpackedStateConcept = requires(T& a,
                                         Index<formalism::GroundAtom<formalism::DerivedTag>> atom) {
     typename T::TaskType;
     { a.clear() };
+    { a.clear_unextended_part() };
+    { a.clear_extended_part() };
+    { a.assign_unextended_part(b) };
     { b.get_index() } -> std::same_as<StateIndex>;
     { a.set(index) };
     { b.get(variable) } -> std::same_as<formalism::FDRValue>;

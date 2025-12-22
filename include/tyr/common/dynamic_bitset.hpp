@@ -23,6 +23,13 @@
 
 namespace tyr
 {
+inline bool test(size_t pos, const boost::dynamic_bitset<>& bitset) noexcept
+{
+    if (pos >= bitset.size())
+        return false;
+    return bitset.test(pos);
+}
+
 inline void set(size_t pos, boost::dynamic_bitset<>& bitset)
 {
     if (pos >= bitset.size())

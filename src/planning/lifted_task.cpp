@@ -104,40 +104,38 @@ static void insert_fact_sets_into_assignment_sets(ProgramExecutionContext& progr
         rule_context.initialize(program_context.facts_execution_context.assignment_sets);
 }
 
-static void
-insert_unextended_state(const boost::dynamic_bitset<>& fluent_atoms, const OverlayRepository<Repository>& atoms_context, ProgramExecutionContext& axiom_context)
+static void insert_unextended_state(const UnpackedState<LiftedTask>& unpacked_state,
+                                    const OverlayRepository<Repository>& atoms_context,
+                                    ProgramExecutionContext& axiom_context)
 {
     axiom_context.facts_execution_context.reset<formalism::FluentTag>();
     axiom_context.task_to_program_execution_context.clear();
 
-    insert_fluent_atoms_to_fact_set(fluent_atoms, atoms_context, axiom_context);
+    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<FluentTag>(), atoms_context, axiom_context);
 
     insert_fact_sets_into_assignment_sets(axiom_context);
 }
 
-static void insert_extended_state(const boost::dynamic_bitset<>& fluent_atoms,
-                                  const boost::dynamic_bitset<>& derived_atoms,
-                                  const std::vector<float_t>& numeric_variables,
+static void insert_extended_state(const UnpackedState<LiftedTask>& unpacked_state,
                                   const OverlayRepository<Repository>& atoms_context,
                                   ProgramExecutionContext& action_context)
 {
     action_context.facts_execution_context.reset<formalism::FluentTag>();
     action_context.task_to_program_execution_context.clear();
 
-    insert_fluent_atoms_to_fact_set(fluent_atoms, atoms_context, action_context);
-    insert_derived_atoms_to_fact_set(derived_atoms, atoms_context, action_context);
-    insert_numeric_variables_to_fact_set(numeric_variables, atoms_context, action_context);
+    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<FluentTag>(), atoms_context, action_context);
+    insert_derived_atoms_to_fact_set(unpacked_state.get_atoms<DerivedTag>(), atoms_context, action_context);
+    insert_numeric_variables_to_fact_set(unpacked_state.get_numeric_variables(), atoms_context, action_context);
 
     insert_fact_sets_into_assignment_sets(action_context);
 }
 
 static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram& axiom_program,
-                                                    boost::dynamic_bitset<>& derived_atoms,
+                                                    UnpackedState<LiftedTask>& unpacked_state,
                                                     OverlayRepository<Repository>& task_repository,
                                                     ProgramExecutionContext& axiom_context)
 {
-    assert(derived_atoms.empty());
-
+    unpacked_state.clear_extended_part();
     axiom_context.program_to_task_execution_context.clear();
 
     /// --- Initialize derived atoms in unpacked state
@@ -152,7 +150,7 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
             // TODO: pass the predicate mapping here so that we can skip merging the predicate :)
             const auto ground_atom = merge<FluentTag, Repository, OverlayRepository<Repository>, DerivedTag>(fact, merge_context).first;
 
-            set(ground_atom.get_value(), derived_atoms);
+            unpacked_state.set(ground_atom);
         }
     }
 }
@@ -163,9 +161,9 @@ static void read_solution_and_instantiate_labeled_successor_nodes(const StateCon
                                                                   BinaryFDRContext<OverlayRepository<Repository>>& fdr_context,
                                                                   const ApplicableActionProgram& action_program,
                                                                   const std::vector<analysis::DomainListListList>& parameter_domains_per_cond_effect_per_action,
-                                                                  std::vector<LabeledNode<LiftedTask>>& out_successors)
+                                                                  std::vector<LabeledNode<LiftedTask>>& out_nodes)
 {
-    out_successors.clear();
+    out_nodes.clear();
 
     auto& effect_families = action_context.planning_execution_context.effect_families;
     auto& assign = action_context.planning_execution_context.assign;
@@ -192,8 +190,8 @@ static void read_solution_and_instantiate_labeled_successor_nodes(const StateCon
                 const auto ground_action = make_view(ground_action_index, grounder_context.destination);
 
                 effect_families.clear();
-                if (is_applicable(ground_action, state_context, effect_families))
-                    out_successors.emplace_back(ground_action, apply_action(state_context, ground_action));
+                if (is_applicable(ground_action, state_context, effect_families))  // TODO: only need to check effect applicability
+                    out_nodes.emplace_back(ground_action, apply_action(state_context, ground_action));
             }
         }
     }
@@ -355,30 +353,24 @@ StateIndex LiftedTask::register_state(const UnpackedState<LiftedTask>& state)
 
 void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_state)
 {
-    auto& fluent_atoms = unpacked_state.template get_atoms<FluentTag>();
-    auto& derived_atoms = unpacked_state.template get_atoms<DerivedTag>();
-
-    insert_unextended_state(fluent_atoms, *m_overlay_repository, m_axiom_context);
+    insert_unextended_state(unpacked_state, *m_overlay_repository, m_axiom_context);
 
     solve_bottom_up(m_axiom_context);
 
-    read_derived_atoms_from_program_context(m_axiom_program, derived_atoms, *m_overlay_repository, m_axiom_context);
+    read_derived_atoms_from_program_context(m_axiom_program, unpacked_state, *m_overlay_repository, m_axiom_context);
 }
 
 Node<LiftedTask> LiftedTask::get_initial_node()
 {
     auto unpacked_state_ptr = m_unpacked_state_pool.get_or_allocate();
     auto& unpacked_state = *unpacked_state_ptr;
-    unpacked_state.clear();
-
-    auto& fluent_atoms = unpacked_state.template get_atoms<FluentTag>();
-    auto& numeric_variables = unpacked_state.get_numeric_variables();
+    unpacked_state.clear_unextended_part();
 
     for (const auto atom : m_task.get_atoms<FluentTag>())
-        set(atom.get_index().get_value(), fluent_atoms);
+        unpacked_state.set(m_fdr_context.get_fact(atom.get_index()));
 
     for (const auto fterm_value : m_task.get_fterm_values<FluentTag>())
-        set(fterm_value.get_fterm().get_index().get_value(), fterm_value.get_value(), numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
+        unpacked_state.set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
 
     compute_extended_state(unpacked_state);
 
@@ -404,15 +396,11 @@ void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node, std::
 {
     out_nodes.clear();
 
-    const auto state = node.get_state();
-    const auto& fluent_atoms = state.get_atoms<FluentTag>();
-    const auto& derived_atoms = state.get_atoms<DerivedTag>();
-    const auto& numeric_variables = state.get_numeric_variables<FluentTag>();
-    const auto state_context = StateContext<LiftedTask>(*this, state.get_unpacked_state(), node.get_metric());
-
-    insert_extended_state(fluent_atoms, derived_atoms, numeric_variables, *m_overlay_repository, m_action_context);
+    insert_extended_state(node.get_state().get_unpacked_state(), *m_overlay_repository, m_action_context);
 
     solve_bottom_up(m_action_context);
+
+    const auto state_context = StateContext<LiftedTask>(*this, node.get_state().get_unpacked_state(), node.get_metric());
 
     read_solution_and_instantiate_labeled_successor_nodes(state_context,
                                                           *m_overlay_repository,

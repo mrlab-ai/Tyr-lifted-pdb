@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_TASK_HPP_
 #define TYR_PLANNING_GROUND_TASK_HPP_
 
+#include "tyr/common/common.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
@@ -31,6 +32,8 @@
 #include "tyr/planning/ground_task/packed_state.hpp"
 #include "tyr/planning/ground_task/state.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
+
+#include <valla/valla.hpp>
 
 namespace tyr::planning
 {
@@ -107,11 +110,16 @@ private:
     /**
      * States
      */
-    boost::dynamic_bitset<> m_static_atoms_bitset;    ///< TODO: initialize
-    std::vector<float_t> m_static_numeric_variables;  ///< TODO: initialize
+    valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> m_uint_nodes;
+    valla::IndexedHashSet<float_t, uint_t> m_float_nodes;
+    IndexedHashSet<PackedState<GroundTask>, StateIndex> m_packed_states;
+    SharedObjectPool<UnpackedState<GroundTask>> m_unpacked_state_pool;
+    boost::dynamic_bitset<> m_static_atoms_bitset;
+    std::vector<float_t> m_static_numeric_variables;
 
     IndexList<formalism::GroundAction> m_applicable_actions;
     IndexList<formalism::GroundAxiom> m_applicable_axioms;
+    formalism::EffectFamilyList m_effect_families;
 };
 
 }
