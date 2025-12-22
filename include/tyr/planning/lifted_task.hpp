@@ -56,14 +56,11 @@ public:
 
     void compute_extended_state(UnpackedState<LiftedTask>& unpacked_state);
 
-    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<LiftedTask>>>
-    get_labeled_successor_nodes(const Node<LiftedTask>& node);
+    std::vector<LabeledNode<LiftedTask>> get_labeled_successor_nodes(const Node<LiftedTask>& node);
 
     Node<LiftedTask> get_initial_node();
 
-    void get_labeled_successor_nodes(
-        const Node<LiftedTask>& node,
-        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<LiftedTask>>>& out_nodes);
+    void get_labeled_successor_nodes(const Node<LiftedTask>& node, std::vector<LabeledNode<LiftedTask>>& out_nodes);
 
     GroundTaskPtr get_ground_task();
 

@@ -50,7 +50,7 @@ concept StateConcept = requires(T& a,
     { b.test(static_atom) } -> std::same_as<bool>;
     { b.test(derived_atom) } -> std::same_as<bool>;
     { a.get_task() } -> std::same_as<Task&>;
-    { b.get_task() } -> std::same_as<Task&>;
+    { b.get_task() } -> std::same_as<const Task&>;
 };
 
 }

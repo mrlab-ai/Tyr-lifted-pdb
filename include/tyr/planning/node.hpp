@@ -27,6 +27,7 @@
 #include "tyr/planning/state_index.hpp"
 
 #include <concepts>
+#include <ranges>
 
 namespace tyr::planning
 {
@@ -39,8 +40,8 @@ class Node
 template<typename Task>
 struct LabeledNode
 {
-    Node<Task> node;
     View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> label;
+    Node<Task> node;
 };
 
 template<typename T, typename Task>
@@ -48,9 +49,10 @@ concept NodeConcept = requires(T& a, const T& b) {
     { b.get_state() } -> std::same_as<State<Task>>;
     { a.get_task() } -> std::same_as<Task&>;
     { b.get_task() } -> std::same_as<const Task&>;
-    { b.get_state_metric() } -> std::same_as<float_t>;
-    { b.get_state_index() } -> std::same_as<StateIndex>;
-    { a.get_labeled_successor_nodes() };  ///< TODO: returns a std::ranges::forward_range<LabeledNode>
+    { b.get_metric() } -> std::same_as<float_t>;
+    { b.get_index() } -> std::same_as<StateIndex>;
+    { a.get_labeled_successor_nodes() } -> std::ranges::forward_range;
+    requires std::same_as<std::ranges::range_reference_t<decltype(a.get_labeled_successor_nodes())>, LabeledNode<Task>&>;
 };
 }
 

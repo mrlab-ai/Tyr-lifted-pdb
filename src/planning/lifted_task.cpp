@@ -157,14 +157,13 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
     }
 }
 
-static void read_solution_and_instantiate_labeled_successor_nodes(
-    const StateContext<LiftedTask>& state_context,
-    OverlayRepository<Repository>& task_repository,
-    ProgramExecutionContext& action_context,
-    BinaryFDRContext<OverlayRepository<Repository>>& fdr_context,
-    const ApplicableActionProgram& action_program,
-    const std::vector<analysis::DomainListListList>& parameter_domains_per_cond_effect_per_action,
-    std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<LiftedTask>>>& out_successors)
+static void read_solution_and_instantiate_labeled_successor_nodes(const StateContext<LiftedTask>& state_context,
+                                                                  OverlayRepository<Repository>& task_repository,
+                                                                  ProgramExecutionContext& action_context,
+                                                                  BinaryFDRContext<OverlayRepository<Repository>>& fdr_context,
+                                                                  const ApplicableActionProgram& action_program,
+                                                                  const std::vector<analysis::DomainListListList>& parameter_domains_per_cond_effect_per_action,
+                                                                  std::vector<LabeledNode<LiftedTask>>& out_successors)
 {
     out_successors.clear();
 
@@ -392,18 +391,16 @@ Node<LiftedTask> LiftedTask::get_initial_node()
     return Node<LiftedTask>(state_index, state_metric, *this);
 }
 
-std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<LiftedTask>>>
-LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node)
+std::vector<LabeledNode<LiftedTask>> LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node)
 {
-    auto result = std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<LiftedTask>>> {};
+    auto result = std::vector<LabeledNode<LiftedTask>> {};
 
     get_labeled_successor_nodes(node, result);
 
     return result;
 }
 
-void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node,
-                                             std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<LiftedTask>>>& out_nodes)
+void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node, std::vector<LabeledNode<LiftedTask>>& out_nodes)
 {
     out_nodes.clear();
 
@@ -411,7 +408,7 @@ void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node,
     const auto& fluent_atoms = state.get_atoms<FluentTag>();
     const auto& derived_atoms = state.get_atoms<DerivedTag>();
     const auto& numeric_variables = state.get_numeric_variables<FluentTag>();
-    const auto state_context = StateContext<LiftedTask>(*this, state.get_unpacked_state(), node.get_state_metric());
+    const auto state_context = StateContext<LiftedTask>(*this, state.get_unpacked_state(), node.get_metric());
 
     insert_extended_state(fluent_atoms, derived_atoms, numeric_variables, *m_overlay_repository, m_action_context);
 

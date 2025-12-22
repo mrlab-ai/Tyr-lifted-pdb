@@ -55,14 +55,12 @@ public:
     State<GroundTask> get_state() const;
     GroundTask& get_task() noexcept { return *m_task; }
     const GroundTask& get_task() const noexcept { return *m_task; }
-    float_t get_state_metric() const noexcept { return m_state_metric; }
-    StateIndex get_state_index() const noexcept { return m_state_index; }
+    float_t get_metric() const noexcept { return m_state_metric; }
+    StateIndex get_index() const noexcept { return m_state_index; }
 
-    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>
-    get_labeled_successor_nodes();
+    std::vector<LabeledNode<GroundTask>> get_labeled_successor_nodes();
 
-    void get_labeled_successor_nodes(
-        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>& out_nodes);
+    void get_labeled_successor_nodes(std::vector<LabeledNode<GroundTask>>& out_nodes);
 
 private:
     GroundTask* m_task;

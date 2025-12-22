@@ -15,23 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted_task/node.hpp"
+#include "tyr/planning/ground_task/node.hpp"
 
-#include "tyr/planning/lifted_task/state.hpp"
+#include "tyr/planning/ground_task/state.hpp"
 //
 #include "tyr/common/config.hpp"
-#include "tyr/planning/lifted_task.hpp"
+#include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/state_index.hpp"
 
 namespace tyr::planning
 {
 
-State<LiftedTask> Node<LiftedTask>::get_state() const { return m_task->get_state(m_state_index); }
+State<GroundTask> Node<GroundTask>::get_state() const { return m_task->get_state(m_state_index); }
 
-std::vector<LabeledNode<LiftedTask>> Node<LiftedTask>::get_labeled_successor_nodes() { return m_task->get_labeled_successor_nodes(*this); }
+std::vector<LabeledNode<GroundTask>> Node<GroundTask>::get_labeled_successor_nodes() { return m_task->get_labeled_successor_nodes(*this); }
 
-void Node<LiftedTask>::get_labeled_successor_nodes(std::vector<LabeledNode<LiftedTask>>& out_nodes) { m_task->get_labeled_successor_nodes(*this, out_nodes); }
+void Node<GroundTask>::get_labeled_successor_nodes(std::vector<LabeledNode<GroundTask>>& out_nodes) { m_task->get_labeled_successor_nodes(*this, out_nodes); }
 
-static_assert(NodeConcept<Node<LiftedTask>, LiftedTask>);
+static_assert(NodeConcept<Node<GroundTask>, GroundTask>);
 
 }

@@ -289,21 +289,19 @@ Node<GroundTask> get_initial_node() {}
 
 void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state) {}
 
-std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>
-GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node)
+std::vector<LabeledNode<GroundTask>> GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node)
 {
-    auto result = std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>> {};
+    auto result = std::vector<LabeledNode<GroundTask>> {};
 
     get_labeled_successor_nodes(node, result);
 
     return result;
 }
 
-void GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node,
-                                             std::vector<std::pair<View<Index<GroundAction>, OverlayRepository<Repository>>, Node<GroundTask>>>& out_nodes)
+void GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node, std::vector<LabeledNode<GroundTask>>& out_nodes)
 {
     const auto state = node.get_state();
-    const auto state_context = StateContext<GroundTask>(*this, state.get_unpacked_state(), node.get_state_metric());
+    const auto state_context = StateContext<GroundTask>(*this, state.get_unpacked_state(), node.get_metric());
 
     m_action_match_tree->generate(state_context, m_applicable_actions);
 }

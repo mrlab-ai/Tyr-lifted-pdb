@@ -55,22 +55,18 @@ public:
     State<LiftedTask> get_state() const;
     LiftedTask& get_task() noexcept { return *m_task; }
     const LiftedTask& get_task() const noexcept { return *m_task; }
-    float_t get_state_metric() const noexcept { return m_state_metric; }
-    StateIndex get_state_index() const noexcept { return m_state_index; }
+    float_t get_metric() const noexcept { return m_state_metric; }
+    StateIndex get_index() const noexcept { return m_state_index; }
 
-    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<LiftedTask>>>
-    get_labeled_successor_nodes();
+    std::vector<LabeledNode<LiftedTask>> get_labeled_successor_nodes();
 
-    void get_labeled_successor_nodes(
-        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<LiftedTask>>>& out_nodes);
+    void get_labeled_successor_nodes(std::vector<LabeledNode<LiftedTask>>& out_nodes);
 
 private:
     LiftedTask* m_task;
     float_t m_state_metric;
     StateIndex m_state_index;
 };
-
-// static_assert(NodeConcept<Node<LiftedTask>, LiftedTask>);
 
 }
 

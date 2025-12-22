@@ -56,16 +56,17 @@ public:
                                               IndexList<formalism::GroundAction> actions,
                                               IndexList<formalism::GroundAxiom> axioms);
 
+    State<GroundTask> get_state(StateIndex state_index);
+
+    StateIndex register_state(const UnpackedState<GroundTask>& state);
+
     void compute_extended_state(UnpackedState<GroundTask>& unpacked_state);
 
     Node<GroundTask> get_initial_node();
 
-    std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>
-    get_labeled_successor_nodes(const Node<GroundTask>& node);
+    std::vector<LabeledNode<GroundTask>> get_labeled_successor_nodes(const Node<GroundTask>& node);
 
-    void get_labeled_successor_nodes(
-        const Node<GroundTask>& node,
-        std::vector<std::pair<View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>>, Node<GroundTask>>>& out_nodes);
+    void get_labeled_successor_nodes(const Node<GroundTask>& node, std::vector<LabeledNode<GroundTask>>& out_nodes);
 
     template<formalism::FactKind T>
     size_t get_num_atoms() const noexcept;

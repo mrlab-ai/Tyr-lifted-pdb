@@ -64,7 +64,7 @@ std::ostream& print(std::ostream& os, const planning::Node<planning::LiftedTask>
     {
         IndentScope scope(os);
 
-        os << print_indent << "metric value = " << el.get_state_metric() << "\n";
+        os << print_indent << "metric value = " << el.get_metric() << "\n";
 
         os << print_indent << "state = " << el.get_state() << "\n";
     }
