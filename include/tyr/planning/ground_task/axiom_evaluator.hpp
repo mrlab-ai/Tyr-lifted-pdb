@@ -15,45 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_STATE_HPP_
-#define TYR_PLANNING_GROUND_TASK_STATE_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_AXIOM_EVALUATOR_HPP_
+#define TYR_PLANNING_GROUND_TASK_AXIOM_EVALUATOR_HPP_
 
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
-#include "tyr/planning/state.hpp"
 
 namespace tyr::planning
 {
-template<>
-class State<GroundTask>
-{
-public:
-    using TaskType = GroundTask;
-
-    /**
-     * StateConcept
-     */
-
-    const UnpackedState<GroundTask>& get_unpacked_state() const noexcept { return *m_unpacked; }
-
-    /**
-     * For GroundTask
-     */
-
-    template<formalism::FactKind T>
-    const boost::dynamic_bitset<>& get_atoms() const noexcept;
-
-    const std::vector<formalism::FDRValue>& get_fluent_facts() const noexcept;
-
-    template<formalism::FactKind T>
-    const std::vector<float_t>& get_numeric_variables() const noexcept;
-
-private:
-    SharedObjectPoolPtr<UnpackedState<GroundTask>> m_unpacked;
-    GroundTask* m_task;
-};
-
-// static_assert(StateConcept<State<GroundTask>>);
+extern void evaluate_axioms_bottomup(UnpackedState<GroundTask>& state, const GroundTask& task, IndexList<formalism::GroundAxiom>& applicable_axioms);
 }
 
 #endif

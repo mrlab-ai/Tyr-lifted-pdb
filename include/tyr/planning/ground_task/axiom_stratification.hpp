@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_STRATIFICATION_HPP_
-#define TYR_PLANNING_GROUND_TASK_STRATIFICATION_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_AXIOM_STRATIFICATION_HPP_
+#define TYR_PLANNING_GROUND_TASK_AXIOM_STRATIFICATION_HPP_
 
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/types.hpp"

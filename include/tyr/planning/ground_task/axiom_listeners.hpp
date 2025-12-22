@@ -30,7 +30,7 @@
 #include "tyr/common/hash.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/planning/ground_task/stratification.hpp"
+#include "tyr/planning/ground_task/axiom_stratification.hpp"
 
 namespace tyr::planning
 {

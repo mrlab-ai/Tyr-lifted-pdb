@@ -92,6 +92,8 @@ public:
         return m_static_numeric_variables[index.get_value()];
     }
 
+    const std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>>& get_axiom_match_tree_strata() const noexcept { return m_axiom_match_tree_strata; }
+
 private:
     DomainPtr m_domain;
 
@@ -112,6 +114,7 @@ private:
     std::vector<float_t> m_static_numeric_variables;  ///< TODO: initialize
 
     IndexList<formalism::GroundAction> m_applicable_actions;
+    IndexList<formalism::GroundAxiom> m_applicable_axioms;
 };
 
 }

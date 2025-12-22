@@ -17,11 +17,14 @@
 
 #include "tyr/planning/ground_task.hpp"
 
+#include "tyr/common/dynamic_bitset.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/merge_planning.hpp"
-#include "tyr/planning/ground_task/stratification.hpp"
+#include "tyr/planning/ground_task/axiom_evaluator.hpp"
+#include "tyr/planning/ground_task/axiom_stratification.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 
 using namespace tyr::formalism;
@@ -290,14 +293,23 @@ GroundTask::GroundTask(DomainPtr domain,
     m_axiom_match_tree_strata(std::move(axiom_match_tree_strata)),
     m_axiom_listener_strata(std::move(axiom_listener_strata)),
     m_axiom_scheduler_strata(std::move(axiom_scheduler_strata)),
-    m_applicable_actions()
+    m_static_atoms_bitset(),
+    m_static_numeric_variables(),
+    m_applicable_actions(),
+    m_applicable_axioms()
 {
     // std::cout << m_fdr_task << std::endl;
+
+    for (const auto atom : m_fdr_task.template get_atoms<formalism::StaticTag>())
+        set(atom.get_index().get_value(), m_static_atoms_bitset);
+
+    for (const auto fterm_value : m_fdr_task.template get_fterm_values<formalism::StaticTag>())
+        set(fterm_value.get_fterm().get_index().get_value(), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
 Node<GroundTask> get_initial_node() {}
 
-void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state) {}
+void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state) { evaluate_axioms_bottomup(unpacked_state, *this, m_applicable_axioms); }
 
 std::vector<LabeledNode<GroundTask>> GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node)
 {

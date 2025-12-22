@@ -25,7 +25,7 @@
 #include "tyr/formalism/planning/ground_axiom_view.hpp"
 //
 #include "tyr/planning/ground_task/axiom_listeners.hpp"
-#include "tyr/planning/ground_task/stratification.hpp"
+#include "tyr/planning/ground_task/axiom_stratification.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 
