@@ -22,6 +22,7 @@
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/formalism/ground_function_term_index.hpp"
 #include "tyr/formalism/ground_function_term_value_index.hpp"
 #include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/axiom_index.hpp"
@@ -49,6 +50,9 @@ struct Data<formalism::FDRTask>
     IndexList<formalism::GroundAtom<formalism::StaticTag>> static_atoms;
     IndexList<formalism::GroundAtom<formalism::FluentTag>> fluent_atoms;
     IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms;
+    IndexList<formalism::GroundFunctionTerm<formalism::StaticTag>> static_fterms;
+    IndexList<formalism::GroundFunctionTerm<formalism::FluentTag>> fluent_fterms;
+    ::cista::optional<Index<formalism::GroundFunctionTerm<formalism::AuxiliaryTag>>> auxiliary_fterm;
     IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>> static_fterm_values;
     IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values;
     ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value;
@@ -71,6 +75,9 @@ struct Data<formalism::FDRTask>
          IndexList<formalism::GroundAtom<formalism::StaticTag>> static_atoms,
          IndexList<formalism::GroundAtom<formalism::FluentTag>> fluent_atoms,
          IndexList<formalism::GroundAtom<formalism::DerivedTag>> derived_atoms,
+         IndexList<formalism::GroundFunctionTerm<formalism::StaticTag>> static_fterms,
+         IndexList<formalism::GroundFunctionTerm<formalism::FluentTag>> fluent_fterms,
+         ::cista::optional<Index<formalism::GroundFunctionTerm<formalism::AuxiliaryTag>>> auxiliary_fterm,
          IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>> static_fterm_values,
          IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values,
          ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value,
@@ -89,6 +96,9 @@ struct Data<formalism::FDRTask>
         static_atoms(std::move(static_atoms)),
         fluent_atoms(std::move(fluent_atoms)),
         derived_atoms(std::move(derived_atoms)),
+        static_fterms(std::move(static_fterms)),
+        fluent_fterms(std::move(fluent_fterms)),
+        auxiliary_fterm(auxiliary_fterm),
         static_fterm_values(std::move(static_fterm_values)),
         fluent_fterm_values(std::move(fluent_fterm_values)),
         auxiliary_fterm_value(auxiliary_fterm_value),
@@ -116,6 +126,9 @@ struct Data<formalism::FDRTask>
         tyr::clear(static_atoms);
         tyr::clear(fluent_atoms);
         tyr::clear(derived_atoms);
+        tyr::clear(static_fterms);
+        tyr::clear(fluent_fterms);
+        tyr::clear(auxiliary_fterm);
         tyr::clear(static_fterm_values);
         tyr::clear(fluent_fterm_values);
         tyr::clear(auxiliary_fterm_value);
@@ -137,6 +150,17 @@ struct Data<formalism::FDRTask>
             return fluent_atoms;
         else if constexpr (std::same_as<T, formalism::DerivedTag>)
             return derived_atoms;
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
+    }
+
+    template<formalism::FactKind T>
+    const auto& get_fterms() const
+    {
+        if constexpr (std::same_as<T, formalism::StaticTag>)
+            return static_fterms;
+        else if constexpr (std::same_as<T, formalism::FluentTag>)
+            return fluent_fterms;
         else
             static_assert(dependent_false<T>::value, "Missing case");
     }
@@ -164,6 +188,9 @@ struct Data<formalism::FDRTask>
                         static_atoms,
                         fluent_atoms,
                         derived_atoms,
+                        static_fterms,
+                        fluent_fterms,
+                        auxiliary_fterm,
                         static_fterm_values,
                         fluent_fterm_values,
                         auxiliary_fterm_value,
@@ -184,6 +211,9 @@ struct Data<formalism::FDRTask>
                         static_atoms,
                         fluent_atoms,
                         derived_atoms,
+                        static_fterms,
+                        fluent_fterms,
+                        auxiliary_fterm,
                         static_fterm_values,
                         fluent_fterm_values,
                         auxiliary_fterm_value,

@@ -166,6 +166,7 @@ auto create_mutex_groups(View<IndexList<GroundAtom<FluentTag>>, OverlayRepositor
 auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
                  View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> fluent_atoms,
                  View<IndexList<GroundAtom<DerivedTag>>, OverlayRepository<Repository>> derived_atoms,
+                 View<IndexList<GroundFunctionTerm<FluentTag>>, OverlayRepository<Repository>> fluent_fterms,
                  View<IndexList<GroundAction>, OverlayRepository<Repository>> actions,
                  View<IndexList<GroundAxiom>, OverlayRepository<Repository>> axioms,
                  OverlayRepository<Repository>& repository)
@@ -191,6 +192,9 @@ auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
         fdr_task.fluent_atoms.push_back(merge(atom, merge_context).first);
     for (const auto atom : derived_atoms)
         fdr_task.derived_atoms.push_back(merge(atom, merge_context).first);
+    for (const auto fterm : fluent_fterms)
+        fdr_task.fluent_fterms.push_back(merge(fterm, merge_context).first);
+
     for (const auto fterm_value : task.get_fterm_values<StaticTag>())
         fdr_task.static_fterm_values.push_back(merge(fterm_value, merge_context).first);
     for (const auto fterm_value : task.get_fterm_values<FluentTag>())
@@ -234,6 +238,7 @@ std::shared_ptr<GroundTask> GroundTask::create(DomainPtr domain,
                                                View<Index<Task>, OverlayRepository<Repository>> task,
                                                IndexList<GroundAtom<FluentTag>> fluent_atoms,
                                                IndexList<GroundAtom<DerivedTag>> derived_atoms,
+                                               IndexList<GroundFunctionTerm<FluentTag>> fluent_fterms,
                                                IndexList<GroundAction> actions,
                                                IndexList<GroundAxiom> axioms)
 {
@@ -243,6 +248,7 @@ std::shared_ptr<GroundTask> GroundTask::create(DomainPtr domain,
     const auto [fdr_task, fdr_context] = create_task(task,
                                                      make_view(fluent_atoms, *task_overlay_repository),
                                                      make_view(derived_atoms, *task_overlay_repository),
+                                                     make_view(fluent_fterms, *task_overlay_repository),
                                                      make_view(actions, *task_overlay_repository),
                                                      make_view(axioms, *task_overlay_repository),
                                                      *overlay_repository);

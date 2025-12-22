@@ -24,6 +24,7 @@
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/ground_function_term_value_view.hpp"
+#include "tyr/formalism/ground_function_term_view.hpp"
 #include "tyr/formalism/object_view.hpp"
 #include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/axiom_view.hpp"
@@ -65,6 +66,12 @@ public:
     {
         return make_view(get_data().template get_atoms<T>(), *m_context);
     }
+    template<formalism::FactKind T>
+    auto get_fterms() const noexcept
+    {
+        return make_view(get_data().template get_fterms<T>(), *m_context);
+    }
+    auto get_auxiliary_fterm() const noexcept { return makee_view(get_data().auxiliary_fterm, *m_context); }
     template<formalism::FactKind T>
     auto get_fterm_values() const noexcept
     {

@@ -463,6 +463,8 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto fluent_atoms_set = UnorderedSet<Index<GroundAtom<FluentTag>>>();
     auto derived_atoms_set = UnorderedSet<Index<GroundAtom<DerivedTag>>>();
+    auto fluent_fterms_set = UnorderedSet<Index<GroundFunctionTerm<FluentTag>>>();
+    // TODO: collect fluent function terms
 
     for (const auto atom : m_task.get_atoms<FluentTag>())
         fluent_atoms_set.insert(atom.get_index());
@@ -564,20 +566,23 @@ GroundTaskPtr LiftedTask::get_ground_task()
 
     auto fluent_atoms = IndexList<GroundAtom<FluentTag>>(fluent_atoms_set.begin(), fluent_atoms_set.end());
     auto derived_atoms = IndexList<GroundAtom<DerivedTag>>(derived_atoms_set.begin(), derived_atoms_set.end());
+    auto fluent_fterms = IndexList<GroundFunctionTerm<FluentTag>>(fluent_fterms_set.begin(), fluent_fterms_set.end());
     auto ground_actions = IndexList<GroundAction>(ground_actions_set.begin(), ground_actions_set.end());
     auto ground_axioms = IndexList<GroundAxiom>(ground_axioms_set.begin(), ground_axioms_set.end());
 
     canonicalize(fluent_atoms);
     canonicalize(derived_atoms);
+    canonicalize(fluent_fterms);
     canonicalize(ground_actions);
     canonicalize(ground_axioms);
 
     std::cout << "Num fluent atoms: " << fluent_atoms.size() << std::endl;
     std::cout << "Num derived atoms: " << derived_atoms.size() << std::endl;
+    std::cout << "Num fluent fterms: " << fluent_fterms.size() << std::endl;
     std::cout << "Num ground actions: " << ground_actions.size() << std::endl;
     std::cout << "Num ground axioms: " << ground_axioms.size() << std::endl;
 
-    return GroundTask::create(m_domain, m_repository, m_overlay_repository, m_task, fluent_atoms, derived_atoms, ground_actions, ground_axioms);
+    return GroundTask::create(m_domain, m_repository, m_overlay_repository, m_task, fluent_atoms, derived_atoms, fluent_fterms, ground_actions, ground_axioms);
 }
 
 const ApplicableActionProgram& LiftedTask::get_action_program() const { return m_action_program; }
