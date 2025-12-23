@@ -20,8 +20,8 @@
 
 #include "tyr/common/config.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/lifted_task/state.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/state_index.hpp"
 
 /**
  * Forward declarations
@@ -49,23 +49,21 @@ class Node<LiftedTask>
 public:
     using TaskType = LiftedTask;
 
-    Node() noexcept : m_task(nullptr), m_state_metric(), m_state_index(StateIndex::max()) {}
-    Node(StateIndex state_index, float_t state_metric, LiftedTask& task) noexcept : m_task(&task), m_state_metric(state_metric), m_state_index(state_index) {}
+    Node(State<LiftedTask> state, float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
 
-    State<LiftedTask> get_state() const;
-    LiftedTask& get_task() noexcept { return *m_task; }
-    const LiftedTask& get_task() const noexcept { return *m_task; }
-    float_t get_metric() const noexcept { return m_state_metric; }
-    StateIndex get_index() const noexcept { return m_state_index; }
+    const State<LiftedTask>& get_state() const noexcept { return m_state; }
+    LiftedTask& get_task() noexcept { return m_state.get_task(); }
+    const LiftedTask& get_task() const noexcept { return m_state.get_task(); }
+    float_t get_metric() const noexcept { return m_metric; }
+    StateIndex get_index() const noexcept { return m_state.get_index(); }
 
     std::vector<LabeledNode<LiftedTask>> get_labeled_successor_nodes();
 
     void get_labeled_successor_nodes(std::vector<LabeledNode<LiftedTask>>& out_nodes);
 
 private:
-    LiftedTask* m_task;
-    float_t m_state_metric;
-    StateIndex m_state_index;
+    State<LiftedTask> m_state;
+    float_t m_metric;
 };
 
 }

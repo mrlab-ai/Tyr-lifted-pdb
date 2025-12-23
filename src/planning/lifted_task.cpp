@@ -340,7 +340,7 @@ State<LiftedTask> LiftedTask::get_state(StateIndex state_index)
     return State<LiftedTask>(*this, std::move(unpacked_state));
 }
 
-StateIndex LiftedTask::register_state(const UnpackedState<LiftedTask>& state)
+void LiftedTask::register_state(UnpackedState<LiftedTask>& state)
 {
     thread_local auto buffer = std::vector<uint_t> {};
 
@@ -348,7 +348,7 @@ StateIndex LiftedTask::register_state(const UnpackedState<LiftedTask>& state)
     auto derived_atoms = create_atoms_slot(state.template get_atoms<formalism::DerivedTag>(), buffer, m_uint_nodes);
     auto numeric_variables = create_numeric_variables_slot(state.get_numeric_variables(), buffer, m_uint_nodes, m_float_nodes);
 
-    return m_packed_states.insert(PackedState<LiftedTask>(StateIndex(m_packed_states.size()), fluent_atoms, derived_atoms, numeric_variables));
+    state.set(m_packed_states.insert(PackedState<LiftedTask>(StateIndex(m_packed_states.size()), fluent_atoms, derived_atoms, numeric_variables)));
 }
 
 void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_state)
@@ -374,13 +374,13 @@ Node<LiftedTask> LiftedTask::get_initial_node()
 
     compute_extended_state(unpacked_state);
 
-    const auto state_index = register_state(unpacked_state);
+    register_state(unpacked_state);
 
     const auto state_context = StateContext<LiftedTask>(*this, unpacked_state, 0);
 
     const auto state_metric = evaluate_metric(get_task().get_metric(), get_task().get_auxiliary_fterm_value(), state_context);
 
-    return Node<LiftedTask>(state_index, state_metric, *this);
+    return Node<LiftedTask>(State<LiftedTask>(*this, unpacked_state_ptr), state_metric);
 }
 
 std::vector<LabeledNode<LiftedTask>> LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node)
@@ -396,11 +396,13 @@ void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node, std::
 {
     out_nodes.clear();
 
-    insert_extended_state(node.get_state().get_unpacked_state(), *m_overlay_repository, m_action_context);
+    const auto state = node.get_state();
+
+    insert_extended_state(state.get_unpacked_state(), *m_overlay_repository, m_action_context);
 
     solve_bottom_up(m_action_context);
 
-    const auto state_context = StateContext<LiftedTask>(*this, node.get_state().get_unpacked_state(), node.get_metric());
+    const auto state_context = StateContext<LiftedTask>(*this, state.get_unpacked_state(), node.get_metric());
 
     read_solution_and_instantiate_labeled_successor_nodes(state_context,
                                                           *m_overlay_repository,

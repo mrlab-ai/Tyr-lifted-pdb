@@ -348,18 +348,18 @@ Node<GroundTask> GroundTask::get_initial_node()
 
     compute_extended_state(unpacked_state);
 
-    const auto state_index = register_state(unpacked_state);
+    register_state(unpacked_state);
 
     const auto state_context = StateContext<GroundTask>(*this, unpacked_state, 0);
 
     const auto state_metric = evaluate_metric(m_fdr_task.get_metric(), m_fdr_task.get_auxiliary_fterm_value(), state_context);
 
-    return Node<GroundTask>(state_index, state_metric, *this);
+    return Node<GroundTask>(State<GroundTask>(*this, unpacked_state_ptr), state_metric);
 }
 
 State<GroundTask> GroundTask::get_state(StateIndex state_index) {}
 
-StateIndex GroundTask::register_state(const UnpackedState<GroundTask>& state) {}
+void GroundTask::register_state(UnpackedState<GroundTask>& state) {}
 
 void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state)
 {
@@ -381,6 +381,7 @@ void GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node, std::
     out_nodes.clear();
 
     const auto state = node.get_state();
+
     const auto state_context = StateContext<GroundTask>(*this, state.get_unpacked_state(), node.get_metric());
 
     m_action_match_tree->generate(state_context, m_applicable_actions);

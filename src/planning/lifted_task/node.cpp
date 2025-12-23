@@ -26,11 +26,12 @@
 namespace tyr::planning
 {
 
-State<LiftedTask> Node<LiftedTask>::get_state() const { return m_task->get_state(m_state_index); }
+std::vector<LabeledNode<LiftedTask>> Node<LiftedTask>::get_labeled_successor_nodes() { return get_task().get_labeled_successor_nodes(*this); }
 
-std::vector<LabeledNode<LiftedTask>> Node<LiftedTask>::get_labeled_successor_nodes() { return m_task->get_labeled_successor_nodes(*this); }
-
-void Node<LiftedTask>::get_labeled_successor_nodes(std::vector<LabeledNode<LiftedTask>>& out_nodes) { m_task->get_labeled_successor_nodes(*this, out_nodes); }
+void Node<LiftedTask>::get_labeled_successor_nodes(std::vector<LabeledNode<LiftedTask>>& out_nodes)
+{
+    get_task().get_labeled_successor_nodes(*this, out_nodes);
+}
 
 static_assert(NodeConcept<Node<LiftedTask>, LiftedTask>);
 

@@ -54,7 +54,7 @@ public:
 
     State<LiftedTask> get_state(StateIndex state_index);
 
-    StateIndex register_state(const UnpackedState<LiftedTask>& state);
+    void register_state(UnpackedState<LiftedTask>& state);
 
     void compute_extended_state(UnpackedState<LiftedTask>& unpacked_state);
 

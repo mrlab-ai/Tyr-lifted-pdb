@@ -20,8 +20,8 @@
 
 #include "tyr/common/config.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/ground_task/state.hpp"
 #include "tyr/planning/node.hpp"
-#include "tyr/planning/state_index.hpp"
 
 /**
  * Forward declarations
@@ -49,23 +49,21 @@ class Node<GroundTask>
 public:
     using TaskType = GroundTask;
 
-    Node() noexcept : m_task(nullptr), m_state_metric(), m_state_index(StateIndex::max()) {}
-    Node(StateIndex state_index, float_t state_metric, GroundTask& task) noexcept : m_task(&task), m_state_metric(state_metric), m_state_index(state_index) {}
+    Node(State<GroundTask> state, float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
 
-    State<GroundTask> get_state() const;
-    GroundTask& get_task() noexcept { return *m_task; }
-    const GroundTask& get_task() const noexcept { return *m_task; }
-    float_t get_metric() const noexcept { return m_state_metric; }
-    StateIndex get_index() const noexcept { return m_state_index; }
+    const State<GroundTask>& get_state() const noexcept { return m_state; }
+    GroundTask& get_task() noexcept { return m_state.get_task(); }
+    const GroundTask& get_task() const noexcept { return m_state.get_task(); }
+    float_t get_metric() const noexcept { return m_metric; }
+    StateIndex get_index() const noexcept { return m_state.get_index(); }
 
     std::vector<LabeledNode<GroundTask>> get_labeled_successor_nodes();
 
     void get_labeled_successor_nodes(std::vector<LabeledNode<GroundTask>>& out_nodes);
 
 private:
-    GroundTask* m_task;
-    float_t m_state_metric;
-    StateIndex m_state_index;
+    State<GroundTask> m_state;
+    float_t m_metric;
 };
 
 }

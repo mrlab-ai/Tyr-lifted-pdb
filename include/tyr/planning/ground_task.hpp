@@ -65,7 +65,7 @@ public:
 
     State<GroundTask> get_state(StateIndex state_index);
 
-    StateIndex register_state(const UnpackedState<GroundTask>& state);
+    void register_state(UnpackedState<GroundTask>& state);
 
     void compute_extended_state(UnpackedState<GroundTask>& unpacked_state);
 

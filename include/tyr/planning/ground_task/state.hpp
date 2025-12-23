@@ -33,6 +33,8 @@ class State<GroundTask>
 public:
     using TaskType = GroundTask;
 
+    State(GroundTask& task, SharedObjectPoolPtr<UnpackedState<GroundTask>> unpacked) noexcept;
+
     /**
      * StateConcept
      */
@@ -72,6 +74,12 @@ private:
 /**
  * Implemntations
  */
+
+inline State<GroundTask>::State(GroundTask& task, SharedObjectPoolPtr<UnpackedState<GroundTask>> unpacked) noexcept :
+    m_unpacked(std::move(unpacked)),
+    m_task(&task)
+{
+}
 
 inline StateIndex State<GroundTask>::get_index() const { return m_unpacked->get_index(); }
 

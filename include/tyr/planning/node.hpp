@@ -46,7 +46,7 @@ struct LabeledNode
 
 template<typename T, typename Task>
 concept NodeConcept = requires(T& a, const T& b) {
-    { b.get_state() } -> std::same_as<State<Task>>;
+    { b.get_state() } -> std::same_as<const State<Task>&>;
     { a.get_task() } -> std::same_as<Task&>;
     { b.get_task() } -> std::same_as<const Task&>;
     { b.get_metric() } -> std::same_as<float_t>;

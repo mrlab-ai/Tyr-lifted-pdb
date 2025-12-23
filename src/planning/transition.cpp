@@ -83,7 +83,7 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
 
     task.compute_extended_state(succ_unpacked_state);
 
-    const auto succ_state_index = task.register_state(succ_unpacked_state);
+    task.register_state(succ_unpacked_state);
 
     auto succ_state_context = StateContext { task, succ_unpacked_state, tmp_state_context.auxiliary_value };
     if (task.get_task().get_metric())
@@ -91,7 +91,7 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
     else
         ++succ_state_context.auxiliary_value;  // Assume unit cost if no metric is given
 
-    return Node<Task>(succ_state_index, succ_state_context.auxiliary_value, task);
+    return Node<Task>(State<Task>(task, succ_unpacked_state_ptr), succ_state_context.auxiliary_value);
 }
 
 template Node<LiftedTask> apply_action(const StateContext<LiftedTask>& state_context,
