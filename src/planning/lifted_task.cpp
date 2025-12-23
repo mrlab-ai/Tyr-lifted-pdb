@@ -18,6 +18,7 @@
 #include "tyr/planning/lifted_task.hpp"
 
 #include "metric.hpp"
+#include "task_utils.hpp"
 #include "transition.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
@@ -227,62 +228,6 @@ static std::vector<analysis::DomainListListList> compute_parameter_domains_per_c
     }
 
     return result;
-}
-
-inline void fill_atoms(valla::Slot<uint_t> slot,
-                       const valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& uint_nodes,
-                       std::vector<uint_t>& buffer,
-                       boost::dynamic_bitset<>& atoms)
-{
-    buffer.clear();
-
-    valla::read_sequence(slot, uint_nodes, std::back_inserter(buffer));
-
-    if (!buffer.empty())
-    {
-        assert(std::is_sorted(buffer.begin(), buffer.end()));
-        atoms.resize(buffer.back() + 1, false);
-        for (const auto& atom_index : buffer)
-            atoms.set(atom_index);
-    }
-}
-
-inline void fill_numeric_variables(valla::Slot<uint_t> slot,
-                                   const valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& uint_nodes,
-                                   const valla::IndexedHashSet<float_t, uint_t>& float_nodes,
-                                   std::vector<uint_t>& buffer,
-                                   std::vector<float_t>& numeric_variables)
-{
-    buffer.clear();
-
-    valla::read_sequence(slot, uint_nodes, std::back_inserter(buffer));
-
-    if (!buffer.empty())
-        valla::decode_from_unsigned_integrals(buffer, float_nodes, std::back_inserter(numeric_variables));
-}
-
-inline valla::Slot<uint_t>
-create_atoms_slot(const boost::dynamic_bitset<>& atoms, std::vector<uint_t>& buffer, valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& uint_nodes)
-{
-    buffer.clear();
-
-    const auto& bits = atoms;
-    for (auto i = bits.find_first(); i != boost::dynamic_bitset<>::npos; i = bits.find_next(i))
-        buffer.push_back(i);
-
-    return valla::insert_sequence(buffer, uint_nodes);
-}
-
-inline valla::Slot<uint_t> create_numeric_variables_slot(const std::vector<float_t>& numeric_variables,
-                                                         std::vector<uint_t>& buffer,
-                                                         valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& uint_nodes,
-                                                         valla::IndexedHashSet<float_t, uint_t>& float_nodes)
-{
-    buffer.clear();
-
-    valla::encode_as_unsigned_integrals(numeric_variables, float_nodes, std::back_inserter(buffer));
-
-    return valla::insert_sequence(buffer, uint_nodes);
 }
 
 LiftedTask::LiftedTask(DomainPtr domain,

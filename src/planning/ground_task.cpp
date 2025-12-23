@@ -18,6 +18,7 @@
 #include "tyr/planning/ground_task.hpp"
 
 #include "metric.hpp"
+#include "task_utils.hpp"
 #include "transition.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
@@ -311,8 +312,8 @@ GroundTask::GroundTask(DomainPtr domain,
     m_uint_nodes(),
     m_float_nodes(),
     m_packed_states(),
-    m_fluent_pool(m_fluent_layout.total_blocks),
-    m_derived_pool(m_derived_layout.total_blocks),
+    m_fluent_repository(m_fluent_layout.total_blocks),
+    m_derived_repository(m_derived_layout.total_blocks),
     m_fluent_buffer(m_fluent_layout.total_blocks),
     m_derived_buffer(m_derived_layout.total_blocks),
     m_unpacked_state_pool(),
@@ -323,6 +324,7 @@ GroundTask::GroundTask(DomainPtr domain,
     m_effect_families()
 {
     // std::cout << m_fdr_task << std::endl;
+    // std::cout << m_fluent_layout << std::endl;
 
     for (const auto atom : m_fdr_task.template get_atoms<formalism::StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);
@@ -335,7 +337,7 @@ Node<GroundTask> GroundTask::get_initial_node()
 {
     auto unpacked_state_ptr = m_unpacked_state_pool.get_or_allocate();
     auto& unpacked_state = *unpacked_state_ptr;
-    unpacked_state.clear_unextended_part();
+    unpacked_state.clear();
 
     unpacked_state.resize_fluent_facts(m_fdr_task.get_fluent_variables().size());
     unpacked_state.resize_derived_atoms(m_fdr_task.get_atoms<DerivedTag>().size());
@@ -357,9 +359,54 @@ Node<GroundTask> GroundTask::get_initial_node()
     return Node<GroundTask>(State<GroundTask>(*this, unpacked_state_ptr), state_metric);
 }
 
-State<GroundTask> GroundTask::get_state(StateIndex state_index) {}
+State<GroundTask> GroundTask::get_state(StateIndex state_index)
+{
+    const auto& packed_state = m_packed_states[state_index];
 
-void GroundTask::register_state(UnpackedState<GroundTask>& state) {}
+    auto unpacked_state = m_unpacked_state_pool.get_or_allocate();
+    unpacked_state->clear();
+
+    unpacked_state->resize_fluent_facts(m_fdr_task.get_fluent_variables().size());
+    unpacked_state->resize_derived_atoms(m_fdr_task.get_atoms<DerivedTag>().size());
+
+    unpacked_state->get_index() = state_index;
+    const auto fluent_ptr = m_fluent_repository[packed_state.get_facts<FluentTag>()];
+    auto& fluent_values = unpacked_state->get_fluent_values();
+    for (uint_t i = 0; i < m_fluent_layout.layouts.size(); ++i)
+        fluent_values[i] = FDRValue { uint_t(VariableReference(m_fluent_layout.layouts[i], fluent_ptr)) };
+
+    const auto derived_ptr = m_derived_repository[packed_state.get_facts<DerivedTag>()];
+    auto& derived_atoms = unpacked_state->get_derived_atoms();
+    for (uint_t i = 0; i < m_derived_layout.total_bits; ++i)
+        derived_atoms[i] = bool(BitReference(i, derived_ptr));
+
+    thread_local auto buffer = std::vector<uint_t> {};
+    fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, buffer, unpacked_state->get_numeric_variables());
+
+    return State<GroundTask>(*this, std::move(unpacked_state));
+}
+
+void GroundTask::register_state(UnpackedState<GroundTask>& state)
+{
+    assert(m_fluent_buffer.size() == m_fluent_layout.total_blocks);
+    assert(m_derived_buffer.size() == m_derived_layout.total_blocks);
+
+    std::fill(m_fluent_buffer.begin(), m_fluent_buffer.end(), uint_t(0));
+    for (uint_t i = 0; i < m_fluent_layout.layouts.size(); ++i)
+        VariableReference(m_fluent_layout.layouts[i], m_fluent_buffer.data()) = uint_t(state.get_fluent_values()[i]);
+    const auto fluent_facts_index = m_fluent_repository.insert(m_fluent_buffer);
+
+    std::fill(m_derived_buffer.begin(), m_derived_buffer.end(), uint_t(0));
+    for (uint_t i = 0; i < m_derived_layout.total_bits; ++i)
+        BitReference(i, m_derived_buffer.data()) = state.get_derived_atoms().test(i);
+    const auto derived_atoms_index = m_derived_repository.insert(m_derived_buffer);
+
+    thread_local auto buffer = std::vector<uint_t> {};
+    auto numeric_variables_slot = create_numeric_variables_slot(state.get_numeric_variables(), buffer, m_uint_nodes, m_float_nodes);
+
+    state.set(
+        m_packed_states.insert(PackedState<GroundTask>(StateIndex(m_packed_states.size()), fluent_facts_index, derived_atoms_index, numeric_variables_slot)));
+}
 
 void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state)
 {

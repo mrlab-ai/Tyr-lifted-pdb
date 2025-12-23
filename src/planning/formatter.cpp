@@ -56,7 +56,7 @@ std::ostream& print(std::ostream& os, const planning::LiftedTask& el)
 
 std::ostream& print(std::ostream& os, const planning::GroundTask& el)
 {
-    // fmt::print(os, "{}", to_string(el.get_task()));
+    fmt::print(os, "{}", to_string(el.get_task()));
     return os;
 }
 
@@ -170,7 +170,6 @@ std::ostream& print(std::ostream& os, const planning::State<planning::GroundTask
     for (uint_t i = 0; i < fluent_values.size(); ++i)
         if (fluent_values[i] != formalism::FDRValue::none())
             fluent_facts.push_back(Data<formalism::FDRFact<formalism::FluentTag>>(Index<formalism::FDRVariable<formalism::FluentTag>>(i), fluent_values[i]));
-
     auto derived_atoms = IndexList<formalism::GroundAtom<formalism::DerivedTag>> {};
     for (auto i = derived_atoms_bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = derived_atoms_bitset.find_next(i))
         derived_atoms.push_back(Index<formalism::GroundAtom<formalism::DerivedTag>>(i));

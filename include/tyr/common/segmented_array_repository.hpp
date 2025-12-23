@@ -68,12 +68,14 @@ public:
 
         uint_t idx(m_pool->size());
         auto* arr = m_pool->allocate();
-        std::memcpy(arr, value.data(), value.size());
+        std::memcpy(arr, value.data(), m_array_size * sizeof(T));
         m_set.emplace(idx);
         return idx;
     }
 
-    const T& operator[](uint_t idx) const noexcept { return (*m_pool)[idx]; }
+    T* operator[](uint_t idx) noexcept { return (*m_pool)[idx]; }
+
+    const T* operator[](uint_t idx) const noexcept { return (*m_pool)[idx]; }
 
     std::size_t size() const noexcept { return m_pool->size(); }
 

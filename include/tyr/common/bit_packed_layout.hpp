@@ -18,6 +18,9 @@
 #ifndef TYR_BIT_PACKED_LAYOUT_HPP_
 #define TYR_BIT_PACKED_LAYOUT_HPP_
 
+#include "tyr/common/formatter.hpp"
+#include "tyr/common/iostream.hpp"
+
 #include <bit>  // std::bit_width, std::countr_zero
 #include <cassert>
 #include <concepts>
@@ -302,6 +305,143 @@ BitsetLayout<Block> create_bitset_layout(size_t num_bits)
     const size_t num_blocks = (num_bits + W - 1) / W;
     return BitsetLayout<Block>(num_bits, num_blocks);
 }
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const DataPortion<Block>& el);
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const ValuePortion<Block>& el);
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const PortionMap<Block>& el);
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const BitPackedElementLayout<Block>& el);
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const BitPackedArrayLayout<Block>& el);
+
+template<std::unsigned_integral Block>
+std::ostream& print(std::ostream& os, const DataPortion<Block>& el)
+{
+    os << "DataPortion(\n";
+
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "word_offset = " << el.word_offset << "\n";
+
+        os << print_indent << "mask = " << el.mask << "\n";
+
+        os << print_indent << "rshift = " << static_cast<size_t>(el.rshift) << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<std::unsigned_integral Block>
+std::ostream& print(std::ostream& os, const ValuePortion<Block>& el)
+{
+    os << "ValuePortion(\n";
+
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "mask = " << el.mask << "\n";
+
+        os << print_indent << "rshift = " << static_cast<size_t>(el.rshift) << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<std::unsigned_integral Block>
+std::ostream& print(std::ostream& os, const PortionMap<Block>& el)
+{
+    os << "PortionMap(\n";
+
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "data = " << el.data << "\n";
+
+        os << print_indent << "value = " << el.value << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<std::unsigned_integral Block>
+std::ostream& print(std::ostream& os, const BitPackedElementLayout<Block>& el)
+{
+    os << "BitPackedElementLayout(\n";
+
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "base word index = " << el.base_word_index << "\n";
+
+        os << print_indent << "high = " << el.high << "\n";
+
+        os << print_indent << "low = " << el.low << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<std::unsigned_integral Block>
+std::ostream& print(std::ostream& os, const BitPackedArrayLayout<Block>& el)
+{
+    os << "BitPackedArrayLayout(\n";
+
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "total_bits = " << el.total_bits << "\n";
+
+        os << print_indent << "total_blocks = " << el.total_blocks << "\n";
+
+        os << print_indent << "layouts = " << el.layouts << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const DataPortion<Block>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const ValuePortion<Block>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const PortionMap<Block>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const BitPackedElementLayout<Block>& el)
+{
+    return tyr::print(os, el);
+}
+
+template<std::unsigned_integral Block>
+std::ostream& operator<<(std::ostream& os, const BitPackedArrayLayout<Block>& el)
+{
+    return tyr::print(os, el);
+}
+
 }
 
 #endif

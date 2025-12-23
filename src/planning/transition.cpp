@@ -78,6 +78,10 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
     auto& succ_unpacked_state = *succ_unpacked_state_ptr;
     succ_unpacked_state.assign_unextended_part(tmp_state_context.unpacked_state);
     succ_unpacked_state.clear_extended_part();
+    if constexpr (std::is_same_v<Task, GroundTask>)
+    {
+        succ_unpacked_state.resize_derived_atoms(task.get_task().template get_atoms<formalism::DerivedTag>().size());
+    }
 
     process_effects(action, succ_unpacked_state, tmp_state_context);
 

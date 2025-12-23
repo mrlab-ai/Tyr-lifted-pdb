@@ -154,9 +154,9 @@ inline void UnpackedState<GroundTask>::assign_unextended_part(const UnpackedStat
     m_numeric_variables = other.m_numeric_variables;
 }
 
-inline void UnpackedState<GroundTask>::resize_fluent_facts(size_t num_fluent_facts) { m_fluent_values.resize(num_fluent_facts); }
+inline void UnpackedState<GroundTask>::resize_fluent_facts(size_t num_fluent_facts) { m_fluent_values.resize(num_fluent_facts, formalism::FDRValue::none()); }
 
-inline void UnpackedState<GroundTask>::resize_derived_atoms(size_t num_derived_atoms) { m_derived_atoms.resize(num_derived_atoms); }
+inline void UnpackedState<GroundTask>::resize_derived_atoms(size_t num_derived_atoms) { m_derived_atoms.resize(num_derived_atoms, false); }
 
 inline std::vector<formalism::FDRValue>& UnpackedState<GroundTask>::get_fluent_values() noexcept { return m_fluent_values; }
 

@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 
     auto lifted_task = parser.parse_task(problem_filepath);
 
-    // std::cout << *domain << std::endl;
+    std::cout << *domain << std::endl;
 
     // std::cout << *lifted_task << std::endl;
 
@@ -56,8 +56,20 @@ int main(int argc, char** argv)
 
     auto ground_task = lifted_task->get_ground_task();
 
+    std::cout << *ground_task << std::endl;
+
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
     std::cout << "Total task grounding time: " << duration_ms.count() << " ms" << std::endl;
     std::cout << "Peak memory usage: " << get_peak_memory_usage_in_bytes() << " bytes" << std::endl;
+
+    auto initial_node = ground_task->get_initial_node();
+
+    std::cout << to_string(initial_node) << std::endl;
+
+    for (const auto& [ground_action, succ_node] : initial_node.get_labeled_successor_nodes())
+    {
+        std::cout << to_string(ground_action) << "\n"  //
+                  << to_string(succ_node) << std::endl;
+    }
 }

@@ -83,7 +83,7 @@ public:
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
     bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const { return tyr::test(uint_t(index), m_static_atoms_bitset); }
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const
+    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const noexcept
     {
         return tyr::get(uint_t(index), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
     }
@@ -117,8 +117,8 @@ private:
     valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> m_uint_nodes;
     valla::IndexedHashSet<float_t, uint_t> m_float_nodes;
     IndexedHashSet<PackedState<GroundTask>, StateIndex> m_packed_states;
-    SegmentedArrayPool<uint_t> m_fluent_pool;
-    SegmentedArrayPool<uint_t> m_derived_pool;
+    SegmentedArrayRepository<uint_t> m_fluent_repository;
+    SegmentedArrayRepository<uint_t> m_derived_repository;
     std::vector<uint_t> m_fluent_buffer;
     std::vector<uint_t> m_derived_buffer;
     SharedObjectPool<UnpackedState<GroundTask>> m_unpacked_state_pool;

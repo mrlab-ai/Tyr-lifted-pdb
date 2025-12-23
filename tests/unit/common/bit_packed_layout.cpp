@@ -42,4 +42,50 @@ TEST(TyrTests, TyrCommonBitPackedLayout)
 
     EXPECT_EQ(uint8_t(ref_fact_0), uint8_t { 2 });
 }
+
+TEST(TyrTests, TyrCommonBitPackedLayout2)
+{
+    auto ranges = std::vector<uint32_t> { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 };
+
+    auto variables_layout = create_bit_packed_array_layout<uint32_t>(ranges);
+
+    EXPECT_EQ(variables_layout.total_blocks, 1);
+
+    // Create a state
+    auto state = std::vector<uint32_t>(variables_layout.total_blocks, 0);
+
+    // Create a reference
+    {
+        auto ref = VariableReference(variables_layout.layouts[0], state.data());
+        EXPECT_EQ(uint32_t(ref), uint32_t { 0 });
+        ref = uint32_t { 1 };
+        EXPECT_EQ(uint32_t(ref), uint32_t { 1 });
+        ref = uint32_t { 0 };
+        EXPECT_EQ(uint32_t(ref), uint32_t { 0 });
+    }
+    {
+        auto ref = VariableReference(variables_layout.layouts[1], state.data());
+        EXPECT_EQ(uint32_t(ref), uint32_t { 0 });
+        ref = uint32_t { 1 };
+        EXPECT_EQ(uint32_t(ref), uint32_t { 1 });
+        ref = uint32_t { 0 };
+        EXPECT_EQ(uint32_t(ref), uint32_t { 0 });
+    }
+    {
+        auto ref = VariableReference(variables_layout.layouts[0], state.data());
+        EXPECT_EQ(uint32_t(ref), uint32_t { 0 });
+        ref = uint32_t { 1 };
+        EXPECT_EQ(uint32_t(ref), uint32_t { 1 });
+        ref = uint32_t { 0 };
+        EXPECT_EQ(uint32_t(ref), uint32_t { 0 });
+    }
+    {
+        auto ref = VariableReference(variables_layout.layouts[2], state.data());
+        EXPECT_EQ(uint32_t(ref), uint32_t { 0 });
+        ref = uint32_t { 1 };
+        EXPECT_EQ(uint32_t(ref), uint32_t { 1 });
+        ref = uint32_t { 0 };
+        EXPECT_EQ(uint32_t(ref), uint32_t { 0 });
+    }
+}
 }
