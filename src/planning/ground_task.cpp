@@ -314,6 +314,8 @@ GroundTask::GroundTask(DomainPtr domain,
     m_unpacked_state_pool(),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
+    m_fluent_buffer(m_fluent_layout.total_blocks),
+    m_derived_buffer(m_derived_layout.total_blocks),
     m_applicable_actions(),
     m_applicable_axioms(),
     m_effect_families()

@@ -18,9 +18,12 @@
 #ifndef TYR_PLANNING_GROUND_TASK_STATE_HPP_
 #define TYR_PLANNING_GROUND_TASK_STATE_HPP_
 
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 #include "tyr/planning/state.hpp"
+
+#include <boost/dynamic_bitset.hpp>
 
 namespace tyr::planning
 {
@@ -34,7 +37,20 @@ public:
      * StateConcept
      */
 
-    const UnpackedState<GroundTask>& get_unpacked_state() const noexcept { return *m_unpacked; }
+    StateIndex get_index() const;
+
+    bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const;
+    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const;
+
+    formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const;
+    float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const;
+
+    bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const;
+
+    GroundTask& get_task() noexcept;
+    const GroundTask& get_task() const noexcept;
+
+    const UnpackedState<GroundTask>& get_unpacked_state() const noexcept;
 
     /**
      * For GroundTask
@@ -43,7 +59,7 @@ public:
     template<formalism::FactKind T>
     const boost::dynamic_bitset<>& get_atoms() const noexcept;
 
-    const std::vector<formalism::FDRValue>& get_fluent_facts() const noexcept;
+    const std::vector<formalism::FDRValue>& get_fluent_values() const noexcept;
 
     template<formalism::FactKind T>
     const std::vector<float_t>& get_numeric_variables() const noexcept;
@@ -53,7 +69,26 @@ private:
     GroundTask* m_task;
 };
 
-// static_assert(StateConcept<State<GroundTask>>);
+/**
+ * Implemntations
+ */
+
+inline StateIndex State<GroundTask>::get_index() const { return m_unpacked->get_index(); }
+
+inline formalism::FDRValue State<GroundTask>::get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
+
+inline float_t State<GroundTask>::get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
+
+inline bool State<GroundTask>::test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return m_unpacked->test(index); }
+
+inline GroundTask& State<GroundTask>::get_task() noexcept { return *m_task; }
+
+inline const GroundTask& State<GroundTask>::get_task() const noexcept { return *m_task; }
+
+inline const UnpackedState<GroundTask>& State<GroundTask>::get_unpacked_state() const noexcept { return *m_unpacked; }
+
+inline const std::vector<formalism::FDRValue>& State<GroundTask>::get_fluent_values() const noexcept { return m_unpacked->get_fluent_values(); }
+
 }
 
 #endif

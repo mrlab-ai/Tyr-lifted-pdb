@@ -20,6 +20,10 @@
 
 #include "tyr/common/formatter.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/ground_task.hpp"
+#include "tyr/planning/ground_task/node.hpp"
+#include "tyr/planning/ground_task/state.hpp"
+#include "tyr/planning/ground_task/unpacked_state.hpp"
 #include "tyr/planning/lifted_task/node.hpp"
 #include "tyr/planning/lifted_task/packed_state.hpp"
 #include "tyr/planning/lifted_task/state.hpp"
@@ -44,6 +48,14 @@ extern std::ostream& print(std::ostream& os, const planning::UnpackedState<plann
 
 extern std::ostream& print(std::ostream& os, const planning::State<planning::LiftedTask>& el);
 
+extern std::ostream& print(std::ostream& os, const planning::Node<planning::GroundTask>& el);
+
+extern std::ostream& print(std::ostream& os, const planning::PackedState<planning::GroundTask>& el);
+
+extern std::ostream& print(std::ostream& os, const planning::UnpackedState<planning::GroundTask>& el);
+
+extern std::ostream& print(std::ostream& os, const planning::State<planning::GroundTask>& el);
+
 namespace planning
 {
 extern std::ostream& operator<<(std::ostream& os, const Domain& el);
@@ -59,6 +71,14 @@ extern std::ostream& operator<<(std::ostream& os, const PackedState<LiftedTask>&
 extern std::ostream& operator<<(std::ostream& os, const UnpackedState<LiftedTask>& el);
 
 extern std::ostream& operator<<(std::ostream& os, const State<LiftedTask>& el);
+
+extern std::ostream& operator<<(std::ostream& os, const Node<GroundTask>& el);
+
+extern std::ostream& operator<<(std::ostream& os, const PackedState<GroundTask>& el);
+
+extern std::ostream& operator<<(std::ostream& os, const UnpackedState<GroundTask>& el);
+
+extern std::ostream& operator<<(std::ostream& os, const State<GroundTask>& el);
 }
 }
 

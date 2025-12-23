@@ -25,8 +25,10 @@
 #include "tyr/formalism/views.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"
+#include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/ground_task/node.hpp"
 #include "tyr/planning/ground_task/state.hpp"
+#include "tyr/planning/ground_task/unpacked_state.hpp"
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/lifted_task/node.hpp"
 #include "tyr/planning/lifted_task/state.hpp"
@@ -131,6 +133,80 @@ std::ostream& print(std::ostream& os, const planning::State<planning::LiftedTask
     return os;
 }
 
+std::ostream& print(std::ostream& os, const planning::Node<planning::GroundTask>& el)
+{
+    os << "Node(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "metric value = " << el.get_metric() << "\n";
+
+        os << print_indent << "state = " << el.get_state() << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+std::ostream& print(std::ostream& os, const planning::PackedState<planning::GroundTask>& el) { return os; }
+
+std::ostream& print(std::ostream& os, const planning::UnpackedState<planning::GroundTask>& el) { return os; }
+
+std::ostream& print(std::ostream& os, const planning::State<planning::GroundTask>& el)
+{
+    const auto& context = *el.get_task().get_repository();
+
+    const auto& static_atoms_bitset = el.template get_atoms<formalism::StaticTag>();
+    const auto& fluent_values = el.get_fluent_values();
+    const auto& derived_atoms_bitset = el.template get_atoms<formalism::DerivedTag>();
+    const auto& static_numeric_variables = el.template get_numeric_variables<formalism::StaticTag>();
+    const auto& fluent_numeric_variables = el.template get_numeric_variables<formalism::FluentTag>();
+
+    auto static_atoms = IndexList<formalism::GroundAtom<formalism::StaticTag>> {};
+    for (auto i = static_atoms_bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = static_atoms_bitset.find_next(i))
+        static_atoms.push_back(Index<formalism::GroundAtom<formalism::StaticTag>>(i));
+
+    auto fluent_facts = DataList<formalism::FDRFact<formalism::FluentTag>> {};
+    for (uint_t i = 0; i < fluent_values.size(); ++i)
+        if (fluent_values[i] != formalism::FDRValue::none())
+            fluent_facts.push_back(Data<formalism::FDRFact<formalism::FluentTag>>(Index<formalism::FDRVariable<formalism::FluentTag>>(i), fluent_values[i]));
+
+    auto derived_atoms = IndexList<formalism::GroundAtom<formalism::DerivedTag>> {};
+    for (auto i = derived_atoms_bitset.find_first(); i != boost::dynamic_bitset<>::npos; i = derived_atoms_bitset.find_next(i))
+        derived_atoms.push_back(Index<formalism::GroundAtom<formalism::DerivedTag>>(i));
+
+    auto static_fterm_values = std::vector<
+        std::pair<View<Index<formalism::GroundFunctionTerm<formalism::StaticTag>>, formalism::OverlayRepository<formalism::Repository>>, float_t>> {};
+    for (uint_t i = 0; i < static_numeric_variables.size(); ++i)
+        if (!std::isnan(static_numeric_variables[i]))
+            static_fterm_values.emplace_back(make_view(Index<formalism::GroundFunctionTerm<formalism::StaticTag>>(i), context), static_numeric_variables[i]);
+
+    auto fluent_fterm_values = std::vector<
+        std::pair<View<Index<formalism::GroundFunctionTerm<formalism::FluentTag>>, formalism::OverlayRepository<formalism::Repository>>, float_t>> {};
+    for (uint_t i = 0; i < fluent_numeric_variables.size(); ++i)
+        if (!std::isnan(fluent_numeric_variables[i]))
+            fluent_fterm_values.emplace_back(make_view(Index<formalism::GroundFunctionTerm<formalism::FluentTag>>(i), context), fluent_numeric_variables[i]);
+
+    os << "State(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "static atoms = " << make_view(static_atoms, context) << "\n";
+
+        os << print_indent << "fluent facts = " << make_view(fluent_facts, context) << "\n";
+
+        os << print_indent << "derived atoms = " << make_view(derived_atoms, context) << "\n";
+
+        os << print_indent << "static numeric variables = " << static_fterm_values << "\n";
+
+        os << print_indent << "fluent numeric variables = " << fluent_fterm_values << "\n";
+    }
+
+    os << print_indent << ")";
+
+    return os;
+}
+
 namespace planning
 {
 std::ostream& operator<<(std::ostream& os, const Domain& el) { return tyr::print(os, el); }
@@ -146,5 +222,13 @@ std::ostream& operator<<(std::ostream& os, const PackedState<LiftedTask>& el) { 
 std::ostream& operator<<(std::ostream& os, const UnpackedState<LiftedTask>& el) { return tyr::print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const State<LiftedTask>& el) { return tyr::print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const Node<GroundTask>& el) { return tyr::print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const PackedState<GroundTask>& el) { return tyr::print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const UnpackedState<GroundTask>& el) { return tyr::print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const State<GroundTask>& el) { return tyr::print(os, el); }
 }
 }

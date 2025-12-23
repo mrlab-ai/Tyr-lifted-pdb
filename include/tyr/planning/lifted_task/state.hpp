@@ -37,11 +37,11 @@ public:
 
     State(LiftedTask& task, SharedObjectPoolPtr<UnpackedState<LiftedTask>> unpacked) noexcept;
 
-    StateIndex get_index() const;
-
     /**
      * StateConcept
      */
+
+    StateIndex get_index() const;
 
     bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const;
     float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const;

@@ -120,6 +120,8 @@ private:
     SharedObjectPool<UnpackedState<GroundTask>> m_unpacked_state_pool;
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
+    std::vector<uint_t> m_fluent_buffer;
+    std::vector<uint_t> m_derived_buffer;
 
     IndexList<formalism::GroundAction> m_applicable_actions;
     IndexList<formalism::GroundAxiom> m_applicable_axioms;

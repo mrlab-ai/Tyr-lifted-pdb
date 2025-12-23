@@ -25,6 +25,7 @@
 #include <concepts>
 #include <gtl/phmap.hpp>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace tyr
@@ -85,6 +86,7 @@ private:
         explicit IndexableEqualTo(std::shared_ptr<const std::vector<T>> vec) noexcept : vec(std::move(vec)), equal_to() {}
 
         bool operator()(I lhs, I rhs) const noexcept { return equal_to((*vec)[lhs.get_value()], (*vec)[rhs.get_value()]); }
+
         bool operator()(const T& lhs, I rhs) const noexcept { return equal_to(lhs, (*vec)[rhs.get_value()]); }
         bool operator()(I lhs, const T& rhs) const noexcept { return equal_to((*vec)[lhs.get_value()], rhs); }
         bool operator()(const T& lhs, const T& rhs) const noexcept { return equal_to(lhs, rhs); }
@@ -93,7 +95,6 @@ private:
     std::shared_ptr<std::vector<T>> m_vec;
     gtl::flat_hash_set<I, IndexableHash, IndexableEqualTo> m_set;
 };
-
 }
 
 #endif
