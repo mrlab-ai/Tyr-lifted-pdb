@@ -117,11 +117,13 @@ private:
     valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> m_uint_nodes;
     valla::IndexedHashSet<float_t, uint_t> m_float_nodes;
     IndexedHashSet<PackedState<GroundTask>, StateIndex> m_packed_states;
+    SegmentedArrayPool<uint_t> m_fluent_pool;
+    SegmentedArrayPool<uint_t> m_derived_pool;
+    std::vector<uint_t> m_fluent_buffer;
+    std::vector<uint_t> m_derived_buffer;
     SharedObjectPool<UnpackedState<GroundTask>> m_unpacked_state_pool;
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
-    std::vector<uint_t> m_fluent_buffer;
-    std::vector<uint_t> m_derived_buffer;
 
     IndexList<formalism::GroundAction> m_applicable_actions;
     IndexList<formalism::GroundAxiom> m_applicable_axioms;

@@ -45,6 +45,14 @@ public:
     IndexedHashSet(IndexedHashSet&& other) = default;
     IndexedHashSet& operator=(IndexedHashSet&& other) = default;
 
+    std::optional<I> find(const T& value) const
+    {
+        if (auto it = m_set.find(value); it != m_set.end())
+            return *it;
+
+        return std::nullopt;
+    }
+
     I insert(const T& value)
     {
         if (auto it = m_set.find(value); it != m_set.end())

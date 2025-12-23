@@ -1,0 +1,152 @@
+/*
+ * Copyright (C) 2025 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TYR_COMMON_SEGMENTED_ARRAY_REPOSITORY_HPP_
+#define TYR_COMMON_SEGMENTED_ARRAY_REPOSITORY_HPP_
+
+#include "tyr/common/declarations.hpp"
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
+#include "tyr/common/segmented_array_pool.hpp"
+
+#include <algorithm>
+#include <bit>
+#include <cassert>
+#include <cstddef>
+#include <cstring>
+#include <optional>
+#include <vector>
+
+namespace tyr
+{
+
+template<typename T, size_t ArraysPerSegment = 1024>
+class SegmentedArrayRepository
+{
+public:
+    explicit SegmentedArrayRepository(size_t array_size) :
+        m_pool(std::make_shared<SegmentedArrayPool<T, ArraysPerSegment>>(array_size)),
+        m_array_size(array_size),
+        m_set(0, IndexableHash(m_pool, array_size), IndexableEqualTo(m_pool, array_size))
+    {
+    }
+    SegmentedArrayRepository(const SegmentedArrayRepository& other) = delete;
+    SegmentedArrayRepository& operator=(const SegmentedArrayRepository& other) = delete;
+    SegmentedArrayRepository(SegmentedArrayRepository&& other) = default;
+    SegmentedArrayRepository& operator=(SegmentedArrayRepository&& other) = default;
+
+    std::optional<uint_t> find(const std::vector<T>& value) const
+    {
+        assert(value.size() == m_array_size);
+
+        if (auto it = m_set.find(value); it != m_set.end())
+            return *it;
+
+        return std::nullopt;
+    }
+
+    uint_t insert(const std::vector<T>& value)
+    {
+        assert(value.size() == m_array_size);
+
+        if (auto it = m_set.find(value); it != m_set.end())
+            return *it;
+
+        uint_t idx(m_pool->size());
+        auto* arr = m_pool->allocate();
+        std::memcpy(arr, value.data(), value.size());
+        m_set.emplace(idx);
+        return idx;
+    }
+
+    const T& operator[](uint_t idx) const noexcept { return (*m_pool)[idx]; }
+
+    std::size_t size() const noexcept { return m_pool->size(); }
+
+private:
+    struct IndexableHash
+    {
+        using is_transparent = void;
+
+        std::shared_ptr<SegmentedArrayPool<T, ArraysPerSegment>> pool;
+        size_t array_size;
+
+        IndexableHash() noexcept : pool(nullptr) {}
+        explicit IndexableHash(std::shared_ptr<SegmentedArrayPool<T, ArraysPerSegment>> pool, size_t array_size) noexcept : pool(pool), array_size(array_size)
+        {
+        }
+
+        static size_t hash(const T* arr, size_t len) noexcept
+        {
+            size_t seed = len;
+            for (size_t i = 0; i < len; ++i)
+                tyr::hash_combine(seed, arr[i]);
+            return seed;
+        }
+
+        size_t operator()(uint_t el) const noexcept { return hash((*pool)[el], array_size); }
+        size_t operator()(const std::vector<T>& el) const noexcept
+        {
+            assert(el.size() == array_size);
+            return hash(el.data(), array_size);
+        }
+    };
+
+    struct IndexableEqualTo
+    {
+        using is_transparent = void;
+
+        std::shared_ptr<SegmentedArrayPool<T, ArraysPerSegment>> pool;
+        size_t array_size;
+
+        IndexableEqualTo() noexcept : pool(nullptr) {}
+        explicit IndexableEqualTo(std::shared_ptr<SegmentedArrayPool<T, ArraysPerSegment>> pool, size_t array_size) noexcept :
+            pool(pool),
+            array_size(array_size)
+        {
+        }
+
+        static bool equal_to(const T* lhs, const T* rhs, size_t len) { return std::equal(lhs, lhs + len, rhs); }
+
+        bool operator()(uint_t lhs, uint_t rhs) const noexcept { return equal_to((*pool)[lhs], (*pool)[rhs], array_size); }
+
+        bool operator()(const std::vector<T>& lhs, uint_t rhs) const noexcept
+        {
+            assert(lhs.size() == array_size);
+            return equal_to(lhs.data(), (*pool)[rhs], array_size);
+        }
+        bool operator()(uint_t lhs, const std::vector<T>& rhs) const noexcept
+        {
+            assert(rhs.size() == array_size);
+            return equal_to((*pool)[lhs], rhs.data(), array_size);
+        }
+        bool operator()(const std::vector<T>& lhs, const std::vector<T>& rhs) const noexcept
+        {
+            assert(lhs.size() == array_size);
+            assert(rhs.size() == array_size);
+            return equal_to(lhs.data(), rhs.data(), array_size);
+        }
+    };
+
+    std::shared_ptr<SegmentedArrayPool<T, ArraysPerSegment>> m_pool;
+    size_t m_array_size;
+    gtl::flat_hash_set<uint_t, IndexableHash, IndexableEqualTo> m_set;
+};
+
+}
+
+#endif

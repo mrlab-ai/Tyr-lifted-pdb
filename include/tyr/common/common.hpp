@@ -32,6 +32,8 @@
 #include "tyr/common/itertools.hpp"
 #include "tyr/common/memory.hpp"
 #include "tyr/common/observer_ptr.hpp"
+#include "tyr/common/segmented_array_pool.hpp"
+#include "tyr/common/segmented_array_repository.hpp"
 #include "tyr/common/segmented_vector.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/common/uint_mixins.hpp"

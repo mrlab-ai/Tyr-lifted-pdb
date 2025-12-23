@@ -25,7 +25,7 @@
 namespace tyr
 {
 template<std::unsigned_integral T>
-inline bool is_power_of_two(T x)
+inline constexpr bool is_power_of_two(T x)
 {
     return std::has_single_bit(x);
 }

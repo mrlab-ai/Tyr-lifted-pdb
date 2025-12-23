@@ -66,7 +66,7 @@ public:
         m_segment_size(ArraysPerSegment * array_size),
         m_cur_seg(0),
         m_cur_pos(0),
-        m_num_arrays(0)
+        m_size(0)
     {
     }
 
@@ -77,14 +77,14 @@ public:
         T* result = &m_segments[m_cur_seg][m_cur_pos];
 
         m_cur_pos += m_array_size;
-        ++m_num_arrays;
+        ++m_size;
 
         return result;
     }
 
     const T* operator[](size_t array_index) const noexcept
     {
-        assert(array_index < m_num_arrays);
+        assert(array_index < m_size);
         const size_t seg = array_index >> seg_shift;
         const size_t idx = array_index & seg_mask;
         return &m_segments[seg][idx * m_array_size];
@@ -92,7 +92,7 @@ public:
 
     T* operator[](size_t array_index) noexcept
     {
-        assert(array_index < m_num_arrays);
+        assert(array_index < m_size);
         const size_t seg = array_index >> seg_shift;
         const size_t idx = array_index & seg_mask;
         return &m_segments[seg][idx * m_array_size];
@@ -102,8 +102,10 @@ public:
     {
         m_cur_seg = 0;
         m_cur_pos = 0;
-        m_num_arrays = 0;
+        m_size = 0;
     }
+
+    size_t size() const noexcept { return m_size; }
 
 private:
     std::vector<std::vector<T>> m_segments;
@@ -113,7 +115,7 @@ private:
 
     size_t m_cur_seg;
     size_t m_cur_pos;
-    size_t m_num_arrays;
+    size_t m_size;
 };
 
 }
