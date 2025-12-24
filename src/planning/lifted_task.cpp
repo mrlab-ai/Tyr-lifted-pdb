@@ -168,6 +168,7 @@ static void read_solution_and_instantiate_labeled_successor_nodes(const StateCon
 
     auto& effect_families = action_context.planning_execution_context.effect_families;
     auto& assign = action_context.planning_execution_context.assign;
+    auto& iter_workspace = action_context.planning_execution_context.iter_workspace;
 
     action_context.task_to_task_execution_context.clear();
 
@@ -184,9 +185,13 @@ static void read_solution_and_instantiate_labeled_successor_nodes(const StateCon
 
                 action_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
 
-                const auto ground_action_index =
-                    ground_planning(action, grounder_context, parameter_domains_per_cond_effect_per_action[action_index.get_value()], assign, fdr_context)
-                        .first;
+                const auto ground_action_index = ground_planning(action,
+                                                                 grounder_context,
+                                                                 parameter_domains_per_cond_effect_per_action[action_index.get_value()],
+                                                                 assign,
+                                                                 iter_workspace,
+                                                                 fdr_context)
+                                                     .first;
 
                 const auto ground_action = make_view(ground_action_index, grounder_context.destination);
 
@@ -392,6 +397,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
     const auto initial_state_context = StateContext(*this, initial_state.get_unpacked_state(), 0);
 
     auto& assign = ground_context.planning_execution_context.assign;
+    auto& iter_workspace = ground_context.planning_execution_context.iter_workspace;
     ground_context.task_to_task_execution_context.clear();
 
     /// --- Ground Atoms
@@ -427,9 +433,13 @@ GroundTaskPtr LiftedTask::get_ground_task()
             {
                 const auto action = make_view(action_index, grounder_context.destination);
 
-                const auto ground_action_index =
-                    ground_planning(action, grounder_context, m_parameter_domains_per_cond_effect_per_action[action_index.get_value()], assign, m_fdr_context)
-                        .first;
+                const auto ground_action_index = ground_planning(action,
+                                                                 grounder_context,
+                                                                 m_parameter_domains_per_cond_effect_per_action[action_index.get_value()],
+                                                                 assign,
+                                                                 iter_workspace,
+                                                                 m_fdr_context)
+                                                     .first;
 
                 const auto ground_action = make_view(ground_action_index, grounder_context.destination);
 

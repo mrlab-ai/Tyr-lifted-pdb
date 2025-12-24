@@ -215,6 +215,7 @@ auto ground_planning(View<Index<Action>, C_SRC> element,
                      GrounderContext<C_DST>& context,
                      const analysis::DomainListListList& cond_effect_domains,
                      UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign,
+                     itertools::cartesian_set::Workspace<Index<formalism::Object>>& iter_workspace,
                      FDR& fdr)
 {
     // Fetch and clear
@@ -237,16 +238,17 @@ auto ground_planning(View<Index<Action>, C_SRC> element,
         // Ensure that we stripped off the action precondition parameter domains.
         assert(std::distance(parameter_domains.begin(), parameter_domains.end()) == static_cast<int>(cond_effect.get_arity()));
 
-        for_element_in_cartesian_set(parameter_domains.begin(),
-                                     parameter_domains.end(),
-                                     [&](auto&& binding_cond)
-                                     {
-                                         // push the additional parameters to the end
-                                         context.binding.resize(binding_size);
-                                         context.binding.insert(context.binding.end(), binding_cond.begin(), binding_cond.end());
+        itertools::cartesian_set::for_each_element(parameter_domains.begin(),
+                                                   parameter_domains.end(),
+                                                   iter_workspace,
+                                                   [&](auto&& binding_cond)
+                                                   {
+                                                       // push the additional parameters to the end
+                                                       context.binding.resize(binding_size);
+                                                       context.binding.insert(context.binding.end(), binding_cond.begin(), binding_cond.end());
 
-                                         action.effects.push_back(ground_planning(cond_effect, context, assign, fdr).first);
-                                     });
+                                                       action.effects.push_back(ground_planning(cond_effect, context, assign, fdr).first);
+                                                   });
     }
     context.binding.resize(binding_size);  ///< important to restore the binding in case of grounding other actions
 

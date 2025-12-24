@@ -21,6 +21,7 @@
 #include "tyr/analysis/analysis.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
+#include "tyr/common/itertools.hpp"
 #include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/grounder_common.hpp"
 #include "tyr/formalism/merge_common.hpp"
@@ -199,6 +200,7 @@ struct PlanningExecutionContext
 {
     formalism::EffectFamilyList effect_families;
     UnorderedMap<Index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue> assign;
+    itertools::cartesian_set::Workspace<Index<formalism::Object>> iter_workspace;
 
     PlanningExecutionContext() = default;
 };

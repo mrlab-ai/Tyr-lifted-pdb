@@ -18,66 +18,71 @@
 #ifndef TYR_COMMON_ITERTOOLS_HPP_
 #define TYR_COMMON_ITERTOOLS_HPP_
 
+#include <algorithm>
 #include <concepts>
-#include <iostream>
+#include <cstddef>
 #include <iterator>
 #include <ranges>
-#include <unordered_set>
+#include <utility>
 #include <vector>
 
-namespace tyr
+namespace tyr::itertools
 {
 
-/**
- * Cartesian set.
- */
+namespace cartesian_set
+{
+
+template<typename T>
+struct Workspace
+{
+    std::vector<T> element;
+    std::vector<std::size_t> indices;
+};
 
 template<class OuterRandomIt, class InnerRange = typename std::iterator_traits<OuterRandomIt>::value_type, class T = typename InnerRange::value_type, class F>
-    requires std::random_access_iterator<OuterRandomIt> && std::ranges::random_access_range<InnerRange> && std::invocable<F, const std::vector<T>&>
-void for_element_in_cartesian_set(OuterRandomIt first, OuterRandomIt last, F&& callback)
+void for_each_element(OuterRandomIt first, OuterRandomIt last, Workspace<T>& workspace, F&& callback)
 {
-    const size_t n = last - first;
+    const std::size_t n = last - first;
 
-    thread_local std::vector<T> tmp;
-    tmp.resize(n);
+    workspace.element.resize(n);
 
     if (n == 0)
     {
-        callback(tmp);  // empty element for empty range
+        callback(workspace.element);  // empty element for empty range
         return;
     }
 
     if (std::any_of(first, last, [](auto&& inner) { return std::distance(inner.begin(), inner.end()) == 0; }))
         return;
 
-    thread_local std::vector<size_t> indices;
-
-    indices.resize(n);
-    indices.assign(n, 0);
+    workspace.indices.resize(n);
+    workspace.indices.assign(n, 0);
 
     while (true)
     {
         // Emit current tuple
-        for (size_t i = 0; i < n; ++i)
-            tmp[i] = first[i][indices[i]];
+        for (std::size_t i = 0; i < n; ++i)
+            workspace.element[i] = first[i][workspace.indices[i]];
 
-        callback(tmp);
+        callback(workspace.element);
 
         // Mixed-radix increment (odometer)
-        size_t pos = n - 1;
+        std::size_t pos = n - 1;
         while (true)
         {
-            ++indices[pos];
-            if (indices[pos] < first[pos].size())
+            ++workspace.indices[pos];
+            if (workspace.indices[pos] < first[pos].size())
                 break;
 
-            indices[pos] = 0;
+            workspace.indices[pos] = 0;
             if (pos == 0)
                 return;  // fully done
 
             --pos;
         }
     }
+}
+
 }
 
 }
