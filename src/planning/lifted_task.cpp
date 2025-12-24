@@ -19,7 +19,6 @@
 
 #include "metric.hpp"
 #include "task_utils.hpp"
-#include "transition.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
@@ -109,7 +108,7 @@ static void insert_unextended_state(const UnpackedState<LiftedTask>& unpacked_st
                                     const OverlayRepository<Repository>& atoms_context,
                                     ProgramExecutionContext& axiom_context)
 {
-    axiom_context.facts_execution_context.reset<formalism::FluentTag>();
+    axiom_context.facts_execution_context.reset<FluentTag>();
     axiom_context.task_to_program_execution_context.clear();
 
     insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<FluentTag>(), atoms_context, axiom_context);
@@ -121,7 +120,7 @@ static void insert_extended_state(const UnpackedState<LiftedTask>& unpacked_stat
                                   const OverlayRepository<Repository>& atoms_context,
                                   ProgramExecutionContext& action_context)
 {
-    action_context.facts_execution_context.reset<formalism::FluentTag>();
+    action_context.facts_execution_context.reset<FluentTag>();
     action_context.task_to_program_execution_context.clear();
 
     insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<FluentTag>(), atoms_context, action_context);
@@ -160,13 +159,13 @@ static void read_solution_and_instantiate_labeled_successor_nodes(const StateCon
                                                                   OverlayRepository<Repository>& task_repository,
                                                                   ProgramExecutionContext& action_context,
                                                                   BinaryFDRContext<OverlayRepository<Repository>>& fdr_context,
+                                                                  SuccessorGenerator& successor_generator,
                                                                   const ApplicableActionProgram& action_program,
                                                                   const std::vector<analysis::DomainListListList>& parameter_domains_per_cond_effect_per_action,
                                                                   std::vector<LabeledNode<LiftedTask>>& out_nodes)
 {
     out_nodes.clear();
 
-    auto& effect_families = action_context.planning_execution_context.effect_families;
     auto& assign = action_context.planning_execution_context.assign;
     auto& iter_workspace = action_context.planning_execution_context.iter_workspace;
 
@@ -195,9 +194,8 @@ static void read_solution_and_instantiate_labeled_successor_nodes(const StateCon
 
                 const auto ground_action = make_view(ground_action_index, grounder_context.destination);
 
-                effect_families.clear();
-                if (is_applicable(ground_action, state_context, effect_families))  // TODO: only need to check effect applicability
-                    out_nodes.emplace_back(ground_action, apply_action(state_context, ground_action));
+                if (successor_generator.is_applicable(ground_action, state_context))
+                    out_nodes.emplace_back(ground_action, successor_generator.apply_action(state_context, ground_action));
             }
         }
     }
@@ -239,7 +237,7 @@ LiftedTask::LiftedTask(DomainPtr domain,
                        RepositoryPtr repository,
                        OverlayRepositoryPtr<Repository> overlay_repository,
                        View<Index<Task>, OverlayRepository<Repository>> task,
-                       formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>> fdr_context) :
+                       BinaryFDRContext<OverlayRepository<Repository>> fdr_context) :
     m_domain(std::move(domain)),
     m_repository(std::move(repository)),
     m_overlay_repository(std::move(overlay_repository)),
@@ -247,6 +245,7 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_state_repository(*this, std::move(fdr_context)),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
+    m_successor_generator(),
     m_action_program(*this),
     m_axiom_program(*this),
     m_ground_program(*this),
@@ -262,10 +261,10 @@ LiftedTask::LiftedTask(DomainPtr domain,
                     m_axiom_program.get_listeners()),
     m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(task))
 {
-    for (const auto atom : m_task.template get_atoms<formalism::StaticTag>())
+    for (const auto atom : m_task.template get_atoms<StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);
 
-    for (const auto fterm_value : m_task.template get_fterm_values<formalism::StaticTag>())
+    for (const auto fterm_value : m_task.template get_fterm_values<StaticTag>())
         set(uint_t(fterm_value.get_fterm().get_index()), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
@@ -318,6 +317,7 @@ void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node, std::
                                                           *m_overlay_repository,
                                                           m_action_context,
                                                           m_state_repository.get_fdr_context(),
+                                                          m_successor_generator,
                                                           m_action_program,
                                                           m_parameter_domains_per_cond_effect_per_action,
                                                           out_nodes);

@@ -26,7 +26,6 @@
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/common.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/grounder/execution_contexts.hpp"
@@ -36,8 +35,7 @@
 #include "tyr/planning/programs/axiom.hpp"
 #include "tyr/planning/programs/ground.hpp"
 #include "tyr/planning/state_index.hpp"
-
-#include <valla/valla.hpp>
+#include "tyr/planning/successor_generator.hpp"
 
 namespace tyr::planning
 {
@@ -102,6 +100,9 @@ private:
     StateRepository<LiftedTask> m_state_repository;
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
+
+    // Transition
+    SuccessorGenerator m_successor_generator;
 
     // Programs
     ApplicableActionProgram m_action_program;

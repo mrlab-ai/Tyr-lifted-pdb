@@ -20,13 +20,8 @@
 #include "tyr/formalism/views.hpp"
 //
 
-#include "transition.hpp"
-#include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/types.hpp"
-#include "tyr/common/variant.hpp"
-#include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/planning/ground_numeric_effect_operator_utils.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -38,23 +33,29 @@
 #include "tyr/planning/lifted_task/node.hpp"
 #include "tyr/planning/lifted_task/state.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
+#include "tyr/planning/successor_generator.hpp"
 
-#include <boost/dynamic_bitset.hpp>
+using namespace tyr::formalism;
 
 namespace tyr::planning
 {
 
 template<typename Task>
-void process_effects(View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action,
+void process_effects(View<Index<GroundAction>, OverlayRepository<Repository>> action,
                      UnpackedState<Task>& succ_unpacked_state,
-                     StateContext<Task>& state_context)
+                     StateContext<Task>& state_context,
+                     DataList<FDRFact<FluentTag>>& tmp_del_effects,
+                     DataList<FDRFact<FluentTag>>& tmp_add_effects)
 {
     for (const auto cond_effect : action.get_effects())
     {
         if (is_applicable(cond_effect.get_condition(), state_context))
         {
             for (const auto fact : cond_effect.get_effect().get_facts())
-                succ_unpacked_state.set(fact.get_data());
+                if (fact.get_value() == FDRValue::none())
+                    tmp_del_effects.push_back(fact.get_data());
+                else
+                    tmp_add_effects.push_back(fact.get_data());
 
             for (const auto numeric_effect : cond_effect.get_effect().get_numeric_effects())
                 visit([&](auto&& arg) { succ_unpacked_state.set(arg.get_fterm().get_index(), evaluate(numeric_effect, state_context)); },
@@ -68,9 +69,23 @@ void process_effects(View<Index<formalism::GroundAction>, formalism::OverlayRepo
 }
 
 template<typename Task>
-Node<Task> apply_action(const StateContext<Task>& state_context,
-                        View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action)
+bool SuccessorGenerator::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<Task>& state)
 {
+    m_effect_families.clear();
+
+    // TODO: only check effect applicability
+    return tyr::planning::is_applicable(action, state, m_effect_families);
+}
+
+template bool SuccessorGenerator::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<LiftedTask>& state);
+template bool SuccessorGenerator::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<GroundTask>& state);
+
+template<typename Task>
+Node<Task> SuccessorGenerator::apply_action(const StateContext<Task>& state_context, View<Index<GroundAction>, OverlayRepository<Repository>> action)
+{
+    m_del_effects.clear();
+    m_add_effects.clear();
+
     auto tmp_state_context = state_context;
     auto& task = tmp_state_context.task;
 
@@ -79,11 +94,14 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
     succ_unpacked_state.assign_unextended_part(tmp_state_context.unpacked_state);
     succ_unpacked_state.clear_extended_part();
     if constexpr (std::is_same_v<Task, GroundTask>)
-    {
-        succ_unpacked_state.resize_derived_atoms(task.get_task().template get_atoms<formalism::DerivedTag>().size());
-    }
+        succ_unpacked_state.resize_derived_atoms(task.get_task().template get_atoms<DerivedTag>().size());
 
-    process_effects(action, succ_unpacked_state, tmp_state_context);
+    process_effects(action, succ_unpacked_state, tmp_state_context, m_del_effects, m_add_effects);
+
+    for (const auto fact : m_del_effects)
+        succ_unpacked_state.set(fact);
+    for (const auto fact : m_add_effects)
+        succ_unpacked_state.set(fact);
 
     task.compute_extended_state(succ_unpacked_state);
 
@@ -98,8 +116,8 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
     return Node<Task>(succ_state, succ_state_context.auxiliary_value);
 }
 
-template Node<LiftedTask> apply_action(const StateContext<LiftedTask>& state_context,
-                                       View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action);
-template Node<GroundTask> apply_action(const StateContext<GroundTask>& state_context,
-                                       View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> action);
+template Node<LiftedTask> SuccessorGenerator::apply_action(const StateContext<LiftedTask>& state_context,
+                                                           View<Index<GroundAction>, OverlayRepository<Repository>> action);
+template Node<GroundTask> SuccessorGenerator::apply_action(const StateContext<GroundTask>& state_context,
+                                                           View<Index<GroundAction>, OverlayRepository<Repository>> action);
 }

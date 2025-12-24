@@ -19,13 +19,13 @@
 
 #include "metric.hpp"
 #include "task_utils.hpp"
-#include "transition.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/merge_planning.hpp"
+#include "tyr/planning/domain.hpp"
 #include "tyr/planning/ground_task/axiom_evaluator.hpp"
 #include "tyr/planning/ground_task/axiom_stratification.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
@@ -260,7 +260,7 @@ std::shared_ptr<GroundTask> GroundTask::create(DomainPtr domain,
 
     auto axiom_strata = compute_ground_axiom_stratification(fdr_task);
 
-    auto axiom_match_tree_strata = std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>> {};
+    auto axiom_match_tree_strata = std::vector<match_tree::MatchTreePtr<GroundAxiom>> {};
     for (const auto& stratum : axiom_strata.data)
         axiom_match_tree_strata.emplace_back(match_tree::MatchTree<GroundAxiom>::create(stratum, fdr_task.get_context()));
 
@@ -278,8 +278,8 @@ GroundTask::GroundTask(DomainPtr domain,
                        OverlayRepositoryPtr<Repository> overlay_repository,
                        View<Index<FDRTask>, OverlayRepository<Repository>> fdr_task,
                        GeneralFDRContext<OverlayRepository<Repository>> fdr_context,
-                       match_tree::MatchTreePtr<formalism::GroundAction> action_match_tree,
-                       std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>>&& axiom_match_tree_strata) :
+                       match_tree::MatchTreePtr<GroundAction> action_match_tree,
+                       std::vector<match_tree::MatchTreePtr<GroundAxiom>>&& axiom_match_tree_strata) :
     m_domain(std::move(domain)),
     m_repository(std::move(m_repository)),
     m_overlay_repository(std::move(overlay_repository)),
@@ -289,16 +289,16 @@ GroundTask::GroundTask(DomainPtr domain,
     m_state_repository(*this, std::move(fdr_context)),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
+    m_successor_generator(),
     m_applicable_actions(),
-    m_applicable_axioms(),
-    m_effect_families()
+    m_applicable_axioms()
 {
     // std::cout << m_fdr_task << std::endl;
 
-    for (const auto atom : m_fdr_task.template get_atoms<formalism::StaticTag>())
+    for (const auto atom : m_fdr_task.template get_atoms<StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);
 
-    for (const auto fterm_value : m_fdr_task.template get_fterm_values<formalism::StaticTag>())
+    for (const auto fterm_value : m_fdr_task.template get_fterm_values<StaticTag>())
         set(uint_t(fterm_value.get_fterm().get_index()), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
@@ -344,9 +344,8 @@ void GroundTask::get_labeled_successor_nodes(const Node<GroundTask>& node, std::
 
     for (const auto ground_action : make_view(m_applicable_actions, *m_overlay_repository))
     {
-        m_effect_families.clear();
-        if (is_applicable(ground_action, state_context, m_effect_families))  // TODO: only need to check effect applicability
-            out_nodes.emplace_back(ground_action, apply_action(state_context, ground_action));
+        if (m_successor_generator.is_applicable(ground_action, state_context))
+            out_nodes.emplace_back(ground_action, m_successor_generator.apply_action(state_context, ground_action));
     }
 }
 

@@ -37,27 +37,13 @@
 namespace tyr::formalism
 {
 
-template<typename Derived>
-class FDRContextMixin
-{
-private:
-    /// @brief Helper to cast to Derived.
-    constexpr const auto& self() const { return static_cast<const Derived&>(*this); }
-    constexpr auto& self() { return static_cast<Derived&>(*this); }
-
-public:
-    Data<FDRFact<FluentTag>> get_fact(Index<GroundAtom<FluentTag>> atom) { return self().get_fact_impl(atom); }
-
-    Data<FDRFact<FluentTag>> get_fact(Index<GroundLiteral<FluentTag>> literal) { return self().get_fact_impl(literal); }
-};
-
 template<Context C>
-class BinaryFDRContext : public FDRContextMixin<BinaryFDRContext<C>>
+class BinaryFDRContext
 {
 public:
     explicit BinaryFDRContext(C& context) : m_context(context), m_variables(), m_mapping() {}
 
-    Data<FDRFact<FluentTag>> get_fact_impl(Index<GroundAtom<FluentTag>> atom)
+    Data<FDRFact<FluentTag>> get_fact(Index<GroundAtom<FluentTag>> atom)
     {
         if (auto it = m_mapping.find(atom); it != m_mapping.end())
             return it->second;
@@ -75,7 +61,7 @@ public:
         return fact;
     }
 
-    Data<FDRFact<FluentTag>> get_fact_impl(Index<GroundLiteral<FluentTag>> literal)
+    Data<FDRFact<FluentTag>> get_fact(Index<GroundLiteral<FluentTag>> literal)
     {
         auto literal_view = make_view(literal, m_context);
         auto pos_fact = this->get_fact(literal_view.get_atom().get_index());
@@ -97,7 +83,7 @@ private:
 };
 
 template<Context C>
-class GeneralFDRContext : public FDRContextMixin<GeneralFDRContext<C>>
+class GeneralFDRContext
 {
 public:
     // Create mapping based on mutexes.
@@ -123,9 +109,9 @@ public:
         }
     }
 
-    Data<FDRFact<FluentTag>> get_fact_impl(Index<GroundAtom<FluentTag>> atom) const { return m_mapping.at(atom); }
+    Data<FDRFact<FluentTag>> get_fact(Index<GroundAtom<FluentTag>> atom) const { return m_mapping.at(atom); }
 
-    Data<FDRFact<FluentTag>> get_fact_impl(Index<GroundLiteral<FluentTag>> literal) const
+    Data<FDRFact<FluentTag>> get_fact(Index<GroundLiteral<FluentTag>> literal) const
     {
         auto literal_view = make_view(literal, m_context);
         auto pos_fact = this->get_fact(literal_view.get_atom());

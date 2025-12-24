@@ -198,7 +198,6 @@ struct ThreadExecutionContext
 
 struct PlanningExecutionContext
 {
-    formalism::EffectFamilyList effect_families;
     UnorderedMap<Index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue> assign;
     itertools::cartesian_set::Workspace<Index<formalism::Object>> iter_workspace;
 

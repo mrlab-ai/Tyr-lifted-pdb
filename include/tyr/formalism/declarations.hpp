@@ -450,6 +450,12 @@ using ThreadRepoPtr = std::shared_ptr<ThreadRepo>;
 
 class MergeCache;
 
+template<Context C>
+class BinaryFDRContext;
+
+template<Context C>
+class GeneralFDRContext;
+
 }
 
 #endif

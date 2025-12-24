@@ -21,19 +21,16 @@
 #include "tyr/common/common.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/domain.hpp"
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
 #include "tyr/planning/ground_task/node.hpp"
 #include "tyr/planning/ground_task/packed_state.hpp"
 #include "tyr/planning/ground_task/state.hpp"
 #include "tyr/planning/ground_task/state_repository.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
-
-#include <valla/valla.hpp>
+#include "tyr/planning/successor_generator.hpp"
 
 namespace tyr::planning
 {
@@ -105,16 +102,16 @@ private:
     match_tree::MatchTreePtr<formalism::GroundAction> m_action_match_tree;
     std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>> m_axiom_match_tree_strata;
 
-    /**
-     * States
-     */
+    // States
     StateRepository<GroundTask> m_state_repository;
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
 
+    // Transition
+    SuccessorGenerator m_successor_generator;
+
     IndexList<formalism::GroundAction> m_applicable_actions;
     IndexList<formalism::GroundAxiom> m_applicable_axioms;
-    formalism::EffectFamilyList m_effect_families;
 };
 
 }
