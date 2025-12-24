@@ -74,7 +74,7 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
     auto tmp_state_context = state_context;
     auto& task = tmp_state_context.task;
 
-    auto succ_unpacked_state_ptr = task.get_unpacked_state_pool().get_or_allocate();
+    auto succ_unpacked_state_ptr = task.get_state_repository().get_unregistered_state();
     auto& succ_unpacked_state = *succ_unpacked_state_ptr;
     succ_unpacked_state.assign_unextended_part(tmp_state_context.unpacked_state);
     succ_unpacked_state.clear_extended_part();
@@ -87,7 +87,7 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
 
     task.compute_extended_state(succ_unpacked_state);
 
-    task.register_state(succ_unpacked_state);
+    auto succ_state = task.register_state(succ_unpacked_state_ptr);
 
     auto succ_state_context = StateContext { task, succ_unpacked_state, tmp_state_context.auxiliary_value };
     if (task.get_task().get_metric())
@@ -95,7 +95,7 @@ Node<Task> apply_action(const StateContext<Task>& state_context,
     else
         ++succ_state_context.auxiliary_value;  // Assume unit cost if no metric is given
 
-    return Node<Task>(State<Task>(task, succ_unpacked_state_ptr), succ_state_context.auxiliary_value);
+    return Node<Task>(succ_state, succ_state_context.auxiliary_value);
 }
 
 template Node<LiftedTask> apply_action(const StateContext<LiftedTask>& state_context,

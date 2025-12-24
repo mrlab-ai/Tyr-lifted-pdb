@@ -244,12 +244,7 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_repository(std::move(repository)),
     m_overlay_repository(std::move(overlay_repository)),
     m_task(task),
-    m_fdr_context(std::move(fdr_context)),
-    m_uint_nodes(),
-    m_float_nodes(),
-    m_nodes_buffer(),
-    m_packed_states(),
-    m_unpacked_state_pool(),
+    m_state_repository(*this, std::move(fdr_context)),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
     m_action_program(*this),
@@ -274,35 +269,9 @@ LiftedTask::LiftedTask(DomainPtr domain,
         set(uint_t(fterm_value.get_fterm().get_index()), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
-State<LiftedTask> LiftedTask::get_state(StateIndex state_index)
-{
-    const auto& packed_state = m_packed_states[state_index];
+State<LiftedTask> LiftedTask::get_state(StateIndex state_index) { return m_state_repository.get_registered_state(state_index); }
 
-    auto unpacked_state = m_unpacked_state_pool.get_or_allocate();
-    unpacked_state->clear();
-
-    unpacked_state->get_index() = state_index;
-    fill_atoms(packed_state.template get_atoms<formalism::FluentTag>(),
-               m_uint_nodes,
-               m_nodes_buffer,
-               unpacked_state->template get_atoms<formalism::FluentTag>());
-    fill_atoms(packed_state.template get_atoms<formalism::DerivedTag>(),
-               m_uint_nodes,
-               m_nodes_buffer,
-               unpacked_state->template get_atoms<formalism::DerivedTag>());
-    fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, m_nodes_buffer, unpacked_state->get_numeric_variables());
-
-    return State<LiftedTask>(*this, std::move(unpacked_state));
-}
-
-void LiftedTask::register_state(UnpackedState<LiftedTask>& state)
-{
-    auto fluent_atoms = create_atoms_slot(state.template get_atoms<formalism::FluentTag>(), m_nodes_buffer, m_uint_nodes);
-    auto derived_atoms = create_atoms_slot(state.template get_atoms<formalism::DerivedTag>(), m_nodes_buffer, m_uint_nodes);
-    auto numeric_variables = create_numeric_variables_slot(state.get_numeric_variables(), m_nodes_buffer, m_uint_nodes, m_float_nodes);
-
-    state.set(m_packed_states.insert(PackedState<LiftedTask>(StateIndex(m_packed_states.size()), fluent_atoms, derived_atoms, numeric_variables)));
-}
+State<LiftedTask> LiftedTask::register_state(SharedObjectPoolPtr<UnpackedState<LiftedTask>> state) { return m_state_repository.register_state(state); }
 
 void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_state)
 {
@@ -315,25 +284,13 @@ void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_stat
 
 Node<LiftedTask> LiftedTask::get_initial_node()
 {
-    auto unpacked_state_ptr = m_unpacked_state_pool.get_or_allocate();
-    auto& unpacked_state = *unpacked_state_ptr;
-    unpacked_state.clear_unextended_part();
+    auto initial_state = m_state_repository.get_initial_state();
 
-    for (const auto atom : m_task.get_atoms<FluentTag>())
-        unpacked_state.set(m_fdr_context.get_fact(atom.get_index()));
-
-    for (const auto fterm_value : m_task.get_fterm_values<FluentTag>())
-        unpacked_state.set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
-
-    compute_extended_state(unpacked_state);
-
-    register_state(unpacked_state);
-
-    const auto state_context = StateContext<LiftedTask>(*this, unpacked_state, 0);
+    const auto state_context = StateContext<LiftedTask>(*this, initial_state.get_unpacked_state(), 0);
 
     const auto state_metric = evaluate_metric(get_task().get_metric(), get_task().get_auxiliary_fterm_value(), state_context);
 
-    return Node<LiftedTask>(State<LiftedTask>(*this, unpacked_state_ptr), state_metric);
+    return Node<LiftedTask>(std::move(initial_state), state_metric);
 }
 
 std::vector<LabeledNode<LiftedTask>> LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node)
@@ -360,7 +317,7 @@ void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node, std::
     read_solution_and_instantiate_labeled_successor_nodes(state_context,
                                                           *m_overlay_repository,
                                                           m_action_context,
-                                                          m_fdr_context,
+                                                          m_state_repository.get_fdr_context(),
                                                           m_action_program,
                                                           m_parameter_domains_per_cond_effect_per_action,
                                                           out_nodes);
@@ -441,7 +398,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
                                                                  m_parameter_domains_per_cond_effect_per_action[action_index.get_value()],
                                                                  assign,
                                                                  iter_workspace,
-                                                                 m_fdr_context)
+                                                                 m_state_repository.get_fdr_context())
                                                      .first;
 
                 const auto ground_action = make_view(ground_action_index, grounder_context.destination);
@@ -491,7 +448,7 @@ GroundTaskPtr LiftedTask::get_ground_task()
             {
                 const auto axiom = make_view(axiom_index, grounder_context.destination);
 
-                const auto ground_axiom_index = ground_planning(axiom, grounder_context, m_fdr_context).first;
+                const auto ground_axiom_index = ground_planning(axiom, grounder_context, m_state_repository.get_fdr_context()).first;
 
                 const auto ground_axiom = make_view(ground_axiom_index, grounder_context.destination);
 

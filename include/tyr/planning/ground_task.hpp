@@ -18,10 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_TASK_HPP_
 #define TYR_PLANNING_GROUND_TASK_HPP_
 
-#include "tyr/common/bit_packed_layout.hpp"
 #include "tyr/common/common.hpp"
-#include "tyr/common/dynamic_bitset.hpp"
-#include "tyr/common/vector.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
@@ -33,6 +30,7 @@
 #include "tyr/planning/ground_task/node.hpp"
 #include "tyr/planning/ground_task/packed_state.hpp"
 #include "tyr/planning/ground_task/state.hpp"
+#include "tyr/planning/ground_task/state_repository.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 
 #include <valla/valla.hpp>
@@ -48,8 +46,6 @@ public:
                formalism::OverlayRepositoryPtr<formalism::Repository> overlay_repository,
                View<Index<formalism::FDRTask>, formalism::OverlayRepository<formalism::Repository>> fdr_task,
                formalism::GeneralFDRContext<formalism::OverlayRepository<formalism::Repository>> fdr_context,
-               BitPackedArrayLayout<uint_t> fluent_layout,
-               BitsetLayout<uint_t> derived_layout,
                match_tree::MatchTreePtr<formalism::GroundAction> action_match_tree,
                std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>>&& axiom_match_tree_strata);
 
@@ -65,7 +61,7 @@ public:
 
     State<GroundTask> get_state(StateIndex state_index);
 
-    void register_state(UnpackedState<GroundTask>& state);
+    State<GroundTask> register_state(SharedObjectPoolPtr<UnpackedState<GroundTask>> state);
 
     void compute_extended_state(UnpackedState<GroundTask>& unpacked_state);
 
@@ -95,7 +91,8 @@ public:
     auto& get_repository() noexcept { return m_overlay_repository; }
     const auto& get_repository() const noexcept { return m_overlay_repository; }
 
-    auto& get_unpacked_state_pool() noexcept { return m_unpacked_state_pool; }
+    auto& get_state_repository() noexcept { return m_state_repository; }
+    const auto& get_state_repository() const noexcept { return m_state_repository; }
 
     const auto& get_axiom_match_tree_strata() const noexcept { return m_axiom_match_tree_strata; }
 
@@ -105,24 +102,13 @@ private:
     formalism::RepositoryPtr m_repository;
     formalism::OverlayRepositoryPtr<formalism::Repository> m_overlay_repository;
     View<Index<formalism::FDRTask>, formalism::OverlayRepository<formalism::Repository>> m_fdr_task;
-    formalism::GeneralFDRContext<formalism::OverlayRepository<formalism::Repository>> m_fdr_context;
-    BitPackedArrayLayout<uint_t> m_fluent_layout;
-    BitsetLayout<uint_t> m_derived_layout;
     match_tree::MatchTreePtr<formalism::GroundAction> m_action_match_tree;
     std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>> m_axiom_match_tree_strata;
 
     /**
      * States
      */
-    valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> m_uint_nodes;
-    valla::IndexedHashSet<float_t, uint_t> m_float_nodes;
-    std::vector<uint_t> m_nodes_buffer;
-    IndexedHashSet<PackedState<GroundTask>, StateIndex> m_packed_states;
-    SegmentedArrayRepository<uint_t> m_fluent_repository;
-    SegmentedArrayRepository<uint_t> m_derived_repository;
-    std::vector<uint_t> m_fluent_buffer;
-    std::vector<uint_t> m_derived_buffer;
-    SharedObjectPool<UnpackedState<GroundTask>> m_unpacked_state_pool;
+    StateRepository<GroundTask> m_state_repository;
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
 

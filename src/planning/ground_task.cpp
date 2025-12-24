@@ -256,22 +256,6 @@ std::shared_ptr<GroundTask> GroundTask::create(DomainPtr domain,
                                                      make_view(axioms, *task_overlay_repository),
                                                      *overlay_repository);
 
-    auto ranges = std::vector<uint_t> {};
-    for (const auto variable : fdr_task.get_fluent_variables())
-    {
-        // Ensure fluent variable indice are dense, i.e., 0,1,2,...
-        assert(uint_t(variable.get_index()) == ranges.size());
-        ranges.push_back(variable.get_domain_size());
-    }
-
-    auto fluent_layout = create_bit_packed_array_layout(ranges);
-
-    // Ensure derived atom indices are dense, i.e., 0,1,2,...
-    for (uint_t i = 0; i < fdr_task.get_atoms<DerivedTag>().size(); ++i)
-        assert(i == uint_t(fdr_task.get_atoms<DerivedTag>()[i].get_index()));
-
-    auto derived_layout = create_bitset_layout<uint_t>(fdr_task.get_atoms<DerivedTag>().size());
-
     auto action_match_tree = match_tree::MatchTree<GroundAction>::create(fdr_task.get_ground_actions().get_data(), fdr_task.get_context());
 
     auto axiom_strata = compute_ground_axiom_stratification(fdr_task);
@@ -285,8 +269,6 @@ std::shared_ptr<GroundTask> GroundTask::create(DomainPtr domain,
                                         overlay_repository,
                                         fdr_task,
                                         fdr_context,
-                                        std::move(fluent_layout),
-                                        derived_layout,
                                         std::move(action_match_tree),
                                         std::move(axiom_match_tree_strata));
 }
@@ -296,28 +278,15 @@ GroundTask::GroundTask(DomainPtr domain,
                        OverlayRepositoryPtr<Repository> overlay_repository,
                        View<Index<FDRTask>, OverlayRepository<Repository>> fdr_task,
                        GeneralFDRContext<OverlayRepository<Repository>> fdr_context,
-                       BitPackedArrayLayout<uint_t> fluent_layout,
-                       BitsetLayout<uint_t> derived_layout,
                        match_tree::MatchTreePtr<formalism::GroundAction> action_match_tree,
                        std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>>&& axiom_match_tree_strata) :
     m_domain(std::move(domain)),
     m_repository(std::move(m_repository)),
     m_overlay_repository(std::move(overlay_repository)),
     m_fdr_task(fdr_task),
-    m_fdr_context(fdr_context),
-    m_fluent_layout(std::move(fluent_layout)),
-    m_derived_layout(derived_layout),
     m_action_match_tree(std::move(action_match_tree)),
     m_axiom_match_tree_strata(std::move(axiom_match_tree_strata)),
-    m_uint_nodes(),
-    m_float_nodes(),
-    m_nodes_buffer(),
-    m_packed_states(),
-    m_fluent_repository(m_fluent_layout.total_blocks),
-    m_derived_repository(m_derived_layout.total_blocks),
-    m_fluent_buffer(m_fluent_layout.total_blocks),
-    m_derived_buffer(m_derived_layout.total_blocks),
-    m_unpacked_state_pool(),
+    m_state_repository(*this, std::move(fdr_context)),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
     m_applicable_actions(),
@@ -325,7 +294,6 @@ GroundTask::GroundTask(DomainPtr domain,
     m_effect_families()
 {
     // std::cout << m_fdr_task << std::endl;
-    // std::cout << m_fluent_layout << std::endl;
 
     for (const auto atom : m_fdr_task.template get_atoms<formalism::StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);
@@ -336,76 +304,18 @@ GroundTask::GroundTask(DomainPtr domain,
 
 Node<GroundTask> GroundTask::get_initial_node()
 {
-    auto unpacked_state_ptr = m_unpacked_state_pool.get_or_allocate();
-    auto& unpacked_state = *unpacked_state_ptr;
-    unpacked_state.clear();
+    auto initial_state = m_state_repository.get_initial_state();
 
-    unpacked_state.resize_fluent_facts(m_fdr_task.get_fluent_variables().size());
-    unpacked_state.resize_derived_atoms(m_fdr_task.get_atoms<DerivedTag>().size());
-
-    for (const auto fact : m_fdr_task.get_fluent_facts())
-        unpacked_state.set(fact.get_data());
-
-    for (const auto fterm_value : m_fdr_task.get_fterm_values<FluentTag>())
-        unpacked_state.set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
-
-    compute_extended_state(unpacked_state);
-
-    register_state(unpacked_state);
-
-    const auto state_context = StateContext<GroundTask>(*this, unpacked_state, 0);
+    const auto state_context = StateContext<GroundTask>(*this, initial_state.get_unpacked_state(), 0);
 
     const auto state_metric = evaluate_metric(m_fdr_task.get_metric(), m_fdr_task.get_auxiliary_fterm_value(), state_context);
 
-    return Node<GroundTask>(State<GroundTask>(*this, unpacked_state_ptr), state_metric);
+    return Node<GroundTask>(std::move(initial_state), state_metric);
 }
 
-State<GroundTask> GroundTask::get_state(StateIndex state_index)
-{
-    const auto& packed_state = m_packed_states[state_index];
+State<GroundTask> GroundTask::get_state(StateIndex state_index) { return m_state_repository.get_registered_state(state_index); }
 
-    auto unpacked_state = m_unpacked_state_pool.get_or_allocate();
-    unpacked_state->clear();
-
-    unpacked_state->resize_fluent_facts(m_fdr_task.get_fluent_variables().size());
-    unpacked_state->resize_derived_atoms(m_fdr_task.get_atoms<DerivedTag>().size());
-
-    unpacked_state->get_index() = state_index;
-    const auto fluent_ptr = m_fluent_repository[packed_state.get_facts<FluentTag>()];
-    auto& fluent_values = unpacked_state->get_fluent_values();
-    for (uint_t i = 0; i < m_fluent_layout.layouts.size(); ++i)
-        fluent_values[i] = FDRValue { uint_t(VariableReference(m_fluent_layout.layouts[i], fluent_ptr)) };
-
-    const auto derived_ptr = m_derived_repository[packed_state.get_facts<DerivedTag>()];
-    auto& derived_atoms = unpacked_state->get_derived_atoms();
-    for (uint_t i = 0; i < m_derived_layout.total_bits; ++i)
-        derived_atoms[i] = bool(BitReference(i, derived_ptr));
-
-    fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, m_nodes_buffer, unpacked_state->get_numeric_variables());
-
-    return State<GroundTask>(*this, std::move(unpacked_state));
-}
-
-void GroundTask::register_state(UnpackedState<GroundTask>& state)
-{
-    assert(m_fluent_buffer.size() == m_fluent_layout.total_blocks);
-    assert(m_derived_buffer.size() == m_derived_layout.total_blocks);
-
-    std::fill(m_fluent_buffer.begin(), m_fluent_buffer.end(), uint_t(0));
-    for (uint_t i = 0; i < m_fluent_layout.layouts.size(); ++i)
-        VariableReference(m_fluent_layout.layouts[i], m_fluent_buffer.data()) = uint_t(state.get_fluent_values()[i]);
-    const auto fluent_facts_index = m_fluent_repository.insert(m_fluent_buffer);
-
-    std::fill(m_derived_buffer.begin(), m_derived_buffer.end(), uint_t(0));
-    for (uint_t i = 0; i < m_derived_layout.total_bits; ++i)
-        BitReference(i, m_derived_buffer.data()) = state.get_derived_atoms().test(i);
-    const auto derived_atoms_index = m_derived_repository.insert(m_derived_buffer);
-
-    auto numeric_variables_slot = create_numeric_variables_slot(state.get_numeric_variables(), m_nodes_buffer, m_uint_nodes, m_float_nodes);
-
-    state.set(
-        m_packed_states.insert(PackedState<GroundTask>(StateIndex(m_packed_states.size()), fluent_facts_index, derived_atoms_index, numeric_variables_slot)));
-}
+State<GroundTask> GroundTask::register_state(SharedObjectPoolPtr<UnpackedState<GroundTask>> state) { return m_state_repository.register_state(state); }
 
 void GroundTask::compute_extended_state(UnpackedState<GroundTask>& unpacked_state)
 {

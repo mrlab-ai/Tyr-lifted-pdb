@@ -25,14 +25,13 @@
 //
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/common.hpp"
-#include "tyr/common/dynamic_bitset.hpp"
-#include "tyr/common/vector.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/grounder/execution_contexts.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/lifted_task/state_repository.hpp"
 #include "tyr/planning/programs/action.hpp"
 #include "tyr/planning/programs/axiom.hpp"
 #include "tyr/planning/programs/ground.hpp"
@@ -54,7 +53,7 @@ public:
 
     State<LiftedTask> get_state(StateIndex state_index);
 
-    void register_state(UnpackedState<LiftedTask>& state);
+    State<LiftedTask> register_state(SharedObjectPoolPtr<UnpackedState<LiftedTask>> state);
 
     void compute_extended_state(UnpackedState<LiftedTask>& unpacked_state);
 
@@ -81,7 +80,8 @@ public:
     auto& get_repository() noexcept { return m_overlay_repository; }
     const auto& get_repository() const noexcept { return m_overlay_repository; }
 
-    auto& get_unpacked_state_pool() noexcept { return m_unpacked_state_pool; }
+    auto& get_state_repository() noexcept { return m_state_repository; }
+    const auto& get_state_repository() const noexcept { return m_state_repository; }
 
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
@@ -97,14 +97,9 @@ private:
     formalism::RepositoryPtr m_repository;
     formalism::OverlayRepositoryPtr<formalism::Repository> m_overlay_repository;
     View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> m_task;
-    formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>> m_fdr_context;
 
     // States
-    valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> m_uint_nodes;
-    valla::IndexedHashSet<float_t, uint_t> m_float_nodes;
-    std::vector<uint_t> m_nodes_buffer;
-    IndexedHashSet<PackedState<LiftedTask>, StateIndex> m_packed_states;
-    SharedObjectPool<UnpackedState<LiftedTask>> m_unpacked_state_pool;
+    StateRepository<LiftedTask> m_state_repository;
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
 
