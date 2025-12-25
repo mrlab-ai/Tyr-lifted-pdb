@@ -1,3 +1,6 @@
+add_executable(astar "astar.cpp")
+target_link_libraries(astar tyr::core)
+
 add_executable(ground_task "ground_task.cpp")
 target_link_libraries(ground_task tyr::core)
 

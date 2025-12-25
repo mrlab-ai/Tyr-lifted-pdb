@@ -35,22 +35,20 @@ class State
 };
 
 template<typename T, typename Task>
-concept StateConcept = requires(T& a,
-                                const T& b,
+concept StateConcept = requires(const T& cs,
                                 Index<formalism::FDRVariable<formalism::FluentTag>> variable,
                                 Index<formalism::GroundFunctionTerm<formalism::StaticTag>> static_fterm,
                                 Index<formalism::GroundFunctionTerm<formalism::FluentTag>> fluent_fterm,
                                 Index<formalism::GroundAtom<formalism::StaticTag>> static_atom,
                                 Index<formalism::GroundAtom<formalism::DerivedTag>> derived_atom) {
     typename T::TaskType;
-    { b.get_index() } -> std::same_as<StateIndex>;
-    { b.get(variable) } -> std::same_as<formalism::FDRValue>;
-    { b.get(static_fterm) } -> std::same_as<float_t>;
-    { b.get(fluent_fterm) } -> std::same_as<float_t>;
-    { b.test(static_atom) } -> std::same_as<bool>;
-    { b.test(derived_atom) } -> std::same_as<bool>;
-    { a.get_task() } -> std::same_as<Task&>;
-    { b.get_task() } -> std::same_as<const Task&>;
+    { cs.get_index() } -> std::same_as<StateIndex>;
+    { cs.get(variable) } -> std::same_as<formalism::FDRValue>;
+    { cs.get(static_fterm) } -> std::same_as<float_t>;
+    { cs.get(fluent_fterm) } -> std::same_as<float_t>;
+    { cs.test(static_atom) } -> std::same_as<bool>;
+    { cs.test(derived_atom) } -> std::same_as<bool>;
+    { cs.get_task() } -> std::same_as<Task&>;
 };
 
 }

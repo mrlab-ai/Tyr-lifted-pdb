@@ -26,9 +26,9 @@
 namespace tyr::planning
 {
 
-std::vector<LabeledNode<GroundTask>> Node<GroundTask>::get_labeled_successor_nodes() { return get_task().get_labeled_successor_nodes(*this); }
+std::vector<LabeledNode<GroundTask>> Node<GroundTask>::get_labeled_successor_nodes() const { return get_task().get_labeled_successor_nodes(*this); }
 
-void Node<GroundTask>::get_labeled_successor_nodes(std::vector<LabeledNode<GroundTask>>& out_nodes)
+void Node<GroundTask>::get_labeled_successor_nodes(std::vector<LabeledNode<GroundTask>>& out_nodes) const
 {
     get_task().get_labeled_successor_nodes(*this, out_nodes);
 }

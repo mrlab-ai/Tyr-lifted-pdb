@@ -45,14 +45,12 @@ struct LabeledNode
 };
 
 template<typename T, typename Task>
-concept NodeConcept = requires(T& a, const T& b) {
-    { b.get_state() } -> std::same_as<const State<Task>&>;
-    { a.get_task() } -> std::same_as<Task&>;
-    { b.get_task() } -> std::same_as<const Task&>;
-    { b.get_metric() } -> std::same_as<float_t>;
-    { b.get_index() } -> std::same_as<StateIndex>;
-    { a.get_labeled_successor_nodes() } -> std::ranges::forward_range;
-    requires std::same_as<std::ranges::range_reference_t<decltype(a.get_labeled_successor_nodes())>, LabeledNode<Task>&>;
+concept NodeConcept = requires(const T& cn) {
+    { cn.get_state() } -> std::same_as<const State<Task>&>;
+    { cn.get_task() } -> std::same_as<Task&>;
+    { cn.get_metric() } -> std::same_as<float_t>;
+    { cn.get_labeled_successor_nodes() } -> std::ranges::forward_range;
+    requires std::convertible_to<std::ranges::range_value_t<decltype(cn.get_labeled_successor_nodes())>, LabeledNode<Task>>;
 };
 }
 

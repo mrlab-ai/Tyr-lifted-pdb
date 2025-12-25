@@ -36,11 +36,11 @@ class StateRepository
 };
 
 template<typename T, typename Task>
-concept StateRepositoryConcept = requires(T& a, StateIndex index, SharedObjectPoolPtr<UnpackedState<Task>> unregistered_state) {
-    { a.get_initial_state() } -> std::same_as<State<Task>>;
-    { a.get_registered_state(index) } -> std::same_as<State<Task>>;
-    { a.get_unregistered_state() } -> std::same_as<SharedObjectPoolPtr<UnpackedState<Task>>>;
-    { a.register_state(unregistered_state) } -> std::same_as<State<Task>>;
+concept StateRepositoryConcept = requires(T& r, StateIndex index, SharedObjectPoolPtr<UnpackedState<Task>> unregistered_state) {
+    { r.get_initial_state() } -> std::same_as<State<Task>>;
+    { r.get_registered_state(index) } -> std::same_as<State<Task>>;
+    { r.get_unregistered_state() } -> std::same_as<SharedObjectPoolPtr<UnpackedState<Task>>>;
+    { r.register_state(unregistered_state) } -> std::same_as<State<Task>>;
 };
 
 }

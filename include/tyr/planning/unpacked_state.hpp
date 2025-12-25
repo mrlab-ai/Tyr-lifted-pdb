@@ -37,8 +37,8 @@ class UnpackedState
 };
 
 template<typename T>
-concept UnpackedStateConcept = requires(T& a,
-                                        const T& b,
+concept UnpackedStateConcept = requires(T& s,
+                                        const T& cs,
                                         StateIndex index,
                                         Index<formalism::FDRVariable<formalism::FluentTag>> variable,
                                         Data<formalism::FDRFact<formalism::FluentTag>> fact,
@@ -46,18 +46,18 @@ concept UnpackedStateConcept = requires(T& a,
                                         float_t value,
                                         Index<formalism::GroundAtom<formalism::DerivedTag>> atom) {
     typename T::TaskType;
-    { a.clear() };
-    { a.clear_unextended_part() };
-    { a.clear_extended_part() };
-    { a.assign_unextended_part(b) };
-    { b.get_index() } -> std::same_as<StateIndex>;
-    { a.set(index) };
-    { b.get(variable) } -> std::same_as<formalism::FDRValue>;
-    { a.set(fact) };
-    { b.get(fterm) } -> std::same_as<float_t>;
-    { a.set(fterm, value) };
-    { b.test(atom) } -> std::same_as<bool>;
-    { a.set(atom) };
+    { s.clear() };
+    { s.clear_unextended_part() };
+    { s.clear_extended_part() };
+    { s.assign_unextended_part(cs) };
+    { cs.get_index() } -> std::same_as<StateIndex>;
+    { s.set(index) };
+    { cs.get(variable) } -> std::same_as<formalism::FDRValue>;
+    { s.set(fact) };
+    { cs.get(fterm) } -> std::same_as<float_t>;
+    { s.set(fterm, value) };
+    { cs.test(atom) } -> std::same_as<bool>;
+    { s.set(atom) };
 };
 
 }

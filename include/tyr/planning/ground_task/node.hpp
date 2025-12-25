@@ -52,14 +52,12 @@ public:
     Node(State<GroundTask> state, float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
 
     const State<GroundTask>& get_state() const noexcept { return m_state; }
-    GroundTask& get_task() noexcept { return m_state.get_task(); }
-    const GroundTask& get_task() const noexcept { return m_state.get_task(); }
+    GroundTask& get_task() const noexcept { return m_state.get_task(); }
     float_t get_metric() const noexcept { return m_metric; }
-    StateIndex get_index() const noexcept { return m_state.get_index(); }
 
-    std::vector<LabeledNode<GroundTask>> get_labeled_successor_nodes();
+    std::vector<LabeledNode<GroundTask>> get_labeled_successor_nodes() const;
 
-    void get_labeled_successor_nodes(std::vector<LabeledNode<GroundTask>>& out_nodes);
+    void get_labeled_successor_nodes(std::vector<LabeledNode<GroundTask>>& out_nodes) const;
 
 private:
     State<GroundTask> m_state;

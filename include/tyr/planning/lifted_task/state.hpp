@@ -51,8 +51,7 @@ public:
 
     bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const;
 
-    LiftedTask& get_task() noexcept;
-    const LiftedTask& get_task() const noexcept;
+    LiftedTask& get_task() const noexcept;
 
     const UnpackedState<LiftedTask>& get_unpacked_state() const noexcept;
 
@@ -89,9 +88,7 @@ inline float_t State<LiftedTask>::get(Index<formalism::GroundFunctionTerm<formal
 
 inline bool State<LiftedTask>::test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return m_unpacked->test(index); }
 
-inline LiftedTask& State<LiftedTask>::get_task() noexcept { return *m_task; }
-
-inline const LiftedTask& State<LiftedTask>::get_task() const noexcept { return *m_task; }
+inline LiftedTask& State<LiftedTask>::get_task() const noexcept { return *m_task; }
 
 inline const UnpackedState<LiftedTask>& State<LiftedTask>::get_unpacked_state() const noexcept { return *m_unpacked; }
 }
