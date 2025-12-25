@@ -40,7 +40,6 @@ namespace details
  */
 
 /// @brief A vertex [parameter_index/object_index] in the consistency graph.
-template<formalism::Context C>
 class Vertex
 {
 private:
@@ -52,12 +51,14 @@ public:
     Vertex(uint_t index, formalism::ParameterIndex parameter_index, Index<formalism::Object> object_index) noexcept;
 
     template<formalism::FactKind T>
-    bool consistent_literals(View<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T, C>& predicate_assignment_sets) const noexcept;
+    bool consistent_literals(View<IndexList<formalism::Literal<T>>, formalism::Repository> literals,
+                             const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept;
 
-    bool consistent_numeric_constraints(View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> numeric_constraints,
-                                        const AssignmentSets<C>& assignment_sets) const noexcept;
+    bool
+    consistent_numeric_constraints(View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, formalism::Repository> numeric_constraints,
+                                   const AssignmentSets& assignment_sets) const noexcept;
 
-    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, C> term) const noexcept;
+    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, formalism::Repository> term) const noexcept;
 
     uint_t get_index() const noexcept;
     formalism::ParameterIndex get_parameter_index() const noexcept;
@@ -69,58 +70,57 @@ public:
  */
 
 /// @brief An undirected edge {src,dst} in the consistency graph.
-template<formalism::Context C>
 class Edge
 {
 private:
-    Vertex<C> m_src;
-    Vertex<C> m_dst;
+    Vertex m_src;
+    Vertex m_dst;
 
 public:
-    Edge(Vertex<C> src, Vertex<C> dst) noexcept;
+    Edge(Vertex src, Vertex dst) noexcept;
 
     template<formalism::FactKind T>
-    bool consistent_literals(View<IndexList<formalism::Literal<T>>, C> literals, const PredicateAssignmentSets<T, C>& predicate_assignment_sets) const noexcept;
+    bool consistent_literals(View<IndexList<formalism::Literal<T>>, formalism::Repository> literals,
+                             const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept;
 
-    bool consistent_numeric_constraints(View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C> numeric_constraints,
-                                        const AssignmentSets<C>& assignment_sets) const noexcept;
+    bool
+    consistent_numeric_constraints(View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, formalism::Repository> numeric_constraints,
+                                   const AssignmentSets& assignment_sets) const noexcept;
 
-    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, C> term) const noexcept;
+    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, formalism::Repository> term) const noexcept;
 
-    const Vertex<C>& get_src() const noexcept;
-    const Vertex<C>& get_dst() const noexcept;
+    const Vertex& get_src() const noexcept;
+    const Vertex& get_dst() const noexcept;
 };
 
-template<formalism::Context C>
-using Vertices = std::vector<Vertex<C>>;
+using Vertices = std::vector<Vertex>;
 }
 
-template<formalism::Context C>
 class StaticConsistencyGraph
 {
 private:
     /// @brief Helper to initialize vertices.
-    std::pair<details::Vertices<C>, std::vector<std::vector<uint_t>>>
-    compute_vertices(View<Index<formalism::ConjunctiveCondition>, C> condition,
+    std::pair<details::Vertices, std::vector<std::vector<uint_t>>>
+    compute_vertices(View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
                      const analysis::DomainListList& parameter_domains,
                      uint_t begin_parameter_index,
                      uint_t end_parameter_index,
-                     const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets);
+                     const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
     /// @brief Helper to initialize edges.
     std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
-    compute_edges(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                  const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets,
-                  const details::Vertices<C>& vertices);
+    compute_edges(View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
+                  const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
+                  const details::Vertices& vertices);
 
 public:
-    StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, C> condition,
-                           View<Index<formalism::ConjunctiveCondition>, C> unary_overapproximation_condition,
-                           View<Index<formalism::ConjunctiveCondition>, C> binary_overapproximation_condition,
+    StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
+                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_overapproximation_condition,
+                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_overapproximation_condition,
                            const analysis::DomainListList& parameter_domains,
                            uint_t begin_parameter_index,
                            uint_t end_parameter_index,
-                           const TaggedAssignmentSets<formalism::StaticTag, C>& static_assignment_sets);
+                           const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
     class EdgeIterator
     {
@@ -135,7 +135,7 @@ public:
 
     public:
         using difference_type = std::ptrdiff_t;
-        using value_type = details::Edge<C>;
+        using value_type = details::Edge;
         using pointer = value_type*;
         using reference = const value_type&;
         using iterator_category = std::forward_iterator_tag;
@@ -154,7 +154,7 @@ public:
 
     auto get_edges() const noexcept { return std::ranges::subrange(EdgeIterator(*this, true), EdgeIterator(*this, false)); }
 
-    auto consistent_vertices(const AssignmentSets<C>& assignment_sets) const
+    auto consistent_vertices(const AssignmentSets& assignment_sets) const
     {
         return get_vertices()
                | std::views::filter(
@@ -166,7 +166,7 @@ public:
                    });
     }
 
-    auto consistent_edges(const AssignmentSets<C>& assignment_sets, const boost::dynamic_bitset<>& consistent_vertices) const
+    auto consistent_edges(const AssignmentSets& assignment_sets, const boost::dynamic_bitset<>& consistent_vertices) const
     {
         return get_edges()
                | std::views::filter(
@@ -179,21 +179,21 @@ public:
                    });
     }
 
-    const details::Vertex<C>& get_vertex(uint_t index) const noexcept;
+    const details::Vertex& get_vertex(uint_t index) const noexcept;
 
     size_t get_num_vertices() const noexcept;
     size_t get_num_edges() const noexcept;
 
-    View<Index<formalism::ConjunctiveCondition>, C> get_condition() const noexcept;
+    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> get_condition() const noexcept;
     const std::vector<std::vector<uint_t>>& get_partitions() const noexcept;
 
 private:
-    View<Index<formalism::ConjunctiveCondition>, C> m_condition;
-    View<Index<formalism::ConjunctiveCondition>, C> m_unary_overapproximation_condition;
-    View<Index<formalism::ConjunctiveCondition>, C> m_binary_overapproximation_condition;
+    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> m_condition;
+    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> m_unary_overapproximation_condition;
+    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> m_binary_overapproximation_condition;
 
     /* The data member of the consistency graph. */
-    details::Vertices<C> m_vertices;
+    details::Vertices m_vertices;
 
     // Adjacency list of edges.
     std::vector<uint_t> m_sources;  ///< sources with non-zero out-degree

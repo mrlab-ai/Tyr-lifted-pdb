@@ -22,40 +22,35 @@
 
 namespace tyr::grounder
 {
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 class PredicateAssignmentSet;
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 class PredicateAssignmentSets;
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 class FunctionAssignmentSet;
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 class FunctionAssignmentSets;
 
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 struct TaggedAssignmentSets;
 
-template<formalism::Context C>
 struct AssignmentSets;
 
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 class PredicateFactSet;
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 class FunctionFactSet;
 
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T>
 struct TaggedFactSets;
 
-template<formalism::Context C>
 struct FactSets;
 
-template<formalism::Context C>
 class StaticConsistencyGraph;
 
 namespace details
 {
-template<formalism::Context C>
 class Vertex;
-template<formalism::Context C>
 class Edge;
 }
 

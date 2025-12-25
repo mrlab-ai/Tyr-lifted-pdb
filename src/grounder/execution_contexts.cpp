@@ -36,7 +36,7 @@ FactsExecutionContext::FactsExecutionContext(View<Index<Program>, Repository> pr
 }
 
 FactsExecutionContext::FactsExecutionContext(View<Index<Program>, Repository> program,
-                                             TaggedFactSets<FluentTag, Repository> fluent_facts,
+                                             TaggedFactSets<FluentTag> fluent_facts,
                                              const analysis::ProgramVariableDomains& domains) :
     fact_sets(program, fluent_facts),
     assignment_sets(program, domains, fact_sets)
@@ -98,12 +98,12 @@ void RuleStageExecutionContext::clear() noexcept
 
 RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
                                            View<Index<GroundConjunctiveCondition>, Repository> nullary_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_overapproximation_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_overapproximation_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_conflicting_overapproximation_condition,
-                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_conflicting_overapproximation_condition,
+                                           View<Index<ConjunctiveCondition>, Repository> unary_overapproximation_condition,
+                                           View<Index<ConjunctiveCondition>, Repository> binary_overapproximation_condition,
+                                           View<Index<ConjunctiveCondition>, Repository> unary_conflicting_overapproximation_condition,
+                                           View<Index<ConjunctiveCondition>, Repository> binary_conflicting_overapproximation_condition,
                                            const analysis::DomainListList& parameter_domains,
-                                           const TaggedAssignmentSets<StaticTag, Repository>& static_assignment_sets,
+                                           const TaggedAssignmentSets<StaticTag>& static_assignment_sets,
                                            const Repository& parent) :
     rule(rule),
     nullary_condition(nullary_condition),
@@ -133,7 +133,7 @@ void RuleExecutionContext::clear() noexcept
     ground_heads.clear();
 }
 
-void RuleExecutionContext::initialize(const AssignmentSets<Repository>& assignment_sets)
+void RuleExecutionContext::initialize(const AssignmentSets& assignment_sets)
 {
     grounder::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
 }

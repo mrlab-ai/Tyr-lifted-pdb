@@ -20,7 +20,8 @@
 
 #include "tyr/common/config.hpp"
 #include "tyr/common/declarations.hpp"
-#include "tyr/formalism/indices.hpp"
+#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/parameter_index.hpp"
 
 #include <limits>
 

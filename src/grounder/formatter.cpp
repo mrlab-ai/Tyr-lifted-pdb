@@ -45,26 +45,19 @@ std::ostream& print(std::ostream& os, const grounder::EdgeAssignment& el)
     return os;
 }
 
-template<formalism::Context C>
-std::ostream& print(std::ostream& os, const grounder::details::Vertex<C>& el)
+std::ostream& print(std::ostream& os, const grounder::details::Vertex& el)
 {
     fmt::print(os, "[{}/{}]", to_string(el.get_parameter_index()), to_string(el.get_object_index()));
     return os;
 }
 
-template std::ostream& print(std::ostream& os, const grounder::details::Vertex<formalism::Repository>& el);
-
-template<formalism::Context C>
-std::ostream& print(std::ostream& os, const grounder::details::Edge<C>& el)
+std::ostream& print(std::ostream& os, const grounder::details::Edge& el)
 {
     fmt::print(os, "[{}, {}]", to_string(el.get_src()), to_string(el.get_dst()));
     return os;
 }
 
-template std::ostream& print(std::ostream& os, const grounder::details::Edge<formalism::Repository>& el);
-
-template<formalism::Context C>
-std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<C>& el)
+std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph& el)
 {
     fmt::print(
         os,
@@ -78,27 +71,13 @@ std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<C>&
     return os;
 }
 
-template std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<formalism::Repository>& el);
-
 namespace grounder
 {
 namespace details
 {
-template<formalism::Context C>
-std::ostream& operator<<(std::ostream& os, const Vertex<C>& el)
-{
-    return print(os, el);
-}
+std::ostream& operator<<(std::ostream& os, const Vertex& el) { return print(os, el); }
 
-template std::ostream& operator<<(std::ostream& os, const Vertex<formalism::Repository>& el);
-
-template<formalism::Context C>
-std::ostream& operator<<(std::ostream& os, const Edge<C>& el)
-{
-    return print(os, el);
-}
-
-template std::ostream& operator<<(std::ostream& os, const Edge<formalism::Repository>& el);
+std::ostream& operator<<(std::ostream& os, const Edge& el) { return print(os, el); }
 
 }  // end namespace details
 
@@ -106,13 +85,7 @@ std::ostream& operator<<(std::ostream& os, const VertexAssignment& el) { return 
 
 std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el) { return print(os, el); }
 
-template<formalism::Context C>
-std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<C>& el)
-{
-    return print(os, el);
-}
-
-template std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<formalism::Repository>& el);
+std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph& el) { return print(os, el); }
 
 }  // end namespace grounder
 }

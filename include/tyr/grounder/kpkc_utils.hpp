@@ -26,18 +26,15 @@ namespace tyr::grounder::kpkc
 {
 
 /// @brief Helper to allocate a DenseKPartiteGraph from a given StaticConsistencyGraph.
-template<formalism::Context C>
-DenseKPartiteGraph allocate_dense_graph(const StaticConsistencyGraph<C>& sparse_graph);
+extern DenseKPartiteGraph allocate_dense_graph(const StaticConsistencyGraph& sparse_graph);
 
 /// @brief Helper to allocate a Workspace from a given StaticConsistencyGraph.
-template<formalism::Context C>
-Workspace allocate_workspace(const StaticConsistencyGraph<C>& sparse_graph);
+extern Workspace allocate_workspace(const StaticConsistencyGraph& sparse_graph);
 
-template<formalism::Context C>
-void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<C>& sparse_graph,
-                                          const AssignmentSets<C>& assignment_sets,
-                                          DenseKPartiteGraph& ref_graph,
-                                          Workspace& ref_workspace);
+extern void initialize_dense_graph_and_workspace(const StaticConsistencyGraph& sparse_graph,
+                                                 const AssignmentSets& assignment_sets,
+                                                 DenseKPartiteGraph& ref_graph,
+                                                 Workspace& ref_workspace);
 
 }
 

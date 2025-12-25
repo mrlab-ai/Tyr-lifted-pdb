@@ -28,8 +28,7 @@
 namespace tyr::grounder::kpkc
 {
 
-template<formalism::Context C>
-DenseKPartiteGraph allocate_dense_graph(const StaticConsistencyGraph<C>& sparse_graph)
+DenseKPartiteGraph allocate_dense_graph(const StaticConsistencyGraph& sparse_graph)
 {
     auto graph = DenseKPartiteGraph();
 
@@ -54,10 +53,7 @@ DenseKPartiteGraph allocate_dense_graph(const StaticConsistencyGraph<C>& sparse_
     return graph;
 }
 
-template DenseKPartiteGraph allocate_dense_graph(const StaticConsistencyGraph<formalism::Repository>& sparse_graph);
-
-template<formalism::Context C>
-Workspace allocate_workspace(const StaticConsistencyGraph<C>& sparse_graph)
+Workspace allocate_workspace(const StaticConsistencyGraph& sparse_graph)
 {
     auto workspace = Workspace();
 
@@ -92,11 +88,8 @@ Workspace allocate_workspace(const StaticConsistencyGraph<C>& sparse_graph)
     return workspace;
 }
 
-template Workspace allocate_workspace(const StaticConsistencyGraph<formalism::Repository>& sparse_graph);
-
-template<formalism::Context C>
-void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<C>& sparse_graph,
-                                          const AssignmentSets<C>& assignment_sets,
+void initialize_dense_graph_and_workspace(const StaticConsistencyGraph& sparse_graph,
+                                          const AssignmentSets& assignment_sets,
                                           DenseKPartiteGraph& ref_graph,
                                           Workspace& ref_workspace)
 {
@@ -136,10 +129,5 @@ void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<C>& spars
     // Initialize partition bits: Reset the partition bits
     ref_workspace.partition_bits.reset();
 }
-
-template void initialize_dense_graph_and_workspace(const StaticConsistencyGraph<formalism::Repository>& sparse_graph,
-                                                   const AssignmentSets<formalism::Repository>& assignment_sets,
-                                                   DenseKPartiteGraph& ref_graph,
-                                                   Workspace& ref_workspace);
 
 }

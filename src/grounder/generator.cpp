@@ -55,47 +55,41 @@ using namespace tyr::formalism;
 namespace tyr::grounder
 {
 
-template<formalism::FactKind T, formalism::Context C_SRC, formalism::Context C1_DST, formalism::Context C2_DST>
-bool is_valid_binding(View<Index<formalism::Literal<T>>, C_SRC> element, const FactSets<C1_DST>& fact_sets, GrounderContext<C2_DST>& context)
+template<FactKind T, Context C_SRC, Context C_DST>
+bool is_valid_binding(View<Index<Literal<T>>, C_SRC> element, const FactSets& fact_sets, GrounderContext<C_DST>& context)
 {
     return fact_sets.template get<T>().predicate.contains(ground_datalog(element.get_atom(), context).first) == element.get_polarity();
 }
 
-template<formalism::FactKind T, formalism::Context C_SRC, formalism::Context C1_DST, formalism::Context C2_DST>
-bool is_valid_binding(View<IndexList<formalism::Literal<T>>, C_SRC> elements, const FactSets<C1_DST>& fact_sets, GrounderContext<C2_DST>& context)
+template<FactKind T, Context C_SRC, Context C_DST>
+bool is_valid_binding(View<IndexList<Literal<T>>, C_SRC> elements, const FactSets& fact_sets, GrounderContext<C_DST>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); });
 }
 
-template<formalism::Context C_SRC, formalism::Context C1_DST, formalism::Context C2_DST>
-bool is_valid_binding(View<DataList<formalism::Literal<formalism::FluentTag>>, C_SRC> elements,
-                      const FactSets<C1_DST>& fact_sets,
-                      GrounderContext<C2_DST>& context)
+template<Context C_SRC, Context C_DST>
+bool is_valid_binding(View<DataList<Literal<FluentTag>>, C_SRC> elements, const FactSets& fact_sets, GrounderContext<C_DST>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); });
 }
 
-template<formalism::Context C_SRC, formalism::Context C1_DST, formalism::Context C2_DST>
-bool is_valid_binding(View<Data<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C_SRC> element,
-                      const FactSets<C1_DST>& fact_sets,
-                      GrounderContext<C2_DST>& context)
+template<Context C_SRC, Context C_DST>
+bool is_valid_binding(View<Data<BooleanOperator<Data<FunctionExpression>>>, C_SRC> element, const FactSets& fact_sets, GrounderContext<C_DST>& context)
 {
     return evaluate(make_view(ground_common(element, context), context.destination), fact_sets);
 }
 
-template<formalism::Context C_SRC, formalism::Context C1_DST, formalism::Context C2_DST>
-bool is_valid_binding(View<DataList<formalism::BooleanOperator<Data<formalism::FunctionExpression>>>, C_SRC> elements,
-                      const FactSets<C1_DST>& fact_sets,
-                      GrounderContext<C2_DST>& context)
+template<Context C_SRC, Context C_DST>
+bool is_valid_binding(View<DataList<BooleanOperator<Data<FunctionExpression>>>, C_SRC> elements, const FactSets& fact_sets, GrounderContext<C_DST>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); });
 }
 
-template<formalism::Context C_SRC, formalism::Context C1_DST, formalism::Context C2_DST>
-bool is_valid_binding(View<Index<formalism::ConjunctiveCondition>, C_SRC> element, const FactSets<C1_DST>& fact_sets, GrounderContext<C2_DST>& context)
+template<Context C_SRC, Context C_DST>
+bool is_valid_binding(View<Index<ConjunctiveCondition>, C_SRC> element, const FactSets& fact_sets, GrounderContext<C_DST>& context)
 {
-    return is_valid_binding(element.template get_literals<formalism::StaticTag>(), fact_sets, context)     //
-           && is_valid_binding(element.template get_literals<formalism::FluentTag>(), fact_sets, context)  //
+    return is_valid_binding(element.template get_literals<StaticTag>(), fact_sets, context)     //
+           && is_valid_binding(element.template get_literals<FluentTag>(), fact_sets, context)  //
            && is_valid_binding(element.get_numeric_constraints(), fact_sets, context);
 }
 
@@ -107,7 +101,7 @@ static auto create_nullary_ground_head_in_stage(View<Index<Atom<FluentTag>>, Rep
 }
 
 static auto create_unary_ground_head_in_stage(uint_t vertex_index,
-                                              const StaticConsistencyGraph<Repository>& consistency_graph,
+                                              const StaticConsistencyGraph& consistency_graph,
                                               View<Index<Atom<FluentTag>>, Repository> head,
                                               GrounderContext<Repository>& context)
 {
@@ -121,7 +115,7 @@ static auto create_unary_ground_head_in_stage(uint_t vertex_index,
 }
 
 static auto create_general_ground_head_in_stage(const std::vector<uint_t>& clique,
-                                                const StaticConsistencyGraph<Repository>& consistency_graph,
+                                                const StaticConsistencyGraph& consistency_graph,
                                                 View<Index<Atom<FluentTag>>, Repository> head,
                                                 GrounderContext<Repository>& context)
 {

@@ -30,32 +30,26 @@ extern std::ostream& print(std::ostream& os, const grounder::VertexAssignment& e
 
 extern std::ostream& print(std::ostream& os, const grounder::EdgeAssignment& el);
 
-template<formalism::Context C>
-std::ostream& print(std::ostream& os, const grounder::details::Vertex<C>& el);
+extern std::ostream& print(std::ostream& os, const grounder::details::Vertex& el);
 
-template<formalism::Context C>
-std::ostream& print(std::ostream& os, const grounder::details::Edge<C>& el);
+extern std::ostream& print(std::ostream& os, const grounder::details::Edge& el);
 
-template<formalism::Context C>
-std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph<C>& el);
+extern std::ostream& print(std::ostream& os, const grounder::StaticConsistencyGraph& el);
 
 namespace grounder
 {
 namespace details
 {
-template<formalism::Context C>
-std::ostream& operator<<(std::ostream& os, const Vertex<C>& el);
+extern std::ostream& operator<<(std::ostream& os, const Vertex& el);
 
-template<formalism::Context C>
-std::ostream& operator<<(std::ostream& os, const Edge<C>& el);
+extern std::ostream& operator<<(std::ostream& os, const Edge& el);
 }  // end namespace details
 
 extern std::ostream& operator<<(std::ostream& os, const VertexAssignment& el);
 
 extern std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el);
 
-template<formalism::Context C>
-std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph<C>& el);
+extern std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph& el);
 }  // end namespace grounder
 }
 
