@@ -29,13 +29,14 @@
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
 #include "tyr/grounder/execution_contexts.hpp"
+#include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/lifted_task/axiom_evaluator.hpp"
 #include "tyr/planning/lifted_task/state_repository.hpp"
 #include "tyr/planning/programs/action.hpp"
 #include "tyr/planning/programs/axiom.hpp"
 #include "tyr/planning/programs/ground.hpp"
 #include "tyr/planning/state_index.hpp"
-#include "tyr/planning/successor_generator.hpp"
 
 namespace tyr::planning
 {
@@ -64,7 +65,6 @@ public:
     GroundTaskPtr get_ground_task();
 
     const ApplicableActionProgram& get_action_program() const;
-    const AxiomEvaluatorProgram& get_axiom_program() const;
     const GroundTaskProgram& get_ground_program() const;
 
     /**
@@ -102,16 +102,16 @@ private:
     std::vector<float_t> m_static_numeric_variables;
 
     // Transition
-    SuccessorGenerator m_successor_generator;
+    ActionExecutor m_successor_generator;
+
+    AxiomEvaluator<LiftedTask> m_axiom_evaluator;
 
     // Programs
     ApplicableActionProgram m_action_program;
-    AxiomEvaluatorProgram m_axiom_program;
     GroundTaskProgram m_ground_program;
 
     // Execution contexts
     grounder::ProgramExecutionContext m_action_context;
-    grounder::ProgramExecutionContext m_axiom_context;
 
     std::vector<analysis::DomainListListList> m_parameter_domains_per_cond_effect_per_action;
 };

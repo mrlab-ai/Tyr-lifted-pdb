@@ -23,6 +23,7 @@
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/grounder/declarations.hpp"
+#include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task.hpp"
@@ -33,7 +34,6 @@
 #include "tyr/planning/lifted_task/node.hpp"
 #include "tyr/planning/lifted_task/state.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
-#include "tyr/planning/successor_generator.hpp"
 
 using namespace tyr::formalism;
 
@@ -69,7 +69,7 @@ void process_effects(View<Index<GroundAction>, OverlayRepository<Repository>> ac
 }
 
 template<typename Task>
-bool SuccessorGenerator::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<Task>& state)
+bool ActionExecutor::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<Task>& state)
 {
     if (tyr::planning::are_applicable_if_fires(action.get_effects(), state, m_effect_families)
         != tyr::planning::is_applicable(action, state, m_effect_families))
@@ -84,11 +84,11 @@ bool SuccessorGenerator::is_applicable(View<Index<GroundAction>, OverlayReposito
     return are_applicable_if_fires(action.get_effects(), state, m_effect_families);
 }
 
-template bool SuccessorGenerator::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<LiftedTask>& state);
-template bool SuccessorGenerator::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<GroundTask>& state);
+template bool ActionExecutor::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<LiftedTask>& state);
+template bool ActionExecutor::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<GroundTask>& state);
 
 template<typename Task>
-Node<Task> SuccessorGenerator::apply_action(const StateContext<Task>& state_context, View<Index<GroundAction>, OverlayRepository<Repository>> action)
+Node<Task> ActionExecutor::apply_action(const StateContext<Task>& state_context, View<Index<GroundAction>, OverlayRepository<Repository>> action)
 {
     m_del_effects.clear();
     m_add_effects.clear();
@@ -120,8 +120,8 @@ Node<Task> SuccessorGenerator::apply_action(const StateContext<Task>& state_cont
     return Node<Task>(succ_state, succ_state_context.auxiliary_value);
 }
 
-template Node<LiftedTask> SuccessorGenerator::apply_action(const StateContext<LiftedTask>& state_context,
-                                                           View<Index<GroundAction>, OverlayRepository<Repository>> action);
-template Node<GroundTask> SuccessorGenerator::apply_action(const StateContext<GroundTask>& state_context,
-                                                           View<Index<GroundAction>, OverlayRepository<Repository>> action);
+template Node<LiftedTask> ActionExecutor::apply_action(const StateContext<LiftedTask>& state_context,
+                                                       View<Index<GroundAction>, OverlayRepository<Repository>> action);
+template Node<GroundTask> ActionExecutor::apply_action(const StateContext<GroundTask>& state_context,
+                                                       View<Index<GroundAction>, OverlayRepository<Repository>> action);
 }

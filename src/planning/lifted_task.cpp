@@ -45,120 +45,11 @@ using namespace tyr::solver;
 namespace tyr::planning
 {
 
-static void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluent_atoms,
-                                            const OverlayRepository<Repository>& atoms_context,
-                                            ProgramExecutionContext& axiom_context)
-{
-    /// --- Initialize FactSets
-    auto merge_context = MergeContext { axiom_context.builder, *axiom_context.repository, axiom_context.task_to_program_execution_context.merge_cache };
-
-    for (auto i = fluent_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = fluent_atoms.find_next(i))
-        axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(
-            make_view(merge(make_view(Index<GroundAtom<FluentTag>>(i), atoms_context), merge_context).first, merge_context.destination));
-}
-
-static void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& derived_atoms,
-                                             const OverlayRepository<Repository>& atoms_context,
-                                             ProgramExecutionContext& axiom_context)
-{
-    /// --- Initialize FactSets
-    auto merge_context = MergeContext { axiom_context.builder, *axiom_context.repository, axiom_context.task_to_program_execution_context.merge_cache };
-
-    for (auto i = derived_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = derived_atoms.find_next(i))
-        axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(make_view(
-            merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(make_view(Index<GroundAtom<DerivedTag>>(i), atoms_context), merge_context)
-                .first,
-            merge_context.destination));
-}
-
-static void insert_numeric_variables_to_fact_set(const std::vector<float_t>& numeric_variables,
-                                                 const OverlayRepository<Repository>& numeric_variables_context,
-                                                 ProgramExecutionContext& axiom_context)
-{
-    /// --- Initialize FactSets
-    auto merge_context = MergeContext { axiom_context.builder, *axiom_context.repository, axiom_context.task_to_program_execution_context.merge_cache };
-
-    for (uint_t i = 0; i < numeric_variables.size(); ++i)
-    {
-        if (!std::isnan(numeric_variables[i]))
-            axiom_context.facts_execution_context.fact_sets.fluent_sets.function.insert(
-                make_view(merge(make_view(Index<GroundFunctionTerm<FluentTag>>(i), numeric_variables_context), merge_context).first, merge_context.destination),
-                numeric_variables[i]);
-    }
-}
-
-static void insert_fact_sets_into_assignment_sets(ProgramExecutionContext& program_context)
-{
-    auto& fluent_predicate_fact_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().predicate;
-    auto& fluent_predicate_assignment_sets = program_context.facts_execution_context.assignment_sets.get<FluentTag>().predicate;
-
-    auto& fluent_function_fact_sets = program_context.facts_execution_context.fact_sets.get<FluentTag>().function;
-    auto& fluent_function_assignment_sets = program_context.facts_execution_context.assignment_sets.get<FluentTag>().function;
-
-    /// --- Initialize AssignmentSets
-    fluent_predicate_assignment_sets.insert(fluent_predicate_fact_sets.get_facts());
-    fluent_function_assignment_sets.insert(fluent_function_fact_sets.get_fterms(), fluent_function_fact_sets.get_values());
-
-    /// --- Initialize RuleExecutionContext
-    for (auto& rule_context : program_context.rule_execution_contexts)
-        rule_context.initialize(program_context.facts_execution_context.assignment_sets);
-}
-
-static void insert_unextended_state(const UnpackedState<LiftedTask>& unpacked_state,
-                                    const OverlayRepository<Repository>& atoms_context,
-                                    ProgramExecutionContext& axiom_context)
-{
-    axiom_context.facts_execution_context.reset<FluentTag>();
-    axiom_context.task_to_program_execution_context.clear();
-
-    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<FluentTag>(), atoms_context, axiom_context);
-
-    insert_fact_sets_into_assignment_sets(axiom_context);
-}
-
-static void insert_extended_state(const UnpackedState<LiftedTask>& unpacked_state,
-                                  const OverlayRepository<Repository>& atoms_context,
-                                  ProgramExecutionContext& action_context)
-{
-    action_context.facts_execution_context.reset<FluentTag>();
-    action_context.task_to_program_execution_context.clear();
-
-    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<FluentTag>(), atoms_context, action_context);
-    insert_derived_atoms_to_fact_set(unpacked_state.get_atoms<DerivedTag>(), atoms_context, action_context);
-    insert_numeric_variables_to_fact_set(unpacked_state.get_numeric_variables(), atoms_context, action_context);
-
-    insert_fact_sets_into_assignment_sets(action_context);
-}
-
-static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram& axiom_program,
-                                                    UnpackedState<LiftedTask>& unpacked_state,
-                                                    OverlayRepository<Repository>& task_repository,
-                                                    ProgramExecutionContext& axiom_context)
-{
-    axiom_context.program_to_task_execution_context.clear();
-
-    /// --- Initialize derived atoms in unpacked state
-
-    auto merge_context = MergeContext { axiom_context.builder, task_repository, axiom_context.program_to_task_execution_context.merge_cache };
-
-    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_predicate_mapping, then facts of the predicate
-    for (const auto fact : axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
-    {
-        if (axiom_program.get_predicate_to_predicate_mapping().contains(fact.get_predicate().get_index()))
-        {
-            // TODO: pass the predicate mapping here so that we can skip merging the predicate :)
-            const auto ground_atom = merge<FluentTag, Repository, OverlayRepository<Repository>, DerivedTag>(fact, merge_context).first;
-
-            unpacked_state.set(ground_atom);
-        }
-    }
-}
-
 static void read_solution_and_instantiate_labeled_successor_nodes(const StateContext<LiftedTask>& state_context,
                                                                   OverlayRepository<Repository>& task_repository,
                                                                   ProgramExecutionContext& action_context,
                                                                   BinaryFDRContext<OverlayRepository<Repository>>& fdr_context,
-                                                                  SuccessorGenerator& successor_generator,
+                                                                  ActionExecutor& successor_generator,
                                                                   const ApplicableActionProgram& action_program,
                                                                   const std::vector<analysis::DomainListListList>& parameter_domains_per_cond_effect_per_action,
                                                                   std::vector<LabeledNode<LiftedTask>>& out_nodes)
@@ -243,19 +134,14 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
     m_successor_generator(),
+    m_axiom_evaluator(m_task, m_overlay_repository),
     m_action_program(*this),
-    m_axiom_program(*this),
     m_ground_program(*this),
     m_action_context(m_action_program.get_program(),
                      m_action_program.get_repository(),
                      m_action_program.get_domains(),
                      m_action_program.get_strata(),
                      m_action_program.get_listeners()),
-    m_axiom_context(m_axiom_program.get_program(),
-                    m_axiom_program.get_repository(),
-                    m_axiom_program.get_domains(),
-                    m_axiom_program.get_strata(),
-                    m_axiom_program.get_listeners()),
     m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(task))
 {
     for (const auto atom : m_task.template get_atoms<StaticTag>())
@@ -269,14 +155,7 @@ State<LiftedTask> LiftedTask::get_state(StateIndex state_index) { return m_state
 
 State<LiftedTask> LiftedTask::register_state(SharedObjectPoolPtr<UnpackedState<LiftedTask>> state) { return m_state_repository.register_state(state); }
 
-void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_state)
-{
-    insert_unextended_state(unpacked_state, *m_overlay_repository, m_axiom_context);
-
-    solve_bottom_up(m_axiom_context);
-
-    read_derived_atoms_from_program_context(m_axiom_program, unpacked_state, *m_overlay_repository, m_axiom_context);
-}
+void LiftedTask::compute_extended_state(UnpackedState<LiftedTask>& unpacked_state) { m_axiom_evaluator.compute_extended_state(unpacked_state); }
 
 Node<LiftedTask> LiftedTask::get_initial_node()
 {
@@ -484,8 +363,6 @@ GroundTaskPtr LiftedTask::get_ground_task()
 }
 
 const ApplicableActionProgram& LiftedTask::get_action_program() const { return m_action_program; }
-
-const AxiomEvaluatorProgram& LiftedTask::get_axiom_program() const { return m_axiom_program; }
 
 const GroundTaskProgram& LiftedTask::get_ground_program() const { return m_ground_program; }
 

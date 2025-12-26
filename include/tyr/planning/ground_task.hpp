@@ -23,6 +23,7 @@
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
+#include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
 #include "tyr/planning/ground_task/node.hpp"
@@ -30,7 +31,6 @@
 #include "tyr/planning/ground_task/state.hpp"
 #include "tyr/planning/ground_task/state_repository.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
-#include "tyr/planning/successor_generator.hpp"
 
 namespace tyr::planning
 {
@@ -108,7 +108,7 @@ private:
     std::vector<float_t> m_static_numeric_variables;
 
     // Transition
-    SuccessorGenerator m_successor_generator;
+    ActionExecutor m_successor_generator;
 
     IndexList<formalism::GroundAction> m_applicable_actions;
     IndexList<formalism::GroundAxiom> m_applicable_axioms;

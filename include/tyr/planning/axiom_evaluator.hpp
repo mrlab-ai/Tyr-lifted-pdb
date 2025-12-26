@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_SUCCESSOR_GENERATOR_HPP_
-#define TYR_PLANNING_SUCCESSOR_GENERATOR_HPP_
+#ifndef TYR_PLANNING_AXIOM_EVALUATOR_HPP_
+#define TYR_PLANNING_AXIOM_EVALUATOR_HPP_
 
 #include "tyr/common/declarations.hpp"
 
@@ -24,9 +24,9 @@ namespace tyr::planning
 {
 
 template<typename Task>
-class SuccessorGenerator
+class AxiomEvaluator
 {
-    static_assert(dependent_false<Task>::value, "SuccessorGenerator is not defined for type T.");
+    static_assert(dependent_false<Task>::value, "AxiomEvaluator is not defined for type T.");
 };
 
 }

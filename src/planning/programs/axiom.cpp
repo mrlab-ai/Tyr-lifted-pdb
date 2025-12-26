@@ -73,8 +73,9 @@ static auto create_axiom_rule(View<Index<Axiom>, OverlayRepository<Repository>> 
     return context.destination.get_or_create(rule, context.builder.get_buffer());
 }
 
-static View<Index<Program>, Repository>
-create(const LiftedTask& task, AxiomEvaluatorProgram::PredicateToPredicateMapping& predicate_to_predicate_mapping, Repository& repository)
+static View<Index<Program>, Repository> create(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
+                                               AxiomEvaluatorProgram::PredicateToPredicateMapping& predicate_to_predicate_mapping,
+                                               Repository& repository)
 {
     auto merge_cache = MergeCache();
     auto builder = Builder();
@@ -83,13 +84,13 @@ create(const LiftedTask& task, AxiomEvaluatorProgram::PredicateToPredicateMappin
     auto& program = *program_ptr;
     program.clear();
 
-    for (const auto predicate : task.get_task().get_domain().get_predicates<StaticTag>())
+    for (const auto predicate : task.get_domain().get_predicates<StaticTag>())
         program.static_predicates.push_back(merge(predicate, context).first);
 
-    for (const auto predicate : task.get_task().get_domain().get_predicates<FluentTag>())
+    for (const auto predicate : task.get_domain().get_predicates<FluentTag>())
         program.fluent_predicates.push_back(merge(predicate, context).first);
 
-    for (const auto predicate : task.get_task().get_domain().get_predicates<DerivedTag>())
+    for (const auto predicate : task.get_domain().get_predicates<DerivedTag>())
     {
         const auto new_predicate = merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(predicate, context).first;
 
@@ -98,7 +99,7 @@ create(const LiftedTask& task, AxiomEvaluatorProgram::PredicateToPredicateMappin
         program.fluent_predicates.push_back(new_predicate);
     }
 
-    for (const auto predicate : task.get_task().get_derived_predicates())
+    for (const auto predicate : task.get_derived_predicates())
     {
         const auto new_predicate = merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(predicate, context).first;
 
@@ -107,39 +108,39 @@ create(const LiftedTask& task, AxiomEvaluatorProgram::PredicateToPredicateMappin
         program.fluent_predicates.push_back(new_predicate);
     }
 
-    for (const auto function : task.get_task().get_domain().get_functions<StaticTag>())
+    for (const auto function : task.get_domain().get_functions<StaticTag>())
         program.static_functions.push_back(merge(function, context).first);
 
-    for (const auto function : task.get_task().get_domain().get_functions<FluentTag>())
+    for (const auto function : task.get_domain().get_functions<FluentTag>())
         program.fluent_functions.push_back(merge(function, context).first);
 
     // We can ignore auxiliary function total-cost because it never occurs in a condition
 
-    for (const auto object : task.get_task().get_domain().get_constants())
+    for (const auto object : task.get_domain().get_constants())
         program.objects.push_back(merge(object, context).first);
-    for (const auto object : task.get_task().get_objects())
+    for (const auto object : task.get_objects())
         program.objects.push_back(merge(object, context).first);
 
-    for (const auto atom : task.get_task().get_atoms<StaticTag>())
+    for (const auto atom : task.get_atoms<StaticTag>())
         program.static_atoms.push_back(merge(atom, context).first);
 
-    for (const auto atom : task.get_task().get_atoms<FluentTag>())
+    for (const auto atom : task.get_atoms<FluentTag>())
         program.fluent_atoms.push_back(merge(atom, context).first);
 
-    for (const auto fterm_value : task.get_task().get_fterm_values<StaticTag>())
+    for (const auto fterm_value : task.get_fterm_values<StaticTag>())
         program.static_fterm_values.push_back(merge(fterm_value, context).first);
 
-    for (const auto axiom : task.get_task().get_domain().get_axioms())
+    for (const auto axiom : task.get_domain().get_axioms())
         program.rules.push_back(create_axiom_rule(axiom, context).first);
 
-    for (const auto axiom : task.get_task().get_axioms())
+    for (const auto axiom : task.get_axioms())
         program.rules.push_back(create_axiom_rule(axiom, context).first);
 
     canonicalize(program);
     return make_view(repository.get_or_create(program, builder.get_buffer()).first, context.destination);
 }
 
-AxiomEvaluatorProgram::AxiomEvaluatorProgram(const LiftedTask& task) :
+AxiomEvaluatorProgram::AxiomEvaluatorProgram(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task) :
     m_prediate_to_predicate(),
     m_repository(std::make_shared<Repository>()),
     m_program(create(task, m_prediate_to_predicate, *m_repository)),

@@ -108,6 +108,8 @@ int main(int argc, char** argv)
     auto& initial_search_node = get_or_create_search_node(initial_node.get_state().get_index(), search_nodes);
     initial_search_node.g_value = initial_node.get_metric();
 
+    auto labeled_succ_nodes = std::vector<planning::LabeledNode<planning::LiftedTask>> {};
+
     while (!queue.empty())
     {
         auto entry = queue.top();
@@ -116,6 +118,11 @@ int main(int argc, char** argv)
         const auto& search_node = get_or_create_search_node(entry.state, search_nodes);
 
         auto node = planning::Node<planning::LiftedTask>(lifted_task->get_state(entry.state), search_node.g_value);
+
+        labeled_succ_nodes.clear();
+        node.get_labeled_successor_nodes(labeled_succ_nodes);
+
+        for (const auto& labeled_succ_node : labeled_succ_nodes) {}
     }
 
     return 0;

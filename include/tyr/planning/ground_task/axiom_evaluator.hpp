@@ -22,11 +22,17 @@
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/views.hpp"
+#include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 
 namespace tyr::planning
 {
+template<>
+class AxiomEvaluator<GroundTask>
+{
+};
+
 extern void evaluate_axioms_bottomup(UnpackedState<GroundTask>& state, GroundTask& task, IndexList<formalism::GroundAxiom>& applicable_axioms);
 }
 

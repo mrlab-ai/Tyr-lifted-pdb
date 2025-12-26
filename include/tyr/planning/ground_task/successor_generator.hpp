@@ -15,18 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_SUCCESSOR_GENERATOR_HPP_
-#define TYR_PLANNING_SUCCESSOR_GENERATOR_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_SUCCESSOR_GENERATOR_HPP_
+#define TYR_PLANNING_GROUND_TASK_SUCCESSOR_GENERATOR_HPP_
 
-#include "tyr/common/declarations.hpp"
+#include "tyr/planning/declarations.hpp"
+#include "tyr/planning/successor_generator.hpp"
 
 namespace tyr::planning
 {
 
-template<typename Task>
-class SuccessorGenerator
+template<>
+class SuccessorGenerator<GroundTask>
 {
-    static_assert(dependent_false<Task>::value, "SuccessorGenerator is not defined for type T.");
 };
 
 }

@@ -1,0 +1,88 @@
+/*
+ * Copyright (C) 2025 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "tyr/planning/lifted_task/axiom_evaluator.hpp"
+
+#include "../task_utils.hpp"
+#include "tyr/solver/bottom_up.hpp"
+
+using namespace tyr::formalism;
+using namespace tyr::grounder;
+using namespace tyr::solver;
+
+namespace tyr::planning
+{
+
+static void insert_unextended_state(const UnpackedState<LiftedTask>& unpacked_state,
+                                    const OverlayRepository<Repository>& atoms_context,
+                                    ProgramExecutionContext& axiom_context)
+{
+    axiom_context.facts_execution_context.reset<FluentTag>();
+    axiom_context.task_to_program_execution_context.clear();
+
+    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<FluentTag>(), atoms_context, axiom_context);
+
+    insert_fact_sets_into_assignment_sets(axiom_context);
+}
+
+static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram& axiom_program,
+                                                    UnpackedState<LiftedTask>& unpacked_state,
+                                                    OverlayRepository<Repository>& task_repository,
+                                                    ProgramExecutionContext& axiom_context)
+{
+    axiom_context.program_to_task_execution_context.clear();
+
+    /// --- Initialize derived atoms in unpacked state
+
+    auto merge_context = MergeContext { axiom_context.builder, task_repository, axiom_context.program_to_task_execution_context.merge_cache };
+
+    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_predicate_mapping, then facts of the predicate
+    for (const auto fact : axiom_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
+    {
+        if (axiom_program.get_predicate_to_predicate_mapping().contains(fact.get_predicate().get_index()))
+        {
+            // TODO: pass the predicate mapping here so that we can skip merging the predicate :)
+            const auto ground_atom = merge<FluentTag, Repository, OverlayRepository<Repository>, DerivedTag>(fact, merge_context).first;
+
+            unpacked_state.set(ground_atom);
+        }
+    }
+}
+
+AxiomEvaluator<LiftedTask>::AxiomEvaluator(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
+                                           formalism::OverlayRepositoryPtr<formalism::Repository> repository) :
+    m_task(task),
+    m_repository(repository),
+    m_axiom_program(task),
+    m_axiom_context(m_axiom_program.get_program(),
+                    m_axiom_program.get_repository(),
+                    m_axiom_program.get_domains(),
+                    m_axiom_program.get_strata(),
+                    m_axiom_program.get_listeners())
+{
+}
+
+void AxiomEvaluator<LiftedTask>::compute_extended_state(UnpackedState<LiftedTask>& unpacked_state)
+{
+    insert_unextended_state(unpacked_state, *m_repository, m_axiom_context);
+
+    solve_bottom_up(m_axiom_context);
+
+    read_derived_atoms_from_program_context(m_axiom_program, unpacked_state, *m_repository, m_axiom_context);
+}
+
+}
