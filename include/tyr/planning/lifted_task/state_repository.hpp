@@ -41,7 +41,7 @@ template<>
 class StateRepository<LiftedTask>
 {
 public:
-    explicit StateRepository(LiftedTask& task, formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>> fdr_context);
+    explicit StateRepository(LiftedTask& task, std::shared_ptr<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>> fdr_context);
 
     State<LiftedTask> get_initial_state();
 
@@ -51,11 +51,9 @@ public:
 
     State<LiftedTask> register_state(SharedObjectPoolPtr<UnpackedState<LiftedTask>> state);
 
-    formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>& get_fdr_context();
-
 private:
     LiftedTask& m_task;
-    formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>> m_fdr_context;
+    std::shared_ptr<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>> m_fdr_context;
     valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> m_uint_nodes;
     valla::IndexedHashSet<float_t, uint_t> m_float_nodes;
     std::vector<uint_t> m_nodes_buffer;

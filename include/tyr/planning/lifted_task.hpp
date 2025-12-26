@@ -47,7 +47,7 @@ public:
                formalism::RepositoryPtr repository,
                formalism::OverlayRepositoryPtr<formalism::Repository> overlay_repository,
                View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
-               formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>> fdr_context);
+               std::shared_ptr<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>> fdr_context);
 
     State<LiftedTask> get_state(StateIndex state_index);
 
@@ -93,6 +93,7 @@ private:
     formalism::RepositoryPtr m_repository;
     formalism::OverlayRepositoryPtr<formalism::Repository> m_overlay_repository;
     View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> m_task;
+    std::shared_ptr<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>> m_fdr_context;
 
     // States
     StateRepository<LiftedTask> m_state_repository;

@@ -75,26 +75,6 @@ auto merge(View<Index<Axiom>, C_SRC> element, MergeContext<C_DST>& context);
 template<Context C_SRC, Context C_DST>
 auto merge(View<Index<Metric>, C_SRC> element, MergeContext<C_DST>& context);
 
-template<Context C_SRC, Context C_DST, typename FDR>
-    requires FDRContext<FDR>
-auto merge(View<Index<GroundFDRConjunctiveCondition>, C_SRC> element, MergeContext<C_DST>& context, FDR& fdr);
-
-template<Context C_SRC, Context C_DST, typename FDR>
-    requires FDRContext<FDR>
-auto merge(View<Index<GroundConjunctiveEffect>, C_SRC> element, MergeContext<C_DST>& context, FDR& fdr);
-
-template<Context C_SRC, Context C_DST, typename FDR>
-    requires FDRContext<FDR>
-auto merge(View<Index<GroundConditionalEffect>, C_SRC> element, MergeContext<C_DST>& context, FDR& fdr);
-
-template<Context C_SRC, Context C_DST, typename FDR>
-    requires FDRContext<FDR>
-auto merge(View<Index<GroundAction>, C_SRC> element, MergeContext<C_DST>& context, FDR& fdr);
-
-template<Context C_SRC, Context C_DST, typename FDR>
-    requires FDRContext<FDR>
-auto merge(View<Index<GroundAxiom>, C_SRC> element, MergeContext<C_DST>& context, FDR& fdr);
-
 /**
  * Implementations
  */

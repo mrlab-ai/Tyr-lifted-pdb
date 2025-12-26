@@ -27,9 +27,8 @@ namespace tyr::planning
 
 extern GroundTaskPtr ground_task(DomainPtr domain,
                                  View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
-                                 formalism::OverlayRepository<formalism::Repository>& task_repository,
-                                 StateRepository<LiftedTask>& state_repository,
-                                 const boost::dynamic_bitset<>& static_atoms);
+                                 formalism::OverlayRepository<formalism::Repository>& overlay_repository,
+                                 formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>& fdr_context);
 
 }
 

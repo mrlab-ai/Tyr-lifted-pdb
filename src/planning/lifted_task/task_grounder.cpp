@@ -170,7 +170,8 @@ static auto create_ground_axiom(View<Index<GroundAxiom>, OverlayRepository<Repos
 }
 
 // TODO: create stronger mutex groups
-auto create_mutex_groups(View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> atoms, MergeContext<OverlayRepository<Repository>>& context)
+static auto create_mutex_groups(View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> atoms,
+                                MergeContext<OverlayRepository<Repository>>& context)
 {
     auto mutex_groups = std::vector<std::vector<View<Index<GroundAtom<FluentTag>>, OverlayRepository<Repository>>>> {};
 
@@ -184,13 +185,13 @@ auto create_mutex_groups(View<IndexList<GroundAtom<FluentTag>>, OverlayRepositor
     return mutex_groups;
 }
 
-auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
-                 View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> fluent_atoms,
-                 View<IndexList<GroundAtom<DerivedTag>>, OverlayRepository<Repository>> derived_atoms,
-                 View<IndexList<GroundFunctionTerm<FluentTag>>, OverlayRepository<Repository>> fluent_fterms,
-                 View<IndexList<GroundAction>, OverlayRepository<Repository>> actions,
-                 View<IndexList<GroundAxiom>, OverlayRepository<Repository>> axioms,
-                 OverlayRepository<Repository>& repository)
+static auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
+                        View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> fluent_atoms,
+                        View<IndexList<GroundAtom<DerivedTag>>, OverlayRepository<Repository>> derived_atoms,
+                        View<IndexList<GroundFunctionTerm<FluentTag>>, OverlayRepository<Repository>> fluent_fterms,
+                        View<IndexList<GroundAction>, OverlayRepository<Repository>> actions,
+                        View<IndexList<GroundAxiom>, OverlayRepository<Repository>> axioms,
+                        OverlayRepository<Repository>& repository)
 {
     auto builder = Builder();
     auto fdr_task_ptr = builder.get_builder<FDRTask>();
@@ -253,13 +254,13 @@ auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
     return std::make_pair(make_view(repository.get_or_create(fdr_task, builder.get_buffer()).first, repository), std::move(fdr_context));
 }
 
-static GroundTaskPtr create_fdr_task(DomainPtr domain,
-                                     View<Index<Task>, OverlayRepository<Repository>> task,
-                                     IndexList<GroundAtom<FluentTag>> fluent_atoms,
-                                     IndexList<GroundAtom<DerivedTag>> derived_atoms,
-                                     IndexList<GroundFunctionTerm<FluentTag>> fluent_fterms,
-                                     IndexList<GroundAction> actions,
-                                     IndexList<GroundAxiom> axioms)
+static auto create_fdr_task(DomainPtr domain,
+                            View<Index<Task>, OverlayRepository<Repository>> task,
+                            IndexList<GroundAtom<FluentTag>> fluent_atoms,
+                            IndexList<GroundAtom<DerivedTag>> derived_atoms,
+                            IndexList<GroundFunctionTerm<FluentTag>> fluent_fterms,
+                            IndexList<GroundAction> actions,
+                            IndexList<GroundAxiom> axioms)
 {
     auto repository = std::make_shared<Repository>();
     auto overlay_repository = std::make_shared<OverlayRepository<Repository>>(*domain->get_repository(), *repository);
@@ -291,9 +292,8 @@ static GroundTaskPtr create_fdr_task(DomainPtr domain,
 
 GroundTaskPtr ground_task(DomainPtr domain,
                           View<Index<Task>, OverlayRepository<Repository>> task,
-                          formalism::OverlayRepository<formalism::Repository>& task_repository,
-                          StateRepository<LiftedTask>& state_repository,
-                          const boost::dynamic_bitset<>& static_atoms)
+                          OverlayRepository<Repository>& overlay_repository,
+                          BinaryFDRContext<OverlayRepository<Repository>>& fdr_context)
 {
     auto ground_program = GroundTaskProgram(task);
 
@@ -338,6 +338,7 @@ GroundTaskPtr ground_task(DomainPtr domain,
     for (const auto atom : task.get_atoms<FluentTag>())
         fluent_atoms_set.insert(atom.get_index());
 
+    // Collect the goal facts
     for (const auto fact : task.get_goal().get_facts<FluentTag>())
         for (const auto atom : fact.get_variable().get_atoms())
             fluent_atoms_set.insert(atom.get_index());
@@ -349,7 +350,11 @@ GroundTaskPtr ground_task(DomainPtr domain,
 
     auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
 
-    auto parameter_domains_per_cond_efffect_per_action = compute_parameter_domains_per_cond_effect_per_action(task);
+    auto static_atoms_bitset = boost::dynamic_bitset<>();
+    for (const auto atom : task.get_atoms<StaticTag>())
+        set(uint_t(atom.get_index()), true, static_atoms_bitset);
+
+    auto parameter_domains_per_cond_effect_per_action = compute_parameter_domains_per_cond_effect_per_action(task);
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_actions_mapping, then facts of the predicate
     for (const auto fact : ground_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
@@ -357,7 +362,7 @@ GroundTaskPtr ground_task(DomainPtr domain,
         if (ground_program.get_predicate_to_actions_mapping().contains(fact.get_predicate().get_index()))
         {
             ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
-            auto grounder_context = GrounderContext { ground_context.builder, task_repository, ground_context.program_to_task_execution_context.binding };
+            auto grounder_context = GrounderContext { ground_context.builder, overlay_repository, ground_context.program_to_task_execution_context.binding };
 
             for (const auto action_index : ground_program.get_predicate_to_actions_mapping().at(fact.get_predicate().get_index()))
             {
@@ -365,15 +370,15 @@ GroundTaskPtr ground_task(DomainPtr domain,
 
                 const auto ground_action_index = ground_planning(action,
                                                                  grounder_context,
-                                                                 parameter_domains_per_cond_efffect_per_action[action_index.get_value()],
+                                                                 parameter_domains_per_cond_effect_per_action[action_index.get_value()],
                                                                  fluent_assign,
                                                                  iter_workspace,
-                                                                 state_repository.get_fdr_context())
+                                                                 fdr_context)
                                                      .first;
 
                 const auto ground_action = make_view(ground_action_index, grounder_context.destination);
 
-                if (is_statically_applicable(ground_action, static_atoms) && is_consistent(ground_action, fluent_assign, derived_assign))
+                if (is_statically_applicable(ground_action, static_atoms_bitset) && is_consistent(ground_action, fluent_assign, derived_assign))
                 {
                     ground_actions_set.insert(ground_action.get_index());
 
@@ -412,17 +417,17 @@ GroundTaskPtr ground_task(DomainPtr domain,
         if (ground_program.get_predicate_to_axioms_mapping().contains(fact.get_predicate().get_index()))
         {
             ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
-            auto grounder_context = GrounderContext { ground_context.builder, task_repository, ground_context.program_to_task_execution_context.binding };
+            auto grounder_context = GrounderContext { ground_context.builder, overlay_repository, ground_context.program_to_task_execution_context.binding };
 
             for (const auto axiom_index : ground_program.get_predicate_to_axioms_mapping().at(fact.get_predicate().get_index()))
             {
                 const auto axiom = make_view(axiom_index, grounder_context.destination);
 
-                const auto ground_axiom_index = ground_planning(axiom, grounder_context, state_repository.get_fdr_context()).first;
+                const auto ground_axiom_index = ground_planning(axiom, grounder_context, fdr_context).first;
 
                 const auto ground_axiom = make_view(ground_axiom_index, grounder_context.destination);
 
-                if (is_statically_applicable(ground_axiom, static_atoms) && is_consistent(ground_axiom, fluent_assign, derived_assign))
+                if (is_statically_applicable(ground_axiom, static_atoms_bitset) && is_consistent(ground_axiom, fluent_assign, derived_assign))
                 {
                     ground_axioms_set.insert(ground_axiom.get_index());
 

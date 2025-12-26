@@ -25,7 +25,8 @@ using namespace tyr::formalism;
 namespace tyr::planning
 {
 
-StateRepository<LiftedTask>::StateRepository(LiftedTask& task, formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>> fdr_context) :
+StateRepository<LiftedTask>::StateRepository(LiftedTask& task,
+                                             std::shared_ptr<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>> fdr_context) :
     m_task(task),
     m_fdr_context(std::move(fdr_context)),
     m_uint_nodes(),
@@ -41,7 +42,7 @@ State<LiftedTask> StateRepository<LiftedTask>::get_initial_state()
     auto unpacked_state = get_unregistered_state();
 
     for (const auto atom : m_task.get_task().get_atoms<FluentTag>())
-        unpacked_state->set(m_fdr_context.get_fact(atom.get_index()));
+        unpacked_state->set(m_fdr_context->get_fact(atom.get_index()));
 
     for (const auto fterm_value : m_task.get_task().get_fterm_values<FluentTag>())
         unpacked_state->set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
@@ -89,8 +90,6 @@ State<LiftedTask> StateRepository<LiftedTask>::register_state(SharedObjectPoolPt
 
     return State<LiftedTask>(m_task, std::move(state));
 }
-
-formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>& StateRepository<LiftedTask>::get_fdr_context() { return m_fdr_context; }
 
 static_assert(StateRepositoryConcept<StateRepository<LiftedTask>, LiftedTask>);
 

@@ -37,7 +37,7 @@ public:
     // Mapping from program rule to task action; there may be multiple actions
     using AppPredicateToActionsMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, std::vector<Index<formalism::Action>>>;
 
-    explicit ApplicableActionProgram(const LiftedTask& task);
+    explicit ApplicableActionProgram(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task);
 
     const AppPredicateToActionsMapping& get_predicate_to_actions_mapping() const noexcept;
     View<Index<formalism::Program>, formalism::Repository> get_program() const noexcept;

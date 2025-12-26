@@ -331,7 +331,7 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
     auto task_context = std::make_shared<formalism::Repository>();
     auto overlay_task_context = std::make_shared<formalism::OverlayRepository<formalism::Repository>>(*domain_context, *task_context);
 
-    auto fdr_context = formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>(*overlay_task_context);
+    auto fdr_context = std::make_shared<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>>(*overlay_task_context);
 
     /* Name */
     task.name = element->get_name();
@@ -394,7 +394,7 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
 
     for (const auto& literal : element->get_initial_literals())
     {
-        const auto index_atom_variant = translate_grounded(literal, builder, *overlay_task_context, fdr_context);
+        const auto index_atom_variant = translate_grounded(literal, builder, *overlay_task_context, *fdr_context);
 
         func_insert_ground_atom(index_atom_variant, task.static_atoms, task.fluent_atoms);
     }
@@ -433,7 +433,7 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
 
     if (element->get_goal_condition().has_value())
     {
-        task.goal = translate_grounded(element->get_goal_condition().value(), builder, *overlay_task_context, fdr_context);
+        task.goal = translate_grounded(element->get_goal_condition().value(), builder, *overlay_task_context, *fdr_context);
     }
     else
     {

@@ -94,17 +94,18 @@ LiftedTask::LiftedTask(DomainPtr domain,
                        RepositoryPtr repository,
                        OverlayRepositoryPtr<Repository> overlay_repository,
                        View<Index<Task>, OverlayRepository<Repository>> task,
-                       BinaryFDRContext<OverlayRepository<Repository>> fdr_context) :
+                       std::shared_ptr<BinaryFDRContext<OverlayRepository<Repository>>> fdr_context) :
     m_domain(std::move(domain)),
     m_repository(std::move(repository)),
     m_overlay_repository(std::move(overlay_repository)),
     m_task(task),
-    m_state_repository(*this, std::move(fdr_context)),
+    m_fdr_context(fdr_context),
+    m_state_repository(*this, fdr_context),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
     m_successor_generator(),
     m_axiom_evaluator(m_task, m_overlay_repository),
-    m_action_program(*this),
+    m_action_program(m_task),
     m_action_context(m_action_program.get_program(),
                      m_action_program.get_repository(),
                      m_action_program.get_domains(),
@@ -160,14 +161,14 @@ void LiftedTask::get_labeled_successor_nodes(const Node<LiftedTask>& node, std::
     read_solution_and_instantiate_labeled_successor_nodes(state_context,
                                                           *m_overlay_repository,
                                                           m_action_context,
-                                                          m_state_repository.get_fdr_context(),
+                                                          *m_fdr_context,
                                                           m_successor_generator,
                                                           m_action_program,
                                                           m_parameter_domains_per_cond_effect_per_action,
                                                           out_nodes);
 }
 
-GroundTaskPtr LiftedTask::get_ground_task() { return ground_task(m_domain, m_task, *m_overlay_repository, m_state_repository, m_static_atoms_bitset); }
+GroundTaskPtr LiftedTask::get_ground_task() { return ground_task(m_domain, m_task, *m_overlay_repository, *m_fdr_context); }
 
 const ApplicableActionProgram& LiftedTask::get_action_program() const { return m_action_program; }
 

@@ -23,15 +23,15 @@
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
-#include "tyr/planning/lifted_task.hpp"
 
 using namespace tyr::formalism;
 
 namespace tyr::planning
 {
 
-static View<Index<Program>, Repository>
-create(const LiftedTask& task, ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping, Repository& repository)
+static View<Index<Program>, Repository> create(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
+                                               ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping,
+                                               Repository& repository)
 {
     auto merge_cache = MergeCache();
     auto builder = Builder();
@@ -40,41 +40,41 @@ create(const LiftedTask& task, ApplicableActionProgram::AppPredicateToActionsMap
     auto& program = *program_ptr;
     program.clear();
 
-    for (const auto predicate : task.get_task().get_domain().get_predicates<StaticTag>())
+    for (const auto predicate : task.get_domain().get_predicates<StaticTag>())
         program.static_predicates.push_back(merge(predicate, context).first);
 
-    for (const auto predicate : task.get_task().get_domain().get_predicates<FluentTag>())
+    for (const auto predicate : task.get_domain().get_predicates<FluentTag>())
         program.fluent_predicates.push_back(merge(predicate, context).first);
 
-    for (const auto predicate : task.get_task().get_domain().get_predicates<DerivedTag>())
+    for (const auto predicate : task.get_domain().get_predicates<DerivedTag>())
         program.fluent_predicates.push_back(merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(predicate, context).first);
 
-    for (const auto predicate : task.get_task().get_derived_predicates())
+    for (const auto predicate : task.get_derived_predicates())
         program.fluent_predicates.push_back(merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(predicate, context).first);
 
-    for (const auto function : task.get_task().get_domain().get_functions<StaticTag>())
+    for (const auto function : task.get_domain().get_functions<StaticTag>())
         program.static_functions.push_back(merge(function, context).first);
 
-    for (const auto function : task.get_task().get_domain().get_functions<FluentTag>())
+    for (const auto function : task.get_domain().get_functions<FluentTag>())
         program.fluent_functions.push_back(merge(function, context).first);
 
     // We can ignore auxiliary function total-cost because it never occurs in a condition
 
-    for (const auto object : task.get_task().get_domain().get_constants())
+    for (const auto object : task.get_domain().get_constants())
         program.objects.push_back(merge(object, context).first);
-    for (const auto object : task.get_task().get_objects())
+    for (const auto object : task.get_objects())
         program.objects.push_back(merge(object, context).first);
 
-    for (const auto atom : task.get_task().get_atoms<StaticTag>())
+    for (const auto atom : task.get_atoms<StaticTag>())
         program.static_atoms.push_back(merge(atom, context).first);
 
-    for (const auto atom : task.get_task().get_atoms<FluentTag>())
+    for (const auto atom : task.get_atoms<FluentTag>())
         program.fluent_atoms.push_back(merge(atom, context).first);
 
-    for (const auto fterm_value : task.get_task().get_fterm_values<StaticTag>())
+    for (const auto fterm_value : task.get_fterm_values<StaticTag>())
         program.static_fterm_values.push_back(merge(fterm_value, context).first);
 
-    for (const auto action : task.get_task().get_domain().get_actions())
+    for (const auto action : task.get_domain().get_actions())
     {
         const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
@@ -127,7 +127,7 @@ create(const LiftedTask& task, ApplicableActionProgram::AppPredicateToActionsMap
     return make_view(repository.get_or_create(program, builder.get_buffer()).first, repository);
 }
 
-ApplicableActionProgram::ApplicableActionProgram(const LiftedTask& task) :
+ApplicableActionProgram::ApplicableActionProgram(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task) :
     m_predicate_to_actions(),
     m_repository(std::make_shared<Repository>()),
     m_program(create(task, m_predicate_to_actions, *m_repository)),
