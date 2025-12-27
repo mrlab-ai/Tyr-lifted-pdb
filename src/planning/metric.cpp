@@ -23,7 +23,9 @@
 #include "tyr/formalism/views.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/ground_task.hpp"
+#include "tyr/planning/ground_task/unpacked_state.hpp"
 #include "tyr/planning/lifted_task.hpp"
+#include "tyr/planning/lifted_task/unpacked_state.hpp"
 
 namespace tyr::planning
 {

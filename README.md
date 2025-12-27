@@ -65,12 +65,13 @@ We obtain a lifted task by parsing the PDDL. Then, we translate the lifted task 
 
 auto parser = tyr::formalism::Parser("domain.pddl");
 auto task = parser.parse_task("problem.pddl");
+auto successor_generator = SuccessorGenerator<tyr::planning::LiftedTask>(task);
 
 // Get the initial node (state + metric value)
-auto initial_node = task.get_initial_node();
+auto initial_node = successor_generator.get_initial_node();
 
 // Get the labeled successor nodes (sequence of ground action + node)
-auto successor_nodes = initial_node.get_labeled_successor_nodes();
+auto successor_nodes = successor_generator.get_labeled_successor_nodes(initial_node);
 
 ```
 
@@ -86,11 +87,12 @@ auto task = parser.parse_task("problem.pddl");
 
 // Ground the task
 auto ground_task = task.get_ground_task();
+auto successor_generator = SuccessorGenerator<tyr::planning::GroundTask>(ground_task);
 
 // Get the initial node (state + metric value)
-auto initial_node = ground_task.get_initial_node();
+auto initial_node = successor_generator.get_initial_node();
 
 // Get the labeled successor nodes (sequence of ground action + node)
-auto successor_nodes = initial_node.get_labeled_successor_nodes();
+auto successor_nodes = successor_generator.get_labeled_successor_nodes(initial_node);
 
 ```

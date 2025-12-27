@@ -70,7 +70,7 @@ extern void insert_extended_state(const UnpackedState<LiftedTask>& unpacked_stat
                                   grounder::ProgramExecutionContext& action_context);
 
 extern std::vector<analysis::DomainListListList>
-compute_parameter_domains_per_cond_effect_per_action(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>>& task);
+compute_parameter_domains_per_cond_effect_per_action(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task);
 }
 
 #endif

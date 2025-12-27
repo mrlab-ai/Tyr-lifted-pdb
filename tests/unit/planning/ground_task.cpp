@@ -43,7 +43,10 @@ TEST(TyrTests, TyrPlanningGroundTaskAgricola)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 12443);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 8);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 8);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskAirport)
@@ -54,7 +57,10 @@ TEST(TyrTests, TyrPlanningGroundTaskAirport)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 379);
     EXPECT_EQ(ground_task->get_num_actions(), 43);
     EXPECT_EQ(ground_task->get_num_axioms(), 420);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskAssembly)
@@ -65,7 +71,10 @@ TEST(TyrTests, TyrPlanningGroundTaskAssembly)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 8);
     EXPECT_EQ(ground_task->get_num_actions(), 6);
     EXPECT_EQ(ground_task->get_num_axioms(), 2);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 3);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 3);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskBarman)
@@ -76,7 +85,10 @@ TEST(TyrTests, TyrPlanningGroundTaskBarman)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 84);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 4);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 4);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskBlocks3)
@@ -87,7 +99,10 @@ TEST(TyrTests, TyrPlanningGroundTaskBlocks3)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 45);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskBlocks4)
@@ -98,7 +113,10 @@ TEST(TyrTests, TyrPlanningGroundTaskBlocks4)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 24);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskChildsnack)
@@ -109,7 +127,10 @@ TEST(TyrTests, TyrPlanningGroundTaskChildsnack)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 7);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 3);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 3);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskDelivery)
@@ -120,7 +141,10 @@ TEST(TyrTests, TyrPlanningGroundTaskDelivery)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 16);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskDriverlog)
@@ -131,7 +155,10 @@ TEST(TyrTests, TyrPlanningGroundTaskDriverlog)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 14);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskFerry)
@@ -142,7 +169,10 @@ TEST(TyrTests, TyrPlanningGroundTaskFerry)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 10);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 3);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 3);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskFoCounters)
@@ -153,7 +183,10 @@ TEST(TyrTests, TyrPlanningGroundTaskFoCounters)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 12);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 9);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 9);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskGrid)
@@ -164,7 +197,10 @@ TEST(TyrTests, TyrPlanningGroundTaskGrid)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 35);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 1);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 1);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskGripper)
@@ -175,7 +211,10 @@ TEST(TyrTests, TyrPlanningGroundTaskGripper)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 20);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 6);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 6);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskHiking)
@@ -186,7 +225,10 @@ TEST(TyrTests, TyrPlanningGroundTaskHiking)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 41);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 18);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 18);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskLogistics)
@@ -197,7 +239,10 @@ TEST(TyrTests, TyrPlanningGroundTaskLogistics)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 14);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 6);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 6);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskMiconic)
@@ -208,7 +253,10 @@ TEST(TyrTests, TyrPlanningGroundTaskMiconic)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 6);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 3);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 3);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskMiconicFulladl)
@@ -219,7 +267,10 @@ TEST(TyrTests, TyrPlanningGroundTaskMiconicFulladl)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 22);
     EXPECT_EQ(ground_task->get_num_actions(), 10);
     EXPECT_EQ(ground_task->get_num_axioms(), 15);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 3);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 3);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskMiconicSimpleadl)
@@ -230,7 +281,10 @@ TEST(TyrTests, TyrPlanningGroundTaskMiconicSimpleadl)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 4);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskParcprinter)
@@ -241,7 +295,10 @@ TEST(TyrTests, TyrPlanningGroundTaskParcprinter)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 25);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 1);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 1);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskPathways)
@@ -252,7 +309,10 @@ TEST(TyrTests, TyrPlanningGroundTaskPathways)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 78);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 16);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 16);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskPhilosophers)
@@ -263,7 +323,10 @@ TEST(TyrTests, TyrPlanningGroundTaskPhilosophers)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 21);
     EXPECT_EQ(ground_task->get_num_actions(), 34);
     EXPECT_EQ(ground_task->get_num_axioms(), 34);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskPsrMiddle)
@@ -274,7 +337,10 @@ TEST(TyrTests, TyrPlanningGroundTaskPsrMiddle)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 363);
     EXPECT_EQ(ground_task->get_num_actions(), 28);
     EXPECT_EQ(ground_task->get_num_axioms(), 467);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 1);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 1);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskPushworld)
@@ -285,7 +351,10 @@ TEST(TyrTests, TyrPlanningGroundTaskPushworld)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 8);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 4);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 4);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskRefuel)
@@ -296,7 +365,10 @@ TEST(TyrTests, TyrPlanningGroundTaskRefuel)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 1);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 1);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 1);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskRefuelAdl)
@@ -307,7 +379,10 @@ TEST(TyrTests, TyrPlanningGroundTaskRefuelAdl)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 1);
     EXPECT_EQ(ground_task->get_num_actions(), 15);
     EXPECT_EQ(ground_task->get_num_axioms(), 3);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 5);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 5);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskReward)
@@ -318,7 +393,10 @@ TEST(TyrTests, TyrPlanningGroundTaskReward)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 6);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 1);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 1);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskRovers)
@@ -329,7 +407,10 @@ TEST(TyrTests, TyrPlanningGroundTaskRovers)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 7);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskSatellite)
@@ -340,7 +421,10 @@ TEST(TyrTests, TyrPlanningGroundTaskSatellite)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 18);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 4);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 4);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskSchedule)
@@ -351,7 +435,10 @@ TEST(TyrTests, TyrPlanningGroundTaskSchedule)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 49);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 44);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 44);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskSokoban)
@@ -362,7 +449,10 @@ TEST(TyrTests, TyrPlanningGroundTaskSokoban)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 526);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 3);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 3);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskSpanner)
@@ -373,7 +463,10 @@ TEST(TyrTests, TyrPlanningGroundTaskSpanner)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 4);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 1);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 1);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskTpp)
@@ -384,7 +477,10 @@ TEST(TyrTests, TyrPlanningGroundTaskTpp)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 56);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 5);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 5);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskTransport)
@@ -395,7 +491,10 @@ TEST(TyrTests, TyrPlanningGroundTaskTransport)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 104);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 5);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 5);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskVisitall)
@@ -406,7 +505,10 @@ TEST(TyrTests, TyrPlanningGroundTaskVisitall)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 12);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 2);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 2);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskWoodworking)
@@ -417,7 +519,10 @@ TEST(TyrTests, TyrPlanningGroundTaskWoodworking)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 198);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 8);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 8);
 }
 
 TEST(TyrTests, TyrPlanningGroundTaskZenotravel)
@@ -428,6 +533,9 @@ TEST(TyrTests, TyrPlanningGroundTaskZenotravel)
     EXPECT_EQ(ground_task->get_num_atoms<DerivedTag>(), 0);
     EXPECT_EQ(ground_task->get_num_actions(), 37);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
-    EXPECT_EQ(ground_task->get_initial_node().get_labeled_successor_nodes().size(), 7);
+
+    auto successor_generator = SuccessorGenerator<GroundTask>(ground_task);
+
+    EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), 7);
 }
 }

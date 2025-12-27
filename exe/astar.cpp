@@ -96,7 +96,9 @@ int main(int argc, char** argv)
 
     auto lifted_task = parser.parse_task(problem_filepath);
 
-    auto initial_node = lifted_task->get_initial_node();
+    auto successor_generator = planning::SuccessorGenerator<planning::LiftedTask>(lifted_task);
+
+    auto initial_node = successor_generator.get_initial_node();
 
     auto queue = Openlist();
 
@@ -117,10 +119,10 @@ int main(int argc, char** argv)
 
         const auto& search_node = get_or_create_search_node(entry.state, search_nodes);
 
-        auto node = planning::Node<planning::LiftedTask>(lifted_task->get_state(entry.state), search_node.g_value);
+        auto node = planning::Node<planning::LiftedTask>(successor_generator.get_state(entry.state), search_node.g_value);
 
         labeled_succ_nodes.clear();
-        node.get_labeled_successor_nodes(labeled_succ_nodes);
+        successor_generator.get_labeled_successor_nodes(node, labeled_succ_nodes);
 
         for (const auto& labeled_succ_node : labeled_succ_nodes) {}
     }

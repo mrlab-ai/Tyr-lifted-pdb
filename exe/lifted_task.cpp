@@ -52,11 +52,13 @@ int main(int argc, char** argv)
 
     std::cout << *lifted_task << std::endl;
 
-    auto initial_node = lifted_task->get_initial_node();
+    auto successor_generator = planning::SuccessorGenerator<planning::LiftedTask>(lifted_task);
+
+    auto initial_node = successor_generator.get_initial_node();
 
     std::cout << to_string(initial_node) << std::endl;
 
-    for (const auto& [ground_action, succ_node] : initial_node.get_labeled_successor_nodes())
+    for (const auto& [ground_action, succ_node] : successor_generator.get_labeled_successor_nodes(initial_node))
     {
         std::cout << to_string(ground_action) << "\n"  //
                   << to_string(succ_node) << std::endl;

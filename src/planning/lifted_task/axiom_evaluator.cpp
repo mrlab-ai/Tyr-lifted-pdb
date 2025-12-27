@@ -15,6 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/planning/lifted_task/axiom_evaluator.hpp"
+
 #include "../task_utils.hpp"           // for insert_fact_s...
 #include "tyr/common/comparators.hpp"  // for operator!=
 #include "tyr/common/equal_to.hpp"     // for EqualTo

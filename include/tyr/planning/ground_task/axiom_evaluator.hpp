@@ -18,15 +18,12 @@
 #ifndef TYR_PLANNING_GROUND_TASK_AXIOM_EVALUATOR_HPP_
 #define TYR_PLANNING_GROUND_TASK_AXIOM_EVALUATOR_HPP_
 
-#include "tyr/common/formatter.hpp"                       // for oper...
-#include "tyr/common/types.hpp"                           // for Inde...
-#include "tyr/formalism/planning/ground_axiom_index.hpp"  // for Index
+#include "tyr/planning/ground_task/unpacked_state.hpp"
+//
+#include "tyr/formalism/planning/ground_axiom_index.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground_task/match_tree/declarations.hpp"  // for Matc...
+#include "tyr/planning/ground_task/match_tree/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
-
-#include <memory>  // for shar...
-#include <vector>  // for vector
 
 namespace tyr::planning
 {
