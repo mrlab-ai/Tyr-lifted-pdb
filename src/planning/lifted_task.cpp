@@ -52,6 +52,6 @@ LiftedTask::LiftedTask(DomainPtr domain,
         set(uint_t(fterm_value.get_fterm().get_index()), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
-GroundTaskPtr LiftedTask::get_ground_task() { return ground_task(m_domain, m_task, *m_overlay_repository, *m_fdr_context); }
+GroundTaskPtr LiftedTask::get_ground_task() { return ground_task(*this); }
 
 }

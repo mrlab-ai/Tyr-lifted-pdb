@@ -25,10 +25,7 @@
 namespace tyr::planning
 {
 
-extern GroundTaskPtr ground_task(DomainPtr domain,
-                                 View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
-                                 formalism::OverlayRepository<formalism::Repository>& overlay_repository,
-                                 formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>& fdr_context);
+extern GroundTaskPtr ground_task(LiftedTask& lifted_task);
 
 }
 

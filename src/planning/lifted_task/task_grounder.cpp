@@ -27,21 +27,13 @@
 #include "tyr/formalism/grounder_planning.hpp"
 #include "tyr/formalism/merge_datalog.hpp"
 #include "tyr/formalism/merge_planning.hpp"
-#include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/execution_contexts.hpp"
 #include "tyr/grounder/generator.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"
 #include "tyr/planning/ground_task.hpp"
-#include "tyr/planning/ground_task/axiom_evaluator.hpp"
-#include "tyr/planning/ground_task/unpacked_state.hpp"
-#include "tyr/planning/lifted_task/node.hpp"
-#include "tyr/planning/lifted_task/packed_state.hpp"
-#include "tyr/planning/lifted_task/state.hpp"
-#include "tyr/planning/lifted_task/state_repository.hpp"
-#include "tyr/planning/lifted_task/task_grounder.hpp"
-#include "tyr/planning/lifted_task/unpacked_state.hpp"
+#include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/programs/ground.hpp"
 #include "tyr/solver/bottom_up.hpp"
 
@@ -275,12 +267,9 @@ static auto create_fdr_task(DomainPtr domain,
     return std::make_shared<GroundTask>(domain, repository, overlay_repository, fdr_task, fdr_context);
 }
 
-GroundTaskPtr ground_task(DomainPtr domain,
-                          View<Index<Task>, OverlayRepository<Repository>> task,
-                          OverlayRepository<Repository>& overlay_repository,
-                          BinaryFDRContext<OverlayRepository<Repository>>& fdr_context)
+GroundTaskPtr ground_task(LiftedTask& lifted_task)
 {
-    auto ground_program = GroundTaskProgram(task);
+    auto ground_program = GroundTaskProgram(lifted_task.get_task());
 
     auto ground_context = ProgramExecutionContext(ground_program.get_program(),
                                                   ground_program.get_repository(),
@@ -320,15 +309,15 @@ GroundTaskPtr ground_task(DomainPtr domain,
     auto fluent_fterms_set = UnorderedSet<Index<GroundFunctionTerm<FluentTag>>>();
     // TODO: collect fluent function terms
 
-    for (const auto atom : task.get_atoms<FluentTag>())
+    for (const auto atom : lifted_task.get_task().get_atoms<FluentTag>())
         fluent_atoms_set.insert(atom.get_index());
 
     // Collect the goal facts
-    for (const auto fact : task.get_goal().get_facts<FluentTag>())
+    for (const auto fact : lifted_task.get_task().get_goal().get_facts<FluentTag>())
         for (const auto atom : fact.get_variable().get_atoms())
             fluent_atoms_set.insert(atom.get_index());
 
-    for (const auto literal : task.get_goal().get_facts<DerivedTag>())
+    for (const auto literal : lifted_task.get_task().get_goal().get_facts<DerivedTag>())
         derived_atoms_set.insert(literal.get_atom().get_index());
 
     /// --- Ground Actions
@@ -336,10 +325,10 @@ GroundTaskPtr ground_task(DomainPtr domain,
     auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
 
     auto static_atoms_bitset = boost::dynamic_bitset<>();
-    for (const auto atom : task.get_atoms<StaticTag>())
+    for (const auto atom : lifted_task.get_task().get_atoms<StaticTag>())
         set(uint_t(atom.get_index()), true, static_atoms_bitset);
 
-    auto parameter_domains_per_cond_effect_per_action = compute_parameter_domains_per_cond_effect_per_action(task);
+    auto parameter_domains_per_cond_effect_per_action = compute_parameter_domains_per_cond_effect_per_action(lifted_task.get_task());
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_actions_mapping, then facts of the predicate
     for (const auto fact : ground_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
@@ -347,7 +336,8 @@ GroundTaskPtr ground_task(DomainPtr domain,
         if (ground_program.get_predicate_to_actions_mapping().contains(fact.get_predicate().get_index()))
         {
             ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
-            auto grounder_context = GrounderContext { ground_context.builder, overlay_repository, ground_context.program_to_task_execution_context.binding };
+            auto grounder_context =
+                GrounderContext { ground_context.builder, *lifted_task.get_repository(), ground_context.program_to_task_execution_context.binding };
 
             for (const auto action_index : ground_program.get_predicate_to_actions_mapping().at(fact.get_predicate().get_index()))
             {
@@ -358,7 +348,7 @@ GroundTaskPtr ground_task(DomainPtr domain,
                                                                  parameter_domains_per_cond_effect_per_action[action_index.get_value()],
                                                                  fluent_assign,
                                                                  iter_workspace,
-                                                                 fdr_context)
+                                                                 *lifted_task.get_fdr_context())
                                                      .first;
 
                 const auto ground_action = make_view(ground_action_index, grounder_context.destination);
@@ -402,13 +392,14 @@ GroundTaskPtr ground_task(DomainPtr domain,
         if (ground_program.get_predicate_to_axioms_mapping().contains(fact.get_predicate().get_index()))
         {
             ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
-            auto grounder_context = GrounderContext { ground_context.builder, overlay_repository, ground_context.program_to_task_execution_context.binding };
+            auto grounder_context =
+                GrounderContext { ground_context.builder, *lifted_task.get_repository(), ground_context.program_to_task_execution_context.binding };
 
             for (const auto axiom_index : ground_program.get_predicate_to_axioms_mapping().at(fact.get_predicate().get_index()))
             {
                 const auto axiom = make_view(axiom_index, grounder_context.destination);
 
-                const auto ground_axiom_index = ground_planning(axiom, grounder_context, fdr_context).first;
+                const auto ground_axiom_index = ground_planning(axiom, grounder_context, *lifted_task.get_fdr_context()).first;
 
                 const auto ground_axiom = make_view(ground_axiom_index, grounder_context.destination);
 
@@ -447,7 +438,7 @@ GroundTaskPtr ground_task(DomainPtr domain,
     std::cout << "Num ground actions: " << ground_actions.size() << std::endl;
     std::cout << "Num ground axioms: " << ground_axioms.size() << std::endl;
 
-    return create_fdr_task(domain, task, fluent_atoms, derived_atoms, fluent_fterms, ground_actions, ground_axioms);
+    return create_fdr_task(lifted_task.get_domain(), lifted_task.get_task(), fluent_atoms, derived_atoms, fluent_fterms, ground_actions, ground_axioms);
 }
 
 }
