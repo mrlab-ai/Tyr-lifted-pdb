@@ -21,7 +21,7 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/tuple.hpp"
-#include "tyr/formalism/builder.hpp"
+#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/indices.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -114,33 +114,7 @@ private:
                                     MapEntryType<Rule>,
                                     MapEntryType<GroundConjunctiveCondition>,
                                     MapEntryType<GroundRule>,
-                                    MapEntryType<Program>,
-                                    MapEntryType<NumericEffect<OpAssign, FluentTag>>,
-                                    MapEntryType<NumericEffect<OpIncrease, FluentTag>>,
-                                    MapEntryType<NumericEffect<OpDecrease, FluentTag>>,
-                                    MapEntryType<NumericEffect<OpScaleUp, FluentTag>>,
-                                    MapEntryType<NumericEffect<OpScaleDown, FluentTag>>,
-                                    MapEntryType<NumericEffect<OpIncrease, AuxiliaryTag>>,
-                                    MapEntryType<GroundNumericEffect<OpAssign, FluentTag>>,
-                                    MapEntryType<GroundNumericEffect<OpIncrease, FluentTag>>,
-                                    MapEntryType<GroundNumericEffect<OpDecrease, FluentTag>>,
-                                    MapEntryType<GroundNumericEffect<OpScaleUp, FluentTag>>,
-                                    MapEntryType<GroundNumericEffect<OpScaleDown, FluentTag>>,
-                                    MapEntryType<GroundNumericEffect<OpIncrease, AuxiliaryTag>>,
-                                    MapEntryType<FDRConjunctiveCondition>,
-                                    MapEntryType<GroundFDRConjunctiveCondition>,
-                                    MapEntryType<ConditionalEffect>,
-                                    MapEntryType<GroundConditionalEffect>,
-                                    MapEntryType<ConjunctiveEffect>,
-                                    MapEntryType<GroundConjunctiveEffect>,
-                                    MapEntryType<Action>,
-                                    MapEntryType<GroundAction>,
-                                    MapEntryType<Axiom>,
-                                    MapEntryType<GroundAxiom>,
-                                    MapEntryType<Metric>,
-                                    MapEntryType<Domain>,
-                                    MapEntryType<Task>,
-                                    MapEntryType<FDRVariable<FluentTag>>>;
+                                    MapEntryType<Program>>;
 
     MergeStorage m_maps;
 

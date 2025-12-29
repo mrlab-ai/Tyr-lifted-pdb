@@ -18,17 +18,18 @@
 #ifndef TYR_ANALYSIS_STRATIFICATION_HPP_
 #define TYR_ANALYSIS_STRATIFICATION_HPP_
 
-#include "tyr/common/formatter.hpp"        // for operator<<
-#include "tyr/common/types.hpp"            // for IndexList
-#include "tyr/formalism/declarations.hpp"  // for Program (ptr only), Rule
-#include "tyr/formalism/rule_index.hpp"    // for Index
+#include "tyr/common/formatter.hpp"                // for operator<<
+#include "tyr/common/types.hpp"                    // for IndexList
+#include "tyr/formalism/datalog/declarations.hpp"  // for Program (ptr only), Rule
+#include "tyr/formalism/datalog/program_view.hpp"  // for Index
+#include "tyr/formalism/datalog/rule_index.hpp"    // for Index
 
 #include <vector>  // for vector
 
 namespace tyr::analysis
 {
 
-using RuleStratum = IndexList<formalism::Rule>;
+using RuleStratum = IndexList<formalism::datalog::Rule>;
 
 struct RuleStrata
 {
@@ -40,7 +41,7 @@ struct RuleStrata
 /// Source: https://users.cecs.anu.edu.au/~thiebaux/papers/ijcai03.pdf
 /// @param program is the program
 /// @return is the RuleStrata
-extern RuleStrata compute_rule_stratification(View<Index<formalism::Program>, formalism::Repository> program);
+extern RuleStrata compute_rule_stratification(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program);
 }
 
 #endif

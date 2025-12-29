@@ -16,7 +16,6 @@
  */
 
 #include "tyr/analysis/domains.hpp"
-
 #include "tyr/common/config.hpp"
 #include "tyr/common/formatter.hpp"
 #include "tyr/common/index_mixins.hpp"
@@ -24,10 +23,10 @@
 #include "tyr/common/unordered_set.hpp"
 #include "tyr/common/variant.hpp"
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/datas.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/datas.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 
 #include <algorithm>
 #include <assert.h>
@@ -36,6 +35,7 @@
 #include <type_traits>
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
 
 namespace tyr::analysis
 {
@@ -585,105 +585,6 @@ template<FactKind T, Context C>
 bool lift_parameter_domain(View<Data<NumericEffectOperator<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets)
 {
     return visit([&](auto&& arg) { return lift_parameter_domain(arg, parameter_domains, function_domain_sets); }, element.get_variant());
-}
-
-ProgramVariableDomains compute_variable_domains(View<Index<Program>, Repository> program)
-{
-    auto objects = std::vector<Index<Object>> {};
-    for (const auto object : program.get_objects())
-        objects.push_back(object.get_index());
-    auto universe = DomainSet(objects.begin(), objects.end());
-
-    ///--- Step 1: Initialize static and fluent predicate parameter domains
-
-    auto static_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<StaticTag>());
-    auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<FluentTag>());
-    insert_into_predicate_domain_sets(program.get_atoms<StaticTag>(), static_predicate_domain_sets);
-    insert_into_predicate_domain_sets(program.get_atoms<FluentTag>(), fluent_predicate_domain_sets);
-
-    ///--- Step 2: Initialize static and fluent function parameter domains
-
-    auto static_function_domain_sets = initialize_function_domain_sets(program.get_functions<StaticTag>());
-    auto fluent_function_domain_sets = initialize_function_domain_sets(program.get_functions<FluentTag>());
-    insert_into_function_domain_sets(program.get_fterm_values<StaticTag>(), static_function_domain_sets);
-    insert_into_function_domain_sets(program.get_fterm_values<FluentTag>(), fluent_function_domain_sets);
-
-    // Important not to forget constants in schemas
-    for (const auto rule : program.get_rules())
-    {
-        for (const auto literal : rule.get_body().get_literals<StaticTag>())
-            insert_constants_into_parameter_domain(literal.get_atom(), static_predicate_domain_sets);
-
-        for (const auto op : rule.get_body().get_numeric_constraints())
-            insert_constants_into_parameter_domain(op, static_function_domain_sets);
-    }
-
-    ///--- Step 3: Compute rule parameter domains as tightest bound from the previously computed domains of the static predicates.
-
-    auto rule_domain_sets = DomainSetListList();
-    {
-        for (const auto rule : program.get_rules())
-        {
-            auto variables = rule.get_body().get_variables();
-            auto parameter_domains = DomainSetList(variables.size(), universe);
-
-            for (const auto literal : rule.get_body().get_literals<StaticTag>())
-                restrict_parameter_domain(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
-
-            for (const auto op : rule.get_body().get_numeric_constraints())
-                restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
-
-            assert(rule.get_index().value == rule_domain_sets.size());
-            rule_domain_sets.push_back(std::move(parameter_domains));
-        }
-    }
-
-    ///--- Step 4: Lift the fluent predicate domains given the variable relationships in the rules.
-
-    bool changed = false;
-
-    do
-    {
-        changed = false;
-
-        for (const auto rule : program.get_rules())
-        {
-            auto& parameter_domains = rule_domain_sets[rule.get_index().value];
-
-            for (const auto literal : rule.get_body().get_literals<FluentTag>())
-                if (lift_parameter_domain(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets))
-                    changed = true;
-
-            for (const auto op : rule.get_body().get_numeric_constraints())
-                if (lift_parameter_domain(op, parameter_domains, fluent_function_domain_sets))
-                    changed = true;
-
-            if (lift_parameter_domain(rule.get_head(), parameter_domains, fluent_predicate_domain_sets))
-                changed = true;
-        }
-    } while (changed);
-
-    ///--- Step 5: Compress sets to vectors.
-
-    auto static_predicate_domains = to_list(static_predicate_domain_sets);
-    auto fluent_predicate_domains = to_list(fluent_predicate_domain_sets);
-    auto static_function_domains = to_list(static_function_domain_sets);
-    auto fluent_function_domains = to_list(fluent_function_domain_sets);
-    auto rule_domains = to_list(rule_domain_sets);
-
-    // std::cout << std::endl;
-    // std::cout << "static_predicate_domains: " << static_predicate_domains << std::endl;
-    // std::cout << "fluent_predicate_domains: " << fluent_predicate_domains << std::endl;
-    // std::cout << "static_function_domains: " << static_function_domains << std::endl;
-    // std::cout << "fluent_function_domains: " << fluent_function_domains << std::endl;
-    // std::cout << "rule_domains: " << rule_domains << std::endl;
-    // std::cout << std::endl;
-
-    return ProgramVariableDomains { std::move(static_predicate_domains),
-                                    std::move(fluent_predicate_domains),
-                                    std::move(static_function_domains),
-                                    std::move(fluent_function_domains),
-                                    std::move(rule_domains) };
 }
 
 TaskVariableDomains compute_variable_domains(View<Index<Task>, OverlayRepository<Repository>> task)

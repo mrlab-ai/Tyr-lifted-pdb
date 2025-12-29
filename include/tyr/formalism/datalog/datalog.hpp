@@ -15,22 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_FUNCTION_INDEX_HPP_
-#define TYR_FORMALISM_PLANNING_FUNCTION_INDEX_HPP_
+#ifndef TYR_FORMALISM_DATALOG_DATALOG_HPP_
+#define TYR_FORMALISM_DATALOG_DATALOG_HPP_
 
-#include "tyr/common/index_mixins.hpp"
-#include "tyr/common/types.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
-
-namespace tyr
-{
-template<formalism::FactKind T>
-struct Index<formalism::Function<T>> : IndexMixin<Index<formalism::Function<T>>>
-{
-    // Inherit constructors
-    using Base = IndexMixin<Index<formalism::Function<T>>>;
-    using Base::Base;
-};
-}
+#include "tyr/formalism/datalog/builder.hpp"
+#include "tyr/formalism/datalog/canonicalization.hpp"
+#include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/formalism/datalog/indices.hpp"
+#include "tyr/formalism/datalog/merge.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/views.hpp"
 
 #endif

@@ -23,23 +23,23 @@
 #include "tyr/common/equal_to.hpp"      // for EqualTo
 #include "tyr/common/hash.hpp"          // for Hash
 #include "tyr/common/types.hpp"
-#include "tyr/formalism/declarations.hpp"     // for FluentTag, Predicate, Rule
-#include "tyr/formalism/predicate_index.hpp"  // for Index
-#include "tyr/formalism/rule_index.hpp"       // for Index
+#include "tyr/formalism/datalog/declarations.hpp"  // for FluentTag, Predicate, Rule
+#include "tyr/formalism/datalog/rule_index.hpp"    // for Index
+#include "tyr/formalism/predicate_index.hpp"       // for Index
 
 #include <vector>  // for vector
 
 namespace tyr::analysis
 {
 
-using ListenerStratum = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, UnorderedSet<Index<formalism::Rule>>>;
+using ListenerStratum = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, UnorderedSet<Index<formalism::datalog::Rule>>>;
 
 struct ListenerStrata
 {
     std::vector<ListenerStratum> data;
 };
 
-extern ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::Repository& context);
+extern ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::datalog::Repository& context);
 }
 
 #endif

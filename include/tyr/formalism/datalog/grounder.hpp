@@ -21,7 +21,6 @@
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/itertools.hpp"
 #include "tyr/common/tuple.hpp"
-#include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"

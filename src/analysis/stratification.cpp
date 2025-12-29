@@ -17,13 +17,13 @@
 
 #include "tyr/analysis/stratification.hpp"
 
-#include "tyr/common/declarations.hpp"   // for UnorderedMap
-#include "tyr/common/equal_to.hpp"       // for EqualTo
-#include "tyr/common/hash.hpp"           // for Hash
-#include "tyr/common/index_mixins.hpp"   // for operator!=
-#include "tyr/common/vector.hpp"         // for View
-#include "tyr/formalism/repository.hpp"  // for Repository
-#include "tyr/formalism/views.hpp"
+#include "tyr/common/declarations.hpp"           // for UnorderedMap
+#include "tyr/common/equal_to.hpp"               // for EqualTo
+#include "tyr/common/hash.hpp"                   // for Hash
+#include "tyr/common/index_mixins.hpp"           // for operator!=
+#include "tyr/common/vector.hpp"                 // for View
+#include "tyr/formalism/datalog/repository.hpp"  // for Repository
+#include "tyr/formalism/datalog/views.hpp"
 
 #include <algorithm>      // for all_of, any_of
 #include <gtl/phmap.hpp>  // for flat_hash_map
@@ -31,6 +31,7 @@
 #include <utility>        // for move
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::datalog;
 
 namespace tyr::analysis
 {

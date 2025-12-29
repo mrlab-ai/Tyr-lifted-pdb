@@ -17,28 +17,29 @@
 
 #include "tyr/analysis/listeners.hpp"
 
-#include "tyr/analysis/stratification.hpp"               // for RuleStrata
-#include "tyr/common/index_mixins.hpp"                   // for operator!=
-#include "tyr/common/types.hpp"                          // for make_view
-#include "tyr/common/vector.hpp"                         // for View
-#include "tyr/formalism/atom_view.hpp"                   // for View
-#include "tyr/formalism/conjunctive_condition_view.hpp"  // for View
-#include "tyr/formalism/literal_index.hpp"               // for Index
-#include "tyr/formalism/literal_view.hpp"                // for View
-#include "tyr/formalism/predicate_view.hpp"              // for View
-#include "tyr/formalism/repository.hpp"                  // for Repository
-#include "tyr/formalism/rule_view.hpp"                   // for View
+#include "tyr/analysis/stratification.hpp"                       // for RuleStrata
+#include "tyr/common/index_mixins.hpp"                           // for operator!=
+#include "tyr/common/types.hpp"                                  // for make_view
+#include "tyr/common/vector.hpp"                                 // for View
+#include "tyr/formalism/datalog/atom_view.hpp"                   // for View
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"  // for View
+#include "tyr/formalism/datalog/literal_index.hpp"               // for Index
+#include "tyr/formalism/datalog/literal_view.hpp"                // for View
+#include "tyr/formalism/datalog/repository.hpp"                  // for Repository
+#include "tyr/formalism/datalog/rule_view.hpp"                   // for View
+#include "tyr/formalism/predicate_view.hpp"                      // for View
 
 #include <cista/containers/vector.h>  // for basic_vector
 #include <gtl/phmap.hpp>              // for flat_hash_set
 #include <utility>                    // for move
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::datalog;
 
 namespace tyr::analysis
 {
 
-ListenerStrata compute_listeners(const RuleStrata& strata, const formalism::Repository& context)
+ListenerStrata compute_listeners(const RuleStrata& strata, const Repository& context)
 {
     auto listeners = ListenerStrata();
 

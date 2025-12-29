@@ -304,16 +304,6 @@ inline void canonicalize(Data<Program>& data)
     canonicalize(data.rules);
 }
 
-template<NumericEffectOpKind Op, FactKind T>
-void canonicalize(Data<NumericEffect<Op, T>>& data)
-{
-}
-
-template<NumericEffectOpKind Op, FactKind T>
-void canonicalize(Data<GroundNumericEffect<Op, T>>& data)
-{
-}
-
 }
 
 #endif

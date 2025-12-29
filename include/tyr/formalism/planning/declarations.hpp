@@ -297,9 +297,6 @@ using RepositoryPtr = std::shared_ptr<Repository>;
 /// @return
 inline const Repository& get_repository(const Repository& context) noexcept { return context; }
 
-template<typename C>
-class OverlayRepository;
-
 /// @brief Make OverlayRepository a trivial context.
 template<typename C>
 inline const OverlayRepository<C>& get_repository(const OverlayRepository<C>& context) noexcept
@@ -312,11 +309,7 @@ concept Context = requires(const T& a) {
     { get_repository(a) } -> RepositoryConcept;
 };
 
-template<Context C_SRC, Context C_DST>
 class MergeCache;
-
-template<Context C_SRC, Context C_DST>
-class CompileCache;
 
 template<Context C>
 class BinaryFDRContext;

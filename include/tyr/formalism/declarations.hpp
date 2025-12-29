@@ -142,6 +142,12 @@ struct Function
 
 class MergeCache;
 
+template<typename C>
+class OverlayRepository;
+
+template<typename C>
+using OverlayRepositoryPtr = std::shared_ptr<OverlayRepository<C>>;
+
 }
 
 #endif

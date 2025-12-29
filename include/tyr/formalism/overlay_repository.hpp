@@ -18,16 +18,14 @@
 #ifndef TYR_FORMALISM_OVERLAY_REPOSITORY_HPP_
 #define TYR_FORMALISM_OVERLAY_REPOSITORY_HPP_
 
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/repository.hpp"
+#include "tyr/buffer/declarations.hpp"
+#include "tyr/common/types.hpp"
 
 namespace tyr::formalism
 {
 template<typename C>
 class OverlayRepository
 {
-    static_assert(Context<C>, "OverlayRepository<C> requires C to model Context");
-
 private:
     const C& parent_scope;
     C& local_scope;
@@ -86,14 +84,6 @@ public:
     const C& get_parent_scope() const noexcept { return parent_scope; }
     const C& get_local_scope() const noexcept { return local_scope; }
 };
-
-// Domain + Task
-static_assert(RepositoryConcept<OverlayRepository<Repository>>);
-static_assert(Context<OverlayRepository<Repository>>);
-
-// Domain + Task + Worker threads
-static_assert(RepositoryConcept<OverlayRepository<OverlayRepository<Repository>>>);
-static_assert(Context<OverlayRepository<OverlayRepository<Repository>>>);
 
 }
 
