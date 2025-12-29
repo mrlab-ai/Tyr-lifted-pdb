@@ -17,17 +17,18 @@
 
 #include "tyr/planning/ground_task/axiom_evaluator.hpp"
 
-#include "tyr/common/comparators.hpp"            // for operator!=
-#include "tyr/common/config.hpp"                 // for float_t
-#include "tyr/formalism/overlay_repository.hpp"  // for Overlay...
-#include "tyr/formalism/repository.hpp"          // for Repository
-#include "tyr/formalism/views.hpp"               // for View
-#include "tyr/planning/applicability.hpp"        // for StateCo...
-#include "tyr/planning/ground_task.hpp"          // for GroundTask
+#include "tyr/common/comparators.hpp"             // for operator!=
+#include "tyr/common/config.hpp"                  // for float_t
+#include "tyr/formalism/overlay_repository.hpp"   // for Overlay...
+#include "tyr/formalism/planning/repository.hpp"  // for Repository
+#include "tyr/formalism/planning/views.hpp"       // for View
+#include "tyr/planning/applicability.hpp"         // for StateCo...
+#include "tyr/planning/ground_task.hpp"           // for GroundTask
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
 
 namespace tyr::planning
 {

@@ -18,10 +18,10 @@
 #ifndef TYR_PLANNING_DOMAIN_HPP_
 #define TYR_PLANNING_DOMAIN_HPP_
 
-#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 
 namespace tyr::planning
 {
@@ -29,14 +29,14 @@ namespace tyr::planning
 class Domain
 {
 public:
-    Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::Domain>, formalism::Repository> domain);
+    Domain(std::shared_ptr<formalism::planning::Repository> repository, View<Index<formalism::planning::Domain>, formalism::planning::Repository> domain);
 
-    const std::shared_ptr<formalism::Repository>& get_repository() const noexcept;
-    View<Index<formalism::Domain>, formalism::Repository> get_domain() const noexcept;
+    const std::shared_ptr<formalism::planning::Repository>& get_repository() const noexcept;
+    View<Index<formalism::planning::Domain>, formalism::planning::Repository> get_domain() const noexcept;
 
 private:
-    std::shared_ptr<formalism::Repository> m_repository;
-    View<Index<formalism::Domain>, formalism::Repository> m_domain;
+    std::shared_ptr<formalism::planning::Repository> m_repository;
+    View<Index<formalism::planning::Domain>, formalism::planning::Repository> m_domain;
 };
 
 }

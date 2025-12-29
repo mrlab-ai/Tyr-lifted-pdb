@@ -16,12 +16,12 @@
  */
 
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 //
 
 #include "tyr/common/types.hpp"
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability.hpp"
@@ -38,6 +38,7 @@
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
 
 namespace tyr::planning
 {
@@ -80,8 +81,10 @@ bool ActionExecutor::is_applicable(View<Index<GroundAction>, OverlayRepository<R
     return are_applicable_if_fires(action.get_effects(), state, m_effect_families);
 }
 
-template bool ActionExecutor::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<LiftedTask>& state);
-template bool ActionExecutor::is_applicable(View<Index<GroundAction>, OverlayRepository<Repository>> action, const StateContext<GroundTask>& state);
+template bool ActionExecutor::is_applicable(View<Index<formalism::planning::GroundAction>, OverlayRepository<formalism::planning::Repository>> action,
+                                            const StateContext<LiftedTask>& state);
+template bool ActionExecutor::is_applicable(View<Index<formalism::planning::GroundAction>, OverlayRepository<formalism::planning::Repository>> action,
+                                            const StateContext<GroundTask>& state);
 
 template<typename Task>
 Node<Task> ActionExecutor::apply_action(const StateContext<Task>& state_context,
@@ -116,10 +119,12 @@ Node<Task> ActionExecutor::apply_action(const StateContext<Task>& state_context,
     return Node<Task>(succ_state, succ_state_context.auxiliary_value);
 }
 
-template Node<LiftedTask> ActionExecutor::apply_action(const StateContext<LiftedTask>& state_context,
-                                                       View<Index<GroundAction>, OverlayRepository<Repository>> action,
-                                                       StateRepository<LiftedTask>& state_repository);
-template Node<GroundTask> ActionExecutor::apply_action(const StateContext<GroundTask>& state_context,
-                                                       View<Index<GroundAction>, OverlayRepository<Repository>> action,
-                                                       StateRepository<GroundTask>& state_repository);
+template Node<LiftedTask>
+ActionExecutor::apply_action(const StateContext<LiftedTask>& state_context,
+                             View<Index<formalism::planning::GroundAction>, OverlayRepository<formalism::planning::Repository>> action,
+                             StateRepository<LiftedTask>& state_repository);
+template Node<GroundTask>
+ActionExecutor::apply_action(const StateContext<GroundTask>& state_context,
+                             View<Index<formalism::planning::GroundAction>, OverlayRepository<formalism::planning::Repository>> action,
+                             StateRepository<GroundTask>& state_repository);
 }

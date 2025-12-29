@@ -17,11 +17,12 @@
 
 #include "tyr/grounder/execution_contexts.hpp"
 
-#include "tyr/formalism/arity.hpp"
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/grounder_datalog.hpp"
+#include "tyr/formalism/datalog/arity.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::datalog;
 
 namespace tyr::grounder
 {
@@ -96,10 +97,10 @@ void RuleStageExecutionContext::clear() noexcept
  * StaticRuleExecutionContext
  */
 
-StaticRuleExecutionContext StaticRuleExecutionContext::create(View<Index<formalism::Rule>, formalism::Repository> rule,
-                                                              formalism::Repository& repository,
+StaticRuleExecutionContext StaticRuleExecutionContext::create(View<Index<Rule>, Repository> rule,
+                                                              Repository& repository,
                                                               const analysis::DomainListList& parameter_domains,
-                                                              const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets)
+                                                              const TaggedAssignmentSets<StaticTag>& static_assignment_sets)
 {
     auto builder = Builder();
 

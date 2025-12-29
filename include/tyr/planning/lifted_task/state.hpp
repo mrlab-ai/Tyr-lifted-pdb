@@ -21,7 +21,7 @@
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 //
 #include "tyr/common/shared_object_pool.hpp"
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state.hpp"
 
@@ -43,13 +43,13 @@ public:
 
     StateIndex get_index() const;
 
-    bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const;
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const;
+    bool test(Index<formalism::planning::GroundAtom<formalism::StaticTag>> index) const;
+    float_t get(Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> index) const;
 
-    formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const;
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const;
+    formalism::planning::FDRValue get(Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const;
+    float_t get(Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> index) const;
 
-    bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const;
+    bool test(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> index) const;
 
     const LiftedTask& get_task() const noexcept;
 
@@ -82,11 +82,14 @@ inline State<LiftedTask>::State(const LiftedTask& task, SharedObjectPoolPtr<Unpa
 
 inline StateIndex State<LiftedTask>::get_index() const { return m_unpacked->get_index(); }
 
-inline formalism::FDRValue State<LiftedTask>::get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
+inline formalism::planning::FDRValue State<LiftedTask>::get(Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
+{
+    return m_unpacked->get(index);
+}
 
-inline float_t State<LiftedTask>::get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
+inline float_t State<LiftedTask>::get(Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> index) const { return m_unpacked->get(index); }
 
-inline bool State<LiftedTask>::test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const { return m_unpacked->test(index); }
+inline bool State<LiftedTask>::test(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> index) const { return m_unpacked->test(index); }
 
 inline const LiftedTask& State<LiftedTask>::get_task() const noexcept { return *m_task; }
 

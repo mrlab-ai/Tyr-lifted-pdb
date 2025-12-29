@@ -18,11 +18,14 @@
 #include "tyr/planning/programs/ground.hpp"
 
 #include "common.hpp"
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/merge_planning.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/merge.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 
 using namespace tyr::formalism;
 

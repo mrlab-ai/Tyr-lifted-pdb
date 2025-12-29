@@ -40,11 +40,11 @@ template<typename T>
 concept UnpackedStateConcept = requires(T& s,
                                         const T& cs,
                                         StateIndex index,
-                                        Index<formalism::FDRVariable<formalism::FluentTag>> variable,
-                                        Data<formalism::FDRFact<formalism::FluentTag>> fact,
-                                        Index<formalism::GroundFunctionTerm<formalism::FluentTag>> fterm,
+                                        Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
+                                        Data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
+                                        Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> fterm,
                                         float_t value,
-                                        Index<formalism::GroundAtom<formalism::DerivedTag>> atom) {
+                                        Index<formalism::planning::GroundAtom<formalism::DerivedTag>> atom) {
     typename T::TaskType;
     { s.clear() };
     { s.clear_unextended_part() };
@@ -52,7 +52,7 @@ concept UnpackedStateConcept = requires(T& s,
     { s.assign_unextended_part(cs) };
     { cs.get_index() } -> std::same_as<StateIndex>;
     { s.set(index) };
-    { cs.get(variable) } -> std::same_as<formalism::FDRValue>;
+    { cs.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
     { s.set(fact) };
     { cs.get(fterm) } -> std::same_as<float_t>;
     { s.set(fterm, value) };

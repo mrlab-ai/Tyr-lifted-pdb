@@ -33,7 +33,7 @@
 #include "tyr/buffer/declarations.hpp"
 #include "tyr/buffer/indexed_hash_set.hpp"
 #include "tyr/common/tuple.hpp"
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 
 #include <cassert>
@@ -44,7 +44,7 @@
 namespace tyr::planning::match_tree
 {
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 class Repository
 {
 private:
@@ -136,11 +136,11 @@ public:
     }
 };
 
-static_assert(RepositoryConcept<Repository<formalism::GroundAction, formalism::Repository>>);
-static_assert(RepositoryConcept<Repository<formalism::GroundAction, formalism::OverlayRepository<formalism::Repository>>>);
+static_assert(RepositoryConcept<Repository<formalism::planning::GroundAction, formalism::planning::Repository>>);
+static_assert(RepositoryConcept<Repository<formalism::planning::GroundAction, formalism::OverlayRepository<formalism::planning::Repository>>>);
 
-static_assert(Context<Repository<formalism::GroundAction, formalism::Repository>>);
-static_assert(Context<Repository<formalism::GroundAction, formalism::OverlayRepository<formalism::Repository>>>);
+static_assert(Context<Repository<formalism::planning::GroundAction, formalism::planning::Repository>>);
+static_assert(Context<Repository<formalism::planning::GroundAction, formalism::OverlayRepository<formalism::planning::Repository>>>);
 
 }
 

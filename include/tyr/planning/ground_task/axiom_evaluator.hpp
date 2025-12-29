@@ -38,7 +38,7 @@ public:
 private:
     std::shared_ptr<GroundTask> m_task;
 
-    IndexList<formalism::GroundAxiom> m_applicable_axioms;
+    IndexList<formalism::planning::GroundAxiom> m_applicable_axioms;
 };
 }
 

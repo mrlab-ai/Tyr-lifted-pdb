@@ -20,12 +20,12 @@
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/closed_interval.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
-#include "tyr/formalism/arity.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
-#include "tyr/formalism/builder.hpp"
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/grounder_datalog.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/datalog/arity.hpp"
+#include "tyr/formalism/datalog/builder.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/formalism/datalog/views.hpp"
 #include "tyr/grounder/assignment_sets.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/formatter.hpp"
@@ -37,6 +37,7 @@
 #include <vector>
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::datalog;
 
 namespace tyr::grounder
 {
@@ -806,15 +807,15 @@ create_ground_nullary_condition(View<Index<ConjunctiveCondition>, Repository> co
 
     for (const auto literal : condition.get_literals<StaticTag>())
         if (effective_arity(literal) == 0)
-            conj_cond.static_literals.push_back(ground_datalog(literal, grounder_context).first);
+            conj_cond.static_literals.push_back(ground(literal, grounder_context).first);
 
     for (const auto literal : condition.get_literals<FluentTag>())
         if (effective_arity(literal) == 0)
-            conj_cond.fluent_literals.push_back(ground_datalog(literal, grounder_context).first);
+            conj_cond.fluent_literals.push_back(ground(literal, grounder_context).first);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (effective_arity(numeric_constraint) == 0)
-            conj_cond.numeric_constraints.push_back(ground_common(numeric_constraint, grounder_context));
+            conj_cond.numeric_constraints.push_back(ground(numeric_constraint, grounder_context));
 
     canonicalize(conj_cond);
     return context.get_or_create(conj_cond, builder.get_buffer());

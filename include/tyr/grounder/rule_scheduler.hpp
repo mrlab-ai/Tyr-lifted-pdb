@@ -18,17 +18,17 @@
 #ifndef TYR_GROUNDER_RULE_SCHEDULER_HPP_
 #define TYR_GROUNDER_RULE_SCHEDULER_HPP_
 
-#include "tyr/analysis/listeners.hpp"       // for ListenerStratum
-#include "tyr/analysis/stratification.hpp"  // for RuleStratum, Rule...
-#include "tyr/common/declarations.hpp"      // for UnorderedSet
-#include "tyr/common/equal_to.hpp"          // for EqualTo
-#include "tyr/common/formatter.hpp"         // for operator<<
-#include "tyr/common/hash.hpp"              // for Hash
-#include "tyr/common/types.hpp"             // for IndexList
-#include "tyr/common/vector.hpp"            // for View
-#include "tyr/formalism/declarations.hpp"   // for FluentTag (ptr only)
-#include "tyr/formalism/repository.hpp"     // for Repository
-#include "tyr/formalism/rule_index.hpp"     // for Index
+#include "tyr/analysis/listeners.hpp"              // for ListenerStratum
+#include "tyr/analysis/stratification.hpp"         // for RuleStratum, Rule...
+#include "tyr/common/declarations.hpp"             // for UnorderedSet
+#include "tyr/common/equal_to.hpp"                 // for EqualTo
+#include "tyr/common/formatter.hpp"                // for operator<<
+#include "tyr/common/hash.hpp"                     // for Hash
+#include "tyr/common/types.hpp"                    // for IndexList
+#include "tyr/common/vector.hpp"                   // for View
+#include "tyr/formalism/datalog/declarations.hpp"  // for FluentTag (ptr only)
+#include "tyr/formalism/datalog/repository.hpp"    // for Repository
+#include "tyr/formalism/datalog/rule_index.hpp"    // for Index
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>  // for dynamic_bitset
 #include <vector>                                   // for vector
@@ -39,7 +39,7 @@ namespace tyr::grounder
 class RuleSchedulerStratum
 {
 public:
-    RuleSchedulerStratum(const analysis::RuleStratum& rules, const analysis::ListenerStratum& listeners, const formalism::Repository& context);
+    RuleSchedulerStratum(const analysis::RuleStratum& rules, const analysis::ListenerStratum& listeners, const formalism::datalog::Repository& context);
 
     void activate_all();
 
@@ -49,16 +49,16 @@ public:
 
     void on_finish_iteration();
 
-    View<IndexList<formalism::Rule>, formalism::Repository> get_active_rules();
+    View<IndexList<formalism::datalog::Rule>, formalism::datalog::Repository> get_active_rules();
 
 private:
     const analysis::RuleStratum& m_rules;
     const analysis::ListenerStratum& m_listeners;
-    const formalism::Repository& m_context;
+    const formalism::datalog::Repository& m_context;
 
     boost::dynamic_bitset<> m_active_predicates;
-    UnorderedSet<Index<formalism::Rule>> m_active_set;  ///< build active set
-    IndexList<formalism::Rule> m_active;                ///< final active set
+    UnorderedSet<Index<formalism::datalog::Rule>> m_active_set;  ///< build active set
+    IndexList<formalism::datalog::Rule> m_active;                ///< final active set
 };
 
 struct RuleSchedulerStrata
@@ -67,7 +67,7 @@ struct RuleSchedulerStrata
 };
 
 extern RuleSchedulerStrata
-create_rule_scheduler_strata(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const formalism::Repository& context);
+create_rule_scheduler_strata(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const formalism::datalog::Repository& context);
 
 }
 

@@ -118,8 +118,6 @@ inline std::ostream& operator<<(std::ostream& os, const Data<GroundFunctionExpre
 template<Context C>
 inline std::ostream& operator<<(std::ostream& os, const View<Data<GroundFunctionExpression>, C>& el);
 
-inline std::ostream& operator<<(std::ostream& os, const Data<ConjunctiveCondition>& el);
-
 inline std::ostream& operator<<(std::ostream& os, const OpAssign& el);
 
 inline std::ostream& operator<<(std::ostream& os, const OpIncrease& el);

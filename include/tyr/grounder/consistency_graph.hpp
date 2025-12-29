@@ -19,9 +19,9 @@
 #define TYR_GROUNDER_CONSISTENCY_GRAPH_HPP_
 
 #include "tyr/analysis/domains.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
 #include "tyr/grounder/assignment_sets.hpp"
 #include "tyr/grounder/declarations.hpp"
 
@@ -51,14 +51,14 @@ public:
     Vertex(uint_t index, formalism::ParameterIndex parameter_index, Index<formalism::Object> object_index) noexcept;
 
     template<formalism::FactKind T>
-    bool consistent_literals(View<IndexList<formalism::Literal<T>>, formalism::Repository> literals,
+    bool consistent_literals(View<IndexList<formalism::datalog::Literal<T>>, formalism::datalog::Repository> literals,
                              const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept;
 
     bool consistent_numeric_constraints(
-        View<DataList<formalism::BooleanOperator<Data<formalism::datalog::FunctionExpression>>>, formalism::Repository> numeric_constraints,
+        View<DataList<formalism::datalog::BooleanOperator<Data<formalism::datalog::FunctionExpression>>>, formalism::datalog::Repository> numeric_constraints,
         const AssignmentSets& assignment_sets) const noexcept;
 
-    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, formalism::Repository> term) const noexcept;
+    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, formalism::datalog::Repository> term) const noexcept;
 
     uint_t get_index() const noexcept;
     formalism::ParameterIndex get_parameter_index() const noexcept;
@@ -80,14 +80,14 @@ public:
     Edge(Vertex src, Vertex dst) noexcept;
 
     template<formalism::FactKind T>
-    bool consistent_literals(View<IndexList<formalism::Literal<T>>, formalism::Repository> literals,
+    bool consistent_literals(View<IndexList<formalism::datalog::Literal<T>>, formalism::datalog::Repository> literals,
                              const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept;
 
     bool consistent_numeric_constraints(
-        View<DataList<formalism::BooleanOperator<Data<formalism::datalog::FunctionExpression>>>, formalism::Repository> numeric_constraints,
+        View<DataList<formalism::datalog::BooleanOperator<Data<formalism::datalog::FunctionExpression>>>, formalism::datalog::Repository> numeric_constraints,
         const AssignmentSets& assignment_sets) const noexcept;
 
-    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, formalism::Repository> term) const noexcept;
+    Index<formalism::Object> get_object_if_overlap(View<Data<formalism::Term>, formalism::datalog::Repository> term) const noexcept;
 
     const Vertex& get_src() const noexcept;
     const Vertex& get_dst() const noexcept;
@@ -101,7 +101,7 @@ class StaticConsistencyGraph
 private:
     /// @brief Helper to initialize vertices.
     std::pair<details::Vertices, std::vector<std::vector<uint_t>>>
-    compute_vertices(View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
+    compute_vertices(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
                      const analysis::DomainListList& parameter_domains,
                      uint_t begin_parameter_index,
                      uint_t end_parameter_index,
@@ -109,14 +109,14 @@ private:
 
     /// @brief Helper to initialize edges.
     std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
-    compute_edges(View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
+    compute_edges(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
                   const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                   const details::Vertices& vertices);
 
 public:
-    StaticConsistencyGraph(View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
-                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_overapproximation_condition,
-                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_overapproximation_condition,
+    StaticConsistencyGraph(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
+                           View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition,
+                           View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition,
                            const analysis::DomainListList& parameter_domains,
                            uint_t begin_parameter_index,
                            uint_t end_parameter_index,
@@ -184,13 +184,13 @@ public:
     size_t get_num_vertices() const noexcept;
     size_t get_num_edges() const noexcept;
 
-    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> get_condition() const noexcept;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> get_condition() const noexcept;
     const std::vector<std::vector<uint_t>>& get_partitions() const noexcept;
 
 private:
-    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> m_condition;
-    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> m_unary_overapproximation_condition;
-    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> m_binary_overapproximation_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_unary_overapproximation_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_binary_overapproximation_condition;
 
     /* The data member of the consistency graph. */
     details::Vertices m_vertices;
@@ -203,22 +203,22 @@ private:
     std::vector<std::vector<uint_t>> m_partitions;
 };
 
-extern std::pair<Index<formalism::GroundConjunctiveCondition>, bool>
-create_ground_nullary_condition(View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
-                                formalism::Builder& builder,
-                                formalism::Repository& context);
+extern std::pair<Index<formalism::datalog::GroundConjunctiveCondition>, bool>
+create_ground_nullary_condition(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
+                                formalism::datalog::Builder& builder,
+                                formalism::datalog::Repository& context);
 
-extern std::pair<Index<formalism::ConjunctiveCondition>, bool>
+extern std::pair<Index<formalism::datalog::ConjunctiveCondition>, bool>
 create_overapproximation_conjunctive_condition(size_t k,
-                                               View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
-                                               formalism::Builder& builder,
-                                               formalism::Repository& context);
+                                               View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
+                                               formalism::datalog::Builder& builder,
+                                               formalism::datalog::Repository& context);
 
-extern std::pair<Index<formalism::ConjunctiveCondition>, bool>
+extern std::pair<Index<formalism::datalog::ConjunctiveCondition>, bool>
 create_overapproximation_conflicting_conjunctive_condition(size_t k,
-                                                           View<Index<formalism::ConjunctiveCondition>, formalism::Repository> condition,
-                                                           formalism::Builder& builder,
-                                                           formalism::Repository& context);
+                                                           View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
+                                                           formalism::datalog::Builder& builder,
+                                                           formalism::datalog::Repository& context);
 
 }
 

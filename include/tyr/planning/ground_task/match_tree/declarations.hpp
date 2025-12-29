@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_DECLARATIONS_HPP_
 #define TYR_PLANNING_GROUND_TASK_MATCH_TREE_DECLARATIONS_HPP_
 
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 
 #include <concepts>
 #include <variant>
@@ -68,9 +68,9 @@ using MatchTreePtr = std::unique_ptr<MatchTree<Tag>>;
  * Aliases
  */
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 class Repository;
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 using RepositoryPtr = std::unique_ptr<Repository<Tag, C>>;
 
 template<typename Repo, typename Tag>
@@ -80,21 +80,23 @@ concept RepositoryAccess = requires(const Repo& r, Index<Tag> idx) {
 
 template<typename T>
 concept HasFormalismRepository = requires(const T& r) {
-    { r.get_formalism_repository() } -> formalism::Context;
+    { r.get_formalism_repository() } -> formalism::planning::Context;
 };
 
 template<typename T>
 concept RepositoryConcept =
-    HasFormalismRepository<T> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAction>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAction>>
-    && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAction>> && RepositoryAccess<T, AtomSelectorNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, VariableSelectorNode<formalism::GroundAxiom>> && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::GroundAxiom>>
-    && RepositoryAccess<T, ElementGeneratorNode<formalism::GroundAxiom>>;
+    HasFormalismRepository<T> && RepositoryAccess<T, AtomSelectorNode<formalism::planning::GroundAction>>
+    && RepositoryAccess<T, VariableSelectorNode<formalism::planning::GroundAction>>
+    && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::planning::GroundAction>>
+    && RepositoryAccess<T, ElementGeneratorNode<formalism::planning::GroundAction>> && RepositoryAccess<T, AtomSelectorNode<formalism::planning::GroundAxiom>>
+    && RepositoryAccess<T, VariableSelectorNode<formalism::planning::GroundAxiom>>
+    && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::planning::GroundAxiom>>
+    && RepositoryAccess<T, ElementGeneratorNode<formalism::planning::GroundAxiom>>;
 
 /// @brief Make Repository a trivial context.
 /// @param context
 /// @return
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 inline const Repository<Tag, C>& get_repository(const Repository<Tag, C>& context) noexcept
 {
     return context;

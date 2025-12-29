@@ -20,7 +20,7 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/ground_atom_view.hpp"
+#include "tyr/formalism/planning/ground_atom_view.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/atom_data.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/atom_index.hpp"

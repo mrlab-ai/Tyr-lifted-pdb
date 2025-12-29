@@ -17,20 +17,19 @@
 
 #include "tyr/grounder/generator.hpp"
 
-#include "tyr/common/comparators.hpp"                    // for opera...
-#include "tyr/common/config.hpp"                         // for uint_t
-#include "tyr/common/equal_to.hpp"                       // for EqualTo
-#include "tyr/common/formatter.hpp"                      // for opera...
-#include "tyr/common/hash.hpp"                           // for Hash
-#include "tyr/common/types.hpp"                          // for View
-#include "tyr/common/vector.hpp"                         // for opera...
-#include "tyr/formalism/conjunctive_condition_view.hpp"  // for View
-#include "tyr/formalism/declarations.hpp"                // for Context
-#include "tyr/formalism/formatter.hpp"                   // for opera...
-#include "tyr/formalism/grounder_common.hpp"             // for Groun...
-#include "tyr/formalism/grounder_datalog.hpp"            // for groun...
-#include "tyr/formalism/repository.hpp"                  // for Repos...
-#include "tyr/formalism/views.hpp"
+#include "tyr/common/comparators.hpp"                            // for opera...
+#include "tyr/common/config.hpp"                                 // for uint_t
+#include "tyr/common/equal_to.hpp"                               // for EqualTo
+#include "tyr/common/formatter.hpp"                              // for opera...
+#include "tyr/common/hash.hpp"                                   // for Hash
+#include "tyr/common/types.hpp"                                  // for View
+#include "tyr/common/vector.hpp"                                 // for opera...
+#include "tyr/formalism/datalog/conjunctive_condition_view.hpp"  // for View
+#include "tyr/formalism/datalog/declarations.hpp"                // for Context
+#include "tyr/formalism/datalog/formatter.hpp"                   // for opera...
+#include "tyr/formalism/datalog/grounder.hpp"                    // for Groun...
+#include "tyr/formalism/datalog/repository.hpp"                  // for Repos...
+#include "tyr/formalism/datalog/views.hpp"
 #include "tyr/grounder/applicability.hpp"      // for is_ap...
 #include "tyr/grounder/consistency_graph.hpp"  // for Vertex
 #include "tyr/grounder/declarations.hpp"
@@ -51,6 +50,7 @@
 #include <vector>                           // for vector
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::datalog;
 
 namespace tyr::grounder
 {
@@ -58,7 +58,7 @@ namespace tyr::grounder
 template<FactKind T, Context C_SRC, Context C_DST>
 bool is_valid_binding(View<Index<Literal<T>>, C_SRC> element, const FactSets& fact_sets, GrounderContext<C_DST>& context)
 {
-    return fact_sets.template get<T>().predicate.contains(ground_datalog(element.get_atom(), context).first) == element.get_polarity();
+    return fact_sets.template get<T>().predicate.contains(ground(element.get_atom(), context).first) == element.get_polarity();
 }
 
 template<FactKind T, Context C_SRC, Context C_DST>
@@ -76,7 +76,7 @@ bool is_valid_binding(View<DataList<Literal<FluentTag>>, C_SRC> elements, const 
 template<Context C_SRC, Context C_DST>
 bool is_valid_binding(View<Data<BooleanOperator<Data<FunctionExpression>>>, C_SRC> element, const FactSets& fact_sets, GrounderContext<C_DST>& context)
 {
-    return evaluate(make_view(ground_common(element, context), context.destination), fact_sets);
+    return evaluate(make_view(ground(element, context), context.destination), fact_sets);
 }
 
 template<Context C_SRC, Context C_DST>
@@ -97,7 +97,7 @@ static auto create_nullary_ground_head_in_stage(View<Index<Atom<FluentTag>>, Rep
 {
     context.binding.clear();
 
-    return ground_datalog(head, context);
+    return ground(head, context);
 }
 
 static auto create_unary_ground_head_in_stage(uint_t vertex_index,
@@ -111,7 +111,7 @@ static auto create_unary_ground_head_in_stage(uint_t vertex_index,
     assert(uint_t(vertex.get_parameter_index()) == 0);
     context.binding.push_back(vertex.get_object_index());
 
-    return ground_datalog(head, context);
+    return ground(head, context);
 }
 
 static auto create_general_ground_head_in_stage(const std::vector<uint_t>& clique,
@@ -127,7 +127,7 @@ static auto create_general_ground_head_in_stage(const std::vector<uint_t>& cliqu
         context.binding[uint_t(vertex.get_parameter_index())] = vertex.get_object_index();
     }
 
-    return ground_datalog(head, context);
+    return ground(head, context);
 }
 
 void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
@@ -183,9 +183,8 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
             if (is_valid_binding(rule_execution_context.unary_conflicting_overapproximation_condition, fact_execution_context.fact_sets, ground_context_rule))
             {
                 // Ensure that ground rule is truly applicable
-                assert(
-                    is_applicable(make_view(ground_datalog(rule_execution_context.rule, ground_context_rule).first, rule_execution_context.overlay_repository),
-                                  fact_execution_context.fact_sets));
+                assert(is_applicable(make_view(ground(rule_execution_context.rule, ground_context_rule).first, rule_execution_context.overlay_repository),
+                                     fact_execution_context.fact_sets));
 
                 rule_stage_execution_context.ground_heads.insert(ground_head);
                 rule_execution_context.ground_heads.push_back(ground_head);
@@ -202,38 +201,37 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
     auto ground_context_stage =
         GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
 
-    kpkc::for_each_k_clique(rule_execution_context.consistency_graph,
-                            rule_execution_context.kpkc_workspace,
-                            [&](auto&& clique)
-                            {
-                                /// --- Rule stage
-                                const auto ground_head = create_general_ground_head_in_stage(clique,
-                                                                                             rule_execution_context.static_consistency_graph,
-                                                                                             rule_execution_context.rule.get_head(),
-                                                                                             ground_context_stage)
-                                                             .first;
+    kpkc::for_each_k_clique(
+        rule_execution_context.consistency_graph,
+        rule_execution_context.kpkc_workspace,
+        [&](auto&& clique)
+        {
+            /// --- Rule stage
+            const auto ground_head = create_general_ground_head_in_stage(clique,
+                                                                         rule_execution_context.static_consistency_graph,
+                                                                         rule_execution_context.rule.get_head(),
+                                                                         ground_context_stage)
+                                         .first;
 
-                                if (!rule_stage_execution_context.ground_heads.contains(ground_head))
-                                {
-                                    /// --- Rule
-                                    auto ground_context_rule = GrounderContext { thread_execution_context.builder,
-                                                                                 rule_execution_context.overlay_repository,
-                                                                                 rule_stage_execution_context.binding };
+            if (!rule_stage_execution_context.ground_heads.contains(ground_head))
+            {
+                /// --- Rule
+                auto ground_context_rule =
+                    GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
 
-                                    if (is_valid_binding(rule_execution_context.binary_conflicting_overapproximation_condition,
-                                                         fact_execution_context.fact_sets,
-                                                         ground_context_rule))
-                                    {
-                                        // Ensure that ground rule is truly applicable
-                                        assert(is_applicable(make_view(ground_datalog(rule_execution_context.rule, ground_context_rule).first,
-                                                                       rule_execution_context.overlay_repository),
-                                                             fact_execution_context.fact_sets));
+                if (is_valid_binding(rule_execution_context.binary_conflicting_overapproximation_condition,
+                                     fact_execution_context.fact_sets,
+                                     ground_context_rule))
+                {
+                    // Ensure that ground rule is truly applicable
+                    assert(is_applicable(make_view(ground(rule_execution_context.rule, ground_context_rule).first, rule_execution_context.overlay_repository),
+                                         fact_execution_context.fact_sets));
 
-                                        rule_stage_execution_context.ground_heads.insert(ground_head);
-                                        rule_execution_context.ground_heads.push_back(ground_head);
-                                    }
-                                }
-                            });
+                    rule_stage_execution_context.ground_heads.insert(ground_head);
+                    rule_execution_context.ground_heads.push_back(ground_head);
+                }
+            }
+        });
 }
 
 void ground(const FactsExecutionContext& fact_execution_context,

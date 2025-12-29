@@ -20,7 +20,7 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/ground_atom_index.hpp"
+#include "tyr/formalism/planning/ground_atom_index.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/atom_index.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/node_data.hpp"
@@ -31,14 +31,14 @@ template<typename Tag>
 struct Data<planning::match_tree::AtomSelectorNode<Tag>>
 {
     Index<planning::match_tree::AtomSelectorNode<Tag>> index;
-    Index<formalism::GroundAtom<formalism::DerivedTag>> atom;
+    Index<formalism::planning::GroundAtom<formalism::DerivedTag>> atom;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> true_child;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> false_child;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(Index<planning::match_tree::AtomSelectorNode<Tag>> index,
-         Index<formalism::GroundAtom<formalism::DerivedTag>> atom,
+         Index<formalism::planning::GroundAtom<formalism::DerivedTag>> atom,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> true_child,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> false_child,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child) :

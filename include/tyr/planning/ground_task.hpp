@@ -40,10 +40,10 @@ class GroundTask
 {
 public:
     GroundTask(DomainPtr domain,
-               formalism::RepositoryPtr m_repository,
-               formalism::OverlayRepositoryPtr<formalism::Repository> overlay_repository,
-               View<Index<formalism::FDRTask>, formalism::OverlayRepository<formalism::Repository>> fdr_task,
-               formalism::GeneralFDRContext<formalism::OverlayRepository<formalism::Repository>> fdr_context);
+               formalism::planning::RepositoryPtr m_repository,
+               formalism::OverlayRepositoryPtr<formalism::planning::Repository> overlay_repository,
+               View<Index<formalism::planning::FDRTask>, formalism::OverlayRepository<formalism::planning::Repository>> fdr_task,
+               formalism::planning::GeneralFDRContext<formalism::OverlayRepository<formalism::planning::Repository>> fdr_context);
 
     template<formalism::FactKind T>
     size_t get_num_atoms() const noexcept;
@@ -52,8 +52,8 @@ public:
 
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
-    bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const { return tyr::test(uint_t(index), m_static_atoms_bitset); }
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const noexcept
+    bool test(Index<formalism::planning::GroundAtom<formalism::StaticTag>> index) const { return tyr::test(uint_t(index), m_static_atoms_bitset); }
+    float_t get(Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> index) const noexcept
     {
         return tyr::get(uint_t(index), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
     }
@@ -71,15 +71,15 @@ public:
 private:
     DomainPtr m_domain;
 
-    formalism::RepositoryPtr m_repository;
-    formalism::OverlayRepositoryPtr<formalism::Repository> m_overlay_repository;
-    View<Index<formalism::FDRTask>, formalism::OverlayRepository<formalism::Repository>> m_fdr_task;
+    formalism::planning::RepositoryPtr m_repository;
+    formalism::OverlayRepositoryPtr<formalism::planning::Repository> m_overlay_repository;
+    View<Index<formalism::planning::FDRTask>, formalism::OverlayRepository<formalism::planning::Repository>> m_fdr_task;
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
 
-    match_tree::MatchTreePtr<formalism::GroundAction> m_action_match_tree;
+    match_tree::MatchTreePtr<formalism::planning::GroundAction> m_action_match_tree;
 
-    std::vector<match_tree::MatchTreePtr<formalism::GroundAxiom>> m_axiom_match_tree_strata;
+    std::vector<match_tree::MatchTreePtr<formalism::planning::GroundAxiom>> m_axiom_match_tree_strata;
 };
 
 }

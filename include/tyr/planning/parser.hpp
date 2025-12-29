@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_PARSER_HPP_
 #define TYR_PLANNING_PARSER_HPP_
 
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <loki/loki.hpp>
@@ -38,7 +38,7 @@ private:
     loki::Parser m_loki_parser;
     loki::DomainTranslationResult m_loki_domain_translation_result;
 
-    formalism::RepositoryPtr m_domain_repository;
+    formalism::planning::RepositoryPtr m_domain_repository;
     DomainPtr m_domain;
 };
 }

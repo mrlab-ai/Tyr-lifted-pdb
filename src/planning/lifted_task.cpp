@@ -29,6 +29,7 @@
 #include <utility>
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
 
 namespace tyr::planning
 {

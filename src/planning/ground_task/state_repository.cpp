@@ -20,9 +20,9 @@
 #include "../task_utils.hpp"                             // for create...
 #include "tyr/common/comparators.hpp"                    // for operat...
 #include "tyr/common/vector.hpp"                         // for View
-#include "tyr/formalism/declarations.hpp"                // for Index
 #include "tyr/formalism/overlay_repository.hpp"          // for Overla...
-#include "tyr/formalism/views.hpp"                       // for View
+#include "tyr/formalism/planning/declarations.hpp"       // for Index
+#include "tyr/formalism/planning/views.hpp"              // for View
 #include "tyr/planning/ground_task.hpp"                  // for Ground...
 #include "tyr/planning/ground_task/axiom_evaluator.hpp"  // for AxiomE...
 #include "tyr/planning/state_repository.hpp"
@@ -36,11 +36,12 @@
 #include <valla/slot.hpp>            // for Slot
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
 
 namespace tyr::planning
 {
 
-static auto create_fluent_layout(View<Index<formalism::FDRTask>, formalism::OverlayRepository<formalism::Repository>> fdr_task)
+static auto create_fluent_layout(View<Index<FDRTask>, OverlayRepository<Repository>> fdr_task)
 {
     auto ranges = std::vector<uint_t> {};
     for (const auto variable : fdr_task.get_fluent_variables())
@@ -53,7 +54,7 @@ static auto create_fluent_layout(View<Index<formalism::FDRTask>, formalism::Over
     return create_bit_packed_array_layout(ranges);
 }
 
-static auto create_derived_layout(View<Index<formalism::FDRTask>, formalism::OverlayRepository<formalism::Repository>> fdr_task)
+static auto create_derived_layout(View<Index<FDRTask>, OverlayRepository<Repository>> fdr_task)
 {
     // Ensure derived atom indices are dense, i.e., 0,1,2,...
     for (uint_t i = 0; i < fdr_task.get_atoms<DerivedTag>().size(); ++i)

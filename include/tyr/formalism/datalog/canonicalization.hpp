@@ -22,6 +22,7 @@
 
 #include "tyr/common/canonicalization.hpp"
 #include "tyr/common/comparators.hpp"
+#include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 
 #include <algorithm>

@@ -41,10 +41,10 @@ class LiftedTask
 {
 public:
     LiftedTask(DomainPtr domain,
-               formalism::RepositoryPtr repository,
-               formalism::OverlayRepositoryPtr<formalism::Repository> overlay_repository,
-               View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
-               std::shared_ptr<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>> fdr_context);
+               formalism::planning::RepositoryPtr repository,
+               formalism::OverlayRepositoryPtr<formalism::planning::Repository> overlay_repository,
+               View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task,
+               std::shared_ptr<formalism::planning::BinaryFDRContext<formalism::OverlayRepository<formalism::planning::Repository>>> fdr_context);
 
     GroundTaskPtr get_ground_task();
 
@@ -66,18 +66,18 @@ public:
 
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
-    bool test(Index<formalism::GroundAtom<formalism::StaticTag>> index) const { return tyr::test(uint_t(index), m_static_atoms_bitset); }
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::StaticTag>> index) const
+    bool test(Index<formalism::planning::GroundAtom<formalism::StaticTag>> index) const { return tyr::test(uint_t(index), m_static_atoms_bitset); }
+    float_t get(Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> index) const
     {
         return tyr::get(uint_t(index), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
     }
 
 private:
     DomainPtr m_domain;
-    formalism::RepositoryPtr m_repository;
-    formalism::OverlayRepositoryPtr<formalism::Repository> m_overlay_repository;
-    View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> m_task;
-    std::shared_ptr<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>> m_fdr_context;
+    formalism::planning::RepositoryPtr m_repository;
+    formalism::OverlayRepositoryPtr<formalism::planning::Repository> m_overlay_repository;
+    View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> m_task;
+    std::shared_ptr<formalism::planning::BinaryFDRContext<formalism::OverlayRepository<formalism::planning::Repository>>> m_fdr_context;
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
 

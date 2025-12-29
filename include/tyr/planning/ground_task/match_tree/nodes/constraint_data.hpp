@@ -20,7 +20,7 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/boolean_operator_data.hpp"
+#include "tyr/formalism/planning/boolean_operator_data.hpp"
 #include "tyr/planning/ground_task/match_tree/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/nodes/node_data.hpp"
 
@@ -30,13 +30,13 @@ template<typename Tag>
 struct Data<planning::match_tree::NumericConstraintSelectorNode<Tag>>
 {
     Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> index;
-    Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> constraint;
+    Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>> constraint;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> true_child;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(Index<planning::match_tree::NumericConstraintSelectorNode<Tag>> index,
-         Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> constraint,
+         Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>> constraint,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> true_child,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child) :
         index(index),

@@ -22,14 +22,14 @@
 namespace tyr::planning
 {
 
-Domain::Domain(std::shared_ptr<formalism::Repository> repository, View<Index<formalism::Domain>, formalism::Repository> domain) :
+Domain::Domain(std::shared_ptr<formalism::planning::Repository> repository, View<Index<formalism::planning::Domain>, formalism::planning::Repository> domain) :
     m_repository(std::move(repository)),
     m_domain(domain)
 {
 }
 
-const std::shared_ptr<formalism::Repository>& Domain::get_repository() const noexcept { return m_repository; }
+const std::shared_ptr<formalism::planning::Repository>& Domain::get_repository() const noexcept { return m_repository; }
 
-View<Index<formalism::Domain>, formalism::Repository> Domain::get_domain() const noexcept { return m_domain; }
+View<Index<formalism::planning::Domain>, formalism::planning::Repository> Domain::get_domain() const noexcept { return m_domain; }
 
 }

@@ -36,14 +36,14 @@ class State
 
 template<typename T, typename Task>
 concept StateConcept = requires(const T& cs,
-                                Index<formalism::FDRVariable<formalism::FluentTag>> variable,
-                                Index<formalism::GroundFunctionTerm<formalism::StaticTag>> static_fterm,
-                                Index<formalism::GroundFunctionTerm<formalism::FluentTag>> fluent_fterm,
-                                Index<formalism::GroundAtom<formalism::StaticTag>> static_atom,
-                                Index<formalism::GroundAtom<formalism::DerivedTag>> derived_atom) {
+                                Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
+                                Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> static_fterm,
+                                Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> fluent_fterm,
+                                Index<formalism::planning::GroundAtom<formalism::StaticTag>> static_atom,
+                                Index<formalism::planning::GroundAtom<formalism::DerivedTag>> derived_atom) {
     typename T::TaskType;
     { cs.get_index() } -> std::same_as<StateIndex>;
-    { cs.get(variable) } -> std::same_as<formalism::FDRValue>;
+    { cs.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
     { cs.get(static_fterm) } -> std::same_as<float_t>;
     { cs.get(fluent_fterm) } -> std::same_as<float_t>;
     { cs.test(static_atom) } -> std::same_as<bool>;

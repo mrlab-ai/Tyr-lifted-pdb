@@ -19,21 +19,23 @@
 
 #include "tyr/common/optional.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
+using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
+
 namespace tyr::planning
 {
 
 template<typename T>
-float_t evaluate_metric(View<::cista::optional<Index<formalism::Metric>>, formalism::OverlayRepository<formalism::Repository>> metric,
-                        View<::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>,
-                             formalism::OverlayRepository<formalism::Repository>> auxiliary_fterm_value,
+float_t evaluate_metric(View<::cista::optional<Index<Metric>>, OverlayRepository<Repository>> metric,
+                        View<::cista::optional<Index<GroundFunctionTermValue<AuxiliaryTag>>>, OverlayRepository<Repository>> auxiliary_fterm_value,
                         const StateContext<T>& state_context)
 {
     if (auxiliary_fterm_value)
@@ -42,12 +44,10 @@ float_t evaluate_metric(View<::cista::optional<Index<formalism::Metric>>, formal
     return metric ? evaluate(metric.value().get_fexpr(), state_context) : 0.;
 }
 
-template float_t evaluate_metric(View<::cista::optional<Index<formalism::Metric>>, formalism::OverlayRepository<formalism::Repository>> metric,
-                                 View<::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>,
-                                      formalism::OverlayRepository<formalism::Repository>> auxiliary_fterm_value,
+template float_t evaluate_metric(View<::cista::optional<Index<Metric>>, OverlayRepository<Repository>> metric,
+                                 View<::cista::optional<Index<GroundFunctionTermValue<AuxiliaryTag>>>, OverlayRepository<Repository>> auxiliary_fterm_value,
                                  const StateContext<LiftedTask>& state_context);
-template float_t evaluate_metric(View<::cista::optional<Index<formalism::Metric>>, formalism::OverlayRepository<formalism::Repository>> metric,
-                                 View<::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>,
-                                      formalism::OverlayRepository<formalism::Repository>> auxiliary_fterm_value,
+template float_t evaluate_metric(View<::cista::optional<Index<Metric>>, OverlayRepository<Repository>> metric,
+                                 View<::cista::optional<Index<GroundFunctionTermValue<AuxiliaryTag>>>, OverlayRepository<Repository>> auxiliary_fterm_value,
                                  const StateContext<GroundTask>& state_context);
 }

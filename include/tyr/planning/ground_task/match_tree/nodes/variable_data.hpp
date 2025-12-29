@@ -31,13 +31,13 @@ template<typename Tag>
 struct Data<planning::match_tree::VariableSelectorNode<Tag>>
 {
     Index<planning::match_tree::VariableSelectorNode<Tag>> index;
-    Index<formalism::FDRVariable<formalism::FluentTag>> variable;
+    Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable;
     ::cista::offset::vector<::cista::optional<Data<planning::match_tree::Node<Tag>>>> domain_children;
     ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child;
 
     Data() = default;
     Data(Index<planning::match_tree::VariableSelectorNode<Tag>> index,
-         Index<formalism::FDRVariable<formalism::FluentTag>> variable,
+         Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
          ::cista::offset::vector<::cista::optional<Data<planning::match_tree::Node<Tag>>>> domain_children,
          ::cista::optional<Data<planning::match_tree::Node<Tag>>> dontcare_child) :
         index(index),

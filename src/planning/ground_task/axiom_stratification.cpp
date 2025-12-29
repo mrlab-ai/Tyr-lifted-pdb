@@ -15,15 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/common/equal_to.hpp"
-#include "tyr/common/hash.hpp"
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
 #include "tyr/planning/ground_task/axiom_stratification.hpp"
 
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
+#include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
+
 using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
 
 namespace tyr::planning
 {

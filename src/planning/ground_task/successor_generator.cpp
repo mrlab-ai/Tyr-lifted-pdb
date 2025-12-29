@@ -20,7 +20,7 @@
 #include "../metric.hpp"
 #include "../task_utils.hpp"
 #include "tyr/formalism/overlay_repository.hpp"  // for View
-#include "tyr/formalism/views.hpp"               // for View
+#include "tyr/formalism/planning/views.hpp"      // for View
 #include "tyr/planning/applicability.hpp"        // for StateC...
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task.hpp"
@@ -29,6 +29,7 @@
 #include "tyr/planning/state_index.hpp"
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
 
 namespace tyr::planning
 {

@@ -22,12 +22,16 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/itertools.hpp"
-#include "tyr/formalism/builder.hpp"
-#include "tyr/formalism/grounder_common.hpp"
-#include "tyr/formalism/merge_common.hpp"
+#include "tyr/formalism/datalog/builder.hpp"
+#include "tyr/formalism/datalog/grounder.hpp"
+#include "tyr/formalism/datalog/merge.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/builder.hpp"
+#include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/merge.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 #include "tyr/grounder/consistency_graph.hpp"
 #include "tyr/grounder/declarations.hpp"
 #include "tyr/grounder/kpkc_utils.hpp"
@@ -44,9 +48,9 @@ struct FactsExecutionContext
     FactSets fact_sets;
     AssignmentSets assignment_sets;
 
-    FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program, const analysis::ProgramVariableDomains& domains);
+    FactsExecutionContext(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program, const analysis::ProgramVariableDomains& domains);
 
-    FactsExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
+    FactsExecutionContext(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program,
                           TaggedFactSets<formalism::FluentTag> fluent_facts,
                           const analysis::ProgramVariableDomains& domains);
 
@@ -56,21 +60,21 @@ struct FactsExecutionContext
     void reset() noexcept;
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view);
+    void insert(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view);
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
+    void insert(View<IndexList<formalism::datalog::GroundFunctionTermValue<T>>, formalism::datalog::Repository> view);
 };
 
 struct RuleStageExecutionContext
 {
     /// Merge thread into staging area
-    formalism::RepositoryPtr repository;
+    formalism::datalog::RepositoryPtr repository;
 
     /// Ground heads encountered across iterations
     IndexList<formalism::Object> binding;
-    UnorderedSet<Index<formalism::GroundAtom<formalism::FluentTag>>> ground_heads;
-    formalism::MergeCache merge_cache;
+    UnorderedSet<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> ground_heads;
+    formalism::datalog::MergeCache merge_cache;
 
     RuleStageExecutionContext();
 
@@ -79,40 +83,40 @@ struct RuleStageExecutionContext
 
 struct StaticRuleExecutionContext
 {
-    View<Index<formalism::Rule>, formalism::Repository> rule;
-    View<Index<formalism::GroundConjunctiveCondition>, formalism::Repository> nullary_condition;
-    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_overapproximation_condition;
-    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_overapproximation_condition;
-    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_conflicting_overapproximation_condition;
-    View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_conflicting_overapproximation_condition;
+    View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule;
+    View<Index<formalism::datalog::GroundConjunctiveCondition>, formalism::datalog::Repository> nullary_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_conflicting_overapproximation_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_conflicting_overapproximation_condition;
     StaticConsistencyGraph static_consistency_graph;
 
-    static StaticRuleExecutionContext create(View<Index<formalism::Rule>, formalism::Repository> rule,
-                                             formalism::Repository& repository,
+    static StaticRuleExecutionContext create(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
+                                             formalism::datalog::Repository& repository,
                                              const analysis::DomainListList& parameter_domains,
                                              const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 };
 
 struct RuleExecutionContext
 {
-    const View<Index<formalism::Rule>, formalism::Repository> rule;
-    const View<Index<formalism::GroundConjunctiveCondition>, formalism::Repository> nullary_condition;
-    const View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_overapproximation_condition;
-    const View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_overapproximation_condition;
-    const View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_conflicting_overapproximation_condition;
-    const View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_conflicting_overapproximation_condition;
+    const View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule;
+    const View<Index<formalism::datalog::GroundConjunctiveCondition>, formalism::datalog::Repository> nullary_condition;
+    const View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition;
+    const View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition;
+    const View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_conflicting_overapproximation_condition;
+    const View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_conflicting_overapproximation_condition;
     const StaticConsistencyGraph static_consistency_graph;
 
     kpkc::DenseKPartiteGraph consistency_graph;
     kpkc::Workspace kpkc_workspace;
 
     /// Merge stage into rule execution context
-    std::shared_ptr<formalism::Repository> repository;
-    formalism::OverlayRepository<formalism::Repository> overlay_repository;
+    std::shared_ptr<formalism::datalog::Repository> repository;
+    formalism::OverlayRepository<formalism::datalog::Repository> overlay_repository;
 
     /// Bindings kept from iteration in stage
     IndexList<formalism::Object> binding;
-    std::vector<Index<formalism::GroundAtom<formalism::FluentTag>>> ground_heads;
+    std::vector<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> ground_heads;
 
     struct Statistics
     {
@@ -187,15 +191,15 @@ struct RuleExecutionContext
         return result;
     }
 
-    RuleExecutionContext(View<Index<formalism::Rule>, formalism::Repository> rule,
-                         View<Index<formalism::GroundConjunctiveCondition>, formalism::Repository> nullary_condition,
-                         View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_overapproximation_condition,
-                         View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_overapproximation_condition,
-                         View<Index<formalism::ConjunctiveCondition>, formalism::Repository> unary_conflicting_overapproximation_condition,
-                         View<Index<formalism::ConjunctiveCondition>, formalism::Repository> binary_conflicting_overapproximation_condition,
+    RuleExecutionContext(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
+                         View<Index<formalism::datalog::GroundConjunctiveCondition>, formalism::datalog::Repository> nullary_condition,
+                         View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition,
+                         View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition,
+                         View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_conflicting_overapproximation_condition,
+                         View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_conflicting_overapproximation_condition,
                          const analysis::DomainListList& parameter_domains,
                          const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
-                         const formalism::Repository& parent);
+                         const formalism::datalog::Repository& parent);
 
     void clear() noexcept;
 
@@ -204,8 +208,8 @@ struct RuleExecutionContext
 
 struct ThreadExecutionContext
 {
-    formalism::Builder builder;
-    formalism::MergeCache merge_cache;
+    formalism::datalog::Builder builder;
+    formalism::datalog::MergeCache merge_cache;
 
     ThreadExecutionContext() = default;
 
@@ -216,7 +220,7 @@ struct ProgramToTaskExecutionContext
 {
     ProgramToTaskExecutionContext() = default;
 
-    formalism::MergeCache merge_cache;
+    formalism::datalog::MergeCache merge_cache;
     IndexList<formalism::Object> binding;
 
     void clear() noexcept;
@@ -226,7 +230,7 @@ struct TaskToProgramExecutionContext
 {
     TaskToProgramExecutionContext() = default;
 
-    formalism::MergeCache merge_cache;
+    formalism::datalog::MergeCache merge_cache;
 
     void clear() noexcept;
 };
@@ -234,15 +238,15 @@ struct TaskToProgramExecutionContext
 struct ProgramExecutionContext
 {
     /// --- Program & analysis
-    const View<Index<formalism::Program>, formalism::Repository> program;
-    const formalism::RepositoryPtr repository;
+    const View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program;
+    const formalism::datalog::RepositoryPtr repository;
     const analysis::ProgramVariableDomains& domains;
     const analysis::RuleStrata& strata;
     const analysis::ListenerStrata& listeners;
     RuleSchedulerStrata rule_scheduler_strata;
 
     /// --- Builder
-    formalism::Builder builder;
+    formalism::datalog::Builder builder;
 
     /// --- Execution contexts
     FactsExecutionContext facts_execution_context;
@@ -261,8 +265,8 @@ struct ProgramExecutionContext
         std::chrono::nanoseconds merge_seq_total_time { 0 };
     } statistics;
 
-    ProgramExecutionContext(View<Index<formalism::Program>, formalism::Repository> program,
-                            formalism::RepositoryPtr repository,
+    ProgramExecutionContext(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program,
+                            formalism::datalog::RepositoryPtr repository,
                             const analysis::ProgramVariableDomains& domains,
                             const analysis::RuleStrata& strata,
                             const analysis::ListenerStrata& listeners);

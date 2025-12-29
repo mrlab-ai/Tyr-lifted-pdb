@@ -18,8 +18,8 @@
 #include "tyr/grounder/rule_scheduler.hpp"
 
 #include "tyr/common/config.hpp"  // for uint_t
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/views.hpp"  // for View
+#include "tyr/formalism/datalog/formatter.hpp"
+#include "tyr/formalism/datalog/views.hpp"  // for View
 #include "tyr/grounder/rule_scheduler.hpp"
 
 #include <assert.h>       // for assert
@@ -27,6 +27,7 @@
 #include <utility>        // for pair
 
 using namespace tyr::formalism;
+using namespace tyr::formalism::datalog;
 
 namespace tyr::grounder
 {

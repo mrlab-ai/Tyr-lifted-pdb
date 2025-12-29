@@ -20,7 +20,7 @@
 
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/datalog/views.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 
@@ -31,25 +31,25 @@ template<formalism::FactKind T>
 class PredicateFactSet
 {
 private:
-    const formalism::Repository& m_context;
-    IndexList<formalism::GroundAtom<T>> m_indices;
+    const formalism::datalog::Repository& m_context;
+    IndexList<formalism::datalog::GroundAtom<T>> m_indices;
 
     boost::dynamic_bitset<> m_bitset;
 
 public:
-    explicit PredicateFactSet(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view);
+    explicit PredicateFactSet(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view);
 
     void reset();
 
-    void insert(View<Index<formalism::GroundAtom<T>>, formalism::Repository> view);
+    void insert(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view);
 
-    void insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view);
+    void insert(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view);
 
-    bool contains(Index<formalism::GroundAtom<T>> index) const noexcept;
+    bool contains(Index<formalism::datalog::GroundAtom<T>> index) const noexcept;
 
-    bool contains(View<Index<formalism::GroundAtom<T>>, formalism::Repository> view) const noexcept;
+    bool contains(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view) const noexcept;
 
-    View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> get_facts() const noexcept;
+    View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> get_facts() const noexcept;
 
     const boost::dynamic_bitset<>& get_bitset() const noexcept;
 };
@@ -58,32 +58,32 @@ template<formalism::FactKind T>
 class FunctionFactSet
 {
 private:
-    const formalism::Repository& m_context;
-    IndexList<formalism::GroundFunctionTerm<T>> m_indices;
-    UnorderedSet<Index<formalism::GroundFunctionTerm<T>>> m_unique;
+    const formalism::datalog::Repository& m_context;
+    IndexList<formalism::datalog::GroundFunctionTerm<T>> m_indices;
+    UnorderedSet<Index<formalism::datalog::GroundFunctionTerm<T>>> m_unique;
 
     std::vector<float_t> m_values;
 
 public:
-    explicit FunctionFactSet(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
+    explicit FunctionFactSet(View<IndexList<formalism::datalog::GroundFunctionTermValue<T>>, formalism::datalog::Repository> view);
 
     void reset();
 
-    void insert(View<Index<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_term, float_t value);
+    void insert(View<Index<formalism::datalog::GroundFunctionTerm<T>>, formalism::datalog::Repository> function_term, float_t value);
 
-    void insert(View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository> function_terms, const std::vector<float_t>& values);
+    void insert(View<IndexList<formalism::datalog::GroundFunctionTerm<T>>, formalism::datalog::Repository> function_terms, const std::vector<float_t>& values);
 
-    void insert(View<Index<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
+    void insert(View<Index<formalism::datalog::GroundFunctionTermValue<T>>, formalism::datalog::Repository> view);
 
-    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view);
+    void insert(View<IndexList<formalism::datalog::GroundFunctionTermValue<T>>, formalism::datalog::Repository> view);
 
-    bool contains(Index<formalism::GroundFunctionTerm<T>> index) const noexcept;
+    bool contains(Index<formalism::datalog::GroundFunctionTerm<T>> index) const noexcept;
 
-    bool contains(View<Index<formalism::GroundFunctionTerm<T>>, formalism::Repository> view) const noexcept;
+    bool contains(View<Index<formalism::datalog::GroundFunctionTerm<T>>, formalism::datalog::Repository> view) const noexcept;
 
-    float_t operator[](Index<formalism::GroundFunctionTerm<T>> index) const noexcept;
+    float_t operator[](Index<formalism::datalog::GroundFunctionTerm<T>> index) const noexcept;
 
-    View<IndexList<formalism::GroundFunctionTerm<T>>, formalism::Repository> get_fterms() const noexcept;
+    View<IndexList<formalism::datalog::GroundFunctionTerm<T>>, formalism::datalog::Repository> get_fterms() const noexcept;
     const std::vector<float_t>& get_values() const noexcept;
 };
 
@@ -93,8 +93,8 @@ struct TaggedFactSets
     PredicateFactSet<T> predicate;
     FunctionFactSet<T> function;
 
-    TaggedFactSets(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> atoms,
-                   View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> function_terms) :
+    TaggedFactSets(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> atoms,
+                   View<IndexList<formalism::datalog::GroundFunctionTermValue<T>>, formalism::datalog::Repository> function_terms) :
         predicate(atoms),
         function(function_terms)
     {
@@ -112,9 +112,9 @@ struct FactSets
     TaggedFactSets<formalism::StaticTag> static_sets;
     TaggedFactSets<formalism::FluentTag> fluent_sets;
 
-    explicit FactSets(View<Index<formalism::Program>, formalism::Repository> program);
+    explicit FactSets(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program);
 
-    FactSets(View<Index<formalism::Program>, formalism::Repository> program, TaggedFactSets<formalism::FluentTag> fluent_facts);
+    FactSets(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program, TaggedFactSets<formalism::FluentTag> fluent_facts);
 
     template<formalism::FactKind T>
     void reset() noexcept
@@ -129,13 +129,13 @@ struct FactSets
     }
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundAtom<T>>, formalism::Repository> view)
+    void insert(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view)
     {
         get<T>().predicate.insert(view);
     }
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::GroundFunctionTermValue<T>>, formalism::Repository> view)
+    void insert(View<IndexList<formalism::datalog::GroundFunctionTermValue<T>>, formalism::datalog::Repository> view)
     {
         get<T>().function.insert(view);
     }

@@ -23,10 +23,13 @@
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/repository.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 
 namespace tyr::planning
@@ -38,11 +41,11 @@ public:
     // Mapping from program fluent predicate to task derived predicate
     using PredicateToPredicateMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::Predicate<formalism::DerivedTag>>>;
 
-    explicit AxiomEvaluatorProgram(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task);
+    explicit AxiomEvaluatorProgram(View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task);
 
     const PredicateToPredicateMapping& get_predicate_to_predicate_mapping() const noexcept;
-    View<Index<formalism::Program>, formalism::Repository> get_program() const noexcept;
-    const formalism::RepositoryPtr& get_repository() const noexcept;
+    View<Index<formalism::datalog::Program>, formalism::datalog::Repository> get_program() const noexcept;
+    const formalism::datalog::RepositoryPtr& get_repository() const noexcept;
     const analysis::ProgramVariableDomains& get_domains() const noexcept;
     const analysis::RuleStrata& get_strata() const noexcept;
     const analysis::ListenerStrata& get_listeners() const noexcept;
@@ -50,8 +53,8 @@ public:
 private:
     PredicateToPredicateMapping m_prediate_to_predicate;
 
-    formalism::RepositoryPtr m_repository;
-    View<Index<formalism::Program>, formalism::Repository> m_program;
+    formalism::datalog::RepositoryPtr m_repository;
+    View<Index<formalism::datalog::Program>, formalism::datalog::Repository> m_program;
 
     analysis::ProgramVariableDomains m_domains;
     analysis::RuleStrata m_strata;

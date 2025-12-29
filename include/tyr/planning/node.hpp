@@ -40,7 +40,7 @@ class Node
 template<typename Task>
 struct LabeledNode
 {
-    View<Index<formalism::GroundAction>, formalism::OverlayRepository<formalism::Repository>> label;
+    View<Index<formalism::planning::GroundAction>, formalism::OverlayRepository<formalism::planning::Repository>> label;
     Node<Task> node;
 };
 

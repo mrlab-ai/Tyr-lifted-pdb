@@ -56,32 +56,37 @@ struct StateContext
 template<typename Task>
 inline float_t evaluate(float_t element, const StateContext<Task>& context);
 
-template<typename Task, formalism::ArithmeticOpKind O, formalism::Context C>
-float_t evaluate(View<Index<formalism::UnaryOperator<O, Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::ArithmeticOpKind O, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::UnaryOperator<O, Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+                 const StateContext<Task>& context);
 
-template<typename Task, formalism::OpKind O, formalism::Context C>
-float_t evaluate(View<Index<formalism::BinaryOperator<O, Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::OpKind O, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::BinaryOperator<O, Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+                 const StateContext<Task>& context);
 
-template<typename Task, formalism::ArithmeticOpKind O, formalism::Context C>
-float_t evaluate(View<Index<formalism::MultiOperator<O, Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::ArithmeticOpKind O, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::MultiOperator<O, Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+                 const StateContext<Task>& context);
 
-template<typename Task, formalism::FactKind T, formalism::Context C>
-float_t evaluate(View<Index<formalism::GroundFunctionTerm<T>>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::FactKind T, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::GroundFunctionTerm<T>>, C> element, const StateContext<Task>& context);
 
-template<typename Task, formalism::Context C>
-float_t evaluate(View<Data<formalism::GroundFunctionExpression>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::planning::Context C>
+float_t evaluate(View<Data<formalism::planning::GroundFunctionExpression>, C> element, const StateContext<Task>& context);
 
-template<typename Task, formalism::Context C>
-float_t evaluate(View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::planning::Context C>
+float_t evaluate(View<Data<formalism::planning::ArithmeticOperator<Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+                 const StateContext<Task>& context);
 
-template<typename Task, formalism::Context C>
-bool evaluate(View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::planning::Context C>
+bool evaluate(View<Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+              const StateContext<Task>& context);
 
-template<typename Task, formalism::NumericEffectOpKind Op, formalism::FactKind T, formalism::Context C>
-float_t evaluate(View<Index<formalism::GroundNumericEffect<Op, T>>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::planning::NumericEffectOpKind Op, formalism::FactKind T, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::GroundNumericEffect<Op, T>>, C> element, const StateContext<Task>& context);
 
-template<typename Task, formalism::FactKind T, formalism::Context C>
-float_t evaluate(View<Data<formalism::GroundNumericEffectOperator<T>>, C> element, const StateContext<Task>& context);
+template<typename Task, formalism::FactKind T, formalism::planning::Context C>
+float_t evaluate(View<Data<formalism::planning::GroundNumericEffectOperator<T>>, C> element, const StateContext<Task>& context);
 
 // Implementations
 
@@ -91,20 +96,23 @@ inline float_t evaluate(float_t element, const StateContext<Task>& context)
     return element;
 }
 
-template<typename Task, formalism::ArithmeticOpKind O, formalism::Context C>
-float_t evaluate(View<Index<formalism::UnaryOperator<O, Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::ArithmeticOpKind O, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::UnaryOperator<O, Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+                 const StateContext<Task>& context)
 {
     return formalism::apply(O {}, evaluate(element.get_arg(), context));
 }
 
-template<typename Task, formalism::OpKind O, formalism::Context C>
-float_t evaluate(View<Index<formalism::BinaryOperator<O, Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::OpKind O, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::BinaryOperator<O, Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+                 const StateContext<Task>& context)
 {
     return formalism::apply(O {}, evaluate(element.get_lhs(), context), evaluate(element.get_rhs(), context));
 }
 
-template<typename Task, formalism::ArithmeticOpKind O, formalism::Context C>
-float_t evaluate(View<Index<formalism::MultiOperator<O, Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::ArithmeticOpKind O, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::MultiOperator<O, Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+                 const StateContext<Task>& context)
 {
     const auto child_fexprs = element.get_args();
 
@@ -115,50 +123,52 @@ float_t evaluate(View<Index<formalism::MultiOperator<O, Data<formalism::GroundFu
                            { return formalism::apply(formalism::OpMul {}, value, evaluate(child_expr, context)); });
 }
 
-template<typename Task, formalism::Context C>
-float_t evaluate(View<Index<formalism::GroundFunctionTerm<formalism::StaticTag>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>>, C> element, const StateContext<Task>& context)
 {
     return context.task.get(element.get_index());
 }
 
-template<typename Task, formalism::Context C>
-float_t evaluate(View<Index<formalism::GroundFunctionTerm<formalism::FluentTag>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>, C> element, const StateContext<Task>& context)
 {
     return context.unpacked_state.get(element.get_index());
 }
 
-template<typename Task, formalism::Context C>
-float_t evaluate(View<Index<formalism::GroundFunctionTerm<formalism::AuxiliaryTag>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::GroundFunctionTerm<formalism::AuxiliaryTag>>, C> element, const StateContext<Task>& context)
 {
     return context.auxiliary_value;
 }
 
-template<typename Task, formalism::Context C>
-float_t evaluate(View<Data<formalism::GroundFunctionExpression>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+float_t evaluate(View<Data<formalism::planning::GroundFunctionExpression>, C> element, const StateContext<Task>& context)
 {
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element.get_variant());
 }
 
-template<typename Task, formalism::Context C>
-float_t evaluate(View<Data<formalism::ArithmeticOperator<Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+float_t evaluate(View<Data<formalism::planning::ArithmeticOperator<Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+                 const StateContext<Task>& context)
 {
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element.get_variant());
 }
 
-template<typename Task, formalism::Context C>
-bool evaluate(View<Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool evaluate(View<Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>>, C> element,
+              const StateContext<Task>& context)
 {
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element.get_variant());
 }
 
-template<typename Task, formalism::NumericEffectOpKind Op, formalism::FactKind T, formalism::Context C>
-float_t evaluate(View<Index<formalism::GroundNumericEffect<Op, T>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::NumericEffectOpKind Op, formalism::FactKind T, formalism::planning::Context C>
+float_t evaluate(View<Index<formalism::planning::GroundNumericEffect<Op, T>>, C> element, const StateContext<Task>& context)
 {
     return formalism::apply(Op {}, evaluate(element.get_fterm(), context), evaluate(element.get_fexpr(), context));
 }
 
-template<typename Task, formalism::FactKind T, formalism::Context C>
-float_t evaluate(View<Data<formalism::GroundNumericEffectOperator<T>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::FactKind T, formalism::planning::Context C>
+float_t evaluate(View<Data<formalism::planning::GroundNumericEffectOperator<T>>, C> element, const StateContext<Task>& context)
 {
     return visit([&](auto&& arg) { return evaluate(arg, context); }, element.get_variant());
 }
@@ -167,10 +177,10 @@ float_t evaluate(View<Data<formalism::GroundNumericEffectOperator<T>>, C> elemen
  * is_applicable_if_fires
  */
 
-template<typename Task, formalism::Context C>
-bool is_applicable_if_fires(View<Index<formalism::GroundConditionalEffect>, C> element,
+template<typename Task, formalism::planning::Context C>
+bool is_applicable_if_fires(View<Index<formalism::planning::GroundConditionalEffect>, C> element,
                             const StateContext<Task>& context,
-                            formalism::EffectFamilyList& ref_fluent_effect_families)
+                            formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
     if (!is_applicable(element.get_condition(), context))
         return true;
@@ -183,49 +193,50 @@ bool is_applicable_if_fires(View<Index<formalism::GroundConditionalEffect>, C> e
  * is_applicable
  */
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundLiteral<formalism::StaticTag>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Index<formalism::planning::GroundLiteral<formalism::StaticTag>>, C> element, const StateContext<Task>& context)
 {
     return context.task.test(element.get_atom().get_index()) == element.get_polarity();
 }
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundLiteral<formalism::DerivedTag>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Index<formalism::planning::GroundLiteral<formalism::DerivedTag>>, C> element, const StateContext<Task>& context)
 {
     return context.unpacked_state.test(element.get_atom().get_index()) == element.get_polarity();
 }
 
-template<typename Task, formalism::FactKind T, formalism::Context C>
-bool is_applicable(View<IndexList<formalism::GroundLiteral<T>>, C> elements, const StateContext<Task>& context)
+template<typename Task, formalism::FactKind T, formalism::planning::Context C>
+bool is_applicable(View<IndexList<formalism::planning::GroundLiteral<T>>, C> elements, const StateContext<Task>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Data<formalism::FDRFact<formalism::FluentTag>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Data<formalism::planning::FDRFact<formalism::FluentTag>>, C> element, const StateContext<Task>& context)
 {
     return context.unpacked_state.get(element.get_variable().get_index()) == element.get_value();
 }
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<DataList<formalism::FDRFact<formalism::FluentTag>>, C> elements, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<DataList<formalism::planning::FDRFact<formalism::FluentTag>>, C> elements, const StateContext<Task>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<DataList<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>, C> elements, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<DataList<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>>, C> elements,
+                   const StateContext<Task>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return evaluate(arg, context); });
 }
 
-template<typename Task, formalism::NumericEffectOpKind Op, formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundNumericEffect<Op, formalism::FluentTag>>, C> element,
+template<typename Task, formalism::planning::NumericEffectOpKind Op, formalism::planning::Context C>
+bool is_applicable(View<Index<formalism::planning::GroundNumericEffect<Op, formalism::FluentTag>>, C> element,
                    const StateContext<Task>& context,
-                   formalism::EffectFamilyList& ref_fluent_effect_families)
+                   formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
     const auto fterm_index = element.get_fterm().get_index();
-    ref_fluent_effect_families.resize(fterm_index.get_value() + 1, formalism::EffectFamily::NONE);
+    ref_fluent_effect_families.resize(fterm_index.get_value() + 1, formalism::planning::EffectFamily::NONE);
 
     // Check non-conflicting effects
     if (!is_compatible_effect_family(Op::family, ref_fluent_effect_families[fterm_index.get_value()]))
@@ -234,7 +245,7 @@ bool is_applicable(View<Index<formalism::GroundNumericEffect<Op, formalism::Flue
     ref_fluent_effect_families[fterm_index.get_value()] = Op::family;
 
     // Check fterm is well-defined in context
-    if constexpr (!std::is_same_v<Op, formalism::OpAssign>)
+    if constexpr (!std::is_same_v<Op, formalism::planning::OpAssign>)
     {
         if (std::isnan(context.unpacked_state.get(fterm_index)))
             return false;  /// target function is undefined and operator is not assign
@@ -244,39 +255,40 @@ bool is_applicable(View<Index<formalism::GroundNumericEffect<Op, formalism::Flue
     return !std::isnan(evaluate(element.get_fexpr(), context));
 }
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Data<formalism::GroundNumericEffectOperator<formalism::FluentTag>>, C> element,
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Data<formalism::planning::GroundNumericEffectOperator<formalism::FluentTag>>, C> element,
                    const StateContext<Task>& context,
-                   formalism::EffectFamilyList& ref_fluent_effect_families)
+                   formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
     return visit([&](auto&& arg) { return is_applicable(arg, context, ref_fluent_effect_families); }, element.get_variant());
 }
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<DataList<formalism::GroundNumericEffectOperator<formalism::FluentTag>>, C> elements,
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<DataList<formalism::planning::GroundNumericEffectOperator<formalism::FluentTag>>, C> elements,
                    const StateContext<Task>& context,
-                   formalism::EffectFamilyList& ref_fluent_effect_families)
+                   formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context, ref_fluent_effect_families); });
 }
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundNumericEffect<formalism::OpIncrease, formalism::AuxiliaryTag>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Index<formalism::planning::GroundNumericEffect<formalism::planning::OpIncrease, formalism::AuxiliaryTag>>, C> element,
+                   const StateContext<Task>& context)
 {
     // Check fexpr is well-defined in context
     return !std::isnan(evaluate(element.get_fexpr(), context));
 }
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Data<formalism::GroundNumericEffectOperator<formalism::AuxiliaryTag>>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Data<formalism::planning::GroundNumericEffectOperator<formalism::AuxiliaryTag>>, C> element, const StateContext<Task>& context)
 {
     return visit([&](auto&& arg) { return is_applicable(arg, context); }, element.get_variant());
 }
 
 // GroundFDRConjunctiveCondition
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundFDRConjunctiveCondition>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Index<formalism::planning::GroundFDRConjunctiveCondition>, C> element, const StateContext<Task>& context)
 {
     return is_applicable(element.template get_facts<formalism::StaticTag>(), context)      //
            && is_applicable(element.template get_facts<formalism::FluentTag>(), context)   //
@@ -286,10 +298,10 @@ bool is_applicable(View<Index<formalism::GroundFDRConjunctiveCondition>, C> elem
 
 // GroundConjunctiveEffect
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundConjunctiveEffect>, C> element,
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Index<formalism::planning::GroundConjunctiveEffect>, C> element,
                    const StateContext<Task>& context,
-                   formalism::EffectFamilyList& ref_fluent_effect_families)
+                   formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
     return is_applicable(element.get_numeric_effects(), context, ref_fluent_effect_families)
            && (!element.get_auxiliary_numeric_effect().has_value() || is_applicable(element.get_auxiliary_numeric_effect().value(), context));
@@ -297,10 +309,10 @@ bool is_applicable(View<Index<formalism::GroundConjunctiveEffect>, C> element,
 
 // GroundConditionalEffectList
 
-template<typename Task, formalism::Context C>
-bool are_applicable_if_fires(View<IndexList<formalism::GroundConditionalEffect>, C> elements,
+template<typename Task, formalism::planning::Context C>
+bool are_applicable_if_fires(View<IndexList<formalism::planning::GroundConditionalEffect>, C> elements,
                              const StateContext<Task>& context,
-                             formalism::EffectFamilyList& out_fluent_effect_families)
+                             formalism::planning::EffectFamilyList& out_fluent_effect_families)
 {
     out_fluent_effect_families.clear();
 
@@ -311,16 +323,18 @@ bool are_applicable_if_fires(View<IndexList<formalism::GroundConditionalEffect>,
 
 // GroundAction
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundAction>, C> element, const StateContext<Task>& context, formalism::EffectFamilyList& out_fluent_effect_families)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Index<formalism::planning::GroundAction>, C> element,
+                   const StateContext<Task>& context,
+                   formalism::planning::EffectFamilyList& out_fluent_effect_families)
 {
     return is_applicable(element.get_condition(), context) && are_applicable_if_fires(element.get_effects(), context, out_fluent_effect_families);
 }
 
 // GroundAxiom
 
-template<typename Task, formalism::Context C>
-bool is_applicable(View<Index<formalism::GroundAxiom>, C> element, const StateContext<Task>& context)
+template<typename Task, formalism::planning::Context C>
+bool is_applicable(View<Index<formalism::planning::GroundAxiom>, C> element, const StateContext<Task>& context)
 {
     return is_applicable(element.get_body(), context);
 }
@@ -329,38 +343,39 @@ bool is_applicable(View<Index<formalism::GroundAxiom>, C> element, const StateCo
  * is_statically_applicable
  */
 
-template<formalism::Context C>
-bool is_statically_applicable(View<Index<formalism::GroundLiteral<formalism::StaticTag>>, C> element, const boost::dynamic_bitset<>& static_atoms)
+template<formalism::planning::Context C>
+bool is_statically_applicable(View<Index<formalism::planning::GroundLiteral<formalism::StaticTag>>, C> element, const boost::dynamic_bitset<>& static_atoms)
 {
     return tyr::test(uint_t(element.get_atom().get_index()), static_atoms) == element.get_polarity();
 }
 
-template<formalism::Context C>
-bool is_statically_applicable(View<IndexList<formalism::GroundLiteral<formalism::StaticTag>>, C> elements, const boost::dynamic_bitset<>& static_atoms)
+template<formalism::planning::Context C>
+bool is_statically_applicable(View<IndexList<formalism::planning::GroundLiteral<formalism::StaticTag>>, C> elements,
+                              const boost::dynamic_bitset<>& static_atoms)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_statically_applicable(arg, static_atoms); });
 }
 
 // GroundFDRConjunctiveCondition
 
-template<formalism::Context C>
-bool is_statically_applicable(View<Index<formalism::GroundFDRConjunctiveCondition>, C> element, const boost::dynamic_bitset<>& static_atoms)
+template<formalism::planning::Context C>
+bool is_statically_applicable(View<Index<formalism::planning::GroundFDRConjunctiveCondition>, C> element, const boost::dynamic_bitset<>& static_atoms)
 {
     return is_statically_applicable(element.template get_facts<formalism::StaticTag>(), static_atoms);
 }
 
 // GroundAction
 
-template<formalism::Context C>
-bool is_statically_applicable(View<Index<formalism::GroundAction>, C> element, const boost::dynamic_bitset<>& static_atoms)
+template<formalism::planning::Context C>
+bool is_statically_applicable(View<Index<formalism::planning::GroundAction>, C> element, const boost::dynamic_bitset<>& static_atoms)
 {
     return is_statically_applicable(element.get_condition(), static_atoms);
 }
 
 // GroundAxiom
 
-template<formalism::Context C>
-bool is_statically_applicable(View<Index<formalism::GroundAxiom>, C> element, const boost::dynamic_bitset<>& static_atoms)
+template<formalism::planning::Context C>
+bool is_statically_applicable(View<Index<formalism::planning::GroundAxiom>, C> element, const boost::dynamic_bitset<>& static_atoms)
 {
     return is_statically_applicable(element.get_body(), static_atoms);
 }
@@ -371,10 +386,10 @@ bool is_statically_applicable(View<Index<formalism::GroundAxiom>, C> element, co
 
 // GroundFDRConjunctiveCondition
 
-template<formalism::Context C>
-bool is_consistent(View<Index<formalism::GroundFDRConjunctiveCondition>, C> element,
-                   UnorderedMap<Index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>& fluent_assign,
-                   UnorderedMap<Index<formalism::GroundAtom<formalism::DerivedTag>>, bool>& derived_assign)
+template<formalism::planning::Context C>
+bool is_consistent(View<Index<formalism::planning::GroundFDRConjunctiveCondition>, C> element,
+                   UnorderedMap<Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>& fluent_assign,
+                   UnorderedMap<Index<formalism::planning::GroundAtom<formalism::DerivedTag>>, bool>& derived_assign)
 {
     for (const auto fact : element.template get_facts<formalism::FluentTag>())
     {
@@ -397,10 +412,10 @@ bool is_consistent(View<Index<formalism::GroundFDRConjunctiveCondition>, C> elem
 
 // GroundAction
 
-template<formalism::Context C>
-bool is_consistent(View<Index<formalism::GroundAction>, C> element,
-                   UnorderedMap<Index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>& out_fluent_assign,
-                   UnorderedMap<Index<formalism::GroundAtom<formalism::DerivedTag>>, bool>& out_derived_assign)
+template<formalism::planning::Context C>
+bool is_consistent(View<Index<formalism::planning::GroundAction>, C> element,
+                   UnorderedMap<Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>& out_fluent_assign,
+                   UnorderedMap<Index<formalism::planning::GroundAtom<formalism::DerivedTag>>, bool>& out_derived_assign)
 {
     out_fluent_assign.clear();
     out_derived_assign.clear();
@@ -409,10 +424,10 @@ bool is_consistent(View<Index<formalism::GroundAction>, C> element,
 
 // GroundAxiom
 
-template<formalism::Context C>
-bool is_consistent(View<Index<formalism::GroundAxiom>, C> element,
-                   UnorderedMap<Index<formalism::FDRVariable<formalism::FluentTag>>, formalism::FDRValue>& out_fluent_assign,
-                   UnorderedMap<Index<formalism::GroundAtom<formalism::DerivedTag>>, bool>& out_derived_assign)
+template<formalism::planning::Context C>
+bool is_consistent(View<Index<formalism::planning::GroundAxiom>, C> element,
+                   UnorderedMap<Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>& out_fluent_assign,
+                   UnorderedMap<Index<formalism::planning::GroundAtom<formalism::DerivedTag>>, bool>& out_derived_assign)
 {
     out_fluent_assign.clear();
     out_derived_assign.clear();

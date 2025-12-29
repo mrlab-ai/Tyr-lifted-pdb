@@ -19,8 +19,8 @@
 #define TYR_PLANNING_GROUND_TASK_MATCH_TREE_MATCH_TREE_HPP_
 
 #include "tyr/buffer/declarations.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/formatter.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/canonicalization.hpp"
@@ -40,15 +40,15 @@
 namespace tyr::planning::match_tree
 {
 
-using PreconditionVariant = std::variant<Index<formalism::GroundAtom<formalism::DerivedTag>>,
-                                         Index<formalism::FDRVariable<formalism::FluentTag>>,
-                                         Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>>;
+using PreconditionVariant = std::variant<Index<formalism::planning::GroundAtom<formalism::DerivedTag>>,
+                                         Index<formalism::planning::FDRVariable<formalism::FluentTag>>,
+                                         Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>>>;
 
 template<typename Tag>
 using PreconditionOccurences = UnorderedMap<PreconditionVariant, IndexList<Tag>>;
 
 template<typename Tag>
-using PreconditionDetails = UnorderedMap<Index<Tag>, UnorderedMap<PreconditionVariant, std::variant<std::monostate, bool, formalism::FDRValue>>>;
+using PreconditionDetails = UnorderedMap<Index<Tag>, UnorderedMap<PreconditionVariant, std::variant<std::monostate, bool, formalism::planning::FDRValue>>>;
 
 template<typename Tag>
 struct BaseEntry
@@ -74,7 +74,7 @@ struct GeneratorStackEntry;
 template<typename Tag>
 using StackEntry = std::variant<AtomStackEntry<Tag>, VariableStackEntry<Tag>, ConstraintStackEntry<Tag>, GeneratorStackEntry<Tag>>;
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base,
                                                              const std::vector<std::pair<PreconditionVariant, IndexList<Tag>>>& sorted_preconditions,
                                                              const PreconditionDetails<Tag>& details,
@@ -83,7 +83,7 @@ static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base
 template<typename Tag>
 struct GetResultContext
 {
-    Repository<Tag, formalism::OverlayRepository<formalism::Repository>>& destination;
+    Repository<Tag, formalism::OverlayRepository<formalism::planning::Repository>>& destination;
     buffer::Buffer& buffer;
 };
 
@@ -99,7 +99,7 @@ struct AtomStackEntry
     Data<AtomSelectorNode<Tag>> result;
 
     AtomStackEntry(BaseEntry<Tag> base,
-                   Index<formalism::GroundAtom<formalism::DerivedTag>> atom,
+                   Index<formalism::planning::GroundAtom<formalism::DerivedTag>> atom,
                    std::span<Index<Tag>> true_elements,
                    std::span<Index<Tag>> false_elements,
                    std::span<Index<Tag>> dontcare_elements) :
@@ -130,7 +130,7 @@ struct VariableStackEntry
     Data<VariableSelectorNode<Tag>> result;
 
     VariableStackEntry(BaseEntry<Tag> base,
-                       Index<formalism::FDRVariable<formalism::FluentTag>> variable,
+                       Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
                        std::vector<std::span<Index<Tag>>> domain_elements_,
                        std::vector<uint_t> forward_,
                        std::span<Index<Tag>> dontcare_elements) :
@@ -154,14 +154,14 @@ struct ConstraintStackEntry
 {
     BaseEntry<Tag> base;
 
-    Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> constraint;
+    Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>> constraint;
     std::span<Index<Tag>> true_elements;
     std::span<Index<Tag>> dontcare_elements;
 
     Data<NumericConstraintSelectorNode<Tag>> result;
 
     ConstraintStackEntry(BaseEntry<Tag> base,
-                         Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> constraint,
+                         Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>> constraint,
                          std::span<Index<Tag>> true_elements,
                          std::span<Index<Tag>> dontcare_elements) :
         base(base),
@@ -198,7 +198,7 @@ bool explored(const AtomStackEntry<Tag>& el) noexcept
     return el.explored_true_child() && el.explored_false_child() && el.explored_dontcare_child();
 }
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 std::optional<StackEntry<Tag>> next_entry(const AtomStackEntry<Tag>& el,
                                           const std::vector<std::pair<PreconditionVariant, IndexList<Tag>>>& sorted_preconditions,
                                           const PreconditionDetails<Tag>& details,
@@ -240,7 +240,7 @@ bool explored(const VariableStackEntry<Tag>& el) noexcept
     return el.explored_children() && el.explored_dontcare_child();
 }
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 std::optional<StackEntry<Tag>> next_entry(const VariableStackEntry<Tag>& el,
                                           const std::vector<std::pair<PreconditionVariant, IndexList<Tag>>>& sorted_preconditions,
                                           const PreconditionDetails<Tag>& details,
@@ -284,7 +284,7 @@ bool explored(const ConstraintStackEntry<Tag>& el) noexcept
     return el.explored_true_child() && el.explored_dontcare_child();
 }
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 std::optional<StackEntry<Tag>> next_entry(const ConstraintStackEntry<Tag>& el,
                                           const std::vector<std::pair<PreconditionVariant, IndexList<Tag>>>& sorted_preconditions,
                                           const PreconditionDetails<Tag>& details,
@@ -322,7 +322,7 @@ bool explored(const GeneratorStackEntry<Tag>& el) noexcept
     return true;
 }
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 std::optional<StackEntry<Tag>> next_entry(const GeneratorStackEntry<Tag>& el,
                                           const std::vector<std::pair<PreconditionVariant, IndexList<Tag>>>& sorted_preconditions,
                                           const PreconditionDetails<Tag>& details,
@@ -344,21 +344,21 @@ void push_result(GeneratorStackEntry<Tag>& el, Data<Node<Tag>> node)
     throw std::logic_error("Unexpected case.");
 }
 
-template<formalism::Context C>
-auto get_condition(View<Index<formalism::GroundAxiom>, C> el)
+template<formalism::planning::Context C>
+auto get_condition(View<Index<formalism::planning::GroundAxiom>, C> el)
 {
     return el.get_body();
 }
 
-template<formalism::Context C>
-auto get_condition(View<Index<formalism::GroundAction>, C> el)
+template<formalism::planning::Context C>
+auto get_condition(View<Index<formalism::planning::GroundAction>, C> el)
 {
     return el.get_condition();
 }
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>>
-try_create_atom_stack_entry(Index<formalism::GroundAtom<formalism::DerivedTag>> atom, BaseEntry<Tag> base, const PreconditionDetails<Tag>& details)
+try_create_atom_stack_entry(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> atom, BaseEntry<Tag> base, const PreconditionDetails<Tag>& details)
 {
     assert(!base.elements.empty());
 
@@ -395,8 +395,8 @@ try_create_atom_stack_entry(Index<formalism::GroundAtom<formalism::DerivedTag>> 
     return AtomStackEntry<Tag>(base, atom, true_elements, false_elements, dontcare_elements);
 }
 
-template<typename Tag, formalism::Context C>
-static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(Index<formalism::FDRVariable<formalism::FluentTag>> variable,
+template<typename Tag, formalism::planning::Context C>
+static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
                                                                       BaseEntry<Tag> base,
                                                                       const PreconditionDetails<Tag>& details,
                                                                       const C& context)
@@ -410,7 +410,7 @@ static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(Index<form
         if (!details.at(e).contains(variable))
             return domain_size;  // dontcare
 
-        const auto value = std::get<formalism::FDRValue>(details.at(e).at(variable));
+        const auto value = std::get<formalism::planning::FDRValue>(details.at(e).at(variable));
         return uint_t(value);
     };
 
@@ -452,9 +452,10 @@ static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(Index<form
 }
 
 template<typename Tag>
-static std::optional<StackEntry<Tag>> try_create_constraint_stack_entry(Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>> constraint,
-                                                                        BaseEntry<Tag> base,
-                                                                        const PreconditionDetails<Tag>& details)
+static std::optional<StackEntry<Tag>>
+try_create_constraint_stack_entry(Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>> constraint,
+                                  BaseEntry<Tag> base,
+                                  const PreconditionDetails<Tag>& details)
 {
     assert(!base.elements.empty());
 
@@ -487,7 +488,7 @@ static StackEntry<Tag> create_generator_stack_entry(BaseEntry<Tag> base)
     return GeneratorStackEntry(base);
 }
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<Tag> base,
                                                                       const std::vector<std::pair<PreconditionVariant, IndexList<Tag>>>& sorted_preconditions,
                                                                       const PreconditionDetails<Tag>& details,
@@ -498,11 +499,11 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
         {
             using Alternative = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::same_as<Alternative, Index<formalism::FDRVariable<formalism::FluentTag>>>)
+            if constexpr (std::same_as<Alternative, Index<formalism::planning::FDRVariable<formalism::FluentTag>>>)
                 return try_create_variable_stack_entry(arg, base, details, context);
-            else if constexpr (std::same_as<Alternative, Index<formalism::GroundAtom<formalism::DerivedTag>>>)
+            else if constexpr (std::same_as<Alternative, Index<formalism::planning::GroundAtom<formalism::DerivedTag>>>)
                 return try_create_atom_stack_entry(arg, base, details);
-            else if constexpr (std::same_as<Alternative, Data<formalism::BooleanOperator<Data<formalism::GroundFunctionExpression>>>>)
+            else if constexpr (std::same_as<Alternative, Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>>>)
                 return try_create_constraint_stack_entry(arg, base, details);
             else
                 static_assert(dependent_false<Alternative>::value, "Missing case");
@@ -510,7 +511,7 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
         sorted_preconditions[base.depth].first);
 }
 
-template<typename Tag, formalism::Context C>
+template<typename Tag, formalism::planning::Context C>
 static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base,
                                                              const std::vector<std::pair<PreconditionVariant, IndexList<Tag>>>& sorted_preconditions,
                                                              const PreconditionDetails<Tag>& details,
@@ -534,7 +535,7 @@ class MatchTree
 private:
     IndexList<Tag> m_elements;
 
-    RepositoryPtr<Tag, formalism::OverlayRepository<formalism::Repository>> m_context;
+    RepositoryPtr<Tag, formalism::OverlayRepository<formalism::planning::Repository>> m_context;
 
     std::optional<Data<Node<Tag>>> m_root;
 
@@ -544,7 +545,7 @@ public:
     template<formalism::Context C>
     MatchTree(IndexList<Tag> elements_, const C& context_) :
         m_elements(std::move(elements_)),
-        m_context(std::make_unique<Repository<Tag, formalism::OverlayRepository<formalism::Repository>>>(context_)),
+        m_context(std::make_unique<Repository<Tag, formalism::OverlayRepository<formalism::planning::Repository>>>(context_)),
         m_root(),
         m_evaluate_stack()
     {
@@ -653,7 +654,7 @@ public:
         std::cout << "Num nodes: " << num_nodes << std::endl;
     }
 
-    template<formalism::Context C>
+    template<formalism::planning::Context C>
     static MatchTreePtr<Tag> create(IndexList<Tag> elements, const C& context)
     {
         return std::make_unique<MatchTree<Tag>>(elements, context);

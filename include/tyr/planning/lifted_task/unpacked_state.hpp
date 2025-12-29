@@ -21,11 +21,11 @@
 #include "tyr/common/config.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/ground_atom_index.hpp"
-#include "tyr/formalism/ground_function_term_index.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
 #include "tyr/formalism/planning/fdr_variable_index.hpp"
+#include "tyr/formalism/planning/ground_atom_index.hpp"
+#include "tyr/formalism/planning/ground_function_term_index.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/unpacked_state.hpp"
@@ -50,14 +50,14 @@ public:
     StateIndex get_index() const;
     void set(StateIndex index);
 
-    formalism::FDRValue get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const;
-    void set(Data<formalism::FDRFact<formalism::FluentTag>> fact);
+    formalism::planning::FDRValue get(Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const;
+    void set(Data<formalism::planning::FDRFact<formalism::FluentTag>> fact);
 
-    float_t get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const;
-    void set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value);
+    float_t get(Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> index) const;
+    void set(Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> index, float_t value);
 
-    bool test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const;
-    void set(Index<formalism::GroundAtom<formalism::DerivedTag>> index);
+    bool test(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> index) const;
+    void set(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> index);
 
     void clear();
     void clear_unextended_part();
@@ -95,35 +95,38 @@ inline StateIndex UnpackedState<LiftedTask>::get_index() const { return m_index;
 inline void UnpackedState<LiftedTask>::set(StateIndex index) { m_index = index; }
 
 // Fluent facts
-inline formalism::FDRValue UnpackedState<LiftedTask>::get(Index<formalism::FDRVariable<formalism::FluentTag>> index) const
+inline formalism::planning::FDRValue UnpackedState<LiftedTask>::get(Index<formalism::planning::FDRVariable<formalism::FluentTag>> index) const
 {
-    return formalism::FDRValue(tyr::test(uint_t(index), m_fluent_atoms));
+    return formalism::planning::FDRValue(tyr::test(uint_t(index), m_fluent_atoms));
 }
 
-inline void UnpackedState<LiftedTask>::set(Data<formalism::FDRFact<formalism::FluentTag>> fact)
+inline void UnpackedState<LiftedTask>::set(Data<formalism::planning::FDRFact<formalism::FluentTag>> fact)
 {
     assert(uint_t(fact.value) < 2);  // can only handle binary using bitsets
     tyr::set(uint_t(fact.variable), bool(uint_t(fact.value)), m_fluent_atoms);
 }
 
 // Fluent numeric variables
-inline float_t UnpackedState<LiftedTask>::get(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index) const
+inline float_t UnpackedState<LiftedTask>::get(Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> index) const
 {
     return tyr::get(uint_t(index), m_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
-inline void UnpackedState<LiftedTask>::set(Index<formalism::GroundFunctionTerm<formalism::FluentTag>> index, float_t value)
+inline void UnpackedState<LiftedTask>::set(Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> index, float_t value)
 {
     tyr::set(uint_t(index), value, m_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 
 // Derived atoms
-inline bool UnpackedState<LiftedTask>::test(Index<formalism::GroundAtom<formalism::DerivedTag>> index) const
+inline bool UnpackedState<LiftedTask>::test(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> index) const
 {
     return tyr::test(uint_t(index), m_derived_atoms);
 }
 
-inline void UnpackedState<LiftedTask>::set(Index<formalism::GroundAtom<formalism::DerivedTag>> index) { tyr::set(uint_t(index), true, m_derived_atoms); }
+inline void UnpackedState<LiftedTask>::set(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> index)
+{
+    tyr::set(uint_t(index), true, m_derived_atoms);
+}
 
 inline void UnpackedState<LiftedTask>::clear()
 {

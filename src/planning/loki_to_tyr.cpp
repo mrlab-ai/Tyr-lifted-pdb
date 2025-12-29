@@ -20,6 +20,9 @@
 #include "tyr/planning/domain.hpp"
 #include "tyr/planning/lifted_task.hpp"
 
+using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
+
 namespace tyr::planning
 {
 
@@ -234,12 +237,12 @@ void LokiToTyrTranslator::prepare(loki::Problem problem)
     }
 }
 
-DomainPtr LokiToTyrTranslator::translate(const loki::Domain& element, formalism::Builder& builder, formalism::RepositoryPtr context)
+DomainPtr LokiToTyrTranslator::translate(const loki::Domain& element, Builder& builder, RepositoryPtr context)
 {
     /* Perform static type analysis */
     prepare(element);
 
-    auto domain_ptr = builder.get_builder<formalism::Domain>();
+    auto domain_ptr = builder.get_builder<formalism::planning::Domain>();
     auto& domain = *domain_ptr;
     domain.clear();
 
@@ -253,20 +256,20 @@ DomainPtr LokiToTyrTranslator::translate(const loki::Domain& element, formalism:
 
     /* Predicates section */
     const auto func_insert_predicate = [](IndexPredicateVariant index_literal_variant,
-                                          IndexList<formalism::Predicate<formalism::StaticTag>>& static_predicates,
-                                          IndexList<formalism::Predicate<formalism::FluentTag>>& fluent_predicates,
-                                          IndexList<formalism::Predicate<formalism::DerivedTag>>& derived_predicates)
+                                          IndexList<Predicate<StaticTag>>& static_predicates,
+                                          IndexList<Predicate<FluentTag>>& fluent_predicates,
+                                          IndexList<Predicate<DerivedTag>>& derived_predicates)
     {
         std::visit(
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<Predicate<StaticTag>>>)
                     static_predicates.push_back(arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Index<Predicate<FluentTag>>>)
                     fluent_predicates.push_back(arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::DerivedTag>>>)
+                else if constexpr (std::is_same_v<T, Index<Predicate<DerivedTag>>>)
                     derived_predicates.push_back(arg);
                 else
                     static_assert(dependent_false<T>::value, "Missing case for type");
@@ -281,20 +284,20 @@ DomainPtr LokiToTyrTranslator::translate(const loki::Domain& element, formalism:
 
     /* Functions section */
     const auto func_insert_function = [](IndexFunctionVariant index_literal_variant,
-                                         IndexList<formalism::Function<formalism::StaticTag>>& static_functions,
-                                         IndexList<formalism::Function<formalism::FluentTag>>& fluent_functions,
-                                         ::cista::optional<Index<formalism::Function<formalism::AuxiliaryTag>>>& auxiliary_function)
+                                         IndexList<Function<StaticTag>>& static_functions,
+                                         IndexList<Function<FluentTag>>& fluent_functions,
+                                         ::cista::optional<Index<Function<AuxiliaryTag>>>& auxiliary_function)
     {
         std::visit(
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, Index<formalism::Function<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<Function<StaticTag>>>)
                     static_functions.push_back(arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::Function<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Index<Function<FluentTag>>>)
                     fluent_functions.push_back(arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::Function<formalism::AuxiliaryTag>>>)
+                else if constexpr (std::is_same_v<T, Index<Function<AuxiliaryTag>>>)
                 {
                     assert(!auxiliary_function);
                     auxiliary_function = arg;
@@ -314,24 +317,23 @@ DomainPtr LokiToTyrTranslator::translate(const loki::Domain& element, formalism:
     domain.actions = translate_lifted(element->get_actions(), builder, *context);
     domain.axioms = translate_lifted(element->get_axioms(), builder, *context);
 
-    formalism::canonicalize(domain);
+    canonicalize(domain);
     return std::make_shared<Domain>(context, make_view(context->get_or_create(domain, builder.get_buffer()).first, *context));
 }
 
-LiftedTaskPtr
-LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder& builder, DomainPtr domain, formalism::RepositoryPtr domain_context)
+LiftedTaskPtr LokiToTyrTranslator::translate(const loki::Problem& element, Builder& builder, DomainPtr domain, RepositoryPtr domain_context)
 {
     /* Perform static type analysis */
     prepare(element);
 
-    auto task_ptr = builder.get_builder<formalism::Task>();
+    auto task_ptr = builder.get_builder<formalism::planning::Task>();
     auto& task = *task_ptr;
     task.clear();
 
-    auto task_context = std::make_shared<formalism::Repository>();
-    auto overlay_task_context = std::make_shared<formalism::OverlayRepository<formalism::Repository>>(*domain_context, *task_context);
+    auto task_context = std::make_shared<Repository>();
+    auto overlay_task_context = std::make_shared<OverlayRepository<Repository>>(*domain_context, *task_context);
 
-    auto fdr_context = std::make_shared<formalism::BinaryFDRContext<formalism::OverlayRepository<formalism::Repository>>>(*overlay_task_context);
+    auto fdr_context = std::make_shared<BinaryFDRContext<OverlayRepository<Repository>>>(*overlay_task_context);
 
     /* Name */
     task.name = element->get_name();
@@ -345,19 +347,18 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
     task.objects = translate_common(element->get_objects(), builder, *overlay_task_context);
 
     /* Predicates section */
-    const auto func_insert_predicate =
-        [](IndexPredicateVariant index_predicate_variant, IndexList<formalism::Predicate<formalism::DerivedTag>>& derived_predicates)
+    const auto func_insert_predicate = [](IndexPredicateVariant index_predicate_variant, IndexList<Predicate<DerivedTag>>& derived_predicates)
     {
         std::visit(
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<Predicate<StaticTag>>>)
                     throw std::runtime_error("Static predicate definition in task is not supported");
-                else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Index<Predicate<FluentTag>>>)
                     throw std::runtime_error("Fluent predicate definition in task is not supported");
-                else if constexpr (std::is_same_v<T, Index<formalism::Predicate<formalism::DerivedTag>>>)
+                else if constexpr (std::is_same_v<T, Index<Predicate<DerivedTag>>>)
                     derived_predicates.push_back(arg);
                 else
                     static_assert(dependent_false<T>::value, "Missing case for type");
@@ -371,20 +372,19 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
     }
 
     /* Initial section */
-    const auto func_insert_ground_atom = [&](IndexGroundLiteralOrFactVariant index_atom_variant,
-                                             IndexList<formalism::GroundAtom<formalism::StaticTag>>& static_atoms,
-                                             IndexList<formalism::GroundAtom<formalism::FluentTag>>& fluent_atoms)
+    const auto func_insert_ground_atom =
+        [&](IndexGroundLiteralOrFactVariant index_atom_variant, IndexList<GroundAtom<StaticTag>>& static_atoms, IndexList<GroundAtom<FluentTag>>& fluent_atoms)
     {
         std::visit(
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<GroundLiteral<StaticTag>>>)
                     static_atoms.push_back(make_view(arg, *overlay_task_context).get_atom().get_index());
-                else if constexpr (std::is_same_v<T, Data<formalism::FDRFact<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Data<FDRFact<FluentTag>>>)
                     fluent_atoms.push_back(make_view(arg, *overlay_task_context).get_atom().get_index());  // we know it must have a value
-                else if constexpr (std::is_same_v<T, Index<formalism::GroundLiteral<formalism::DerivedTag>>>)
+                else if constexpr (std::is_same_v<T, Index<GroundLiteral<DerivedTag>>>)
                     throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section.");
                 else
                     static_assert(dependent_false<T>::value, "Missing case for type");
@@ -400,20 +400,20 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
     }
 
     const auto func_insert_fterm_values = [](IndexGroundFunctionTermValueVariant index_fterm_value_variant,
-                                             IndexList<formalism::GroundFunctionTermValue<formalism::StaticTag>>& static_fterm_values,
-                                             IndexList<formalism::GroundFunctionTermValue<formalism::FluentTag>>& fluent_fterm_values,
-                                             ::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>& auxiliary_fterm_value)
+                                             IndexList<GroundFunctionTermValue<StaticTag>>& static_fterm_values,
+                                             IndexList<GroundFunctionTermValue<FluentTag>>& fluent_fterm_values,
+                                             ::cista::optional<Index<GroundFunctionTermValue<AuxiliaryTag>>>& auxiliary_fterm_value)
     {
         std::visit(
             [&](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTermValue<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<GroundFunctionTermValue<StaticTag>>>)
                     static_fterm_values.push_back(arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTermValue<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Index<GroundFunctionTermValue<FluentTag>>>)
                     fluent_fterm_values.push_back(arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>)
+                else if constexpr (std::is_same_v<T, Index<GroundFunctionTermValue<AuxiliaryTag>>>)
                 {
                     assert(!auxiliary_fterm_value);
                     auxiliary_fterm_value = arg;
@@ -438,7 +438,7 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
     else
     {
         // Create empty conjunctive condition
-        auto conj_cond_ptr = builder.get_builder<formalism::GroundFDRConjunctiveCondition>();
+        auto conj_cond_ptr = builder.get_builder<GroundFDRConjunctiveCondition>();
         auto& conj_cond = *conj_cond_ptr;
         conj_cond.clear();
         canonicalize(conj_cond);
@@ -458,7 +458,7 @@ LokiToTyrTranslator::translate(const loki::Problem& element, formalism::Builder&
     /* Structures section */
     task.axioms = translate_lifted(element->get_axioms(), builder, *overlay_task_context);
 
-    formalism::canonicalize(task);
+    canonicalize(task);
     return std::make_shared<LiftedTask>(domain,
                                         task_context,
                                         overlay_task_context,

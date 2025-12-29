@@ -20,16 +20,16 @@
 
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/types.hpp"
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/planning/declarations.hpp"
 
 namespace tyr::planning
 {
 
 template<typename T>
-float_t evaluate_metric(View<::cista::optional<Index<formalism::Metric>>, formalism::OverlayRepository<formalism::Repository>> metric,
-                        View<::cista::optional<Index<formalism::GroundFunctionTermValue<formalism::AuxiliaryTag>>>,
-                             formalism::OverlayRepository<formalism::Repository>> auxiliary_fterm_value,
+float_t evaluate_metric(View<::cista::optional<Index<formalism::planning::Metric>>, formalism::OverlayRepository<formalism::planning::Repository>> metric,
+                        View<::cista::optional<Index<formalism::planning::GroundFunctionTermValue<formalism::AuxiliaryTag>>>,
+                             formalism::OverlayRepository<formalism::planning::Repository>> auxiliary_fterm_value,
                         const StateContext<T>& state_context);
 }
 
