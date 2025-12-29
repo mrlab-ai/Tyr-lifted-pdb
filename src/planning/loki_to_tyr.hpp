@@ -68,9 +68,9 @@ using IndexFunctionVariant = std::variant<Index<formalism::Function<formalism::S
                                           Index<formalism::Function<formalism::FluentTag>>,
                                           Index<formalism::Function<formalism::AuxiliaryTag>>>;
 
-using IndexFunctionTermVariant = std::variant<Index<formalism::FunctionTerm<formalism::StaticTag>>,
-                                              Index<formalism::FunctionTerm<formalism::FluentTag>>,
-                                              Index<formalism::FunctionTerm<formalism::AuxiliaryTag>>>;
+using IndexFunctionTermVariant = std::variant<Index<formalism::planning::FunctionTerm<formalism::StaticTag>>,
+                                              Index<formalism::planning::FunctionTerm<formalism::FluentTag>>,
+                                              Index<formalism::planning::FunctionTerm<formalism::AuxiliaryTag>>>;
 
 using IndexGroundFunctionTermVariant = std::variant<Index<formalism::GroundFunctionTerm<formalism::StaticTag>>,
                                                     Index<formalism::GroundFunctionTerm<formalism::FluentTag>>,
@@ -549,11 +549,11 @@ private:
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<formalism::planning::FunctionTerm<formalism::StaticTag>>>)
                     return Data<formalism::planning::FunctionExpression>(arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Index<formalism::planning::FunctionTerm<formalism::FluentTag>>>)
                     return Data<formalism::planning::FunctionExpression>(arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::AuxiliaryTag>>>)
+                else if constexpr (std::is_same_v<T, Index<formalism::planning::FunctionTerm<formalism::AuxiliaryTag>>>)
                     throw std::runtime_error("Cannot create FunctionExpression over auxiliary function term.");
                 else
                     static_assert(dependent_false<T>::value, "Missing case for type");
@@ -576,7 +576,7 @@ private:
         {
             using Tag = std::decay_t<decltype(fact_tag)>;
 
-            auto fterm_ptr = builder.template get_builder<formalism::FunctionTerm<Tag>>();
+            auto fterm_ptr = builder.template get_builder<formalism::planning::FunctionTerm<Tag>>();
             auto& fterm = *fterm_ptr;
             fterm.clear();
             fterm.function = function_index;
@@ -792,11 +792,11 @@ private:
             {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::StaticTag>>>)
+                if constexpr (std::is_same_v<T, Index<formalism::planning::FunctionTerm<formalism::StaticTag>>>)
                     throw std::runtime_error("Cannot create NumericEffect over static function term.");
-                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::FluentTag>>>)
+                else if constexpr (std::is_same_v<T, Index<formalism::planning::FunctionTerm<formalism::FluentTag>>>)
                     return build_numeric_effect_term(formalism::FluentTag {}, arg);
-                else if constexpr (std::is_same_v<T, Index<formalism::FunctionTerm<formalism::AuxiliaryTag>>>)
+                else if constexpr (std::is_same_v<T, Index<formalism::planning::FunctionTerm<formalism::AuxiliaryTag>>>)
                     return build_numeric_effect_term(formalism::AuxiliaryTag {}, arg);
                 else
                     static_assert(dependent_false<T>::value, "Missing case for type");

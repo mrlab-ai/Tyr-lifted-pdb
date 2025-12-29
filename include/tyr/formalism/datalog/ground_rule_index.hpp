@@ -25,10 +25,10 @@
 namespace tyr
 {
 template<>
-struct Index<formalism::GroundRule> : IndexMixin<Index<formalism::GroundRule>>
+struct Index<formalism::datalog::GroundRule> : IndexMixin<Index<formalism::datalog::GroundRule>>
 {
     // Inherit constructors
-    using Base = IndexMixin<Index<formalism::GroundRule>>;
+    using Base = IndexMixin<Index<formalism::datalog::GroundRule>>;
     using Base::Base;
 };
 

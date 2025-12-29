@@ -26,7 +26,7 @@
 
 namespace tyr
 {
-template<formalism::Context C>
+template<typename C>
 class View<Index<formalism::Binding>, C>
 {
 private:

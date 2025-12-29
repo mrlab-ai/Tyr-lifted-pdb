@@ -25,10 +25,10 @@
 namespace tyr
 {
 template<formalism::FactKind T>
-struct Index<formalism::FunctionTerm<T>> : IndexMixin<Index<formalism::FunctionTerm<T>>>
+struct Index<formalism::planning::FunctionTerm<T>> : IndexMixin<Index<formalism::planning::FunctionTerm<T>>>
 {
     // Inherit constructors
-    using Base = IndexMixin<Index<formalism::FunctionTerm<T>>>;
+    using Base = IndexMixin<Index<formalism::planning::FunctionTerm<T>>>;
     using Base::Base;
 };
 }

@@ -20,7 +20,7 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/variant.hpp"
-#include "tyr/formalism/boolean_operator_data.hpp"
+#include "tyr/formalism/datalog/boolean_operator_data.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
 namespace tyr

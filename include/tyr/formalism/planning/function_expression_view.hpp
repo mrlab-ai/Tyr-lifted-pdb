@@ -20,8 +20,8 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/variant.hpp"
-#include "tyr/formalism/planning/declarations.hpp
 #include "tyr/formalism/planning/arithmetic_operator_view.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/function_expression_data.hpp"
 
 namespace tyr

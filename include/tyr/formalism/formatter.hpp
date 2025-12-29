@@ -21,6 +21,7 @@
 #include "tyr/common/formatter.hpp"
 #include "tyr/common/iostream.hpp"
 #include "tyr/formalism/datas.hpp"
+#include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/views.hpp"
 
 #include <fmt/core.h>
@@ -59,39 +60,39 @@ inline std::ostream& operator<<(std::ostream& os, OpDiv el);
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Variable>& el);
 
-template<Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Variable>, C>& el);
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Object>& el);
 
 inline std::ostream& operator<<(std::ostream& os, const Data<formalism::Variable>& el);
 
-template<formalism::Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<formalism::Variable>, C>& el);
 
-template<Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Object>, C>& el);
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Binding>& el);
 
-template<formalism::Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Binding>, C>& el);
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Term>& el);
 
-template<Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Data<Term>, C>& el);
 
 template<FactKind T>
 inline std::ostream& operator<<(std::ostream& os, const Data<Predicate<T>>& el);
 
-template<FactKind T, Context C>
+template<FactKind T, typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Predicate<T>>, C>& el);
 
 template<FactKind T>
 inline std::ostream& operator<<(std::ostream& os, const Data<Function<T>>& el);
 
-template<FactKind T, Context C>
+template<FactKind T, typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Function<T>>, C>& el);
 
 }  // end namespace formalism
@@ -172,7 +173,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Variable>& el
     return os;
 }
 
-template<formalism::Context C>
+template<typename C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::Variable>, C>& el)
 {
     fmt::print(os, "{}", to_string(el.get_name()));
@@ -185,7 +186,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Object>& el)
     return os;
 }
 
-template<formalism::Context C>
+template<typename C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::Object>, C>& el)
 {
     fmt::print(os, "{}", to_string(el.get_name()));
@@ -198,7 +199,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Binding>& el)
     return os;
 }
 
-template<formalism::Context C>
+template<typename C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::Binding>, C>& el)
 {
     fmt::print(os, "{}", fmt::join(to_strings(el.get_objects()), " "));
@@ -211,7 +212,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Term>& el)
     return os;
 }
 
-template<formalism::Context C>
+template<typename C>
 inline std::ostream& print(std::ostream& os, const View<Data<formalism::Term>, C>& el)
 {
     fmt::print(os, "{}", to_string(el.get_variant()));
@@ -225,7 +226,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Predicate<T>>
     return os;
 }
 
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T, typename C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::Predicate<T>>, C>& el)
 {
     fmt::print(os, "{}/{}", to_string(el.get_name()), to_string(el.get_arity()));
@@ -239,7 +240,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::Function<T>>&
     return os;
 }
 
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T, typename C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::Function<T>>, C>& el)
 {
     fmt::print(os, "{}/{}", to_string(el.get_name()), to_string(el.get_arity()));
@@ -272,7 +273,7 @@ inline std::ostream& operator<<(std::ostream& os, OpDiv el) { return tyr::print(
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Variable>& el) { return tyr::print(os, el); }
 
-template<Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Variable>, C>& el)
 {
     return tyr::print(os, el);
@@ -280,7 +281,7 @@ inline std::ostream& operator<<(std::ostream& os, const View<Index<Variable>, C>
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Object>& el) { return tyr::print(os, el); }
 
-template<Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Object>, C>& el)
 {
     return tyr::print(os, el);
@@ -288,7 +289,7 @@ inline std::ostream& operator<<(std::ostream& os, const View<Index<Object>, C>& 
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Binding>& el) { return tyr::print(os, el); }
 
-template<formalism::Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Binding>, C>& el)
 {
     return tyr::print(os, el);
@@ -296,7 +297,7 @@ inline std::ostream& operator<<(std::ostream& os, const View<Index<Binding>, C>&
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Term>& el) { return tyr::print(os, el); }
 
-template<Context C>
+template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Data<Term>, C>& el)
 {
     return tyr::print(os, el);
@@ -308,7 +309,7 @@ inline std::ostream& operator<<(std::ostream& os, const Data<Predicate<T>>& el)
     return tyr::print(os, el);
 }
 
-template<FactKind T, Context C>
+template<FactKind T, typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Predicate<T>>, C>& el)
 {
     return tyr::print(os, el);
@@ -320,7 +321,7 @@ inline std::ostream& operator<<(std::ostream& os, const Data<Function<T>>& el)
     return tyr::print(os, el);
 }
 
-template<FactKind T, Context C>
+template<FactKind T, typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Function<T>>, C>& el)
 {
     return tyr::print(os, el);

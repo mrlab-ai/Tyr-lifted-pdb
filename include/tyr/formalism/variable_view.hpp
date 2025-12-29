@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::Context C>
+template<typename C>
 class View<Index<formalism::Variable>, C>
 {
 private:
@@ -34,7 +34,7 @@ private:
 public:
     View(Index<formalism::Variable> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
-    const auto& get_data() const noexcept { return formalism::get_repository(*m_context)[m_handle]; }
+    const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
     const auto& get_handle() const noexcept { return m_handle; }
 

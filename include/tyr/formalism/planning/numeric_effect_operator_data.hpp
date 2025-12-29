@@ -21,7 +21,7 @@
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
 #include "tyr/common/variant.hpp"
-#include "tyr/formalism/plaanning/declarations.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/numeric_effect_index.hpp"
 
 namespace tyr

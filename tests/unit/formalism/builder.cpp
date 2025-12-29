@@ -21,6 +21,7 @@
 
 using namespace tyr::buffer;
 using namespace tyr::formalism;
+using namespace tyr::formalism::planning;
 
 namespace tyr::tests
 {

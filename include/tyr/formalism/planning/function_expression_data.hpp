@@ -20,9 +20,9 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/function_term_index.hpp"
 #include "tyr/formalism/planning/arithmetic_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/function_term_index.hpp"
 
 namespace tyr
 {
@@ -31,8 +31,8 @@ struct Data<formalism::planning::FunctionExpression>
 {
     using Variant = ::cista::offset::variant<float_t,
                                              Data<formalism::planning::ArithmeticOperator<Data<formalism::planning::FunctionExpression>>>,
-                                             Index<formalism::FunctionTerm<formalism::StaticTag>>,
-                                             Index<formalism::FunctionTerm<formalism::FluentTag>>>;
+                                             Index<formalism::planning::FunctionTerm<formalism::StaticTag>>,
+                                             Index<formalism::planning::FunctionTerm<formalism::FluentTag>>>;
 
     Variant value;
 

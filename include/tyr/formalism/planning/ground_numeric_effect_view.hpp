@@ -20,9 +20,9 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/variant.hpp"
-#include "tyr/formalism/ground_function_expression_view.hpp"
-#include "tyr/formalism/ground_function_term_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/ground_function_expression_view.hpp"
+#include "tyr/formalism/planning/ground_function_term_view.hpp"
 #include "tyr/formalism/planning/ground_numeric_effect_index.hpp"
 
 namespace tyr

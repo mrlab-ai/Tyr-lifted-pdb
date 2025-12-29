@@ -31,8 +31,8 @@ struct Data<formalism::datalog::FunctionExpression>
 {
     using Variant = ::cista::offset::variant<float_t,
                                              Data<formalism::datalog::ArithmeticOperator<Data<formalism::datalog::FunctionExpression>>>,
-                                             Index<formalism::FunctionTerm<formalism::StaticTag>>,
-                                             Index<formalism::FunctionTerm<formalism::FluentTag>>>;
+                                             Index<formalism::datalog::FunctionTerm<formalism::StaticTag>>,
+                                             Index<formalism::datalog::FunctionTerm<formalism::FluentTag>>>;
 
     Variant value;
 

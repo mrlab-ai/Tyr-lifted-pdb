@@ -18,20 +18,13 @@
 #ifndef TYR_FORMALISM_FORMALISM_HPP_
 #define TYR_FORMALISM_FORMALISM_HPP_
 
-#include "tyr/formalism/builder.hpp"
 #include "tyr/formalism/canonicalization.hpp"
+#include "tyr/formalism/datalog/datalog.hpp"
 #include "tyr/formalism/datas.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/grounder_datalog.hpp"
-#include "tyr/formalism/grounder_planning.hpp"
 #include "tyr/formalism/indices.hpp"
-#include "tyr/formalism/merge_common.hpp"
-#include "tyr/formalism/merge_datalog.hpp"
-#include "tyr/formalism/merge_planning.hpp"
-#include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/planning.hpp"
-#include "tyr/formalism/repository.hpp"
 #include "tyr/formalism/views.hpp"
 
 #endif

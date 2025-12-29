@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::Context C>
+template<typename C>
 class View<Data<formalism::Term>, C>
 {
 private:

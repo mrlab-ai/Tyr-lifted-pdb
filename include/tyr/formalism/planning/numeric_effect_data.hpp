@@ -35,11 +35,13 @@ struct Data<formalism::planning::NumericEffect<Op, T>>
                   "Unsupported NumericEffect<Op, T> combination.");
 
     Index<formalism::planning::NumericEffect<Op, T>> index;
-    Index<formalism::FunctionTerm<T>> fterm;
+    Index<formalism::planning::FunctionTerm<T>> fterm;
     Data<formalism::planning::FunctionExpression> fexpr;
 
     Data() = default;
-    Data(Index<formalism::planning::NumericEffect<Op, T>> index, Index<formalism::FunctionTerm<T>> fterm, Data<formalism::planning::FunctionExpression> fexpr) :
+    Data(Index<formalism::planning::NumericEffect<Op, T>> index,
+         Index<formalism::planning::FunctionTerm<T>> fterm,
+         Data<formalism::planning::FunctionExpression> fexpr) :
         index(index),
         fterm(fterm),
         fexpr(fexpr)

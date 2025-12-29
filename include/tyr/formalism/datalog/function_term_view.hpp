@@ -28,14 +28,14 @@
 namespace tyr
 {
 template<formalism::FactKind T, formalism::datalog::Context C>
-class View<Index<formalism::FunctionTerm<T>>, C>
+class View<Index<formalism::datalog::FunctionTerm<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::FunctionTerm<T>> m_handle;
+    Index<formalism::datalog::FunctionTerm<T>> m_handle;
 
 public:
-    View(Index<formalism::FunctionTerm<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::datalog::FunctionTerm<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }

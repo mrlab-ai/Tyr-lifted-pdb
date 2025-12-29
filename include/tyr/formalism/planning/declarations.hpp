@@ -239,11 +239,7 @@ struct FDRConjunctiveCondition
 {
 };
 
-struct FDRConjunctiveEffect
-{
-};
-
-struct FDRConditionalEffect
+struct GroundFDRConjunctiveCondition
 {
 };
 
@@ -290,8 +286,7 @@ concept RepositoryConcept =
     && RepositoryAccess<T, BinaryOperator<OpDiv, Data<GroundFunctionExpression>>> && RepositoryAccess<T, MultiOperator<OpAdd, Data<GroundFunctionExpression>>>
     && RepositoryAccess<T, MultiOperator<OpMul, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpEq, Data<GroundFunctionExpression>>>
     && RepositoryAccess<T, BinaryOperator<OpLe, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpLt, Data<GroundFunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpGe, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpGt, Data<GroundFunctionExpression>>>
-    && RepositoryAccess<T, Rule> && RepositoryAccess<T, GroundRule> && RepositoryAccess<T, Program>;
+    && RepositoryAccess<T, BinaryOperator<OpGe, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpGt, Data<GroundFunctionExpression>>>;
 
 class Repository;
 

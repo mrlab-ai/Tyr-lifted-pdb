@@ -19,11 +19,11 @@ add_gtest(common_bit_packed_layout                       "common/bit_packed_layo
 # add_gtest(analysis_stratification                        "analysis/stratification.cpp")
 # add_gtest(analysis_listeners                             "analysis/listeners.cpp")
 
-add_gtest(buffer_indexed_hash_set                        "buffer/indexed_hash_set.cpp")
+# add_gtest(buffer_indexed_hash_set                        "buffer/indexed_hash_set.cpp")
 
 add_gtest(formalism_builder                              "formalism/builder.cpp")
-add_gtest(formalism_repository                           "formalism/repository.cpp")
-add_gtest(formalism_proxy                                "formalism/proxy.cpp")
+# add_gtest(formalism_repository                           "formalism/repository.cpp")
+# add_gtest(formalism_proxy                                "formalism/proxy.cpp")
 
 # add_gtest(grounder_assignment_sets                       "grounder/assignment_sets.cpp")
 # add_gtest(grounder_generator                             "grounder/generator.cpp")

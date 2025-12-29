@@ -24,7 +24,7 @@
 
 namespace tyr
 {
-template<formalism::FactKind T, formalism::Context C>
+template<formalism::FactKind T, typename C>
 class View<Index<formalism::Function<T>>, C>
 {
 private:

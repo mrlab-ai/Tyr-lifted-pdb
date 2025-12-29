@@ -29,14 +29,14 @@ namespace tyr
 {
 
 template<formalism::FactKind T>
-struct Data<formalism::FunctionTerm<T>>
+struct Data<formalism::datalog::FunctionTerm<T>>
 {
-    Index<formalism::FunctionTerm<T>> index;
+    Index<formalism::datalog::FunctionTerm<T>> index;
     Index<formalism::Function<T>> function;
     DataList<formalism::Term> terms;
 
     Data() = default;
-    Data(Index<formalism::FunctionTerm<T>> index, Index<formalism::Function<T>> function, DataList<formalism::Term> terms) :
+    Data(Index<formalism::datalog::FunctionTerm<T>> index, Index<formalism::Function<T>> function, DataList<formalism::Term> terms) :
         index(index),
         function(function),
         terms(std::move(terms))

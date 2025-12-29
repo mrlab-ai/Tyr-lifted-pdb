@@ -381,14 +381,14 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::plannin
 }
 
 template<formalism::FactKind T>
-inline std::ostream& print(std::ostream& os, const Data<formalism::FunctionTerm<T>>& el)
+inline std::ostream& print(std::ostream& os, const Data<formalism::planning::FunctionTerm<T>>& el)
 {
     fmt::print(os, "({} {})", to_string(el.function), fmt::format("{}", fmt::join(to_strings(el.terms), " ")));
     return os;
 }
 
 template<formalism::FactKind T, formalism::planning::Context C>
-inline std::ostream& print(std::ostream& os, const View<Index<formalism::FunctionTerm<T>>, C>& el)
+inline std::ostream& print(std::ostream& os, const View<Index<formalism::planning::FunctionTerm<T>>, C>& el)
 {
     fmt::print(os, "({} {})", to_string(el.get_function().get_name()), fmt::format("{}", fmt::join(to_strings(el.get_terms()), " ")));
     return os;

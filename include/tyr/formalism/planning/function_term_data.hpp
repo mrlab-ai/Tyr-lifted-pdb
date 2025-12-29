@@ -20,22 +20,22 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/function_term_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/function_term_index.hpp"
 #include "tyr/formalism/term_data.hpp"
 
 namespace tyr
 {
 
 template<formalism::FactKind T>
-struct Data<formalism::FunctionTerm<T>>
+struct Data<formalism::planning::FunctionTerm<T>>
 {
-    Index<formalism::FunctionTerm<T>> index;
+    Index<formalism::planning::FunctionTerm<T>> index;
     Index<formalism::Function<T>> function;
-    DataList<formalism::planning::Term> terms;
+    DataList<formalism::Term> terms;
 
     Data() = default;
-    Data(Index<formalism::FunctionTerm<T>> index, Index<formalism::Function<T>> function, DataList<formalism::planning::Term> terms) :
+    Data(Index<formalism::planning::FunctionTerm<T>> index, Index<formalism::Function<T>> function, DataList<formalism::Term> terms) :
         index(index),
         function(function),
         terms(std::move(terms))

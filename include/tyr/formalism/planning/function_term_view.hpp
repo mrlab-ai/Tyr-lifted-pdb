@@ -19,21 +19,21 @@
 #define TYR_FORMALISM_PLANNING_FUNCTION_TERM_VIEW_HPP_
 
 #include "tyr/common/types.hpp"
-#include "tyr/formalism/function_term_index.hpp"
 #include "tyr/formalism/function_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/function_term_index.hpp"
 
 namespace tyr
 {
 template<formalism::FactKind T, formalism::planning::Context C>
-class View<Index<formalism::FunctionTerm<T>>, C>
+class View<Index<formalism::planning::FunctionTerm<T>>, C>
 {
 private:
     const C* m_context;
-    Index<formalism::FunctionTerm<T>> m_handle;
+    Index<formalism::planning::FunctionTerm<T>> m_handle;
 
 public:
-    View(Index<formalism::FunctionTerm<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(Index<formalism::planning::FunctionTerm<T>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     const auto& get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
     const auto& get_context() const noexcept { return *m_context; }
