@@ -23,29 +23,6 @@ endforeach()
 list(APPEND TYR_PUBLIC_HEADER_FILES "../include/tyr/tyr.hpp")
 
 add_library(core STATIC ${TYR_SRC_FILES} ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
-    planning/task_utils.cpp
-    planning/metric.cpp
-    planning/loki_to_tyr.cpp
-    planning/formatter.cpp
-    planning/domain.cpp
-    planning/action_executor.cpp
-    planning/ground_task/axiom_evaluator.cpp
-    planning/ground_task/axiom_stratification.cpp
-    planning/ground_task/node.cpp
-    planning/ground_task/state_repository.cpp
-    planning/ground_task/state.cpp
-    planning/ground_task/successor_generator.cpp
-    planning/ground_task.cpp
-    planning/lifted_task/axiom_evaluator.cpp
-    planning/lifted_task/node.cpp
-    planning/lifted_task/state.cpp
-    planning/lifted_task/successor_generator.cpp
-    planning/lifted_task/task_grounder.cpp
-    planning/lifted_task.cpp
-    planning/programs/action.cpp
-    planning/programs/axiom.cpp
-    planning/programs/ground.cpp
-    planning/programs/common.cpp
 )
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)
 

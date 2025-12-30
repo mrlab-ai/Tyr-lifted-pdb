@@ -28,58 +28,59 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
-using namespace tyr::formalism;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::planning
 {
 
-static View<Index<formalism::datalog::Program>, formalism::datalog::Repository>
-create(View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task,
-       ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping,
-       formalism::datalog::Repository& repository)
+static View<Index<fd::Program>, fd::Repository> create(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                                       ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping,
+                                                       fd::Repository& repository)
 {
-    auto merge_cache = formalism::planning::MergeDatalogCache();
-    auto builder = formalism::datalog::Builder();
-    auto context = formalism::planning::MergeDatalogContext(builder, repository, merge_cache);
-    auto program_ptr = builder.get_builder<formalism::datalog::Program>();
+    auto merge_cache = fp::MergeDatalogCache();
+    auto builder = fd::Builder();
+    auto context = fp::MergeDatalogContext(builder, repository, merge_cache);
+    auto program_ptr = builder.get_builder<fd::Program>();
     auto& program = *program_ptr;
     program.clear();
 
-    for (const auto predicate : task.get_domain().get_predicates<StaticTag>())
-        program.static_predicates.push_back(merge_p2d(predicate, context).first);
+    for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
+        program.static_predicates.push_back(fp::merge_p2d(predicate, context).first);
 
-    for (const auto predicate : task.get_domain().get_predicates<FluentTag>())
-        program.fluent_predicates.push_back(merge_p2d(predicate, context).first);
+    for (const auto predicate : task.get_domain().get_predicates<f::FluentTag>())
+        program.fluent_predicates.push_back(fp::merge_p2d(predicate, context).first);
 
-    for (const auto predicate : task.get_domain().get_predicates<DerivedTag>())
+    for (const auto predicate : task.get_domain().get_predicates<f::DerivedTag>())
         program.fluent_predicates.push_back(
-            merge_p2d<DerivedTag, OverlayRepository<formalism::planning::Repository>, formalism::datalog::Repository, FluentTag>(predicate, context).first);
+            fp::merge_p2d<f::DerivedTag, f::OverlayRepository<fp::Repository>, fd::Repository, f::FluentTag>(predicate, context).first);
 
     for (const auto predicate : task.get_derived_predicates())
         program.fluent_predicates.push_back(
-            merge_p2d<DerivedTag, OverlayRepository<formalism::planning::Repository>, formalism::datalog::Repository, FluentTag>(predicate, context).first);
+            fp::merge_p2d<f::DerivedTag, f::OverlayRepository<fp::Repository>, fd::Repository, f::FluentTag>(predicate, context).first);
 
-    for (const auto function : task.get_domain().get_functions<StaticTag>())
-        program.static_functions.push_back(merge_p2d(function, context).first);
+    for (const auto function : task.get_domain().get_functions<f::StaticTag>())
+        program.static_functions.push_back(fp::merge_p2d(function, context).first);
 
-    for (const auto function : task.get_domain().get_functions<FluentTag>())
-        program.fluent_functions.push_back(merge_p2d(function, context).first);
+    for (const auto function : task.get_domain().get_functions<f::FluentTag>())
+        program.fluent_functions.push_back(fp::merge_p2d(function, context).first);
 
     // We can ignore auxiliary function total-cost because it never occurs in a condition
 
     for (const auto object : task.get_domain().get_constants())
-        program.objects.push_back(merge_p2d(object, context).first);
+        program.objects.push_back(fp::merge_p2d(object, context).first);
     for (const auto object : task.get_objects())
-        program.objects.push_back(merge_p2d(object, context).first);
+        program.objects.push_back(fp::merge_p2d(object, context).first);
 
-    for (const auto atom : task.get_atoms<StaticTag>())
-        program.static_atoms.push_back(merge_p2d(atom, context).first);
+    for (const auto atom : task.get_atoms<f::StaticTag>())
+        program.static_atoms.push_back(fp::merge_p2d(atom, context).first);
 
-    for (const auto atom : task.get_atoms<FluentTag>())
-        program.fluent_atoms.push_back(merge_p2d(atom, context).first);
+    for (const auto atom : task.get_atoms<f::FluentTag>())
+        program.fluent_atoms.push_back(fp::merge_p2d(atom, context).first);
 
-    for (const auto fterm_value : task.get_fterm_values<StaticTag>())
-        program.static_fterm_values.push_back(merge_p2d(fterm_value, context).first);
+    for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
+        program.static_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first);
 
     for (const auto action : task.get_domain().get_actions())
     {
@@ -89,32 +90,32 @@ create(View<Index<formalism::planning::Task>, formalism::OverlayRepository<forma
 
         program.fluent_predicates.push_back(applicability_predicate);
 
-        auto rule_ptr = builder.get_builder<formalism::datalog::Rule>();
+        auto rule_ptr = builder.get_builder<fd::Rule>();
         auto& rule = *rule_ptr;
         rule.clear();
 
-        auto conj_cond_ptr = builder.get_builder<formalism::datalog::ConjunctiveCondition>();
+        auto conj_cond_ptr = builder.get_builder<fd::ConjunctiveCondition>();
         auto& conj_cond = *conj_cond_ptr;
         conj_cond.clear();
 
         for (const auto variable : action.get_variables())
-            rule.variables.push_back(merge_p2d(variable, context).first);
+            rule.variables.push_back(fp::merge_p2d(variable, context).first);
 
         for (const auto variable : action.get_condition().get_variables())
-            conj_cond.variables.push_back(merge_p2d(variable, context).first);
+            conj_cond.variables.push_back(fp::merge_p2d(variable, context).first);
 
-        for (const auto literal : action.get_condition().get_literals<StaticTag>())
-            conj_cond.static_literals.push_back(merge_p2d(literal, context).first);
+        for (const auto literal : action.get_condition().get_literals<f::StaticTag>())
+            conj_cond.static_literals.push_back(fp::merge_p2d(literal, context).first);
 
-        for (const auto literal : action.get_condition().get_literals<FluentTag>())
-            conj_cond.fluent_literals.push_back(merge_p2d(literal, context).first);
+        for (const auto literal : action.get_condition().get_literals<f::FluentTag>())
+            conj_cond.fluent_literals.push_back(fp::merge_p2d(literal, context).first);
 
-        for (const auto literal : action.get_condition().get_literals<DerivedTag>())
+        for (const auto literal : action.get_condition().get_literals<f::DerivedTag>())
             conj_cond.fluent_literals.push_back(
-                merge_p2d<DerivedTag, OverlayRepository<formalism::planning::Repository>, formalism::datalog::Repository, FluentTag>(literal, context).first);
+                fp::merge_p2d<f::DerivedTag, f::OverlayRepository<fp::Repository>, fd::Repository, f::FluentTag>(literal, context).first);
 
         for (const auto numeric_constraint : action.get_condition().get_numeric_constraints())
-            conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
+            conj_cond.numeric_constraints.push_back(fp::merge_p2d(numeric_constraint, context));
 
         canonicalize(conj_cond);
         const auto new_conj_cond = repository.get_or_create(conj_cond, builder.get_buffer()).first;
@@ -135,9 +136,9 @@ create(View<Index<formalism::planning::Task>, formalism::OverlayRepository<forma
     return make_view(repository.get_or_create(program, builder.get_buffer()).first, repository);
 }
 
-ApplicableActionProgram::ApplicableActionProgram(View<Index<formalism::planning::Task>, OverlayRepository<formalism::planning::Repository>> task) :
+ApplicableActionProgram::ApplicableActionProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
     m_predicate_to_actions(),
-    m_repository(std::make_shared<formalism::datalog::Repository>()),
+    m_repository(std::make_shared<fd::Repository>()),
     m_program(create(task, m_predicate_to_actions, *m_repository)),
     m_domains(analysis::compute_variable_domains(m_program)),
     m_strata(analysis::compute_rule_stratification(m_program)),
@@ -151,9 +152,9 @@ const ApplicableActionProgram::AppPredicateToActionsMapping& ApplicableActionPro
     return m_predicate_to_actions;
 }
 
-View<Index<formalism::datalog::Program>, formalism::datalog::Repository> ApplicableActionProgram::get_program() const noexcept { return m_program; }
+View<Index<fd::Program>, fd::Repository> ApplicableActionProgram::get_program() const noexcept { return m_program; }
 
-const formalism::datalog::RepositoryPtr& ApplicableActionProgram::get_repository() const noexcept { return m_repository; }
+const fd::RepositoryPtr& ApplicableActionProgram::get_repository() const noexcept { return m_repository; }
 
 const analysis::ProgramVariableDomains& ApplicableActionProgram::get_domains() const noexcept { return m_domains; }
 

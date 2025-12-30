@@ -17,24 +17,26 @@
 
 #include "common.hpp"
 
-using namespace tyr::formalism;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::planning
 {
 
-::cista::offset::string create_applicability_name(View<Index<formalism::planning::Action>, OverlayRepository<formalism::planning::Repository>> action)
+::cista::offset::string create_applicability_name(View<Index<fp::Action>, f::OverlayRepository<fp::Repository>> action)
 {
     return ::cista::offset::string { std::string { "@" } + action.get_name().str() + std::string("_")
                                      + std::to_string(action.get_condition().get_index().get_value()) };
 }
 
-::cista::offset::string create_triggered_name(View<Index<formalism::planning::Action>, OverlayRepository<formalism::planning::Repository>> action,
-                                              View<Index<formalism::planning::ConditionalEffect>, OverlayRepository<formalism::planning::Repository>> cond_eff)
+::cista::offset::string create_triggered_name(View<Index<fp::Action>, f::OverlayRepository<fp::Repository>> action,
+                                              View<Index<fp::ConditionalEffect>, f::OverlayRepository<fp::Repository>> cond_eff)
 {
     return ::cista::offset::string { create_applicability_name(action).str() + std::string("_") + std::to_string(cond_eff.get_index().get_value()) };
 }
 
-::cista::offset::string create_applicability_name(View<Index<formalism::planning::Axiom>, OverlayRepository<formalism::planning::Repository>> axiom)
+::cista::offset::string create_applicability_name(View<Index<fp::Axiom>, f::OverlayRepository<fp::Repository>> axiom)
 {
     return ::cista::offset::string { std::string { "@" } + axiom.get_head().get_predicate().get_name().str() + std::string("_")
                                      + std::to_string(axiom.get_body().get_index().get_value()) + std::string("/")

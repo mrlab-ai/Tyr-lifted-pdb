@@ -51,7 +51,7 @@ public:
     const analysis::ListenerStrata& get_listeners() const noexcept;
 
 private:
-    PredicateToPredicateMapping m_prediate_to_predicate;
+    PredicateToPredicateMapping m_predicate_to_predicate;
 
     formalism::datalog::RepositoryPtr m_repository;
     View<Index<formalism::datalog::Program>, formalism::datalog::Repository> m_program;

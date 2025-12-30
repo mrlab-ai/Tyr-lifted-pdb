@@ -20,7 +20,7 @@
 #include "loki_to_tyr.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 
-using namespace tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
@@ -28,10 +28,10 @@ namespace tyr::planning
 Parser::Parser(const fs::path& domain_filepath, const loki::ParserOptions& options) :
     m_loki_parser(loki::Parser(loki::read_file(domain_filepath), domain_filepath, options)),
     m_loki_domain_translation_result(loki::translate(m_loki_parser.get_domain())),
-    m_domain_repository(std::make_shared<Repository>())
+    m_domain_repository(std::make_shared<fp::Repository>())
 {
     auto translator = LokiToTyrTranslator();
-    auto builder = formalism::planning::Builder();
+    auto builder = fp::Builder();
 
     m_domain = translator.translate(m_loki_domain_translation_result.get_translated_domain(), builder, m_domain_repository);
 }
@@ -39,7 +39,7 @@ Parser::Parser(const fs::path& domain_filepath, const loki::ParserOptions& optio
 LiftedTaskPtr Parser::parse_task(const fs::path& problem_filepath, const loki::ParserOptions& options)
 {
     auto translator = LokiToTyrTranslator();
-    auto builder = formalism::planning::Builder();
+    auto builder = fp::Builder();
 
     return translator.translate(loki::translate(m_loki_parser.parse_problem(problem_filepath, options), m_loki_domain_translation_result),
                                 builder,

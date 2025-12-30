@@ -19,43 +19,43 @@
 
 #include "tyr/planning/ground_task.hpp"
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
 
-bool State<GroundTask>::test(Index<GroundAtom<StaticTag>> index) const { return m_task->test(index); }
+bool State<GroundTask>::test(Index<fp::GroundAtom<f::StaticTag>> index) const { return m_task->test(index); }
 
-float_t State<GroundTask>::get(Index<GroundFunctionTerm<StaticTag>> index) const { return m_task->get(index); }
+float_t State<GroundTask>::get(Index<fp::GroundFunctionTerm<f::StaticTag>> index) const { return m_task->get(index); }
 
-template<FactKind T>
+template<f::FactKind T>
 const boost::dynamic_bitset<>& State<GroundTask>::get_atoms() const noexcept
 {
-    if constexpr (std::is_same_v<T, StaticTag>)
+    if constexpr (std::is_same_v<T, f::StaticTag>)
         return m_task->get_static_atoms_bitset();
-    else if constexpr (std::is_same_v<T, DerivedTag>)
+    else if constexpr (std::is_same_v<T, f::DerivedTag>)
         return m_unpacked->get_derived_atoms();
     else
         static_assert(dependent_false<T>::value, "Missing case");
 }
 
-template const boost::dynamic_bitset<>& State<GroundTask>::get_atoms<StaticTag>() const noexcept;
-template const boost::dynamic_bitset<>& State<GroundTask>::get_atoms<DerivedTag>() const noexcept;
+template const boost::dynamic_bitset<>& State<GroundTask>::get_atoms<f::StaticTag>() const noexcept;
+template const boost::dynamic_bitset<>& State<GroundTask>::get_atoms<f::DerivedTag>() const noexcept;
 
-template<FactKind T>
+template<f::FactKind T>
 const std::vector<float_t>& State<GroundTask>::get_numeric_variables() const noexcept
 {
-    if constexpr (std::is_same_v<T, StaticTag>)
+    if constexpr (std::is_same_v<T, f::StaticTag>)
         return m_task->get_static_numeric_variables();
-    else if constexpr (std::is_same_v<T, FluentTag>)
+    else if constexpr (std::is_same_v<T, f::FluentTag>)
         return m_unpacked->get_numeric_variables();
     else
         static_assert(dependent_false<T>::value, "Missing case");
 }
 
-template const std::vector<float_t>& State<GroundTask>::get_numeric_variables<StaticTag>() const noexcept;
-template const std::vector<float_t>& State<GroundTask>::get_numeric_variables<FluentTag>() const noexcept;
+template const std::vector<float_t>& State<GroundTask>::get_numeric_variables<f::StaticTag>() const noexcept;
+template const std::vector<float_t>& State<GroundTask>::get_numeric_variables<f::FluentTag>() const noexcept;
 
 static_assert(StateConcept<State<GroundTask>, GroundTask>);
 }

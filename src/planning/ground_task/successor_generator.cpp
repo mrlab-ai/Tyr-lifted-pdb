@@ -28,9 +28,6 @@
 #include "tyr/planning/ground_task/state_repository.hpp"
 #include "tyr/planning/state_index.hpp"
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
-
 namespace tyr::planning
 {
 

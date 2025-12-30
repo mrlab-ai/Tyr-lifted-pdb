@@ -30,8 +30,8 @@
 #include <stdexcept>      // for runtime_error
 #include <utility>        // for move
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::datalog;
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::analysis
 {
@@ -47,14 +47,14 @@ enum class StratumStatus
 
 struct PredicateStrata
 {
-    std::vector<UnorderedSet<Index<Predicate<FluentTag>>>> strata;
+    std::vector<UnorderedSet<Index<f::Predicate<f::FluentTag>>>> strata;
 };
 
-static PredicateStrata compute_predicate_stratification(View<Index<Program>, Repository> program)
+static PredicateStrata compute_predicate_stratification(View<Index<fd::Program>, fd::Repository> program)
 {
-    auto R = UnorderedMap<Index<Predicate<FluentTag>>, UnorderedMap<Index<Predicate<FluentTag>>, StratumStatus>> {};
+    auto R = UnorderedMap<Index<f::Predicate<f::FluentTag>>, UnorderedMap<Index<f::Predicate<f::FluentTag>>, StratumStatus>> {};
 
-    const auto& predicates = program.get_predicates<FluentTag>().get_data();
+    const auto& predicates = program.get_predicates<f::FluentTag>().get_data();
 
     // lines 2-4
     for (const auto predicate_1 : predicates)
@@ -70,7 +70,7 @@ static PredicateStrata compute_predicate_stratification(View<Index<Program>, Rep
     {
         const auto head_predicate = rule.get_head().get_predicate().get_index();
 
-        for (const auto literal : rule.get_body().get_literals<FluentTag>())
+        for (const auto literal : rule.get_body().get_literals<f::FluentTag>())
         {
             const auto body_predicate = literal.get_atom().get_predicate().get_index();
 
@@ -111,10 +111,10 @@ static PredicateStrata compute_predicate_stratification(View<Index<Program>, Rep
     }
 
     auto predicate_strata = PredicateStrata {};
-    auto remaining = UnorderedSet<Index<Predicate<FluentTag>>>(predicates.begin(), predicates.end());
+    auto remaining = UnorderedSet<Index<f::Predicate<f::FluentTag>>>(predicates.begin(), predicates.end());
     while (!remaining.empty())
     {
-        auto stratum = UnorderedSet<Index<Predicate<FluentTag>>> {};
+        auto stratum = UnorderedSet<Index<f::Predicate<f::FluentTag>>> {};
         for (const auto& predicate_1 : remaining)
         {
             if (std::all_of(remaining.begin(),
@@ -142,17 +142,17 @@ static PredicateStrata compute_predicate_stratification(View<Index<Program>, Rep
 /// Source: https://users.cecs.anu.edu.au/~thiebaux/papers/ijcai03.pdf
 /// @param program is the program
 /// @return is the RuleStrata
-RuleStrata compute_rule_stratification(View<Index<Program>, Repository> program)
+RuleStrata compute_rule_stratification(View<Index<fd::Program>, fd::Repository> program)
 {
     const auto predicate_stratification = details::compute_predicate_stratification(program);
 
     auto rule_strata = RuleStrata {};
 
-    auto remaining_rules = UnorderedSet<Index<Rule>>(program.get_rules().get_data().begin(), program.get_rules().get_data().end());
+    auto remaining_rules = UnorderedSet<Index<fd::Rule>>(program.get_rules().get_data().begin(), program.get_rules().get_data().end());
 
     for (const auto& predicate_stratum : predicate_stratification.strata)
     {
-        auto stratum = UnorderedSet<Index<Rule>> {};
+        auto stratum = UnorderedSet<Index<fd::Rule>> {};
 
         for (const auto rule : remaining_rules)
         {

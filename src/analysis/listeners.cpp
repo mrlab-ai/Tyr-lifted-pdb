@@ -33,13 +33,13 @@
 #include <gtl/phmap.hpp>              // for flat_hash_set
 #include <utility>                    // for move
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::datalog;
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::analysis
 {
 
-ListenerStrata compute_listeners(const RuleStrata& strata, const Repository& context)
+ListenerStrata compute_listeners(const RuleStrata& strata, const fd::Repository& context)
 {
     auto listeners = ListenerStrata();
 
@@ -48,7 +48,7 @@ ListenerStrata compute_listeners(const RuleStrata& strata, const Repository& con
         auto listeners_in_stratum = ListenerStratum {};
 
         for (const auto rule : stratum)
-            for (const auto literal : make_view(rule, context).get_body().get_literals<FluentTag>())
+            for (const auto literal : make_view(rule, context).get_body().get_literals<f::FluentTag>())
                 if (literal.get_polarity())
                     listeners_in_stratum[literal.get_atom().get_predicate().get_index()].insert(rule);
 

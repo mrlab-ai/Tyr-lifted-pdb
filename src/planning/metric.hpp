@@ -19,9 +19,18 @@
 #define TYR_SRC_PLANNING_METRIC_HPP_
 
 #include "tyr/common/declarations.hpp"
+#include "tyr/common/optional.hpp"
 #include "tyr/common/types.hpp"
+#include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/ground_task.hpp"
+#include "tyr/planning/ground_task/unpacked_state.hpp"
+#include "tyr/planning/lifted_task.hpp"
+#include "tyr/planning/lifted_task/unpacked_state.hpp"
 
 namespace tyr::planning
 {
@@ -30,7 +39,13 @@ template<typename T>
 float_t evaluate_metric(View<::cista::optional<Index<formalism::planning::Metric>>, formalism::OverlayRepository<formalism::planning::Repository>> metric,
                         View<::cista::optional<Index<formalism::planning::GroundFunctionTermValue<formalism::AuxiliaryTag>>>,
                              formalism::OverlayRepository<formalism::planning::Repository>> auxiliary_fterm_value,
-                        const StateContext<T>& state_context);
+                        const StateContext<T>& state_context)
+{
+    if (auxiliary_fterm_value)
+        return auxiliary_fterm_value.value().get_value();
+
+    return metric ? evaluate(metric.value().get_fexpr(), state_context) : 0.;
+}
 }
 
 #endif

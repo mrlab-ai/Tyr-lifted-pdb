@@ -40,21 +40,17 @@
 #include <gtl/phmap.hpp>                    // for operator!=
 #include <utility>                          // for pair
 
-using namespace tyr::formalism;
-using namespace tyr::grounder;
-using namespace tyr::solver;
-
 namespace tyr::planning
 {
 
 static void insert_unextended_state(const UnpackedState<LiftedTask>& unpacked_state,
-                                    const OverlayRepository<formalism::planning::Repository>& atoms_context,
-                                    ProgramExecutionContext& axiom_context)
+                                    const formalism::OverlayRepository<formalism::planning::Repository>& atoms_context,
+                                    grounder::ProgramExecutionContext& axiom_context)
 {
-    axiom_context.facts_execution_context.reset<FluentTag>();
+    axiom_context.facts_execution_context.reset<formalism::FluentTag>();
     axiom_context.task_to_program_execution_context.clear();
 
-    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<FluentTag>(), atoms_context, axiom_context);
+    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<formalism::FluentTag>(), atoms_context, axiom_context);
 
     insert_fact_sets_into_assignment_sets(axiom_context);
 }
@@ -62,7 +58,7 @@ static void insert_unextended_state(const UnpackedState<LiftedTask>& unpacked_st
 static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram& axiom_program,
                                                     UnpackedState<LiftedTask>& unpacked_state,
                                                     formalism::OverlayRepository<formalism::planning::Repository>& task_repository,
-                                                    ProgramExecutionContext& axiom_context)
+                                                    grounder::ProgramExecutionContext& axiom_context)
 {
     axiom_context.program_to_task_execution_context.clear();
 
@@ -103,7 +99,7 @@ void AxiomEvaluator<LiftedTask>::compute_extended_state(UnpackedState<LiftedTask
 {
     insert_unextended_state(unpacked_state, *m_task->get_repository(), m_axiom_context);
 
-    solve_bottom_up(m_axiom_context);
+    solver::solve_bottom_up(m_axiom_context);
 
     read_derived_atoms_from_program_context(m_task->get_axiom_program(), unpacked_state, *m_task->get_repository(), m_axiom_context);
 }
