@@ -108,8 +108,8 @@ private:
                                     MapEntryType<GroundNumericEffect<OpScaleUp, FluentTag>>,
                                     MapEntryType<GroundNumericEffect<OpScaleDown, FluentTag>>,
                                     MapEntryType<GroundNumericEffect<OpIncrease, AuxiliaryTag>>,
-                                    MapEntryType<FDRConjunctiveCondition>,
-                                    MapEntryType<GroundFDRConjunctiveCondition>,
+                                    MapEntryType<ConjunctiveCondition>,
+                                    MapEntryType<GroundConjunctiveCondition>,
                                     MapEntryType<ConditionalEffect>,
                                     MapEntryType<GroundConditionalEffect>,
                                     MapEntryType<ConjunctiveEffect>,
@@ -243,7 +243,7 @@ template<FactKind T, Context C_SRC, Context C_DST>
 auto merge_p2p(View<Data<GroundNumericEffectOperator<T>>, C_SRC> element, MergeContext<C_DST>& context);
 
 template<Context C_SRC, Context C_DST>
-auto merge_p2p(View<Index<FDRConjunctiveCondition>, C_SRC> element, MergeContext<C_DST>& context);
+auto merge_p2p(View<Index<ConjunctiveCondition>, C_SRC> element, MergeContext<C_DST>& context);
 
 template<Context C_SRC, Context C_DST>
 auto merge_p2p(View<Index<Axiom>, C_SRC> element, MergeContext<C_DST>& context);
@@ -707,31 +707,30 @@ auto merge_p2p(View<Data<GroundNumericEffectOperator<T>>, C_SRC> element, MergeC
 // Composite
 
 template<Context C_SRC, Context C_DST>
-auto merge_p2p(View<Index<FDRConjunctiveCondition>, C_SRC> element, MergeContext<C_DST>& context)
+auto merge_p2p(View<Index<ConjunctiveCondition>, C_SRC> element, MergeContext<C_DST>& context)
 {
-    return with_cache<FDRConjunctiveCondition, FDRConjunctiveCondition>(element,
-                                                                        context.cache,
-                                                                        [&]()
-                                                                        {
-                                                                            auto conj_cond_ptr =
-                                                                                context.builder.template get_builder<FDRConjunctiveCondition>();
-                                                                            auto& conj_cond = *conj_cond_ptr;
-                                                                            conj_cond.clear();
+    return with_cache<ConjunctiveCondition, ConjunctiveCondition>(element,
+                                                                  context.cache,
+                                                                  [&]()
+                                                                  {
+                                                                      auto conj_cond_ptr = context.builder.template get_builder<ConjunctiveCondition>();
+                                                                      auto& conj_cond = *conj_cond_ptr;
+                                                                      conj_cond.clear();
 
-                                                                            for (const auto variable : element.get_variables())
-                                                                                conj_cond.variables.push_back(merge_p2p(variable, context).first);
-                                                                            for (const auto literal : element.template get_literals<StaticTag>())
-                                                                                conj_cond.static_literals.push_back(merge_p2p(literal, context).first);
-                                                                            for (const auto literal : element.template get_literals<FluentTag>())
-                                                                                conj_cond.fluent_literals.push_back(merge_p2p(literal, context).first);
-                                                                            for (const auto literal : element.template get_literals<DerivedTag>())
-                                                                                conj_cond.derived_literals.push_back(merge_p2p(literal, context).first);
-                                                                            for (const auto numeric_constraint : element.get_numeric_constraints())
-                                                                                conj_cond.numeric_constraints.push_back(merge_p2p(numeric_constraint, context));
+                                                                      for (const auto variable : element.get_variables())
+                                                                          conj_cond.variables.push_back(merge_p2p(variable, context).first);
+                                                                      for (const auto literal : element.template get_literals<StaticTag>())
+                                                                          conj_cond.static_literals.push_back(merge_p2p(literal, context).first);
+                                                                      for (const auto literal : element.template get_literals<FluentTag>())
+                                                                          conj_cond.fluent_literals.push_back(merge_p2p(literal, context).first);
+                                                                      for (const auto literal : element.template get_literals<DerivedTag>())
+                                                                          conj_cond.derived_literals.push_back(merge_p2p(literal, context).first);
+                                                                      for (const auto numeric_constraint : element.get_numeric_constraints())
+                                                                          conj_cond.numeric_constraints.push_back(merge_p2p(numeric_constraint, context));
 
-                                                                            canonicalize(conj_cond);
-                                                                            return context.destination.get_or_create(conj_cond, context.builder.get_buffer());
-                                                                        });
+                                                                      canonicalize(conj_cond);
+                                                                      return context.destination.get_or_create(conj_cond, context.builder.get_buffer());
+                                                                  });
 }
 
 template<Context C_SRC, Context C_DST>

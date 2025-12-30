@@ -287,10 +287,10 @@ bool is_applicable(View<Data<formalism::planning::GroundNumericEffectOperator<fo
     return visit([&](auto&& arg) { return is_applicable(arg, context); }, element.get_variant());
 }
 
-// GroundFDRConjunctiveCondition
+// GroundConjunctiveCondition
 
 template<typename Task, formalism::planning::Context C>
-bool is_applicable(View<Index<formalism::planning::GroundFDRConjunctiveCondition>, C> element, const StateContext<Task>& context)
+bool is_applicable(View<Index<formalism::planning::GroundConjunctiveCondition>, C> element, const StateContext<Task>& context)
 {
     return is_applicable(element.template get_facts<formalism::StaticTag>(), context)      //
            && is_applicable(element.template get_facts<formalism::FluentTag>(), context)   //
@@ -358,10 +358,10 @@ bool is_statically_applicable(View<IndexList<formalism::planning::GroundLiteral<
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_statically_applicable(arg, static_atoms); });
 }
 
-// GroundFDRConjunctiveCondition
+// GroundConjunctiveCondition
 
 template<formalism::planning::Context C>
-bool is_statically_applicable(View<Index<formalism::planning::GroundFDRConjunctiveCondition>, C> element, const boost::dynamic_bitset<>& static_atoms)
+bool is_statically_applicable(View<Index<formalism::planning::GroundConjunctiveCondition>, C> element, const boost::dynamic_bitset<>& static_atoms)
 {
     return is_statically_applicable(element.template get_facts<formalism::StaticTag>(), static_atoms);
 }
@@ -386,10 +386,10 @@ bool is_statically_applicable(View<Index<formalism::planning::GroundAxiom>, C> e
  * is_consistent
  */
 
-// GroundFDRConjunctiveCondition
+// GroundConjunctiveCondition
 
 template<formalism::planning::Context C>
-bool is_consistent(View<Index<formalism::planning::GroundFDRConjunctiveCondition>, C> element,
+bool is_consistent(View<Index<formalism::planning::GroundConjunctiveCondition>, C> element,
                    UnorderedMap<Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue>& fluent_assign,
                    UnorderedMap<Index<formalism::planning::GroundAtom<formalism::DerivedTag>>, bool>& derived_assign)
 {

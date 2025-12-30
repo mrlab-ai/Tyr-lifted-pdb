@@ -254,10 +254,10 @@ auto ground(View<Index<Literal<FluentTag>>, C_SRC> element, GrounderContext<C_DS
 
 template<Context C_SRC, Context C_DST, typename FDR>
     requires FDRContext<FDR>
-auto ground(View<Index<FDRConjunctiveCondition>, C_SRC> element, GrounderContext<C_DST>& context, FDR& fdr)
+auto ground(View<Index<ConjunctiveCondition>, C_SRC> element, GrounderContext<C_DST>& context, FDR& fdr)
 {
     // Fetch and clear
-    auto conj_cond_ptr = context.builder.template get_builder<GroundFDRConjunctiveCondition>();
+    auto conj_cond_ptr = context.builder.template get_builder<GroundConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 

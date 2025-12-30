@@ -643,10 +643,10 @@ private:
     }
 
     template<formalism::planning::Context C>
-    Index<formalism::planning::FDRConjunctiveCondition>
+    Index<formalism::planning::ConjunctiveCondition>
     translate_lifted(loki::Condition element, const IndexList<formalism::Variable>& parameters, formalism::planning::Builder& builder, C& context)
     {
-        auto conj_condition_ptr = builder.template get_builder<formalism::planning::FDRConjunctiveCondition>();
+        auto conj_condition_ptr = builder.template get_builder<formalism::planning::ConjunctiveCondition>();
         auto& conj_condition = *conj_condition_ptr;
         conj_condition.clear();
 
@@ -675,7 +675,7 @@ private:
         };
 
         return std::visit(
-            [&](auto&& condition) -> Index<formalism::planning::FDRConjunctiveCondition>
+            [&](auto&& condition) -> Index<formalism::planning::ConjunctiveCondition>
             {
                 using ConditionT = std::decay_t<decltype(condition)>;
 
@@ -814,7 +814,7 @@ private:
     IndexList<formalism::planning::ConditionalEffect>
     translate_lifted(loki::Effect element, const IndexList<formalism::Variable>& parameters, formalism::planning::Builder& builder, C& context)
     {
-        using ConditionalEffectData = UnorderedMap<Index<formalism::planning::FDRConjunctiveCondition>,
+        using ConditionalEffectData = UnorderedMap<Index<formalism::planning::ConjunctiveCondition>,
                                                    std::tuple<IndexList<formalism::Variable>,
                                                               IndexList<formalism::planning::Literal<formalism::FluentTag>>,
                                                               DataList<formalism::planning::NumericEffectOperator<formalism::FluentTag>>,
@@ -865,7 +865,7 @@ private:
                         else
                         {
                             // Create empty conjunctive condition for unconditional effects
-                            auto conj_cond_ptr = builder.template get_builder<formalism::planning::FDRConjunctiveCondition>();
+                            auto conj_cond_ptr = builder.template get_builder<formalism::planning::ConjunctiveCondition>();
                             auto& conj_cond = *conj_cond_ptr;
                             conj_cond.clear();
                             formalism::planning::canonicalize(conj_cond);
@@ -1040,7 +1040,7 @@ private:
         ///---------- Push parameters and parse scope -------------
         m_param_map.push_parameters(parameters);
         {
-            auto conjunctive_condition = Index<formalism::planning::FDRConjunctiveCondition>::max();
+            auto conjunctive_condition = Index<formalism::planning::ConjunctiveCondition>::max();
             if (element->get_condition().has_value())
             {
                 conjunctive_condition = translate_lifted(element->get_condition().value(), parameters, builder, context);
@@ -1048,7 +1048,7 @@ private:
             else
             {
                 // Create empty one
-                auto conj_cond_ptr = builder.template get_builder<formalism::planning::FDRConjunctiveCondition>();
+                auto conj_cond_ptr = builder.template get_builder<formalism::planning::ConjunctiveCondition>();
                 auto& conj_cond = *conj_cond_ptr;
                 conj_cond.clear();
                 formalism::planning::canonicalize(conj_cond);
@@ -1487,13 +1487,13 @@ private:
     }
 
     template<formalism::planning::Context C>
-    Index<formalism::planning::GroundFDRConjunctiveCondition>
+    Index<formalism::planning::GroundConjunctiveCondition>
     translate_grounded(loki::Condition element,
                        formalism::planning::Builder& builder,
                        C& context,
                        formalism::planning::BinaryFDRContext<formalism::OverlayRepository<formalism::planning::Repository>>& fdr_context)
     {
-        auto conj_condition_ptr = builder.template get_builder<formalism::planning::GroundFDRConjunctiveCondition>();
+        auto conj_condition_ptr = builder.template get_builder<formalism::planning::GroundConjunctiveCondition>();
         auto& conj_condition = *conj_condition_ptr;
         conj_condition.clear();
 
@@ -1520,7 +1520,7 @@ private:
         };
 
         return std::visit(
-            [&](auto&& condition) -> Index<formalism::planning::GroundFDRConjunctiveCondition>
+            [&](auto&& condition) -> Index<formalism::planning::GroundConjunctiveCondition>
             {
                 using ConditionT = std::decay_t<decltype(condition)>;
 

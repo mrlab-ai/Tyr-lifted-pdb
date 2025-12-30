@@ -34,7 +34,7 @@ namespace fd = tyr::formalism::datalog;
 
 namespace tyr::planning
 {
-static void process_axiom_body(View<Index<fp::FDRConjunctiveCondition>, f::OverlayRepository<fp::Repository>> axiom_body,
+static void process_axiom_body(View<Index<fp::ConjunctiveCondition>, f::OverlayRepository<fp::Repository>> axiom_body,
                                fp::MergeDatalogContext<fd::Repository>& context,
                                Data<fd::ConjunctiveCondition>& conj_cond)
 {

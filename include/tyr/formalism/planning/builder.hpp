@@ -140,8 +140,8 @@ private:
                                       BuilderEntry<FDRVariable<DerivedTag>>,
                                       BuilderEntry<FDRFact<FluentTag>>,
                                       BuilderEntry<FDRFact<DerivedTag>>,
-                                      BuilderEntry<FDRConjunctiveCondition>,
-                                      BuilderEntry<GroundFDRConjunctiveCondition>,
+                                      BuilderEntry<ConjunctiveCondition>,
+                                      BuilderEntry<GroundConjunctiveCondition>,
                                       BuilderEntry<FDRTask>>;
 
     BuilderStorage m_builder;

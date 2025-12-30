@@ -33,7 +33,7 @@
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/ground_action_view.hpp"
 #include "tyr/formalism/planning/ground_axiom_view.hpp"
-#include "tyr/formalism/planning/ground_fdr_conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/ground_function_term_value_view.hpp"
 #include "tyr/formalism/planning/ground_function_term_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"

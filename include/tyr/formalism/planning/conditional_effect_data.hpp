@@ -21,9 +21,9 @@
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/planning/conditional_effect_index.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/conjunctive_effect_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
 namespace tyr
@@ -34,13 +34,13 @@ struct Data<formalism::planning::ConditionalEffect>
 {
     Index<formalism::planning::ConditionalEffect> index;
     IndexList<formalism::Variable> variables;
-    Index<formalism::planning::FDRConjunctiveCondition> condition;
+    Index<formalism::planning::ConjunctiveCondition> condition;
     Index<formalism::planning::ConjunctiveEffect> effect;
 
     Data() = default;
     Data(Index<formalism::planning::ConditionalEffect> index,
          IndexList<formalism::Variable> variables,
-         Index<formalism::planning::FDRConjunctiveCondition> condition,
+         Index<formalism::planning::ConjunctiveCondition> condition,
          Index<formalism::planning::ConjunctiveEffect> effect) :
         index(index),
         variables(std::move(variables)),

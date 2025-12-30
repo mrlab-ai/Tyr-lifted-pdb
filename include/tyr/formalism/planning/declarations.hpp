@@ -235,11 +235,11 @@ struct FDRFact
 {
 };
 
-struct FDRConjunctiveCondition
+struct ConjunctiveCondition
 {
 };
 
-struct GroundFDRConjunctiveCondition
+struct GroundConjunctiveCondition
 {
 };
 

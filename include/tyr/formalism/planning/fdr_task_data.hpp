@@ -30,7 +30,7 @@
 #include "tyr/formalism/planning/ground_action_index.hpp"
 #include "tyr/formalism/planning/ground_atom_index.hpp"
 #include "tyr/formalism/planning/ground_axiom_index.hpp"
-#include "tyr/formalism/planning/ground_fdr_conjunctive_condition_index.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/ground_function_term_index.hpp"
 #include "tyr/formalism/planning/ground_function_term_value_index.hpp"
 #include "tyr/formalism/planning/metric_index.hpp"
@@ -62,7 +62,7 @@ struct Data<formalism::planning::FDRTask>
     /// FDR-related
     IndexList<formalism::planning::FDRVariable<formalism::FluentTag>> fluent_variables;
     DataList<formalism::planning::FDRFact<formalism::FluentTag>> fluent_facts;
-    Index<formalism::planning::GroundFDRConjunctiveCondition> goal;
+    Index<formalism::planning::GroundConjunctiveCondition> goal;
     IndexList<formalism::planning::GroundAction> ground_actions;
     IndexList<formalism::planning::GroundAxiom> ground_axioms;
 
@@ -85,7 +85,7 @@ struct Data<formalism::planning::FDRTask>
          IndexList<formalism::planning::Axiom> axioms,
          IndexList<formalism::planning::FDRVariable<formalism::FluentTag>> fluent_variables,
          DataList<formalism::planning::FDRFact<formalism::FluentTag>> fluent_facts,
-         Index<formalism::planning::GroundFDRConjunctiveCondition> goal,
+         Index<formalism::planning::GroundConjunctiveCondition> goal,
          IndexList<formalism::planning::GroundAction> ground_actions,
          IndexList<formalism::planning::GroundAxiom> ground_axioms) :
         index(index),

@@ -28,7 +28,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/domain_index.hpp"
 #include "tyr/formalism/planning/domain_view.hpp"
-#include "tyr/formalism/planning/ground_fdr_conjunctive_condition_view.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/ground_function_term_value_view.hpp"
 #include "tyr/formalism/planning/metric_view.hpp"
 #include "tyr/formalism/planning/task_index.hpp"

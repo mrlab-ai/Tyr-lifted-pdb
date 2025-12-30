@@ -438,7 +438,7 @@ LiftedTaskPtr LokiToTyrTranslator::translate(const loki::Problem& element, Build
     else
     {
         // Create empty conjunctive condition
-        auto conj_cond_ptr = builder.get_builder<GroundFDRConjunctiveCondition>();
+        auto conj_cond_ptr = builder.get_builder<GroundConjunctiveCondition>();
         auto& conj_cond = *conj_cond_ptr;
         conj_cond.clear();
         canonicalize(conj_cond);

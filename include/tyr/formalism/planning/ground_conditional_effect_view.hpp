@@ -21,8 +21,8 @@
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/ground_conditional_effect_index.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_condition_view.hpp"
 #include "tyr/formalism/planning/ground_conjunctive_effect_view.hpp"
-#include "tyr/formalism/planning/ground_fdr_conjunctive_condition_view.hpp"
 
 namespace tyr
 {

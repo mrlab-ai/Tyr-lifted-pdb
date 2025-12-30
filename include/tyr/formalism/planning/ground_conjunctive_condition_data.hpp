@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_GROUND_FDR_CONJUNCTIVE_CONDITION_DATA_HPP_
-#define TYR_FORMALISM_PLANNING_GROUND_FDR_CONJUNCTIVE_CONDITION_DATA_HPP_
+#ifndef TYR_FORMALISM_PLANNING_GROUND_CONJUNCTIVE_CONDITION_DATA_HPP_
+#define TYR_FORMALISM_PLANNING_GROUND_CONJUNCTIVE_CONDITION_DATA_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
@@ -24,22 +24,22 @@
 #include "tyr/formalism/planning/boolean_operator_data.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/formalism/planning/ground_fdr_conjunctive_condition_index.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/ground_literal_index.hpp"
 
 namespace tyr
 {
 template<>
-struct Data<formalism::planning::GroundFDRConjunctiveCondition>
+struct Data<formalism::planning::GroundConjunctiveCondition>
 {
-    Index<formalism::planning::GroundFDRConjunctiveCondition> index;
+    Index<formalism::planning::GroundConjunctiveCondition> index;
     IndexList<formalism::planning::GroundLiteral<formalism::StaticTag>> static_literals;
     DataList<formalism::planning::FDRFact<formalism::FluentTag>> fluent_facts;
     IndexList<formalism::planning::GroundLiteral<formalism::DerivedTag>> derived_literals;
     DataList<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>> numeric_constraints;
 
     Data() = default;
-    Data(Index<formalism::planning::GroundFDRConjunctiveCondition> index,
+    Data(Index<formalism::planning::GroundConjunctiveCondition> index,
          IndexList<formalism::planning::GroundLiteral<formalism::StaticTag>> static_literals,
          DataList<formalism::planning::FDRFact<formalism::FluentTag>> fluent_facts,
          IndexList<formalism::planning::GroundLiteral<formalism::DerivedTag>> derived_literals,

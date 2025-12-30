@@ -226,10 +226,10 @@ inline std::ostream& operator<<(std::ostream& os, const Data<FDRFact<T>>& el);
 template<FactKind T, Context C>
 std::ostream& operator<<(std::ostream& os, const View<Data<FDRFact<T>>, C>& el);
 
-inline std::ostream& operator<<(std::ostream& os, const Data<GroundFDRConjunctiveCondition>& el);
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConjunctiveCondition>& el);
 
 template<Context C>
-std::ostream& operator<<(std::ostream& os, const View<Index<GroundFDRConjunctiveCondition>, C>& el);
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundConjunctiveCondition>, C>& el);
 
 inline std::ostream& operator<<(std::ostream& os, const Data<FDRTask>& el);
 
@@ -1047,7 +1047,7 @@ std::ostream& print(std::ostream& os, const View<Data<formalism::planning::FDRFa
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::planning::FDRConjunctiveCondition>& el)
+inline std::ostream& print(std::ostream& os, const Data<formalism::planning::ConjunctiveCondition>& el)
 {
     os << "ConjunctiveCondition(\n";
     {
@@ -1069,7 +1069,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::planning::FDR
 }
 
 template<formalism::planning::Context C>
-inline std::ostream& print(std::ostream& os, const View<Index<formalism::planning::FDRConjunctiveCondition>, C>& el)
+inline std::ostream& print(std::ostream& os, const View<Index<formalism::planning::ConjunctiveCondition>, C>& el)
 {
     os << "ConjunctiveCondition(\n";
     {
@@ -1090,9 +1090,9 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::plannin
     return os;
 }
 
-inline std::ostream& print(std::ostream& os, const Data<formalism::planning::GroundFDRConjunctiveCondition>& el)
+inline std::ostream& print(std::ostream& os, const Data<formalism::planning::GroundConjunctiveCondition>& el)
 {
-    os << "GroundFDRConjunctiveCondition(\n";
+    os << "GroundConjunctiveCondition(\n";
     {
         IndentScope scope(os);
 
@@ -1110,9 +1110,9 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::planning::Gro
 }
 
 template<formalism::planning::Context C>
-std::ostream& print(std::ostream& os, const View<Index<formalism::planning::GroundFDRConjunctiveCondition>, C>& el)
+std::ostream& print(std::ostream& os, const View<Index<formalism::planning::GroundConjunctiveCondition>, C>& el)
 {
-    os << "GroundFDRConjunctiveCondition(\n";
+    os << "GroundConjunctiveCondition(\n";
     {
         IndentScope scope(os);
 
@@ -1570,18 +1570,18 @@ std::ostream& operator<<(std::ostream& os, const View<Data<FDRFact<T>>, C>& el)
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<FDRConjunctiveCondition>& el) { return tyr::print(os, el); }
+inline std::ostream& operator<<(std::ostream& os, const Data<ConjunctiveCondition>& el) { return tyr::print(os, el); }
 
 template<Context C>
-inline std::ostream& operator<<(std::ostream& os, const View<Index<FDRConjunctiveCondition>, C>& el)
+inline std::ostream& operator<<(std::ostream& os, const View<Index<ConjunctiveCondition>, C>& el)
 {
     return tyr::print(os, el);
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Data<GroundFDRConjunctiveCondition>& el) { return tyr::print(os, el); }
+inline std::ostream& operator<<(std::ostream& os, const Data<GroundConjunctiveCondition>& el) { return tyr::print(os, el); }
 
 template<Context C>
-std::ostream& operator<<(std::ostream& os, const View<Index<GroundFDRConjunctiveCondition>, C>& el)
+std::ostream& operator<<(std::ostream& os, const View<Index<GroundConjunctiveCondition>, C>& el)
 {
     return tyr::print(os, el);
 }

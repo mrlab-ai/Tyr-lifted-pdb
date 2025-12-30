@@ -63,11 +63,11 @@ static auto remap_fdr_fact(View<Data<FDRFact<FluentTag>>, OverlayRepository<Repo
     return new_fact;
 }
 
-static auto create_ground_fdr_conjunctive_condition(View<Index<GroundFDRConjunctiveCondition>, OverlayRepository<Repository>> element,
+static auto create_ground_fdr_conjunctive_condition(View<Index<GroundConjunctiveCondition>, OverlayRepository<Repository>> element,
                                                     GeneralFDRContext<OverlayRepository<Repository>>& fdr_context,
                                                     MergeContext<OverlayRepository<Repository>>& context)
 {
-    auto fdr_conj_cond_ptr = context.builder.get_builder<GroundFDRConjunctiveCondition>();
+    auto fdr_conj_cond_ptr = context.builder.get_builder<GroundConjunctiveCondition>();
     auto& fdr_conj_cond = *fdr_conj_cond_ptr;
     fdr_conj_cond.clear();
 

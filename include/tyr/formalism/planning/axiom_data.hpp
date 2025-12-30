@@ -22,8 +22,8 @@
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/planning/atom_index.hpp"
 #include "tyr/formalism/planning/axiom_index.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
 namespace tyr
@@ -34,13 +34,13 @@ struct Data<formalism::planning::Axiom>
 {
     Index<formalism::planning::Axiom> index;
     IndexList<formalism::Variable> variables;
-    Index<formalism::planning::FDRConjunctiveCondition> body;
+    Index<formalism::planning::ConjunctiveCondition> body;
     Index<formalism::planning::Atom<formalism::DerivedTag>> head;
 
     Data() = default;
     Data(Index<formalism::planning::Axiom> index,
          IndexList<formalism::Variable> variables,
-         Index<formalism::planning::FDRConjunctiveCondition> body,
+         Index<formalism::planning::ConjunctiveCondition> body,
          Index<formalism::planning::Atom<formalism::DerivedTag>> head) :
         index(index),
         variables(std::move(variables)),

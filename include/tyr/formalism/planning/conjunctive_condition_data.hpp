@@ -15,23 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_FDR_CONJUNCTIVE_CONDITION_DATA_HPP_
-#define TYR_FORMALISM_PLANNING_FDR_CONJUNCTIVE_CONDITION_DATA_HPP_
+#ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_DATA_HPP_
+#define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_DATA_HPP_
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/planning/boolean_operator_data.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/literal_index.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
 namespace tyr
 {
 template<>
-struct Data<formalism::planning::FDRConjunctiveCondition>
+struct Data<formalism::planning::ConjunctiveCondition>
 {
-    Index<formalism::planning::FDRConjunctiveCondition> index;
+    Index<formalism::planning::ConjunctiveCondition> index;
     IndexList<formalism::Variable> variables;
     IndexList<formalism::planning::Literal<formalism::StaticTag>> static_literals;
     IndexList<formalism::planning::Literal<formalism::FluentTag>> fluent_literals;
@@ -39,7 +39,7 @@ struct Data<formalism::planning::FDRConjunctiveCondition>
     DataList<formalism::planning::BooleanOperator<Data<formalism::planning::FunctionExpression>>> numeric_constraints;
 
     Data() = default;
-    Data(Index<formalism::planning::FDRConjunctiveCondition> index,
+    Data(Index<formalism::planning::ConjunctiveCondition> index,
          IndexList<formalism::Variable> variables,
          IndexList<formalism::planning::Literal<formalism::StaticTag>> static_literals,
          IndexList<formalism::planning::Literal<formalism::FluentTag>> fluent_literals,

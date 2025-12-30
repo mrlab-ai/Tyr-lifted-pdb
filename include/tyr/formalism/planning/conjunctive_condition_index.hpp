@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_FDR_CONJUNCTIVE_CONDITION_INDEX_HPP_
-#define TYR_FORMALISM_PLANNING_FDR_CONJUNCTIVE_CONDITION_INDEX_HPP_
+#ifndef TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_INDEX_HPP_
+#define TYR_FORMALISM_PLANNING_CONJUNCTIVE_CONDITION_INDEX_HPP_
 
 #include "tyr/common/index_mixins.hpp"
 #include "tyr/common/types.hpp"
@@ -25,10 +25,10 @@
 namespace tyr
 {
 template<>
-struct Index<formalism::planning::FDRConjunctiveCondition> : IndexMixin<Index<formalism::planning::FDRConjunctiveCondition>>
+struct Index<formalism::planning::ConjunctiveCondition> : IndexMixin<Index<formalism::planning::ConjunctiveCondition>>
 {
     // Inherit constructors
-    using Base = IndexMixin<Index<formalism::planning::FDRConjunctiveCondition>>;
+    using Base = IndexMixin<Index<formalism::planning::ConjunctiveCondition>>;
     using Base::Base;
 };
 

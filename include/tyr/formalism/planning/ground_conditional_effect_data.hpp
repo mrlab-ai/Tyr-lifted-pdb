@@ -22,8 +22,8 @@
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/ground_conditional_effect_index.hpp"
+#include "tyr/formalism/planning/ground_conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/ground_conjunctive_effect_index.hpp"
-#include "tyr/formalism/planning/ground_fdr_conjunctive_condition_index.hpp"
 
 namespace tyr
 {
@@ -32,12 +32,12 @@ template<>
 struct Data<formalism::planning::GroundConditionalEffect>
 {
     Index<formalism::planning::GroundConditionalEffect> index;
-    Index<formalism::planning::GroundFDRConjunctiveCondition> condition;
+    Index<formalism::planning::GroundConjunctiveCondition> condition;
     Index<formalism::planning::GroundConjunctiveEffect> effect;
 
     Data() = default;
     Data(Index<formalism::planning::GroundConditionalEffect> index,
-         Index<formalism::planning::GroundFDRConjunctiveCondition> condition,
+         Index<formalism::planning::GroundConjunctiveCondition> condition,
          Index<formalism::planning::GroundConjunctiveEffect> effect) :
         index(index),
         condition(condition),

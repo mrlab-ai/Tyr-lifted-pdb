@@ -43,7 +43,7 @@ create_triggered_name(View<Index<formalism::planning::Action>, formalism::Overla
 extern ::cista::offset::string
 create_applicability_name(View<Index<formalism::planning::Axiom>, formalism::OverlayRepository<formalism::planning::Repository>> axiom);
 
-inline void append_from_condition(View<Index<formalism::planning::FDRConjunctiveCondition>, formalism::OverlayRepository<formalism::planning::Repository>> cond,
+inline void append_from_condition(View<Index<formalism::planning::ConjunctiveCondition>, formalism::OverlayRepository<formalism::planning::Repository>> cond,
                                   formalism::planning::MergeDatalogContext<formalism::datalog::Repository>& context,
                                   Data<formalism::datalog::ConjunctiveCondition>& conj_cond)
 {

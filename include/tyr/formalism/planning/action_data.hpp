@@ -22,8 +22,8 @@
 #include "tyr/common/types_utils.hpp"
 #include "tyr/formalism/planning/action_index.hpp"
 #include "tyr/formalism/planning/conditional_effect_index.hpp"
+#include "tyr/formalism/planning/conjunctive_condition_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/fdr_conjunctive_condition_index.hpp"
 #include "tyr/formalism/variable_index.hpp"
 
 namespace tyr
@@ -36,7 +36,7 @@ struct Data<formalism::planning::Action>
     ::cista::offset::string name;
     uint_t original_arity;
     IndexList<formalism::Variable> variables;
-    Index<formalism::planning::FDRConjunctiveCondition> condition;
+    Index<formalism::planning::ConjunctiveCondition> condition;
     IndexList<formalism::planning::ConditionalEffect> effects;
 
     Data() = default;
@@ -44,7 +44,7 @@ struct Data<formalism::planning::Action>
          ::cista::offset::string name,
          uint_t original_arity,
          IndexList<formalism::Variable> variables,
-         Index<formalism::planning::FDRConjunctiveCondition> condition,
+         Index<formalism::planning::ConjunctiveCondition> condition,
          IndexList<formalism::planning::ConditionalEffect> effects) :
         index(index),
         name(std::move(name)),
