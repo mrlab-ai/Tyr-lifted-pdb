@@ -106,9 +106,9 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                 const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
                 auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
 
-                auto merge_context = formalism::MergeContext { program_execution_context.builder,
-                                                               *program_execution_context.repository,
-                                                               rule_stage_execution_context.merge_cache };
+                auto merge_context = formalism::datalog::MergeContext { program_execution_context.datalog_builder,
+                                                                        *program_execution_context.repository,
+                                                                        rule_stage_execution_context.merge_cache };
 
                 for (const auto ground_head_index : rule_execution_context.ground_heads)
                 {
@@ -118,7 +118,7 @@ static void solve_bottom_up_for_stratum(grounder::ProgramExecutionContext& progr
                     const auto ground_head_rule = make_view(ground_head_index, *rule_stage_execution_context.repository);
 
                     // Merge it into the program
-                    const auto ground_head_index_program = merge(ground_head_rule, merge_context).first;
+                    const auto ground_head_index_program = merge_d2d(ground_head_rule, merge_context).first;
 
                     // Insert new fact into fact sets and assigment sets
                     if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head_index_program))

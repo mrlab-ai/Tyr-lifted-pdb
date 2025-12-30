@@ -1,5 +1,5 @@
 # List of subdirectory names
-set(SUBDIRECTORIES "analysis" "buffer" "common" "formalism" "grounder")
+set(SUBDIRECTORIES "analysis" "buffer" "common" "formalism" "grounder" "planning" "solver")
 # set(SUBDIRECTORIES "analysis" "buffer" "common" "formalism" "grounder" "planning" "solver")
 
 # Initialize empty lists for source and header files
@@ -43,6 +43,8 @@ add_library(core STATIC ${TYR_SRC_FILES} ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLI
     planning/lifted_task/task_grounder.cpp
     planning/lifted_task.cpp
     planning/programs/action.cpp
+    planning/programs/axiom.cpp
+    planning/programs/ground.cpp
     planning/programs/common.cpp
 )
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)

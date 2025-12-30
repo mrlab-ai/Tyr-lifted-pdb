@@ -106,7 +106,7 @@ namespace tyr::tests
     3 ball / 1
     4 gripper / 1
 */
-inline IndexList<formalism::Predicate<formalism::StaticTag>> add_static_predicates(formalism::Repository& repository)
+inline IndexList<formalism::Predicate<formalism::StaticTag>> add_static_predicates(formalism::datalog::Repository& repository)
 {
     auto result = IndexList<formalism::Predicate<formalism::StaticTag>> {};
 
@@ -151,7 +151,7 @@ inline Index<formalism::Predicate<formalism::StaticTag>> convert(GripperStaticPr
     5 pick / 3
     6 drop / 3
 */
-inline IndexList<formalism::Predicate<formalism::FluentTag>> add_fluent_predicates(formalism::Repository& repository)
+inline IndexList<formalism::Predicate<formalism::FluentTag>> add_fluent_predicates(formalism::datalog::Repository& repository)
 {
     auto result = IndexList<formalism::Predicate<formalism::FluentTag>> {};
 
@@ -199,7 +199,7 @@ inline Index<formalism::Predicate<formalism::FluentTag>> convert(GripperFluentPr
     4 ball1
     5 ball2
 */
-inline IndexList<formalism::Object> add_objects(formalism::Repository& repository)
+inline IndexList<formalism::Object> add_objects(formalism::datalog::Repository& repository)
 {
     auto result = IndexList<formalism::Object> {};
 
@@ -242,11 +242,11 @@ inline Index<formalism::Object> convert(GripperObject e) noexcept { return Index
     10 (ball ball1)
     11 (ball ball2)
 */
-inline IndexList<formalism::GroundAtom<formalism::StaticTag>> add_static_ground_atoms(formalism::Repository& repository)
+inline IndexList<formalism::datalog::GroundAtom<formalism::StaticTag>> add_static_ground_atoms(formalism::datalog::Repository& repository)
 {
-    auto result = IndexList<formalism::GroundAtom<formalism::StaticTag>> {};
+    auto result = IndexList<formalism::datalog::GroundAtom<formalism::StaticTag>> {};
 
-    auto ground_atom_builder = Data<formalism::GroundAtom<formalism::StaticTag>> {};
+    auto ground_atom_builder = Data<formalism::datalog::GroundAtom<formalism::StaticTag>> {};
     auto buffer = buffer::Buffer {};
 
     for (const auto& [predicate, atoms] : std::vector<std::pair<GripperStaticPredicate, std::vector<std::vector<GripperObject>>>> {
@@ -289,11 +289,11 @@ inline IndexList<formalism::GroundAtom<formalism::StaticTag>> add_static_ground_
     3 (at ball2 rooma)
     4 (at-robby rooma)
 */
-inline IndexList<formalism::GroundAtom<formalism::FluentTag>> add_fluent_ground_atoms(formalism::Repository& repository)
+inline IndexList<formalism::datalog::GroundAtom<formalism::FluentTag>> add_fluent_ground_atoms(formalism::datalog::Repository& repository)
 {
-    auto result = IndexList<formalism::GroundAtom<formalism::FluentTag>> {};
+    auto result = IndexList<formalism::datalog::GroundAtom<formalism::FluentTag>> {};
 
-    auto ground_atom_builder = Data<formalism::GroundAtom<formalism::FluentTag>> {};
+    auto ground_atom_builder = Data<formalism::datalog::GroundAtom<formalism::FluentTag>> {};
     auto buffer = buffer::Buffer {};
 
     for (const auto& [predicate, atoms] : std::vector<std::pair<GripperFluentPredicate, std::vector<std::vector<GripperObject>>>> {
@@ -330,15 +330,15 @@ inline IndexList<formalism::GroundAtom<formalism::FluentTag>> add_fluent_ground_
         (move ?from_0 ?to_0)
 )
 */
-inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
+inline Index<formalism::datalog::Rule> add_rule_move(formalism::datalog::Repository& repository)
 {
     auto variable_builder = Data<formalism::Variable> {};
-    auto static_atom_builder = Data<formalism::Atom<formalism::StaticTag>> {};
-    auto fluent_atom_builder = Data<formalism::Atom<formalism::FluentTag>> {};
-    auto static_literal_builder = Data<formalism::Literal<formalism::StaticTag>> {};
-    auto fluent_literal_builder = Data<formalism::Literal<formalism::FluentTag>> {};
-    auto conjunctive_condition_builder = Data<formalism::ConjunctiveCondition> {};
-    auto rule_builder = Data<formalism::Rule> {};
+    auto static_atom_builder = Data<formalism::datalog::Atom<formalism::StaticTag>> {};
+    auto fluent_atom_builder = Data<formalism::datalog::Atom<formalism::FluentTag>> {};
+    auto static_literal_builder = Data<formalism::datalog::Literal<formalism::StaticTag>> {};
+    auto fluent_literal_builder = Data<formalism::datalog::Literal<formalism::FluentTag>> {};
+    auto conjunctive_condition_builder = Data<formalism::datalog::ConjunctiveCondition> {};
+    auto rule_builder = Data<formalism::datalog::Rule> {};
     auto buffer = buffer::Buffer {};
 
     for (const auto& name : std::vector<std::string> { "?from_0", "?to_0" })
@@ -423,15 +423,15 @@ inline Index<formalism::Rule> add_rule_move(formalism::Repository& repository)
         (pick ?obj_0 ?room_0 ?gripper_0)
 )
 */
-inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
+inline Index<formalism::datalog::Rule> add_rule_pick(formalism::datalog::Repository& repository)
 {
     auto variable_builder = Data<formalism::Variable> {};
-    auto static_atom_builder = Data<formalism::Atom<formalism::StaticTag>> {};
-    auto fluent_atom_builder = Data<formalism::Atom<formalism::FluentTag>> {};
-    auto static_literal_builder = Data<formalism::Literal<formalism::StaticTag>> {};
-    auto fluent_literal_builder = Data<formalism::Literal<formalism::FluentTag>> {};
-    auto conjunctive_condition_builder = Data<formalism::ConjunctiveCondition> {};
-    auto rule_builder = Data<formalism::Rule> {};
+    auto static_atom_builder = Data<formalism::datalog::Atom<formalism::StaticTag>> {};
+    auto fluent_atom_builder = Data<formalism::datalog::Atom<formalism::FluentTag>> {};
+    auto static_literal_builder = Data<formalism::datalog::Literal<formalism::StaticTag>> {};
+    auto fluent_literal_builder = Data<formalism::datalog::Literal<formalism::FluentTag>> {};
+    auto conjunctive_condition_builder = Data<formalism::datalog::ConjunctiveCondition> {};
+    auto rule_builder = Data<formalism::datalog::Rule> {};
     auto buffer = buffer::Buffer {};
 
     for (const auto& name : std::vector<std::string> { "?obj_0", "?room_0", "?gripper_0" })
@@ -521,15 +521,15 @@ inline Index<formalism::Rule> add_rule_pick(formalism::Repository& repository)
         (drop ?obj_0 ?room_0 ?gripper_0)
 )
 */
-inline Index<formalism::Rule> add_rule_drop(formalism::Repository& repository)
+inline Index<formalism::datalog::Rule> add_rule_drop(formalism::datalog::Repository& repository)
 {
     auto variable_builder = Data<formalism::Variable> {};
-    auto static_atom_builder = Data<formalism::Atom<formalism::StaticTag>> {};
-    auto fluent_atom_builder = Data<formalism::Atom<formalism::FluentTag>> {};
-    auto static_literal_builder = Data<formalism::Literal<formalism::StaticTag>> {};
-    auto fluent_literal_builder = Data<formalism::Literal<formalism::FluentTag>> {};
-    auto conjunctive_condition_builder = Data<formalism::ConjunctiveCondition> {};
-    auto rule_builder = Data<formalism::Rule> {};
+    auto static_atom_builder = Data<formalism::datalog::Atom<formalism::StaticTag>> {};
+    auto fluent_atom_builder = Data<formalism::datalog::Atom<formalism::FluentTag>> {};
+    auto static_literal_builder = Data<formalism::datalog::Literal<formalism::StaticTag>> {};
+    auto fluent_literal_builder = Data<formalism::datalog::Literal<formalism::FluentTag>> {};
+    auto conjunctive_condition_builder = Data<formalism::datalog::ConjunctiveCondition> {};
+    auto rule_builder = Data<formalism::datalog::Rule> {};
     auto buffer = buffer::Buffer {};
 
     for (const auto& name : std::vector<std::string> { "?obj_0", "?room_0", "?gripper_0" })
@@ -614,13 +614,13 @@ enum class GripperRule : uint_t
     Drop = 2,
 };
 
-inline Index<formalism::Rule> convert(GripperRule e) noexcept { return Index<formalism::Rule>(static_cast<uint_t>(e)); }
+inline Index<formalism::datalog::Rule> convert(GripperRule e) noexcept { return Index<formalism::datalog::Rule>(static_cast<uint_t>(e)); }
 
-inline std::pair<View<Index<formalism::Program>, formalism::Repository>, formalism::RepositoryPtr> create_example_problem()
+inline std::pair<View<Index<formalism::datalog::Program>, formalism::datalog::Repository>, formalism::datalog::RepositoryPtr> create_example_problem()
 {
-    auto repository_ptr = std::make_shared<formalism::Repository>();
+    auto repository_ptr = std::make_shared<formalism::datalog::Repository>();
     auto& repository = *repository_ptr;
-    auto program_builder = Data<formalism::Program> {};
+    auto program_builder = Data<formalism::datalog::Program> {};
     auto buffer = buffer::Buffer {};
 
     program_builder.static_predicates = add_static_predicates(repository);

@@ -18,12 +18,13 @@
 #include "tyr/planning/programs/axiom.hpp"
 
 #include "common.hpp"
+#include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
-#include "tyr/formalism/planning/merge.hpp"
+#include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
@@ -31,35 +32,37 @@ using namespace tyr::formalism;
 
 namespace tyr::planning
 {
-static void process_axiom_body(View<Index<FDRConjunctiveCondition>, OverlayRepository<Repository>> axiom_body,
-                               MergeContext<Repository>& context,
-                               Data<ConjunctiveCondition>& conj_cond)
+static void process_axiom_body(View<Index<formalism::planning::FDRConjunctiveCondition>, OverlayRepository<formalism::planning::Repository>> axiom_body,
+                               formalism::planning::MergeDatalogContext<formalism::datalog::Repository>& context,
+                               Data<formalism::datalog::ConjunctiveCondition>& conj_cond)
 {
     for (const auto literal : axiom_body.get_literals<StaticTag>())
-        conj_cond.static_literals.push_back(merge(literal, context).first);
+        conj_cond.static_literals.push_back(merge_p2d(literal, context).first);
 
     for (const auto literal : axiom_body.get_literals<FluentTag>())
-        conj_cond.fluent_literals.push_back(merge(literal, context).first);
+        conj_cond.fluent_literals.push_back(merge_p2d(literal, context).first);
 
     for (const auto literal : axiom_body.get_literals<DerivedTag>())
-        conj_cond.fluent_literals.push_back(merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(literal, context).first);
+        conj_cond.fluent_literals.push_back(
+            merge_p2d<DerivedTag, OverlayRepository<formalism::planning::Repository>, formalism::datalog::Repository, FluentTag>(literal, context).first);
 
     for (const auto numeric_constraint : axiom_body.get_numeric_constraints())
-        conj_cond.numeric_constraints.push_back(merge(numeric_constraint, context));
+        conj_cond.numeric_constraints.push_back(merge_p2d(numeric_constraint, context));
 }
 
-static auto create_axiom_rule(View<Index<Axiom>, OverlayRepository<Repository>> axiom, MergeContext<Repository>& context)
+static auto create_axiom_rule(View<Index<formalism::planning::Axiom>, OverlayRepository<formalism::planning::Repository>> axiom,
+                              formalism::planning::MergeDatalogContext<formalism::datalog::Repository>& context)
 {
-    auto rule_ptr = context.builder.get_builder<Rule>();
+    auto rule_ptr = context.builder.get_builder<formalism::datalog::Rule>();
     auto& rule = *rule_ptr;
     rule.clear();
 
-    auto conj_cond_ptr = context.builder.get_builder<ConjunctiveCondition>();
+    auto conj_cond_ptr = context.builder.get_builder<formalism::datalog::ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
     for (const auto variable : axiom.get_variables())
-        conj_cond.variables.push_back(merge(variable, context).first);
+        conj_cond.variables.push_back(merge_p2d(variable, context).first);
 
     process_axiom_body(axiom.get_body(), context, conj_cond);
 
@@ -68,7 +71,8 @@ static auto create_axiom_rule(View<Index<Axiom>, OverlayRepository<Repository>> 
 
     rule.body = new_conj_cond;
 
-    const auto new_head = merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(axiom.get_head(), context).first;
+    const auto new_head =
+        merge_p2d<DerivedTag, OverlayRepository<formalism::planning::Repository>, formalism::datalog::Repository, FluentTag>(axiom.get_head(), context).first;
 
     rule.head = new_head;
 
@@ -76,26 +80,28 @@ static auto create_axiom_rule(View<Index<Axiom>, OverlayRepository<Repository>> 
     return context.destination.get_or_create(rule, context.builder.get_buffer());
 }
 
-static View<Index<Program>, Repository> create(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task,
-                                               AxiomEvaluatorProgram::PredicateToPredicateMapping& predicate_to_predicate_mapping,
-                                               Repository& repository)
+static View<Index<formalism::datalog::Program>, formalism::datalog::Repository>
+create(View<Index<formalism::planning::Task>, OverlayRepository<formalism::planning::Repository>> task,
+       AxiomEvaluatorProgram::PredicateToPredicateMapping& predicate_to_predicate_mapping,
+       formalism::datalog::Repository& repository)
 {
-    auto merge_cache = MergeCache();
-    auto builder = Builder();
-    auto context = MergeContext<Repository>(builder, repository, merge_cache);
-    auto program_ptr = builder.get_builder<Program>();
+    auto merge_cache = formalism::planning::MergeDatalogCache();
+    auto builder = formalism::datalog::Builder();
+    auto context = formalism::planning::MergeDatalogContext<formalism::datalog::Repository>(builder, repository, merge_cache);
+    auto program_ptr = builder.get_builder<formalism::datalog::Program>();
     auto& program = *program_ptr;
     program.clear();
 
     for (const auto predicate : task.get_domain().get_predicates<StaticTag>())
-        program.static_predicates.push_back(merge(predicate, context).first);
+        program.static_predicates.push_back(merge_p2d(predicate, context).first);
 
     for (const auto predicate : task.get_domain().get_predicates<FluentTag>())
-        program.fluent_predicates.push_back(merge(predicate, context).first);
+        program.fluent_predicates.push_back(merge_p2d(predicate, context).first);
 
     for (const auto predicate : task.get_domain().get_predicates<DerivedTag>())
     {
-        const auto new_predicate = merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(predicate, context).first;
+        const auto new_predicate =
+            merge_p2d<DerivedTag, OverlayRepository<formalism::planning::Repository>, formalism::datalog::Repository, FluentTag>(predicate, context).first;
 
         predicate_to_predicate_mapping.emplace(new_predicate, predicate.get_index());
 
@@ -104,7 +110,8 @@ static View<Index<Program>, Repository> create(View<Index<formalism::Task>, form
 
     for (const auto predicate : task.get_derived_predicates())
     {
-        const auto new_predicate = merge<DerivedTag, OverlayRepository<Repository>, Repository, FluentTag>(predicate, context).first;
+        const auto new_predicate =
+            merge_p2d<DerivedTag, OverlayRepository<formalism::planning::Repository>, formalism::datalog::Repository, FluentTag>(predicate, context).first;
 
         predicate_to_predicate_mapping.emplace(new_predicate, predicate.get_index());
 
@@ -112,26 +119,26 @@ static View<Index<Program>, Repository> create(View<Index<formalism::Task>, form
     }
 
     for (const auto function : task.get_domain().get_functions<StaticTag>())
-        program.static_functions.push_back(merge(function, context).first);
+        program.static_functions.push_back(merge_p2d(function, context).first);
 
     for (const auto function : task.get_domain().get_functions<FluentTag>())
-        program.fluent_functions.push_back(merge(function, context).first);
+        program.fluent_functions.push_back(merge_p2d(function, context).first);
 
     // We can ignore auxiliary function total-cost because it never occurs in a condition
 
     for (const auto object : task.get_domain().get_constants())
-        program.objects.push_back(merge(object, context).first);
+        program.objects.push_back(merge_p2d(object, context).first);
     for (const auto object : task.get_objects())
-        program.objects.push_back(merge(object, context).first);
+        program.objects.push_back(merge_p2d(object, context).first);
 
     for (const auto atom : task.get_atoms<StaticTag>())
-        program.static_atoms.push_back(merge(atom, context).first);
+        program.static_atoms.push_back(merge_p2d(atom, context).first);
 
     for (const auto atom : task.get_atoms<FluentTag>())
-        program.fluent_atoms.push_back(merge(atom, context).first);
+        program.fluent_atoms.push_back(merge_p2d(atom, context).first);
 
     for (const auto fterm_value : task.get_fterm_values<StaticTag>())
-        program.static_fterm_values.push_back(merge(fterm_value, context).first);
+        program.static_fterm_values.push_back(merge_p2d(fterm_value, context).first);
 
     for (const auto axiom : task.get_domain().get_axioms())
         program.rules.push_back(create_axiom_rule(axiom, context).first);
@@ -143,9 +150,9 @@ static View<Index<Program>, Repository> create(View<Index<formalism::Task>, form
     return make_view(repository.get_or_create(program, builder.get_buffer()).first, context.destination);
 }
 
-AxiomEvaluatorProgram::AxiomEvaluatorProgram(View<Index<formalism::Task>, formalism::OverlayRepository<formalism::Repository>> task) :
+AxiomEvaluatorProgram::AxiomEvaluatorProgram(View<Index<formalism::planning::Task>, OverlayRepository<formalism::planning::Repository>> task) :
     m_prediate_to_predicate(),
-    m_repository(std::make_shared<Repository>()),
+    m_repository(std::make_shared<formalism::datalog::Repository>()),
     m_program(create(task, m_prediate_to_predicate, *m_repository)),
     m_domains(analysis::compute_variable_domains(m_program)),
     m_strata(analysis::compute_rule_stratification(m_program)),
@@ -159,9 +166,9 @@ const AxiomEvaluatorProgram::PredicateToPredicateMapping& AxiomEvaluatorProgram:
     return m_prediate_to_predicate;
 }
 
-View<Index<Program>, Repository> AxiomEvaluatorProgram::get_program() const noexcept { return m_program; }
+View<Index<formalism::datalog::Program>, formalism::datalog::Repository> AxiomEvaluatorProgram::get_program() const noexcept { return m_program; }
 
-const RepositoryPtr& AxiomEvaluatorProgram::get_repository() const noexcept { return m_repository; }
+const formalism::datalog::RepositoryPtr& AxiomEvaluatorProgram::get_repository() const noexcept { return m_repository; }
 
 const analysis::ProgramVariableDomains& AxiomEvaluatorProgram::get_domains() const noexcept { return m_domains; }
 
