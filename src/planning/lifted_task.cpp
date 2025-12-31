@@ -28,17 +28,17 @@
 #include <tuple>
 #include <utility>
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
 
 LiftedTask::LiftedTask(DomainPtr domain,
-                       RepositoryPtr repository,
-                       OverlayRepositoryPtr<Repository> overlay_repository,
-                       View<Index<Task>, OverlayRepository<Repository>> task,
-                       std::shared_ptr<BinaryFDRContext<OverlayRepository<Repository>>> fdr_context) :
+                       fp::RepositoryPtr repository,
+                       f::OverlayRepositoryPtr<fp::Repository> overlay_repository,
+                       View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                       std::shared_ptr<fp::BinaryFDRContext<f::OverlayRepository<fp::Repository>>> fdr_context) :
     m_domain(std::move(domain)),
     m_repository(std::move(repository)),
     m_overlay_repository(std::move(overlay_repository)),
@@ -50,10 +50,10 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_action_program(m_task),
     m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(m_task))
 {
-    for (const auto atom : m_task.template get_atoms<StaticTag>())
+    for (const auto atom : m_task.template get_atoms<f::StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);
 
-    for (const auto fterm_value : m_task.template get_fterm_values<StaticTag>())
+    for (const auto fterm_value : m_task.template get_fterm_values<f::StaticTag>())
         set(uint_t(fterm_value.get_fterm().get_index()), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
 

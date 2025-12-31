@@ -34,8 +34,8 @@
 #include <stddef.h>
 #include <type_traits>
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::datalog;
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::analysis
 {
@@ -59,8 +59,8 @@ static DomainListListList to_list(const DomainSetListList& set)
     return vec;
 }
 
-template<FactKind T, Context C>
-DomainSetListList initialize_predicate_domain_sets(View<IndexList<Predicate<T>>, C> predicates)
+template<f::FactKind T, fd::Context C>
+DomainSetListList initialize_predicate_domain_sets(View<IndexList<f::Predicate<T>>, C> predicates)
 {
     auto predicate_domain_sets = DomainSetListList(predicates.size());
 
@@ -70,8 +70,8 @@ DomainSetListList initialize_predicate_domain_sets(View<IndexList<Predicate<T>>,
     return predicate_domain_sets;
 }
 
-template<FactKind T, Context C>
-void insert_into_predicate_domain_sets(View<IndexList<GroundAtom<T>>, C> atoms, DomainSetListList& predicate_domain_sets)
+template<f::FactKind T, fd::Context C>
+void insert_into_predicate_domain_sets(View<IndexList<fd::GroundAtom<T>>, C> atoms, DomainSetListList& predicate_domain_sets)
 {
     for (const auto atom : atoms)
     {
@@ -82,8 +82,8 @@ void insert_into_predicate_domain_sets(View<IndexList<GroundAtom<T>>, C> atoms, 
     }
 }
 
-template<FactKind T, Context C>
-DomainSetListList initialize_function_domain_sets(View<IndexList<Function<T>>, C> functions)
+template<f::FactKind T, fd::Context C>
+DomainSetListList initialize_function_domain_sets(View<IndexList<f::Function<T>>, C> functions)
 {
     auto function_domain_sets = DomainSetListList(functions.size());
 
@@ -93,8 +93,8 @@ DomainSetListList initialize_function_domain_sets(View<IndexList<Function<T>>, C
     return function_domain_sets;
 }
 
-template<FactKind T, Context C>
-void insert_into_function_domain_sets(View<IndexList<GroundFunctionTermValue<T>>, C> fterm_values, DomainSetListList& function_domain_sets)
+template<f::FactKind T, fd::Context C>
+void insert_into_function_domain_sets(View<IndexList<fd::GroundFunctionTermValue<T>>, C> fterm_values, DomainSetListList& function_domain_sets)
 {
     for (const auto term_value : fterm_values)
     {
@@ -110,33 +110,34 @@ void insert_into_function_domain_sets(View<IndexList<GroundFunctionTermValue<T>>
  * Insert constants
  */
 
-template<Context C>
-void insert_constants_into_parameter_domain(View<Data<FunctionExpression>, C> element, DomainSetListList& function_domain_sets);
+template<fd::Context C>
+void insert_constants_into_parameter_domain(View<Data<fd::FunctionExpression>, C> element, DomainSetListList& function_domain_sets);
 
 static void insert_constants_into_parameter_domain(float_t, DomainSetListList&) {}
 
-template<OpKind O, Context C>
-void insert_constants_into_parameter_domain(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C> element, DomainSetListList& function_domain_sets)
+template<f::OpKind O, fd::Context C>
+void insert_constants_into_parameter_domain(View<Index<fd::UnaryOperator<O, Data<fd::FunctionExpression>>>, C> element, DomainSetListList& function_domain_sets)
 {
     insert_constants_into_parameter_domain(element.get_arg(), function_domain_sets);
 }
 
-template<OpKind O, Context C>
-void insert_constants_into_parameter_domain(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C> element, DomainSetListList& function_domain_sets)
+template<f::OpKind O, fd::Context C>
+void insert_constants_into_parameter_domain(View<Index<fd::BinaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
+                                            DomainSetListList& function_domain_sets)
 {
     insert_constants_into_parameter_domain(element.get_lhs(), function_domain_sets);
     insert_constants_into_parameter_domain(element.get_rhs(), function_domain_sets);
 }
 
-template<OpKind O, Context C>
-void insert_constants_into_parameter_domain(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C> element, DomainSetListList& function_domain_sets)
+template<f::OpKind O, fd::Context C>
+void insert_constants_into_parameter_domain(View<Index<fd::MultiOperator<O, Data<fd::FunctionExpression>>>, C> element, DomainSetListList& function_domain_sets)
 {
     for (const auto arg : element.get_args())
         insert_constants_into_parameter_domain(arg, function_domain_sets);
 }
 
-template<FactKind T, Context C>
-void insert_constants_into_parameter_domain(View<Index<Atom<T>>, C> element, DomainSetListList& predicate_domain_sets)
+template<f::FactKind T, fd::Context C>
+void insert_constants_into_parameter_domain(View<Index<fd::Atom<T>>, C> element, DomainSetListList& predicate_domain_sets)
 {
     const auto predicate = element.get_predicate();
 
@@ -148,12 +149,12 @@ void insert_constants_into_parameter_domain(View<Index<Atom<T>>, C> element, Dom
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>)
+                if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, C>>)
                 {
                     auto& predicate_domain = predicate_domain_sets[predicate.get_index().value][pos];
                     predicate_domain.insert(arg.get_index());
                 }
-                else if constexpr (std::is_same_v<Alternative, ParameterIndex>) {}
+                else if constexpr (std::is_same_v<Alternative, f::ParameterIndex>) {}
                 else
                 {
                     static_assert(dependent_false<Alternative>::value, "Missing case");
@@ -164,8 +165,8 @@ void insert_constants_into_parameter_domain(View<Index<Atom<T>>, C> element, Dom
     }
 }
 
-template<FactKind T, Context C>
-void insert_constants_into_parameter_domain(View<Index<FunctionTerm<T>>, C> element, DomainSetListList& function_domain_sets)
+template<f::FactKind T, fd::Context C>
+void insert_constants_into_parameter_domain(View<Index<fd::FunctionTerm<T>>, C> element, DomainSetListList& function_domain_sets)
 {
     const auto function = element.get_function();
 
@@ -177,12 +178,12 @@ void insert_constants_into_parameter_domain(View<Index<FunctionTerm<T>>, C> elem
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>)
+                if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, C>>)
                 {
                     auto& function_domain = function_domain_sets[function.get_index().value][pos];
                     function_domain.insert(arg.get_index());
                 }
-                else if constexpr (std::is_same_v<Alternative, ParameterIndex>) {}
+                else if constexpr (std::is_same_v<Alternative, f::ParameterIndex>) {}
                 else
                 {
                     static_assert(dependent_false<Alternative>::value, "Missing case");
@@ -193,26 +194,27 @@ void insert_constants_into_parameter_domain(View<Index<FunctionTerm<T>>, C> elem
     }
 }
 
-template<Context C>
-void insert_constants_into_parameter_domain(View<Index<FunctionTerm<FluentTag>>, C> element, DomainSetListList& function_domain_sets)
+template<fd::Context C>
+void insert_constants_into_parameter_domain(View<Index<fd::FunctionTerm<f::FluentTag>>, C> element, DomainSetListList& function_domain_sets)
 {
     // Dont restrict for fluent fterm
 }
 
-template<Context C>
-void insert_constants_into_parameter_domain(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element, DomainSetListList& function_domain_sets)
+template<fd::Context C>
+void insert_constants_into_parameter_domain(View<Data<fd::ArithmeticOperator<Data<fd::FunctionExpression>>>, C> element,
+                                            DomainSetListList& function_domain_sets)
 {
     visit([&](auto&& arg) { insert_constants_into_parameter_domain(arg, function_domain_sets); }, element.get_variant());
 }
 
-template<Context C>
-void insert_constants_into_parameter_domain(View<Data<FunctionExpression>, C> element, DomainSetListList& function_domain_sets)
+template<fd::Context C>
+void insert_constants_into_parameter_domain(View<Data<fd::FunctionExpression>, C> element, DomainSetListList& function_domain_sets)
 {
     visit([&](auto&& arg) { insert_constants_into_parameter_domain(arg, function_domain_sets); }, element.get_variant());
 }
 
-template<Context C>
-void insert_constants_into_parameter_domain(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element, DomainSetListList& function_domain_sets)
+template<fd::Context C>
+void insert_constants_into_parameter_domain(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, C> element, DomainSetListList& function_domain_sets)
 {
     visit([&](auto&& arg) { insert_constants_into_parameter_domain(arg, function_domain_sets); }, element.get_variant());
 }
@@ -221,21 +223,21 @@ void insert_constants_into_parameter_domain(View<Data<BooleanOperator<Data<Funct
  * Restrict
  */
 
-template<Context C>
-void restrict_parameter_domain(View<Data<FunctionExpression>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets);
+template<fd::Context C>
+void restrict_parameter_domain(View<Data<fd::FunctionExpression>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets);
 
 static void restrict_parameter_domain(float_t, DomainSetList&, const DomainSetListList&) {}
 
-template<OpKind O, Context C>
-void restrict_parameter_domain(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::UnaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& function_domain_sets)
 {
     restrict_parameter_domain(element.get_arg(), parameter_domains, function_domain_sets);
 }
 
-template<OpKind O, Context C>
-void restrict_parameter_domain(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::BinaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& function_domain_sets)
 {
@@ -243,8 +245,8 @@ void restrict_parameter_domain(View<Index<BinaryOperator<O, Data<FunctionExpress
     restrict_parameter_domain(element.get_rhs(), parameter_domains, function_domain_sets);
 }
 
-template<OpKind O, Context C>
-void restrict_parameter_domain(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::MultiOperator<O, Data<fd::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& function_domain_sets)
 {
@@ -252,8 +254,8 @@ void restrict_parameter_domain(View<Index<MultiOperator<O, Data<FunctionExpressi
         restrict_parameter_domain(arg, parameter_domains, function_domain_sets);
 }
 
-template<FactKind T, Context C>
-void restrict_parameter_domain(View<Index<Atom<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& predicate_domain_sets)
+template<f::FactKind T, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::Atom<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& predicate_domain_sets)
 {
     const auto predicate = element.get_predicate();
 
@@ -265,11 +267,11 @@ void restrict_parameter_domain(View<Index<Atom<T>>, C> element, DomainSetList& p
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>)
+                if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, C>>)
                 {
                     // Cannot know parameter index such that there is nothing to be done.
                 }
-                else if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                else if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
                     auto& parameter_domain = parameter_domains[parameter_index];
@@ -287,8 +289,8 @@ void restrict_parameter_domain(View<Index<Atom<T>>, C> element, DomainSetList& p
     }
 }
 
-template<FactKind T, Context C>
-void restrict_parameter_domain(View<Index<FunctionTerm<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets)
+template<f::FactKind T, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::FunctionTerm<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets)
 {
     const auto function = element.get_function();
 
@@ -300,11 +302,11 @@ void restrict_parameter_domain(View<Index<FunctionTerm<T>>, C> element, DomainSe
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>)
+                if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, C>>)
                 {
                     // Cannot know parameter index such that there is nothing to be done.
                 }
-                else if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                else if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
                     auto& parameter_domain = parameter_domains[parameter_index];
@@ -322,28 +324,30 @@ void restrict_parameter_domain(View<Index<FunctionTerm<T>>, C> element, DomainSe
     }
 }
 
-template<Context C>
-void restrict_parameter_domain(View<Index<FunctionTerm<FluentTag>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets)
+template<fd::Context C>
+void restrict_parameter_domain(View<Index<fd::FunctionTerm<f::FluentTag>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets)
 {
     // Dont restrict for fluent fterm
 }
 
-template<Context C>
-void restrict_parameter_domain(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element,
+template<fd::Context C>
+void restrict_parameter_domain(View<Data<fd::ArithmeticOperator<Data<fd::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& function_domain_sets)
 {
     visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, function_domain_sets); }, element.get_variant());
 }
 
-template<Context C>
-void restrict_parameter_domain(View<Data<FunctionExpression>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets)
+template<fd::Context C>
+void restrict_parameter_domain(View<Data<fd::FunctionExpression>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets)
 {
     visit([&](auto&& arg) { restrict_parameter_domain(arg, parameter_domains, function_domain_sets); }, element.get_variant());
 }
 
-template<Context C>
-void restrict_parameter_domain(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element,
+template<fd::Context C>
+void restrict_parameter_domain(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, C> element,
                                DomainSetList& parameter_domains,
                                const DomainSetListList& function_domain_sets)
 {
@@ -354,63 +358,65 @@ void restrict_parameter_domain(View<Data<BooleanOperator<Data<FunctionExpression
  * Lift
  */
 
-template<Context C>
-bool lift_parameter_domain(View<Data<FunctionExpression>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
+template<fd::Context C>
+bool lift_parameter_domain(View<Data<fd::FunctionExpression>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
 
 static bool lift_parameter_domain(float_t, const DomainSetList&, DomainSetListList&);
 
-template<OpKind O, Context C>
-bool lift_parameter_domain(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::UnaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets);
 
-template<OpKind O, Context C>
-bool lift_parameter_domain(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::BinaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets);
 
-template<OpKind O, Context C>
-bool lift_parameter_domain(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::MultiOperator<O, Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets);
 
-template<FactKind T, Context C>
-bool lift_parameter_domain(View<Index<Atom<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets);
+template<f::FactKind T, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::Atom<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets);
 
-template<FactKind T, Context C>
-bool lift_parameter_domain(View<Index<FunctionTerm<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
+template<f::FactKind T, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::FunctionTerm<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
 
-template<Context C>
-bool lift_parameter_domain(View<Index<FunctionTerm<StaticTag>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
-
-template<Context C>
-bool lift_parameter_domain(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element,
+template<fd::Context C>
+bool lift_parameter_domain(View<Index<fd::FunctionTerm<f::StaticTag>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets);
 
-template<Context C>
-bool lift_parameter_domain(View<Data<FunctionExpression>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
-
-template<Context C>
-bool lift_parameter_domain(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element,
+template<fd::Context C>
+bool lift_parameter_domain(View<Data<fd::ArithmeticOperator<Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets);
 
-template<Context C>
-bool lift_parameter_domain(View<Data<FunctionExpression>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
+template<fd::Context C>
+bool lift_parameter_domain(View<Data<fd::FunctionExpression>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
+
+template<fd::Context C>
+bool lift_parameter_domain(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& function_domain_sets);
+
+template<fd::Context C>
+bool lift_parameter_domain(View<Data<fd::FunctionExpression>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
 
 static bool lift_parameter_domain(float_t, const DomainSetList&, DomainSetListList&) { return false; }
 
-template<OpKind O, Context C>
-bool lift_parameter_domain(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::UnaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets)
 {
     return lift_parameter_domain(element.get_arg(), parameter_domains, function_domain_sets);
 }
 
-template<OpKind O, Context C>
-bool lift_parameter_domain(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::BinaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets)
 {
@@ -418,8 +424,8 @@ bool lift_parameter_domain(View<Index<BinaryOperator<O, Data<FunctionExpression>
            || lift_parameter_domain(element.get_rhs(), parameter_domains, function_domain_sets);
 }
 
-template<OpKind O, Context C>
-bool lift_parameter_domain(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C> element,
+template<f::OpKind O, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::MultiOperator<O, Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets)
 {
@@ -428,8 +434,8 @@ bool lift_parameter_domain(View<Index<MultiOperator<O, Data<FunctionExpression>>
                        [&](auto&& arg) { return lift_parameter_domain(arg, parameter_domains, function_domain_sets); });
 }
 
-template<FactKind T, Context C>
-bool lift_parameter_domain(View<Index<Atom<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets)
+template<f::FactKind T, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::Atom<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets)
 {
     const auto predicate = element.get_predicate();
 
@@ -443,7 +449,7 @@ bool lift_parameter_domain(View<Index<Atom<T>>, C> element, const DomainSetList&
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>)
+                if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, C>>)
                 {
                     auto& predicate_domain = predicate_domain_sets[predicate.get_index().value][pos];
                     size_t before = predicate_domain.size();
@@ -451,7 +457,7 @@ bool lift_parameter_domain(View<Index<Atom<T>>, C> element, const DomainSetList&
                     if (predicate_domain.size() != before)
                         changed = true;
                 }
-                else if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                else if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
                     const auto& parameter_domain = parameter_domains[parameter_index];
@@ -472,8 +478,8 @@ bool lift_parameter_domain(View<Index<Atom<T>>, C> element, const DomainSetList&
     return changed;
 }
 
-template<FactKind T, Context C>
-bool lift_parameter_domain(View<Index<FunctionTerm<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets)
+template<f::FactKind T, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::FunctionTerm<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets)
 {
     const auto function = element.get_function();
 
@@ -487,7 +493,7 @@ bool lift_parameter_domain(View<Index<FunctionTerm<T>>, C> element, const Domain
             {
                 using Alternative = std::decay_t<decltype(arg)>;
 
-                if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>)
+                if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, C>>)
                 {
                     auto& function_domain = function_domain_sets[function.get_index().value][pos];
                     size_t before = function_domain.size();
@@ -495,7 +501,7 @@ bool lift_parameter_domain(View<Index<FunctionTerm<T>>, C> element, const Domain
                     if (function_domain.size() != before)
                         changed = true;
                 }
-                else if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                else if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
                 {
                     const auto parameter_index = uint_t(arg);
                     const auto& parameter_domain = parameter_domains[parameter_index];
@@ -516,59 +522,61 @@ bool lift_parameter_domain(View<Index<FunctionTerm<T>>, C> element, const Domain
     return changed;
 }
 
-template<Context C>
-bool lift_parameter_domain(View<Index<FunctionTerm<StaticTag>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets)
+template<fd::Context C>
+bool lift_parameter_domain(View<Index<fd::FunctionTerm<f::StaticTag>>, C> element,
+                           const DomainSetList& parameter_domains,
+                           DomainSetListList& function_domain_sets)
 {
     return false;
 }
 
-template<Context C>
-bool lift_parameter_domain(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element,
+template<fd::Context C>
+bool lift_parameter_domain(View<Data<fd::ArithmeticOperator<Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets)
 {
     return visit([&](auto&& arg) { return lift_parameter_domain(arg, parameter_domains, function_domain_sets); }, element.get_variant());
 }
 
-template<Context C>
-bool lift_parameter_domain(View<Data<FunctionExpression>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets)
+template<fd::Context C>
+bool lift_parameter_domain(View<Data<fd::FunctionExpression>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets)
 {
     return visit([&](auto&& arg) { return lift_parameter_domain(arg, parameter_domains, function_domain_sets); }, element.get_variant());
 }
 
-template<Context C>
-bool lift_parameter_domain(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element,
+template<fd::Context C>
+bool lift_parameter_domain(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, C> element,
                            const DomainSetList& parameter_domains,
                            DomainSetListList& function_domain_sets)
 {
     return visit([&](auto&& arg) { return lift_parameter_domain(arg, parameter_domains, function_domain_sets); }, element.get_variant());
 }
 
-ProgramVariableDomains compute_variable_domains(View<Index<Program>, Repository> program)
+ProgramVariableDomains compute_variable_domains(View<Index<fd::Program>, fd::Repository> program)
 {
-    auto objects = std::vector<Index<Object>> {};
+    auto objects = std::vector<Index<f::Object>> {};
     for (const auto object : program.get_objects())
         objects.push_back(object.get_index());
     auto universe = DomainSet(objects.begin(), objects.end());
 
     ///--- Step 1: Initialize static and fluent predicate parameter domains
 
-    auto static_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<StaticTag>());
-    auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<FluentTag>());
-    insert_into_predicate_domain_sets(program.get_atoms<StaticTag>(), static_predicate_domain_sets);
-    insert_into_predicate_domain_sets(program.get_atoms<FluentTag>(), fluent_predicate_domain_sets);
+    auto static_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<f::StaticTag>());
+    auto fluent_predicate_domain_sets = initialize_predicate_domain_sets(program.get_predicates<f::FluentTag>());
+    insert_into_predicate_domain_sets(program.get_atoms<f::StaticTag>(), static_predicate_domain_sets);
+    insert_into_predicate_domain_sets(program.get_atoms<f::FluentTag>(), fluent_predicate_domain_sets);
 
     ///--- Step 2: Initialize static and fluent function parameter domains
 
-    auto static_function_domain_sets = initialize_function_domain_sets(program.get_functions<StaticTag>());
-    auto fluent_function_domain_sets = initialize_function_domain_sets(program.get_functions<FluentTag>());
-    insert_into_function_domain_sets(program.get_fterm_values<StaticTag>(), static_function_domain_sets);
-    insert_into_function_domain_sets(program.get_fterm_values<FluentTag>(), fluent_function_domain_sets);
+    auto static_function_domain_sets = initialize_function_domain_sets(program.get_functions<f::StaticTag>());
+    auto fluent_function_domain_sets = initialize_function_domain_sets(program.get_functions<f::FluentTag>());
+    insert_into_function_domain_sets(program.get_fterm_values<f::StaticTag>(), static_function_domain_sets);
+    insert_into_function_domain_sets(program.get_fterm_values<f::FluentTag>(), fluent_function_domain_sets);
 
     // Important not to forget constants in schemas
     for (const auto rule : program.get_rules())
     {
-        for (const auto literal : rule.get_body().get_literals<StaticTag>())
+        for (const auto literal : rule.get_body().get_literals<f::StaticTag>())
             insert_constants_into_parameter_domain(literal.get_atom(), static_predicate_domain_sets);
 
         for (const auto op : rule.get_body().get_numeric_constraints())
@@ -584,7 +592,7 @@ ProgramVariableDomains compute_variable_domains(View<Index<Program>, Repository>
             auto variables = rule.get_body().get_variables();
             auto parameter_domains = DomainSetList(variables.size(), universe);
 
-            for (const auto literal : rule.get_body().get_literals<StaticTag>())
+            for (const auto literal : rule.get_body().get_literals<f::StaticTag>())
                 restrict_parameter_domain(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
 
             for (const auto op : rule.get_body().get_numeric_constraints())
@@ -607,7 +615,7 @@ ProgramVariableDomains compute_variable_domains(View<Index<Program>, Repository>
         {
             auto& parameter_domains = rule_domain_sets[rule.get_index().value];
 
-            for (const auto literal : rule.get_body().get_literals<FluentTag>())
+            for (const auto literal : rule.get_body().get_literals<f::FluentTag>())
                 if (lift_parameter_domain(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets))
                     changed = true;
 

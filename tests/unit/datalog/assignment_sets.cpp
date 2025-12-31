@@ -22,9 +22,9 @@
 #include <tyr/datalog/datalog.hpp>
 #include <tyr/formalism/formalism.hpp>
 
-using namespace tyr::buffer;
-using namespace tyr::formalism;
-using namespace tyr::datalog;
+namespace a = tyr::analysis;
+namespace d = tyr::datalog;
+namespace f = tyr::formalism;
 
 namespace tyr::tests
 {
@@ -34,10 +34,10 @@ TEST(TyrTests, TyrDatalogAssignmentSets)
     auto [program, repository] = create_example_problem();
 
     // Analyze variable domains to compress assignment sets
-    auto domains = analysis::compute_variable_domains(program);
+    auto domains = a::compute_variable_domains(program);
 
     // Allocate
-    auto assignment_sets = datalog::AssignmentSets(program, domains);
+    auto assignment_sets = d::AssignmentSets(program, domains);
 
     // Reset
     assignment_sets.static_sets.predicate.reset();
@@ -46,9 +46,9 @@ TEST(TyrTests, TyrDatalogAssignmentSets)
     assignment_sets.fluent_sets.function.reset();
 
     // Insert for a given set of facts
-    assignment_sets.static_sets.predicate.insert(program.get_atoms<formalism::StaticTag>());
-    assignment_sets.fluent_sets.predicate.insert(program.get_atoms<formalism::FluentTag>());
-    assignment_sets.static_sets.function.insert(program.get_fterm_values<formalism::StaticTag>());
-    assignment_sets.fluent_sets.function.insert(program.get_fterm_values<formalism::FluentTag>());
+    assignment_sets.static_sets.predicate.insert(program.get_atoms<f::StaticTag>());
+    assignment_sets.fluent_sets.predicate.insert(program.get_atoms<f::FluentTag>());
+    assignment_sets.static_sets.function.insert(program.get_fterm_values<f::StaticTag>());
+    assignment_sets.fluent_sets.function.insert(program.get_fterm_values<f::FluentTag>());
 }
 }

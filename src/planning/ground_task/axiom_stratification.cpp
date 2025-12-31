@@ -24,8 +24,8 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
@@ -41,14 +41,14 @@ enum class StratumStatus
 
 struct GroundAtomStrata
 {
-    std::vector<UnorderedSet<Index<GroundAtom<DerivedTag>>>> strata;
+    std::vector<UnorderedSet<Index<fp::GroundAtom<f::DerivedTag>>>> strata;
 };
 
-static GroundAtomStrata compute_atom_stratification(View<Index<FDRTask>, OverlayRepository<Repository>> task)
+static GroundAtomStrata compute_atom_stratification(View<Index<fp::FDRTask>, f::OverlayRepository<fp::Repository>> task)
 {
-    auto R = UnorderedMap<Index<GroundAtom<DerivedTag>>, UnorderedMap<Index<GroundAtom<DerivedTag>>, StratumStatus>> {};
+    auto R = UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, StratumStatus>> {};
 
-    const auto& atoms = task.get_atoms<DerivedTag>().get_data();
+    const auto& atoms = task.get_atoms<f::DerivedTag>().get_data();
 
     // lines 2-4
     for (const auto atom_1 : atoms)
@@ -64,7 +64,7 @@ static GroundAtomStrata compute_atom_stratification(View<Index<FDRTask>, Overlay
     {
         const auto head_atom = axiom.get_head().get_index();
 
-        for (const auto literal : axiom.get_body().get_facts<DerivedTag>())
+        for (const auto literal : axiom.get_body().get_facts<f::DerivedTag>())
         {
             const auto body_atom = literal.get_atom().get_index();
 
@@ -102,10 +102,10 @@ static GroundAtomStrata compute_atom_stratification(View<Index<FDRTask>, Overlay
     }
 
     auto atoms_strata = GroundAtomStrata {};
-    auto remaining = UnorderedSet<Index<GroundAtom<DerivedTag>>>(atoms.begin(), atoms.end());
+    auto remaining = UnorderedSet<Index<fp::GroundAtom<f::DerivedTag>>>(atoms.begin(), atoms.end());
     while (!remaining.empty())
     {
-        auto stratum = UnorderedSet<Index<GroundAtom<DerivedTag>>> {};
+        auto stratum = UnorderedSet<Index<fp::GroundAtom<f::DerivedTag>>> {};
         for (const auto& atom_1 : remaining)
         {
             if (std::all_of(remaining.begin(),
@@ -128,17 +128,17 @@ static GroundAtomStrata compute_atom_stratification(View<Index<FDRTask>, Overlay
 }
 }
 
-GroundAxiomStrata compute_ground_axiom_stratification(View<Index<FDRTask>, OverlayRepository<Repository>> task)
+GroundAxiomStrata compute_ground_axiom_stratification(View<Index<fp::FDRTask>, f::OverlayRepository<fp::Repository>> task)
 {
     const auto atom_stratification = details::compute_atom_stratification(task);
 
     auto axiom_strata = GroundAxiomStrata {};
 
-    auto remaining_axioms = UnorderedSet<Index<GroundAxiom>>(task.get_ground_axioms().get_data().begin(), task.get_ground_axioms().get_data().end());
+    auto remaining_axioms = UnorderedSet<Index<fp::GroundAxiom>>(task.get_ground_axioms().get_data().begin(), task.get_ground_axioms().get_data().end());
 
     for (const auto& atom_stratum : atom_stratification.strata)
     {
-        auto stratum = UnorderedSet<Index<GroundAxiom>> {};
+        auto stratum = UnorderedSet<Index<fp::GroundAxiom>> {};
 
         for (const auto axiom : remaining_axioms)
         {

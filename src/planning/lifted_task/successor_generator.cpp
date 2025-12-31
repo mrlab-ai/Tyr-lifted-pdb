@@ -30,8 +30,9 @@
 #include "tyr/planning/programs/action.hpp"
 #include "tyr/planning/successor_generator.hpp"
 
-using namespace tyr::formalism;
-using namespace tyr::datalog;
+namespace d = tyr::datalog;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
@@ -76,14 +77,14 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
 
     insert_extended_state(state.get_unpacked_state(), *m_task->get_repository(), m_action_context);
 
-    datalog::solve_bottom_up(m_action_context);
+    d::solve_bottom_up(m_action_context);
 
     const auto state_context = StateContext<LiftedTask>(*m_task, state.get_unpacked_state(), node.get_metric());
 
     out_nodes.clear();
 
-    auto fluent_assign = UnorderedMap<Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue> {};
-    auto iter_workspace = itertools::cartesian_set::Workspace<Index<formalism::Object>> {};
+    auto fluent_assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
+    auto iter_workspace = itertools::cartesian_set::Workspace<Index<f::Object>> {};
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over predicate_to_actions_mapping, then facts of the predicate
     for (const auto fact : m_action_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
@@ -92,9 +93,9 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
         {
             for (const auto action_index : m_task->get_action_program().get_predicate_to_actions_mapping().at(fact.get_predicate().get_index()))
             {
-                auto grounder_context = formalism::planning::GrounderContext { m_action_context.planning_builder,
-                                                                               *m_task->get_repository(),
-                                                                               m_action_context.program_to_task_execution_context.binding };
+                auto grounder_context = fp::GrounderContext { m_action_context.planning_builder,
+                                                              *m_task->get_repository(),
+                                                              m_action_context.program_to_task_execution_context.binding };
 
                 const auto action = make_view(action_index, grounder_context.destination);
 

@@ -49,51 +49,55 @@
 #include <utility>                          // for pair
 #include <vector>                           // for vector
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::datalog;
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::datalog
 {
 
-template<FactKind T, Context C_SRC, Context C_DST>
-bool is_valid_binding(View<Index<Literal<T>>, C_SRC> element, const FactSets& fact_sets, GrounderContext<C_DST>& context)
+template<f::FactKind T, fd::Context C_SRC, fd::Context C_DST>
+bool is_valid_binding(View<Index<fd::Literal<T>>, C_SRC> element, const FactSets& fact_sets, fd::GrounderContext<C_DST>& context)
 {
     return fact_sets.template get<T>().predicate.contains(ground(element.get_atom(), context).first) == element.get_polarity();
 }
 
-template<FactKind T, Context C_SRC, Context C_DST>
-bool is_valid_binding(View<IndexList<Literal<T>>, C_SRC> elements, const FactSets& fact_sets, GrounderContext<C_DST>& context)
+template<f::FactKind T, fd::Context C_SRC, fd::Context C_DST>
+bool is_valid_binding(View<IndexList<fd::Literal<T>>, C_SRC> elements, const FactSets& fact_sets, fd::GrounderContext<C_DST>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); });
 }
 
-template<Context C_SRC, Context C_DST>
-bool is_valid_binding(View<DataList<Literal<FluentTag>>, C_SRC> elements, const FactSets& fact_sets, GrounderContext<C_DST>& context)
+template<fd::Context C_SRC, fd::Context C_DST>
+bool is_valid_binding(View<DataList<fd::Literal<f::FluentTag>>, C_SRC> elements, const FactSets& fact_sets, fd::GrounderContext<C_DST>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); });
 }
 
-template<Context C_SRC, Context C_DST>
-bool is_valid_binding(View<Data<BooleanOperator<Data<FunctionExpression>>>, C_SRC> element, const FactSets& fact_sets, GrounderContext<C_DST>& context)
+template<fd::Context C_SRC, fd::Context C_DST>
+bool is_valid_binding(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, C_SRC> element,
+                      const FactSets& fact_sets,
+                      fd::GrounderContext<C_DST>& context)
 {
     return evaluate(make_view(ground(element, context), context.destination), fact_sets);
 }
 
-template<Context C_SRC, Context C_DST>
-bool is_valid_binding(View<DataList<BooleanOperator<Data<FunctionExpression>>>, C_SRC> elements, const FactSets& fact_sets, GrounderContext<C_DST>& context)
+template<fd::Context C_SRC, fd::Context C_DST>
+bool is_valid_binding(View<DataList<fd::BooleanOperator<Data<fd::FunctionExpression>>>, C_SRC> elements,
+                      const FactSets& fact_sets,
+                      fd::GrounderContext<C_DST>& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, fact_sets, context); });
 }
 
-template<Context C_SRC, Context C_DST>
-bool is_valid_binding(View<Index<ConjunctiveCondition>, C_SRC> element, const FactSets& fact_sets, GrounderContext<C_DST>& context)
+template<fd::Context C_SRC, fd::Context C_DST>
+bool is_valid_binding(View<Index<fd::ConjunctiveCondition>, C_SRC> element, const FactSets& fact_sets, fd::GrounderContext<C_DST>& context)
 {
-    return is_valid_binding(element.template get_literals<StaticTag>(), fact_sets, context)     //
-           && is_valid_binding(element.template get_literals<FluentTag>(), fact_sets, context)  //
+    return is_valid_binding(element.template get_literals<f::StaticTag>(), fact_sets, context)     //
+           && is_valid_binding(element.template get_literals<f::FluentTag>(), fact_sets, context)  //
            && is_valid_binding(element.get_numeric_constraints(), fact_sets, context);
 }
 
-static auto create_nullary_ground_head_in_stage(View<Index<Atom<FluentTag>>, Repository> head, GrounderContext<Repository>& context)
+static auto create_nullary_ground_head_in_stage(View<Index<fd::Atom<f::FluentTag>>, fd::Repository> head, fd::GrounderContext<fd::Repository>& context)
 {
     context.binding.clear();
 
@@ -102,8 +106,8 @@ static auto create_nullary_ground_head_in_stage(View<Index<Atom<FluentTag>>, Rep
 
 static auto create_unary_ground_head_in_stage(uint_t vertex_index,
                                               const StaticConsistencyGraph& consistency_graph,
-                                              View<Index<Atom<FluentTag>>, Repository> head,
-                                              GrounderContext<Repository>& context)
+                                              View<Index<fd::Atom<f::FluentTag>>, fd::Repository> head,
+                                              fd::GrounderContext<fd::Repository>& context)
 {
     context.binding.clear();
 
@@ -116,8 +120,8 @@ static auto create_unary_ground_head_in_stage(uint_t vertex_index,
 
 static auto create_general_ground_head_in_stage(const std::vector<uint_t>& clique,
                                                 const StaticConsistencyGraph& consistency_graph,
-                                                View<Index<Atom<FluentTag>>, Repository> head,
-                                                GrounderContext<Repository>& context)
+                                                View<Index<fd::Atom<f::FluentTag>>, fd::Repository> head,
+                                                fd::GrounderContext<fd::Repository>& context)
 {
     context.binding.resize(clique.size());
     for (const auto vertex_index : clique)
@@ -136,7 +140,7 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
                          ThreadExecutionContext& thread_execution_context)
 {
     auto ground_context_stage =
-        GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
+        fd::GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
 
     /// --- Rule stage
     const auto ground_head = create_nullary_ground_head_in_stage(rule_execution_context.rule.get_head(), ground_context_stage).first;
@@ -145,7 +149,7 @@ void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
     {
         /// --- Rule
         auto ground_context_rule =
-            GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
+            fd::GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
 
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
         // This should not occur very often anyways.
@@ -163,7 +167,7 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
                        ThreadExecutionContext& thread_execution_context)
 {
     auto ground_context_stage =
-        GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
+        fd::GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
 
     for (const auto vertex_index : rule_execution_context.kpkc_workspace.consistent_vertices_vec)
     {
@@ -178,7 +182,7 @@ void ground_unary_case(const FactsExecutionContext& fact_execution_context,
         {
             /// --- Rule
             auto ground_context_rule =
-                GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
+                fd::GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
 
             if (is_valid_binding(rule_execution_context.unary_conflicting_overapproximation_condition, fact_execution_context.fact_sets, ground_context_rule))
             {
@@ -199,7 +203,7 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
                          ThreadExecutionContext& thread_execution_context)
 {
     auto ground_context_stage =
-        GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
+        fd::GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
 
     kpkc::for_each_k_clique(
         rule_execution_context.consistency_graph,
@@ -217,7 +221,7 @@ void ground_general_case(const FactsExecutionContext& fact_execution_context,
             {
                 /// --- Rule
                 auto ground_context_rule =
-                    GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
+                    fd::GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
 
                 if (is_valid_binding(rule_execution_context.binary_conflicting_overapproximation_condition,
                                      fact_execution_context.fact_sets,

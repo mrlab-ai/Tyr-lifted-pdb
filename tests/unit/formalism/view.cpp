@@ -19,21 +19,21 @@
 
 #include <gtest/gtest.h>
 
-using namespace tyr::buffer;
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
+namespace b = tyr::buffer;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::tests
 {
 
 TEST(TyrTests, TyrFormalismView)
 {
-    auto repository = Repository();
-    auto buffer = Buffer();
-    auto predicate_builder = Data<Predicate<FluentTag>>();
-    auto object_builder = Data<Object>();
-    auto variable_builder = Data<Variable>();
-    auto atom_builder = Data<Atom<FluentTag>>();
+    auto repository = fp::Repository();
+    auto buffer = b::Buffer();
+    auto predicate_builder = Data<f::Predicate<f::FluentTag>>();
+    auto object_builder = Data<f::Object>();
+    auto variable_builder = Data<f::Variable>();
+    auto atom_builder = Data<fp::Atom<f::FluentTag>>();
 
     // Create a unique predicate
     predicate_builder.name = "predicate";
@@ -49,8 +49,8 @@ TEST(TyrTests, TyrFormalismView)
     // Create atom
     atom_builder.terms.clear();
     atom_builder.predicate = predicate_index;
-    atom_builder.terms.push_back(Data<Term>(object_index));
-    atom_builder.terms.push_back(Data<Term>(ParameterIndex(0)));
+    atom_builder.terms.push_back(Data<f::Term>(object_index));
+    atom_builder.terms.push_back(Data<f::Term>(f::ParameterIndex(0)));
     canonicalize(atom_builder);
     auto [atom_index, atom_success] = repository.get_or_create(atom_builder, buffer);
 
@@ -66,7 +66,7 @@ TEST(TyrTests, TyrFormalismView)
         {
             using Alternative = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<Alternative, View<Index<Object>, Repository>>)
+            if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, fp::Repository>>)
             {
                 EXPECT_EQ(arg.get_index(), object_index);
             }
@@ -81,9 +81,9 @@ TEST(TyrTests, TyrFormalismView)
         {
             using Alternative = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+            if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
             {
-                EXPECT_EQ(arg, ParameterIndex(0));
+                EXPECT_EQ(arg, f::ParameterIndex(0));
             }
             else
             {

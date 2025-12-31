@@ -19,20 +19,20 @@
 
 #include <gtest/gtest.h>
 
-using namespace tyr::buffer;
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
+namespace b = tyr::buffer;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::tests
 {
 
 TEST(TyrTests, TyrFormalismRepository)
 {
-    auto repository = Repository();
-    auto buffer = Buffer();
-    auto predicate_builder = Data<Predicate<FluentTag>>();
-    auto object_builder = Data<Object>();
-    auto atom_builder = Data<Atom<FluentTag>>();
+    auto repository = fp::Repository();
+    auto buffer = b::Buffer();
+    auto predicate_builder = Data<f::Predicate<f::FluentTag>>();
+    auto object_builder = Data<f::Object>();
+    auto atom_builder = Data<fp::Atom<f::FluentTag>>();
 
     // Create a unique predicate
     predicate_builder.name = "predicate_0";
@@ -98,8 +98,8 @@ TEST(TyrTests, TyrFormalismRepository)
     // Create atom
     atom_builder.terms.clear();
     atom_builder.predicate = predicate_0.get_index();
-    atom_builder.terms.push_back(Data<Term>(object_0.get_index()));
-    atom_builder.terms.push_back(Data<Term>(object_1.get_index()));
+    atom_builder.terms.push_back(Data<f::Term>(object_0.get_index()));
+    atom_builder.terms.push_back(Data<f::Term>(object_1.get_index()));
     canonicalize(atom_builder);
     auto [atom_0, atom_success_0] = repository.get_or_create(atom_builder, buffer);
 
@@ -114,11 +114,11 @@ TEST(TyrTests, TyrFormalismRepository)
 
 TEST(TyrTests, TyrFormalismView)
 {
-    auto repository = Repository();
-    auto buffer = Buffer();
-    auto predicate_builder = Data<Predicate<FluentTag>>();
-    auto object_builder = Data<Object>();
-    auto atom_builder = Data<Atom<FluentTag>>();
+    auto repository = fp::Repository();
+    auto buffer = b::Buffer();
+    auto predicate_builder = Data<f::Predicate<f::FluentTag>>();
+    auto object_builder = Data<f::Object>();
+    auto atom_builder = Data<fp::Atom<f::FluentTag>>();
 
     // Create a unique predicate
     predicate_builder.name = "predicate_0";
@@ -140,8 +140,8 @@ TEST(TyrTests, TyrFormalismView)
     // Create atom
     atom_builder.terms.clear();
     atom_builder.predicate = predicate_0.get_index();
-    atom_builder.terms.push_back(Data<Term>(object_0.get_index()));
-    atom_builder.terms.push_back(Data<Term>(object_1.get_index()));
+    atom_builder.terms.push_back(Data<f::Term>(object_0.get_index()));
+    atom_builder.terms.push_back(Data<f::Term>(object_1.get_index()));
     canonicalize(atom_builder);
     [[maybe_unused]] auto [atom_0, atom_success_0] = repository.get_or_create(atom_builder, buffer);
 }

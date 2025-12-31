@@ -20,8 +20,7 @@
 #include <gtest/gtest.h>
 #include <tyr/tyr.hpp>
 
-using namespace tyr::buffer;
-using namespace tyr::formalism;
+namespace a = tyr::analysis;
 
 namespace tyr::tests
 {
@@ -30,8 +29,8 @@ TEST(TyrTests, TyrAnalysisListenerStrata)
 {
     auto [program, repository] = create_example_problem();
 
-    auto rule_strata = analysis::compute_rule_stratification(program);
-    auto listeners = analysis::compute_listeners(rule_strata, program.get_context());
+    auto rule_strata = a::compute_rule_stratification(program);
+    auto listeners = a::compute_listeners(rule_strata, program.get_context());
 
     for (const auto& listeners_in_stratum : listeners.data)
     {

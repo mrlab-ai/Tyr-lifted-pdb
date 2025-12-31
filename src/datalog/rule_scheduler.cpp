@@ -26,13 +26,13 @@
 #include <gtl/phmap.hpp>  // for operator!=, flat_hash_set
 #include <utility>        // for pair
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::datalog;
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::datalog
 {
 
-RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules, const analysis::ListenerStratum& listeners, const Repository& context) :
+RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules, const analysis::ListenerStratum& listeners, const fd::Repository& context) :
     m_rules(rules),
     m_listeners(listeners),
     m_context(context),
@@ -57,7 +57,7 @@ void RuleSchedulerStratum::activate_all()
 
 void RuleSchedulerStratum::on_start_iteration() noexcept { m_active_predicates.reset(); }
 
-void RuleSchedulerStratum::on_generate(Index<Predicate<FluentTag>> predicate)
+void RuleSchedulerStratum::on_generate(Index<f::Predicate<f::FluentTag>> predicate)
 {
     assert(uint_t(predicate) < m_active_predicates.size());
 
@@ -68,7 +68,7 @@ void RuleSchedulerStratum::on_finish_iteration()
 {
     m_active_set.clear();
     for (auto i = m_active_predicates.find_first(); i != boost::dynamic_bitset<>::npos; i = m_active_predicates.find_next(i))
-        if (const auto it = m_listeners.find(Index<Predicate<FluentTag>>(i)); it != m_listeners.end())
+        if (const auto it = m_listeners.find(Index<f::Predicate<f::FluentTag>>(i)); it != m_listeners.end())
             for (const auto rule : it->second)
                 m_active_set.insert(rule);
 
@@ -77,9 +77,9 @@ void RuleSchedulerStratum::on_finish_iteration()
         m_active.push_back(rule);
 }
 
-View<IndexList<Rule>, Repository> RuleSchedulerStratum::get_active_rules() { return make_view(m_active, m_context); }
+View<IndexList<fd::Rule>, fd::Repository> RuleSchedulerStratum::get_active_rules() { return make_view(m_active, m_context); }
 
-RuleSchedulerStrata create_rule_scheduler_strata(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const Repository& context)
+RuleSchedulerStrata create_rule_scheduler_strata(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const fd::Repository& context)
 {
     assert(rules.data.size() == listeners.data.size());
 

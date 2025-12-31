@@ -21,8 +21,8 @@
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::datalog;
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::datalog
 {
@@ -30,29 +30,29 @@ namespace tyr::datalog
  * FactsExecutionContext
  */
 
-FactsExecutionContext::FactsExecutionContext(View<Index<Program>, Repository> program, const analysis::ProgramVariableDomains& domains) :
+FactsExecutionContext::FactsExecutionContext(View<Index<fd::Program>, fd::Repository> program, const analysis::ProgramVariableDomains& domains) :
     fact_sets(program),
     assignment_sets(program, domains, fact_sets)
 {
 }
 
-FactsExecutionContext::FactsExecutionContext(View<Index<Program>, Repository> program,
-                                             TaggedFactSets<FluentTag> fluent_facts,
+FactsExecutionContext::FactsExecutionContext(View<Index<fd::Program>, fd::Repository> program,
+                                             TaggedFactSets<f::FluentTag> fluent_facts,
                                              const analysis::ProgramVariableDomains& domains) :
     fact_sets(program, fluent_facts),
     assignment_sets(program, domains, fact_sets)
 {
 }
 
-template<FactKind T>
+template<f::FactKind T>
 void FactsExecutionContext::reset() noexcept
 {
     fact_sets.template reset<T>();
     assignment_sets.template reset<T>();
 }
 
-template void FactsExecutionContext::reset<StaticTag>() noexcept;
-template void FactsExecutionContext::reset<FluentTag>() noexcept;
+template void FactsExecutionContext::reset<f::StaticTag>() noexcept;
+template void FactsExecutionContext::reset<f::FluentTag>() noexcept;
 
 void FactsExecutionContext::reset() noexcept
 {
@@ -60,31 +60,31 @@ void FactsExecutionContext::reset() noexcept
     assignment_sets.reset();
 }
 
-template<FactKind T>
-void FactsExecutionContext::insert(View<IndexList<GroundAtom<T>>, Repository> view)
+template<f::FactKind T>
+void FactsExecutionContext::insert(View<IndexList<fd::GroundAtom<T>>, fd::Repository> view)
 {
     fact_sets.insert(view);
     assignment_sets.insert(fact_sets.template get<T>());
 }
 
-template void FactsExecutionContext::insert(View<IndexList<GroundAtom<StaticTag>>, Repository> view);
-template void FactsExecutionContext::insert(View<IndexList<GroundAtom<FluentTag>>, Repository> view);
+template void FactsExecutionContext::insert(View<IndexList<fd::GroundAtom<f::StaticTag>>, fd::Repository> view);
+template void FactsExecutionContext::insert(View<IndexList<fd::GroundAtom<f::FluentTag>>, fd::Repository> view);
 
-template<FactKind T>
-void FactsExecutionContext::insert(View<IndexList<GroundFunctionTermValue<T>>, Repository> view)
+template<f::FactKind T>
+void FactsExecutionContext::insert(View<IndexList<fd::GroundFunctionTermValue<T>>, fd::Repository> view)
 {
     fact_sets.insert(view);
     assignment_sets.insert(fact_sets.template get<T>());
 }
 
-template void FactsExecutionContext::insert(View<IndexList<GroundFunctionTermValue<StaticTag>>, Repository> view);
-template void FactsExecutionContext::insert(View<IndexList<GroundFunctionTermValue<FluentTag>>, Repository> view);
+template void FactsExecutionContext::insert(View<IndexList<fd::GroundFunctionTermValue<f::StaticTag>>, fd::Repository> view);
+template void FactsExecutionContext::insert(View<IndexList<fd::GroundFunctionTermValue<f::FluentTag>>, fd::Repository> view);
 
 /**
  * RuleStageExecutionContext
  */
 
-RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<Repository>()), binding(), ground_heads(), merge_cache() {}
+RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<fd::Repository>()), binding(), ground_heads(), merge_cache() {}
 
 void RuleStageExecutionContext::clear() noexcept
 {
@@ -97,12 +97,12 @@ void RuleStageExecutionContext::clear() noexcept
  * StaticRuleExecutionContext
  */
 
-StaticRuleExecutionContext StaticRuleExecutionContext::create(View<Index<Rule>, Repository> rule,
-                                                              Repository& repository,
+StaticRuleExecutionContext StaticRuleExecutionContext::create(View<Index<fd::Rule>, fd::Repository> rule,
+                                                              fd::Repository& repository,
                                                               const analysis::DomainListList& parameter_domains,
-                                                              const TaggedAssignmentSets<StaticTag>& static_assignment_sets)
+                                                              const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets)
 {
-    auto builder = Builder();
+    auto builder = fd::Builder();
 
     auto nullary_condition = make_view(create_ground_nullary_condition(rule.get_body(), builder, repository).first, repository);
 
@@ -137,15 +137,15 @@ StaticRuleExecutionContext StaticRuleExecutionContext::create(View<Index<Rule>, 
  * RuleExecutionContext
  */
 
-RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
-                                           View<Index<GroundConjunctiveCondition>, Repository> nullary_condition,
-                                           View<Index<ConjunctiveCondition>, Repository> unary_overapproximation_condition,
-                                           View<Index<ConjunctiveCondition>, Repository> binary_overapproximation_condition,
-                                           View<Index<ConjunctiveCondition>, Repository> unary_conflicting_overapproximation_condition,
-                                           View<Index<ConjunctiveCondition>, Repository> binary_conflicting_overapproximation_condition,
+RuleExecutionContext::RuleExecutionContext(View<Index<fd::Rule>, fd::Repository> rule,
+                                           View<Index<fd::GroundConjunctiveCondition>, fd::Repository> nullary_condition,
+                                           View<Index<fd::ConjunctiveCondition>, fd::Repository> unary_overapproximation_condition,
+                                           View<Index<fd::ConjunctiveCondition>, fd::Repository> binary_overapproximation_condition,
+                                           View<Index<fd::ConjunctiveCondition>, fd::Repository> unary_conflicting_overapproximation_condition,
+                                           View<Index<fd::ConjunctiveCondition>, fd::Repository> binary_conflicting_overapproximation_condition,
                                            const analysis::DomainListList& parameter_domains,
-                                           const TaggedAssignmentSets<StaticTag>& static_assignment_sets,
-                                           const Repository& parent) :
+                                           const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
+                                           const fd::Repository& parent) :
     rule(rule),
     nullary_condition(nullary_condition),
     unary_overapproximation_condition(unary_overapproximation_condition),
@@ -161,7 +161,7 @@ RuleExecutionContext::RuleExecutionContext(View<Index<Rule>, Repository> rule,
                              static_assignment_sets),
     consistency_graph(datalog::kpkc::allocate_dense_graph(static_consistency_graph)),
     kpkc_workspace(datalog::kpkc::allocate_workspace(static_consistency_graph)),
-    repository(std::make_shared<Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
+    repository(std::make_shared<fd::Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
     overlay_repository(parent, *repository),
     binding(),
     ground_heads()
@@ -201,8 +201,8 @@ void TaskToProgramExecutionContext::clear() noexcept { merge_cache.clear(); }
  * ProgramExecutionContext
  */
 
-ProgramExecutionContext::ProgramExecutionContext(View<Index<Program>, Repository> program,
-                                                 RepositoryPtr repository,
+ProgramExecutionContext::ProgramExecutionContext(View<Index<fd::Program>, fd::Repository> program,
+                                                 fd::RepositoryPtr repository,
                                                  const analysis::ProgramVariableDomains& domains,
                                                  const analysis::RuleStrata& strata,
                                                  const analysis::ListenerStrata& listeners) :

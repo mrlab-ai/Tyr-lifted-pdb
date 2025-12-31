@@ -36,15 +36,15 @@
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/programs/ground.hpp"
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
-using namespace tyr::datalog;
+namespace d = tyr::datalog;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
-static auto remap_fdr_fact(View<Data<FDRFact<FluentTag>>, OverlayRepository<Repository>> fact,
-                           GeneralFDRContext<OverlayRepository<Repository>>& fdr_context,
-                           MergeContext<OverlayRepository<Repository>>& context)
+static auto remap_fdr_fact(View<Data<fp::FDRFact<f::FluentTag>>, f::OverlayRepository<fp::Repository>> fact,
+                           fp::GeneralFDRContext<f::OverlayRepository<fp::Repository>>& fdr_context,
+                           fp::MergeContext<f::OverlayRepository<fp::Repository>>& context)
 {
     // Ensure that remapping is unambiguous
     assert(fact.get_variable().get_domain_size() == 2);
@@ -53,30 +53,30 @@ static auto remap_fdr_fact(View<Data<FDRFact<FluentTag>>, OverlayRepository<Repo
     auto new_fact = fdr_context.get_fact(new_atom);
 
     // value 1 -> keep positive fact
-    if (fact.get_value() != FDRValue::none())
+    if (fact.get_value() != fp::FDRValue::none())
         return new_fact;
 
     // value 0 -> same variable, value 0
-    new_fact.value = FDRValue::none();
+    new_fact.value = fp::FDRValue::none();
 
     return new_fact;
 }
 
-static auto create_ground_fdr_conjunctive_condition(View<Index<GroundConjunctiveCondition>, OverlayRepository<Repository>> element,
-                                                    GeneralFDRContext<OverlayRepository<Repository>>& fdr_context,
-                                                    MergeContext<OverlayRepository<Repository>>& context)
+static auto create_ground_fdr_conjunctive_condition(View<Index<fp::GroundConjunctiveCondition>, f::OverlayRepository<fp::Repository>> element,
+                                                    fp::GeneralFDRContext<f::OverlayRepository<fp::Repository>>& fdr_context,
+                                                    fp::MergeContext<f::OverlayRepository<fp::Repository>>& context)
 {
-    auto fdr_conj_cond_ptr = context.builder.get_builder<GroundConjunctiveCondition>();
+    auto fdr_conj_cond_ptr = context.builder.get_builder<fp::GroundConjunctiveCondition>();
     auto& fdr_conj_cond = *fdr_conj_cond_ptr;
     fdr_conj_cond.clear();
 
-    for (const auto literal : element.get_facts<StaticTag>())
+    for (const auto literal : element.get_facts<f::StaticTag>())
         fdr_conj_cond.static_literals.push_back(merge_p2p(literal, context).first);
 
-    for (const auto fact : element.get_facts<FluentTag>())
+    for (const auto fact : element.get_facts<f::FluentTag>())
         fdr_conj_cond.fluent_facts.push_back(remap_fdr_fact(fact, fdr_context, context));
 
-    for (const auto literal : element.get_facts<DerivedTag>())
+    for (const auto literal : element.get_facts<f::DerivedTag>())
         fdr_conj_cond.derived_literals.push_back(merge_p2p(literal, context).first);
 
     for (const auto numeric_constraint : element.get_numeric_constraints())
@@ -86,15 +86,15 @@ static auto create_ground_fdr_conjunctive_condition(View<Index<GroundConjunctive
     return context.destination.get_or_create(fdr_conj_cond, context.builder.get_buffer());
 }
 
-static auto create_ground_conjunctive_effect(View<Index<GroundConjunctiveEffect>, OverlayRepository<Repository>> element,
-                                             GeneralFDRContext<OverlayRepository<Repository>>& fdr_context,
-                                             MergeContext<OverlayRepository<Repository>>& context)
+static auto create_ground_conjunctive_effect(View<Index<fp::GroundConjunctiveEffect>, f::OverlayRepository<fp::Repository>> element,
+                                             fp::GeneralFDRContext<f::OverlayRepository<fp::Repository>>& fdr_context,
+                                             fp::MergeContext<f::OverlayRepository<fp::Repository>>& context)
 {
-    auto fdr_conj_eff_ptr = context.builder.get_builder<GroundConjunctiveEffect>();
+    auto fdr_conj_eff_ptr = context.builder.get_builder<fp::GroundConjunctiveEffect>();
     auto& fdr_conj_eff = *fdr_conj_eff_ptr;
     fdr_conj_eff.clear();
 
-    auto assign = UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue> {};
+    auto assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
 
     for (const auto fact : element.get_facts())
         fdr_conj_eff.facts.push_back(remap_fdr_fact(fact, fdr_context, context));
@@ -109,11 +109,11 @@ static auto create_ground_conjunctive_effect(View<Index<GroundConjunctiveEffect>
     return context.destination.get_or_create(fdr_conj_eff, context.builder.get_buffer());
 }
 
-static auto create_ground_conditional_effect(View<Index<GroundConditionalEffect>, OverlayRepository<Repository>> element,
-                                             GeneralFDRContext<OverlayRepository<Repository>>& fdr_context,
-                                             MergeContext<OverlayRepository<Repository>>& context)
+static auto create_ground_conditional_effect(View<Index<fp::GroundConditionalEffect>, f::OverlayRepository<fp::Repository>> element,
+                                             fp::GeneralFDRContext<f::OverlayRepository<fp::Repository>>& fdr_context,
+                                             fp::MergeContext<f::OverlayRepository<fp::Repository>>& context)
 {
-    auto fdr_cond_eff_ptr = context.builder.get_builder<GroundConditionalEffect>();
+    auto fdr_cond_eff_ptr = context.builder.get_builder<fp::GroundConditionalEffect>();
     auto& fdr_cond_eff = *fdr_cond_eff_ptr;
     fdr_cond_eff.clear();
 
@@ -124,11 +124,11 @@ static auto create_ground_conditional_effect(View<Index<GroundConditionalEffect>
     return context.destination.get_or_create(fdr_cond_eff, context.builder.get_buffer());
 }
 
-static auto create_ground_action(View<Index<GroundAction>, OverlayRepository<Repository>> element,
-                                 GeneralFDRContext<OverlayRepository<Repository>>& fdr_context,
-                                 MergeContext<OverlayRepository<Repository>>& context)
+static auto create_ground_action(View<Index<fp::GroundAction>, f::OverlayRepository<fp::Repository>> element,
+                                 fp::GeneralFDRContext<f::OverlayRepository<fp::Repository>>& fdr_context,
+                                 fp::MergeContext<f::OverlayRepository<fp::Repository>>& context)
 {
-    auto fdr_action_ptr = context.builder.get_builder<GroundAction>();
+    auto fdr_action_ptr = context.builder.get_builder<fp::GroundAction>();
     auto& fdr_action = *fdr_action_ptr;
     fdr_action.clear();
 
@@ -142,11 +142,11 @@ static auto create_ground_action(View<Index<GroundAction>, OverlayRepository<Rep
     return context.destination.get_or_create(fdr_action, context.builder.get_buffer());
 }
 
-static auto create_ground_axiom(View<Index<GroundAxiom>, OverlayRepository<Repository>> element,
-                                GeneralFDRContext<OverlayRepository<Repository>>& fdr_context,
-                                MergeContext<OverlayRepository<Repository>>& context)
+static auto create_ground_axiom(View<Index<fp::GroundAxiom>, f::OverlayRepository<fp::Repository>> element,
+                                fp::GeneralFDRContext<f::OverlayRepository<fp::Repository>>& fdr_context,
+                                fp::MergeContext<f::OverlayRepository<fp::Repository>>& context)
 {
-    auto fdr_axiom_ptr = context.builder.get_builder<GroundAxiom>();
+    auto fdr_axiom_ptr = context.builder.get_builder<fp::GroundAxiom>();
     auto& fdr_axiom = *fdr_axiom_ptr;
     fdr_axiom.clear();
 
@@ -160,14 +160,14 @@ static auto create_ground_axiom(View<Index<GroundAxiom>, OverlayRepository<Repos
 }
 
 // TODO: create stronger mutex groups
-static auto create_mutex_groups(View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> atoms,
-                                MergeContext<OverlayRepository<Repository>>& context)
+static auto create_mutex_groups(View<IndexList<fp::GroundAtom<f::FluentTag>>, f::OverlayRepository<fp::Repository>> atoms,
+                                fp::MergeContext<f::OverlayRepository<fp::Repository>>& context)
 {
-    auto mutex_groups = std::vector<std::vector<View<Index<GroundAtom<FluentTag>>, OverlayRepository<Repository>>>> {};
+    auto mutex_groups = std::vector<std::vector<View<Index<fp::GroundAtom<f::FluentTag>>, f::OverlayRepository<fp::Repository>>>> {};
 
     for (const auto atom : atoms)
     {
-        auto group = std::vector<View<Index<GroundAtom<FluentTag>>, OverlayRepository<Repository>>> {};
+        auto group = std::vector<View<Index<fp::GroundAtom<f::FluentTag>>, f::OverlayRepository<fp::Repository>>> {};
         group.push_back(make_view(merge_p2p(atom, context).first, context.destination));
         mutex_groups.push_back(group);
     }
@@ -175,21 +175,21 @@ static auto create_mutex_groups(View<IndexList<GroundAtom<FluentTag>>, OverlayRe
     return mutex_groups;
 }
 
-static auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
-                        View<IndexList<GroundAtom<FluentTag>>, OverlayRepository<Repository>> fluent_atoms,
-                        View<IndexList<GroundAtom<DerivedTag>>, OverlayRepository<Repository>> derived_atoms,
-                        View<IndexList<GroundFunctionTerm<FluentTag>>, OverlayRepository<Repository>> fluent_fterms,
-                        View<IndexList<GroundAction>, OverlayRepository<Repository>> actions,
-                        View<IndexList<GroundAxiom>, OverlayRepository<Repository>> axioms,
-                        OverlayRepository<Repository>& repository)
+static auto create_task(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                        View<IndexList<fp::GroundAtom<f::FluentTag>>, f::OverlayRepository<fp::Repository>> fluent_atoms,
+                        View<IndexList<fp::GroundAtom<f::DerivedTag>>, f::OverlayRepository<fp::Repository>> derived_atoms,
+                        View<IndexList<fp::GroundFunctionTerm<f::FluentTag>>, f::OverlayRepository<fp::Repository>> fluent_fterms,
+                        View<IndexList<fp::GroundAction>, f::OverlayRepository<fp::Repository>> actions,
+                        View<IndexList<fp::GroundAxiom>, f::OverlayRepository<fp::Repository>> axioms,
+                        f::OverlayRepository<fp::Repository>& repository)
 {
-    auto builder = Builder();
-    auto fdr_task_ptr = builder.get_builder<FDRTask>();
+    auto builder = fp::Builder();
+    auto fdr_task_ptr = builder.get_builder<fp::FDRTask>();
     auto& fdr_task = *fdr_task_ptr;
     fdr_task.clear();
 
-    auto merge_cache = MergeCache {};
-    auto merge_context = MergeContext { builder, repository, merge_cache };
+    auto merge_cache = fp::MergeCache {};
+    auto merge_context = fp::MergeContext { builder, repository, merge_cache };
 
     fdr_task.name = task.get_name();
     fdr_task.domain = task.get_domain().get_index();
@@ -198,7 +198,7 @@ static auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
     for (const auto object : task.get_objects())
         fdr_task.objects.push_back(merge_p2p(object, merge_context).first);
 
-    for (const auto atom : task.get_atoms<StaticTag>())
+    for (const auto atom : task.get_atoms<f::StaticTag>())
         fdr_task.static_atoms.push_back(merge_p2p(atom, merge_context).first);
     for (const auto atom : fluent_atoms)
         fdr_task.fluent_atoms.push_back(merge_p2p(atom, merge_context).first);
@@ -207,9 +207,9 @@ static auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
     for (const auto fterm : fluent_fterms)
         fdr_task.fluent_fterms.push_back(merge_p2p(fterm, merge_context).first);
 
-    for (const auto fterm_value : task.get_fterm_values<StaticTag>())
+    for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
         fdr_task.static_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first);
-    for (const auto fterm_value : task.get_fterm_values<FluentTag>())
+    for (const auto fterm_value : task.get_fterm_values<f::FluentTag>())
         fdr_task.fluent_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first);
     if (task.get_auxiliary_fterm_value().has_value())
         fdr_task.auxiliary_fterm_value = merge_p2p(task.get_auxiliary_fterm_value().value(), merge_context).first;
@@ -220,14 +220,14 @@ static auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
 
     /// --- Create FDR context
     auto mutex_groups = create_mutex_groups(fluent_atoms, merge_context);
-    auto fdr_context = GeneralFDRContext<OverlayRepository<Repository>>(mutex_groups, repository);
+    auto fdr_context = fp::GeneralFDRContext<f::OverlayRepository<fp::Repository>>(mutex_groups, repository);
 
     /// --- Create FDR variables
     for (const auto variable : fdr_context.get_variables())
         fdr_task.fluent_variables.push_back(variable.get_index());
 
     /// --- Create FDR fluent facts
-    for (const auto atom : task.get_atoms<FluentTag>())
+    for (const auto atom : task.get_atoms<f::FluentTag>())
         fdr_task.fluent_facts.push_back(fdr_context.get_fact(merge_p2p(atom, merge_context).first));
 
     /// --- Create FDR goal
@@ -245,15 +245,15 @@ static auto create_task(View<Index<Task>, OverlayRepository<Repository>> task,
 }
 
 static auto create_fdr_task(DomainPtr domain,
-                            View<Index<Task>, OverlayRepository<Repository>> task,
-                            IndexList<GroundAtom<FluentTag>> fluent_atoms,
-                            IndexList<GroundAtom<DerivedTag>> derived_atoms,
-                            IndexList<GroundFunctionTerm<FluentTag>> fluent_fterms,
-                            IndexList<GroundAction> actions,
-                            IndexList<GroundAxiom> axioms)
+                            View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                            IndexList<fp::GroundAtom<f::FluentTag>> fluent_atoms,
+                            IndexList<fp::GroundAtom<f::DerivedTag>> derived_atoms,
+                            IndexList<fp::GroundFunctionTerm<f::FluentTag>> fluent_fterms,
+                            IndexList<fp::GroundAction> actions,
+                            IndexList<fp::GroundAxiom> axioms)
 {
-    auto repository = std::make_shared<Repository>();
-    auto overlay_repository = std::make_shared<OverlayRepository<Repository>>(*domain->get_repository(), *repository);
+    auto repository = std::make_shared<fp::Repository>();
+    auto overlay_repository = std::make_shared<f::OverlayRepository<fp::Repository>>(*domain->get_repository(), *repository);
 
     const auto [fdr_task, fdr_context] = create_task(task,
                                                      make_view(fluent_atoms, task.get_context()),
@@ -270,15 +270,15 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 {
     auto ground_program = GroundTaskProgram(lifted_task.get_task());
 
-    auto ground_context = ProgramExecutionContext(ground_program.get_program(),
-                                                  ground_program.get_repository(),
-                                                  ground_program.get_domains(),
-                                                  ground_program.get_strata(),
-                                                  ground_program.get_listeners());
+    auto ground_context = d::ProgramExecutionContext(ground_program.get_program(),
+                                                     ground_program.get_repository(),
+                                                     ground_program.get_domains(),
+                                                     ground_program.get_strata(),
+                                                     ground_program.get_listeners());
 
     datalog::solve_bottom_up(ground_context);
 
-    auto aggregated_statistics = RuleExecutionContext::compute_aggregate_statistics(ground_context.rule_execution_contexts);
+    auto aggregated_statistics = d::RuleExecutionContext::compute_aggregate_statistics(ground_context.rule_execution_contexts);
 
     auto to_ms = [](auto d) { return std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(d).count(); };
 
@@ -297,34 +297,34 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
     ground_context.program_to_task_execution_context.clear();
 
-    auto fluent_assign = UnorderedMap<Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::FDRValue> {};
-    auto derived_assign = UnorderedMap<Index<formalism::planning::GroundAtom<formalism::DerivedTag>>, bool> {};
-    auto iter_workspace = itertools::cartesian_set::Workspace<Index<formalism::Object>> {};
+    auto fluent_assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
+    auto derived_assign = UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, bool> {};
+    auto iter_workspace = itertools::cartesian_set::Workspace<Index<f::Object>> {};
 
     /// --- Ground Atoms
 
-    auto fluent_atoms_set = UnorderedSet<Index<GroundAtom<FluentTag>>>();
-    auto derived_atoms_set = UnorderedSet<Index<GroundAtom<DerivedTag>>>();
-    auto fluent_fterms_set = UnorderedSet<Index<GroundFunctionTerm<FluentTag>>>();
+    auto fluent_atoms_set = UnorderedSet<Index<fp::GroundAtom<f::FluentTag>>>();
+    auto derived_atoms_set = UnorderedSet<Index<fp::GroundAtom<f::DerivedTag>>>();
+    auto fluent_fterms_set = UnorderedSet<Index<fp::GroundFunctionTerm<f::FluentTag>>>();
     // TODO: collect fluent function terms
 
-    for (const auto atom : lifted_task.get_task().get_atoms<FluentTag>())
+    for (const auto atom : lifted_task.get_task().get_atoms<f::FluentTag>())
         fluent_atoms_set.insert(atom.get_index());
 
     // Collect the goal facts
-    for (const auto fact : lifted_task.get_task().get_goal().get_facts<FluentTag>())
+    for (const auto fact : lifted_task.get_task().get_goal().get_facts<f::FluentTag>())
         for (const auto atom : fact.get_variable().get_atoms())
             fluent_atoms_set.insert(atom.get_index());
 
-    for (const auto literal : lifted_task.get_task().get_goal().get_facts<DerivedTag>())
+    for (const auto literal : lifted_task.get_task().get_goal().get_facts<f::DerivedTag>())
         derived_atoms_set.insert(literal.get_atom().get_index());
 
     /// --- Ground Actions
 
-    auto ground_actions_set = UnorderedSet<Index<GroundAction>> {};
+    auto ground_actions_set = UnorderedSet<Index<fp::GroundAction>> {};
 
     auto static_atoms_bitset = boost::dynamic_bitset<>();
-    for (const auto atom : lifted_task.get_task().get_atoms<StaticTag>())
+    for (const auto atom : lifted_task.get_task().get_atoms<f::StaticTag>())
         set(uint_t(atom.get_index()), true, static_atoms_bitset);
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_actions_mapping, then facts of the predicate
@@ -333,8 +333,9 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
         if (ground_program.get_predicate_to_actions_mapping().contains(fact.get_predicate().get_index()))
         {
             ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
-            auto grounder_context =
-                GrounderContext { ground_context.planning_builder, *lifted_task.get_repository(), ground_context.program_to_task_execution_context.binding };
+            auto grounder_context = fp::GrounderContext { ground_context.planning_builder,
+                                                          *lifted_task.get_repository(),
+                                                          ground_context.program_to_task_execution_context.binding };
 
             for (const auto action_index : ground_program.get_predicate_to_actions_mapping().at(fact.get_predicate().get_index()))
             {
@@ -354,20 +355,20 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
                 {
                     ground_actions_set.insert(ground_action.get_index());
 
-                    for (const auto fact : ground_action.get_condition().get_facts<FluentTag>())
+                    for (const auto fact : ground_action.get_condition().get_facts<f::FluentTag>())
                         for (const auto atom : fact.get_variable().get_atoms())
                             fluent_atoms_set.insert(atom.get_index());
 
-                    for (const auto literal : ground_action.get_condition().get_facts<DerivedTag>())
+                    for (const auto literal : ground_action.get_condition().get_facts<f::DerivedTag>())
                         derived_atoms_set.insert(literal.get_atom().get_index());
 
                     for (const auto cond_effect : ground_action.get_effects())
                     {
-                        for (const auto fact : cond_effect.get_condition().get_facts<FluentTag>())
+                        for (const auto fact : cond_effect.get_condition().get_facts<f::FluentTag>())
                             for (const auto atom : fact.get_variable().get_atoms())
                                 fluent_atoms_set.insert(atom.get_index());
 
-                        for (const auto literal : cond_effect.get_condition().get_facts<DerivedTag>())
+                        for (const auto literal : cond_effect.get_condition().get_facts<f::DerivedTag>())
                             derived_atoms_set.insert(literal.get_atom().get_index());
 
                         for (const auto fact : cond_effect.get_effect().get_facts())
@@ -381,7 +382,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
     /// --- Ground Axioms
 
-    auto ground_axioms_set = UnorderedSet<Index<GroundAxiom>> {};
+    auto ground_axioms_set = UnorderedSet<Index<fp::GroundAxiom>> {};
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_axioms_mapping, then facts of the predicate
     for (const auto fact : ground_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_facts())
@@ -389,8 +390,9 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
         if (ground_program.get_predicate_to_axioms_mapping().contains(fact.get_predicate().get_index()))
         {
             ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
-            auto grounder_context =
-                GrounderContext { ground_context.planning_builder, *lifted_task.get_repository(), ground_context.program_to_task_execution_context.binding };
+            auto grounder_context = fp::GrounderContext { ground_context.planning_builder,
+                                                          *lifted_task.get_repository(),
+                                                          ground_context.program_to_task_execution_context.binding };
 
             for (const auto axiom_index : ground_program.get_predicate_to_axioms_mapping().at(fact.get_predicate().get_index()))
             {
@@ -404,11 +406,11 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
                 {
                     ground_axioms_set.insert(ground_axiom.get_index());
 
-                    for (const auto fact : ground_axiom.get_body().get_facts<FluentTag>())
+                    for (const auto fact : ground_axiom.get_body().get_facts<f::FluentTag>())
                         for (const auto atom : fact.get_variable().get_atoms())
                             fluent_atoms_set.insert(atom.get_index());
 
-                    for (const auto literal : ground_axiom.get_body().get_facts<DerivedTag>())
+                    for (const auto literal : ground_axiom.get_body().get_facts<f::DerivedTag>())
                         derived_atoms_set.insert(literal.get_atom().get_index());
 
                     derived_atoms_set.insert(ground_axiom.get_head().get_index());
@@ -417,11 +419,11 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
         }
     }
 
-    auto fluent_atoms = IndexList<GroundAtom<FluentTag>>(fluent_atoms_set.begin(), fluent_atoms_set.end());
-    auto derived_atoms = IndexList<GroundAtom<DerivedTag>>(derived_atoms_set.begin(), derived_atoms_set.end());
-    auto fluent_fterms = IndexList<GroundFunctionTerm<FluentTag>>(fluent_fterms_set.begin(), fluent_fterms_set.end());
-    auto ground_actions = IndexList<GroundAction>(ground_actions_set.begin(), ground_actions_set.end());
-    auto ground_axioms = IndexList<GroundAxiom>(ground_axioms_set.begin(), ground_axioms_set.end());
+    auto fluent_atoms = IndexList<fp::GroundAtom<f::FluentTag>>(fluent_atoms_set.begin(), fluent_atoms_set.end());
+    auto derived_atoms = IndexList<fp::GroundAtom<f::DerivedTag>>(derived_atoms_set.begin(), derived_atoms_set.end());
+    auto fluent_fterms = IndexList<fp::GroundFunctionTerm<f::FluentTag>>(fluent_fterms_set.begin(), fluent_fterms_set.end());
+    auto ground_actions = IndexList<fp::GroundAction>(ground_actions_set.begin(), ground_actions_set.end());
+    auto ground_axioms = IndexList<fp::GroundAxiom>(ground_axioms_set.begin(), ground_axioms_set.end());
 
     canonicalize(fluent_atoms);
     canonicalize(derived_atoms);

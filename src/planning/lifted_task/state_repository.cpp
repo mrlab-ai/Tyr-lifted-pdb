@@ -32,7 +32,7 @@
 #include <utility>         // for move
 #include <valla/slot.hpp>  // for Slot
 
-using namespace tyr::formalism;
+namespace f = tyr::formalism;
 
 namespace tyr::planning
 {
@@ -52,10 +52,10 @@ State<LiftedTask> StateRepository<LiftedTask>::get_initial_state()
 {
     auto unpacked_state = get_unregistered_state();
 
-    for (const auto atom : m_task->get_task().get_atoms<FluentTag>())
+    for (const auto atom : m_task->get_task().get_atoms<f::FluentTag>())
         unpacked_state->set(m_task->get_fdr_context()->get_fact(atom.get_index()));
 
-    for (const auto fterm_value : m_task->get_task().get_fterm_values<FluentTag>())
+    for (const auto fterm_value : m_task->get_task().get_fterm_values<f::FluentTag>())
         unpacked_state->set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
 
     return register_state(unpacked_state);
@@ -68,14 +68,8 @@ State<LiftedTask> StateRepository<LiftedTask>::get_registered_state(StateIndex s
     auto unpacked_state = get_unregistered_state();
 
     unpacked_state->get_index() = state_index;
-    fill_atoms(packed_state.template get_atoms<formalism::FluentTag>(),
-               m_uint_nodes,
-               m_nodes_buffer,
-               unpacked_state->template get_atoms<formalism::FluentTag>());
-    fill_atoms(packed_state.template get_atoms<formalism::DerivedTag>(),
-               m_uint_nodes,
-               m_nodes_buffer,
-               unpacked_state->template get_atoms<formalism::DerivedTag>());
+    fill_atoms(packed_state.template get_atoms<f::FluentTag>(), m_uint_nodes, m_nodes_buffer, unpacked_state->template get_atoms<f::FluentTag>());
+    fill_atoms(packed_state.template get_atoms<f::DerivedTag>(), m_uint_nodes, m_nodes_buffer, unpacked_state->template get_atoms<f::DerivedTag>());
     fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, m_nodes_buffer, unpacked_state->get_numeric_variables());
 
     return State<LiftedTask>(*m_task, std::move(unpacked_state));

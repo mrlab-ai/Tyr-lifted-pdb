@@ -27,9 +27,6 @@
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
-
 namespace tyr::planning
 {
 

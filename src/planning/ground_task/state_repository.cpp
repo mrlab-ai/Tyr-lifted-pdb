@@ -35,13 +35,13 @@
 #include <utility>                   // for move
 #include <valla/slot.hpp>            // for Slot
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::planning;
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
 
-static auto create_fluent_layout(View<Index<FDRTask>, OverlayRepository<Repository>> fdr_task)
+static auto create_fluent_layout(View<Index<fp::FDRTask>, f::OverlayRepository<fp::Repository>> fdr_task)
 {
     auto ranges = std::vector<uint_t> {};
     for (const auto variable : fdr_task.get_fluent_variables())
@@ -54,13 +54,13 @@ static auto create_fluent_layout(View<Index<FDRTask>, OverlayRepository<Reposito
     return create_bit_packed_array_layout(ranges);
 }
 
-static auto create_derived_layout(View<Index<FDRTask>, OverlayRepository<Repository>> fdr_task)
+static auto create_derived_layout(View<Index<fp::FDRTask>, f::OverlayRepository<fp::Repository>> fdr_task)
 {
     // Ensure derived atom indices are dense, i.e., 0,1,2,...
-    for (uint_t i = 0; i < fdr_task.get_atoms<DerivedTag>().size(); ++i)
-        assert(i == uint_t(fdr_task.get_atoms<DerivedTag>()[i].get_index()));
+    for (uint_t i = 0; i < fdr_task.get_atoms<f::DerivedTag>().size(); ++i)
+        assert(i == uint_t(fdr_task.get_atoms<f::DerivedTag>()[i].get_index()));
 
-    return create_bitset_layout<uint_t>(fdr_task.get_atoms<DerivedTag>().size());
+    return create_bitset_layout<uint_t>(fdr_task.get_atoms<f::DerivedTag>().size());
 }
 
 StateRepository<GroundTask>::StateRepository(std::shared_ptr<GroundTask> task) :
@@ -87,7 +87,7 @@ State<GroundTask> StateRepository<GroundTask>::get_initial_state()
     for (const auto fact : m_task->get_task().get_fluent_facts())
         unpacked_state->set(fact.get_data());
 
-    for (const auto fterm_value : m_task->get_task().get_fterm_values<FluentTag>())
+    for (const auto fterm_value : m_task->get_task().get_fterm_values<f::FluentTag>())
         unpacked_state->set(fterm_value.get_fterm().get_index(), fterm_value.get_value());
 
     return register_state(unpacked_state);
@@ -100,12 +100,12 @@ State<GroundTask> StateRepository<GroundTask>::get_registered_state(StateIndex s
     auto unpacked_state = get_unregistered_state();
 
     unpacked_state->get_index() = state_index;
-    const auto fluent_ptr = m_fluent_repository[packed_state.get_facts<FluentTag>()];
+    const auto fluent_ptr = m_fluent_repository[packed_state.get_facts<f::FluentTag>()];
     auto& fluent_values = unpacked_state->get_fluent_values();
     for (uint_t i = 0; i < m_fluent_layout.layouts.size(); ++i)
-        fluent_values[i] = FDRValue { uint_t(BitPackedElementReference(m_fluent_layout.layouts[i], fluent_ptr)) };
+        fluent_values[i] = fp::FDRValue { uint_t(BitPackedElementReference(m_fluent_layout.layouts[i], fluent_ptr)) };
 
-    const auto derived_ptr = m_derived_repository[packed_state.get_facts<DerivedTag>()];
+    const auto derived_ptr = m_derived_repository[packed_state.get_facts<f::DerivedTag>()];
     auto& derived_atoms = unpacked_state->get_derived_atoms();
     for (uint_t i = 0; i < m_derived_layout.total_bits; ++i)
         derived_atoms[i] = bool(BitReference(i, derived_ptr));
@@ -121,7 +121,7 @@ SharedObjectPoolPtr<UnpackedState<GroundTask>> StateRepository<GroundTask>::get_
     state->clear();
 
     state->resize_fluent_facts(m_task->get_task().get_fluent_variables().size());
-    state->resize_derived_atoms(m_task->get_task().get_atoms<DerivedTag>().size());
+    state->resize_derived_atoms(m_task->get_task().get_atoms<f::DerivedTag>().size());
 
     return state;
 }

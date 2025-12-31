@@ -25,8 +25,10 @@
 #include <tyr/datalog/datalog.hpp>
 #include <tyr/formalism/formalism.hpp>
 
-using namespace tyr::buffer;
-using namespace tyr::formalism;
+namespace a = tyr::analysis;
+namespace b = tyr::buffer;
+namespace d = tyr::datalog;
+namespace f = tyr::formalism;
 
 namespace tyr::tests
 {
@@ -41,15 +43,15 @@ TEST(TyrTests, TyrDatalogGenerator)
      * Analysis 1
      */
 
-    auto domains = analysis::compute_variable_domains(program);
-    auto strata = analysis::compute_rule_stratification(program);
-    auto listeners = analysis::compute_listeners(strata, program.get_context());
+    auto domains = a::compute_variable_domains(program);
+    auto strata = a::compute_rule_stratification(program);
+    auto listeners = a::compute_listeners(strata, program.get_context());
 
     /**
      * Allocation 1: Execution contexts
      */
 
-    auto program_execution_context = datalog::ProgramExecutionContext(program, repository, domains, strata, listeners);
+    auto program_execution_context = d::ProgramExecutionContext(program, repository, domains, strata, listeners);
 
     /**
      * Parallelization 1: Lock-free rule grounding
@@ -67,7 +69,7 @@ TEST(TyrTests, TyrDatalogGenerator)
                           auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();  // thread-local
                           thread_execution_context.clear();
 
-                          datalog::ground(facts_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
+                          d::ground(facts_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
                       });
 }
 }

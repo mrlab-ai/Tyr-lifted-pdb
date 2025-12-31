@@ -20,8 +20,7 @@
 #include <gtest/gtest.h>
 #include <tyr/tyr.hpp>
 
-using namespace tyr::buffer;
-using namespace tyr::formalism;
+namespace a = tyr::analysis;
 
 namespace tyr::tests
 {
@@ -30,7 +29,7 @@ TEST(TyrTests, TyrAnalysisDomains)
 {
     auto [program, repository] = create_example_problem();
 
-    auto domains = analysis::compute_variable_domains(program);
+    auto domains = a::compute_variable_domains(program);
 
     std::cout << "Static predicate domains: " << "\n" << to_string(domains.static_predicate_domains) << std::endl;
     std::cout << "Fluent predicate domains: " << "\n" << to_string(domains.fluent_predicate_domains) << std::endl;

@@ -22,8 +22,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <limits>
 
-using namespace tyr::formalism;
-using namespace tyr::formalism::datalog;
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::datalog
 {
@@ -32,21 +32,21 @@ namespace tyr::datalog
  * PredicateFactSet
  */
 
-template<FactKind T>
-PredicateFactSet<T>::PredicateFactSet(View<IndexList<GroundAtom<T>>, Repository> view) : m_context(view.get_context()), m_indices()
+template<f::FactKind T>
+PredicateFactSet<T>::PredicateFactSet(View<IndexList<fd::GroundAtom<T>>, fd::Repository> view) : m_context(view.get_context()), m_indices()
 {
     insert(view);
 }
 
-template<FactKind T>
+template<f::FactKind T>
 void PredicateFactSet<T>::reset()
 {
     m_indices.clear();
     m_bitset.reset();
 }
 
-template<FactKind T>
-void PredicateFactSet<T>::insert(View<Index<GroundAtom<T>>, Repository> view)
+template<f::FactKind T>
+void PredicateFactSet<T>::insert(View<Index<fd::GroundAtom<T>>, fd::Repository> view)
 {
     if (&m_context != &view.get_context())
         throw std::runtime_error("Incompatible contexts.");
@@ -62,53 +62,56 @@ void PredicateFactSet<T>::insert(View<Index<GroundAtom<T>>, Repository> view)
     m_bitset.set(index.get_value());
 }
 
-template<FactKind T>
-void PredicateFactSet<T>::insert(View<IndexList<GroundAtom<T>>, Repository> view)
+template<f::FactKind T>
+void PredicateFactSet<T>::insert(View<IndexList<fd::GroundAtom<T>>, fd::Repository> view)
 {
     for (const auto atom : view)
         insert(atom);
 }
 
-template<FactKind T>
-bool PredicateFactSet<T>::contains(Index<GroundAtom<T>> index) const noexcept
+template<f::FactKind T>
+bool PredicateFactSet<T>::contains(Index<fd::GroundAtom<T>> index) const noexcept
 {
     if (index.get_value() >= m_bitset.size())
         return false;
     return m_bitset.test(index.get_value());
 }
 
-template<FactKind T>
-bool PredicateFactSet<T>::contains(View<Index<GroundAtom<T>>, Repository> view) const noexcept
+template<f::FactKind T>
+bool PredicateFactSet<T>::contains(View<Index<fd::GroundAtom<T>>, fd::Repository> view) const noexcept
 {
     return contains(view.get_index());
 }
 
-template<FactKind T>
-View<IndexList<GroundAtom<T>>, Repository> PredicateFactSet<T>::get_facts() const noexcept
+template<f::FactKind T>
+View<IndexList<fd::GroundAtom<T>>, fd::Repository> PredicateFactSet<T>::get_facts() const noexcept
 {
     return make_view(m_indices, m_context);
 }
 
-template<FactKind T>
+template<f::FactKind T>
 const boost::dynamic_bitset<>& PredicateFactSet<T>::get_bitset() const noexcept
 {
     return m_bitset;
 }
 
-template class PredicateFactSet<StaticTag>;
-template class PredicateFactSet<FluentTag>;
+template class PredicateFactSet<f::StaticTag>;
+template class PredicateFactSet<f::FluentTag>;
 
 /**
  * FunctionFactSet
  */
 
-template<FactKind T>
-FunctionFactSet<T>::FunctionFactSet(View<IndexList<GroundFunctionTermValue<T>>, Repository> view) : m_context(view.get_context()), m_indices(), m_unique()
+template<f::FactKind T>
+FunctionFactSet<T>::FunctionFactSet(View<IndexList<fd::GroundFunctionTermValue<T>>, fd::Repository> view) :
+    m_context(view.get_context()),
+    m_indices(),
+    m_unique()
 {
     insert(view);
 }
 
-template<FactKind T>
+template<f::FactKind T>
 void FunctionFactSet<T>::reset()
 {
     m_indices.clear();
@@ -116,8 +119,8 @@ void FunctionFactSet<T>::reset()
     std::fill(m_values.begin(), m_values.end(), std::numeric_limits<float_t>::quiet_NaN());
 }
 
-template<FactKind T>
-void FunctionFactSet<T>::insert(View<Index<GroundFunctionTerm<T>>, Repository> function_term, float_t value)
+template<f::FactKind T>
+void FunctionFactSet<T>::insert(View<Index<fd::GroundFunctionTerm<T>>, fd::Repository> function_term, float_t value)
 {
     const auto fterm_index = function_term.get_index();
 
@@ -131,8 +134,8 @@ void FunctionFactSet<T>::insert(View<Index<GroundFunctionTerm<T>>, Repository> f
     m_values[fterm_index.get_value()] = value;
 }
 
-template<FactKind T>
-void FunctionFactSet<T>::insert(View<IndexList<GroundFunctionTerm<T>>, Repository> function_terms, const std::vector<float_t>& values)
+template<f::FactKind T>
+void FunctionFactSet<T>::insert(View<IndexList<fd::GroundFunctionTerm<T>>, fd::Repository> function_terms, const std::vector<float_t>& values)
 {
     assert(function_terms.size() == values.size());
 
@@ -140,64 +143,64 @@ void FunctionFactSet<T>::insert(View<IndexList<GroundFunctionTerm<T>>, Repositor
         insert(function_terms[i], values[i]);
 }
 
-template<FactKind T>
-void FunctionFactSet<T>::insert(View<Index<GroundFunctionTermValue<T>>, Repository> view)
+template<f::FactKind T>
+void FunctionFactSet<T>::insert(View<Index<fd::GroundFunctionTermValue<T>>, fd::Repository> view)
 {
     insert(view.get_fterm(), view.get_value());
 }
 
-template<FactKind T>
-void FunctionFactSet<T>::insert(View<IndexList<GroundFunctionTermValue<T>>, Repository> view)
+template<f::FactKind T>
+void FunctionFactSet<T>::insert(View<IndexList<fd::GroundFunctionTermValue<T>>, fd::Repository> view)
 {
     for (const auto fterm_value : view)
         insert(fterm_value);
 }
 
-template<FactKind T>
-bool FunctionFactSet<T>::contains(Index<GroundFunctionTerm<T>> index) const noexcept
+template<f::FactKind T>
+bool FunctionFactSet<T>::contains(Index<fd::GroundFunctionTerm<T>> index) const noexcept
 {
     return m_unique.contains(index);
 }
 
-template<FactKind T>
-bool FunctionFactSet<T>::contains(View<Index<GroundFunctionTerm<T>>, Repository> view) const noexcept
+template<f::FactKind T>
+bool FunctionFactSet<T>::contains(View<Index<fd::GroundFunctionTerm<T>>, fd::Repository> view) const noexcept
 {
     return contains(view.get_index());
 }
 
-template<FactKind T>
-float_t FunctionFactSet<T>::operator[](Index<GroundFunctionTerm<T>> index) const noexcept
+template<f::FactKind T>
+float_t FunctionFactSet<T>::operator[](Index<fd::GroundFunctionTerm<T>> index) const noexcept
 {
     return m_values[index.get_value()];
 }
 
-template<FactKind T>
-View<IndexList<GroundFunctionTerm<T>>, Repository> FunctionFactSet<T>::get_fterms() const noexcept
+template<f::FactKind T>
+View<IndexList<fd::GroundFunctionTerm<T>>, fd::Repository> FunctionFactSet<T>::get_fterms() const noexcept
 {
     return make_view(m_indices, m_context);
 }
 
-template<FactKind T>
+template<f::FactKind T>
 const std::vector<float_t>& FunctionFactSet<T>::get_values() const noexcept
 {
     return m_values;
 }
 
-template class FunctionFactSet<StaticTag>;
-template class FunctionFactSet<FluentTag>;
+template class FunctionFactSet<f::StaticTag>;
+template class FunctionFactSet<f::FluentTag>;
 
 /**
  * FactSets
  */
 
-FactSets::FactSets(View<Index<Program>, Repository> program) :
-    static_sets(program.template get_atoms<StaticTag>(), program.template get_fterm_values<StaticTag>()),
-    fluent_sets(program.template get_atoms<FluentTag>(), program.template get_fterm_values<FluentTag>())
+FactSets::FactSets(View<Index<fd::Program>, fd::Repository> program) :
+    static_sets(program.template get_atoms<f::StaticTag>(), program.template get_fterm_values<f::StaticTag>()),
+    fluent_sets(program.template get_atoms<f::FluentTag>(), program.template get_fterm_values<f::FluentTag>())
 {
 }
 
-FactSets::FactSets(View<Index<Program>, Repository> program, TaggedFactSets<FluentTag> fluent_facts) :
-    static_sets(program.template get_atoms<StaticTag>(), program.template get_fterm_values<StaticTag>()),
+FactSets::FactSets(View<Index<fd::Program>, fd::Repository> program, TaggedFactSets<f::FluentTag> fluent_facts) :
+    static_sets(program.template get_atoms<f::StaticTag>(), program.template get_fterm_values<f::StaticTag>()),
     fluent_sets(std::move(fluent_facts))
 {
 }
