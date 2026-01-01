@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_OVERLAY_REPOSITORY_HPP_
 
 #include "tyr/buffer/declarations.hpp"
+#include "tyr/common/index_mixins.hpp"
 #include "tyr/common/types.hpp"
 
 namespace tyr::formalism
@@ -46,6 +47,7 @@ public:
     }
 
     template<typename T, bool AssignIndex = true>
+        requires(IndexConcept<Index<T>> && !GroupIndexConcept<Index<T>>)
     std::pair<Index<T>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
         if (auto ptr = parent_scope.find(builder))
@@ -57,15 +59,29 @@ public:
         return std::make_pair(local_scope.template get_or_create<T, false>(builder, buf).first, true);
     }
 
+    template<typename T, bool AssignIndex = true>
+        requires(GroupIndexConcept<Index<T>>)
+    std::pair<Index<T>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
+    {
+        if (auto ptr = parent_scope.find(builder))
+            return std::make_pair(*ptr, false);
+
+        // Manually assign index to continue indexing.
+        builder.index.index.value = parent_scope.template size<T>(builder.index.group) + local_scope.template size<T>(builder.index.group);
+
+        return std::make_pair(local_scope.template get_or_create<T, false>(builder, buf).first, true);
+    }
+
     template<typename T>
+        requires(IndexConcept<Index<T>> && !GroupIndexConcept<Index<T>>)
     const Data<T>& operator[](Index<T> index) const noexcept
     {
         assert(index != Index<T>::max() && "Unassigned index.");
 
-        const auto parent_scope_size = parent_scope.template size<T>();
-
         // Guard against accidental overlap from incorrect merging.
-        assert(local_scope.template size<T>() == 0 || local_scope.template front<T>().index.get_value() >= parent_scope.template size<T>());
+        assert(local_scope.template size<T>() == 0 || local_scope.template front<T>().index.value >= parent_scope.template size<T>());
+
+        const auto parent_scope_size = parent_scope.template size<T>();
 
         if (index.value < parent_scope_size)
             return parent_scope[index];
@@ -76,9 +92,35 @@ public:
     }
 
     template<typename T>
+        requires(GroupIndexConcept<Index<T>>)
+    const Data<T>& operator[](Index<T> index) const noexcept
+    {
+        assert(index != Index<T>::max() && "Unassigned index.");
+
+        // Guard against accidental overlap from incorrect merging.
+        assert(local_scope.template size<T>(index.get_group()) == 0
+               || local_scope.template front<T>(index.get_group()).index.get_index().value >= parent_scope.template size<T>(index.get_group()));
+
+        const auto parent_scope_size = parent_scope.template size<T>(index.get_group());
+
+        if (index.index.value < parent_scope_size)
+            return parent_scope[index];
+
+        // Subtract parent_scope size to get position in local_scope storage
+        index.index.value -= parent_scope_size;
+        return local_scope[index];
+    }
+
+    template<typename T>
     size_t size() const noexcept
     {
         return parent_scope.template size<T>() + local_scope.template size<T>();
+    }
+
+    template<typename T>
+    size_t size(Index<T> group) const noexcept
+    {
+        return parent_scope.template size<T>(group) + local_scope.template size<T>(group);
     }
 
     const C& get_parent_scope() const noexcept { return parent_scope; }

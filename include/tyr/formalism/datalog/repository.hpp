@@ -40,10 +40,24 @@ class Repository
 {
 private:
     template<typename T>
-    struct RepositoryEntry
+    struct RepositoryEntry;
+
+    template<typename T>
+        requires(IndexConcept<Index<T>> && !GroupIndexConcept<Index<T>>)
+    struct RepositoryEntry<T>
     {
         using value_type = T;
         using container_type = buffer::IndexedHashSet<T>;
+
+        container_type container;
+    };
+
+    template<typename T>
+        requires(GroupIndexConcept<Index<T>>)
+    struct RepositoryEntry<T>
+    {
+        using value_type = T;
+        using container_type = std::vector<buffer::IndexedHashSet<T>>;
 
         container_type container;
     };
@@ -107,31 +121,66 @@ public:
     Repository() = default;
 
     template<typename T>
+        requires(IndexConcept<Index<T>> && !GroupIndexConcept<Index<T>>)
     std::optional<Index<T>> find(const Data<T>& builder) const noexcept
     {
-        const auto& indexed_hash_set = get_container<T>(m_repository);
+        const auto& repository = get_container<T>(m_repository);
 
-        if (const auto ptr = indexed_hash_set.find(builder))
+        if (const auto ptr = repository.find(builder))
+            return ptr->index;
+
+        return std::nullopt;
+    }
+
+    template<typename T>
+        requires(GroupIndexConcept<Index<T>>)
+    std::optional<Index<T>> find(const Data<T>& builder) const noexcept
+    {
+        const auto& repositories = get_container<T>(m_repository);
+
+        if (builder.index.group.value >= repositories.size())
+            return std::nullopt;
+
+        if (const auto ptr = repositories[builder.index.group.value].find(builder))
             return ptr->index;
 
         return std::nullopt;
     }
 
     template<typename T, bool AssignIndex = true>
+        requires(IndexConcept<Index<T>> && !GroupIndexConcept<Index<T>>)
     std::pair<Index<T>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
-        auto& indexed_hash_set = get_container<T>(m_repository);
+        auto& repository = get_container<T>(m_repository);
 
         if constexpr (AssignIndex)
-            builder.index.value = indexed_hash_set.size();
+            builder.index.value = repository.size();
 
-        const auto [ptr, success] = indexed_hash_set.insert(builder, buf);
+        const auto [ptr, success] = repository.insert(builder, buf);
+
+        return std::make_pair(ptr->index, success);
+    }
+
+    template<typename T, bool AssignIndex = true>
+        requires(GroupIndexConcept<Index<T>>)
+    std::pair<Index<T>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
+    {
+        auto& repositories = get_container<T>(m_repository);
+
+        if (builder.index.group.value >= repositories.size())
+            repositories.resize(builder.index.group.value + 1);
+
+        if constexpr (AssignIndex)
+            builder.index.index.value = repositories[builder.index.group.value].size();
+
+        const auto [ptr, success] = repositories[builder.index.group.value].insert(builder, buf);
 
         return std::make_pair(ptr->index, success);
     }
 
     /// @brief Access the element with the given index.
     template<typename T>
+        requires(IndexConcept<Index<T>> && !GroupIndexConcept<Index<T>>)
     const Data<T>& operator[](Index<T> index) const noexcept
     {
         assert(index != Index<T>::max() && "Unassigned index.");
@@ -142,11 +191,32 @@ public:
     }
 
     template<typename T>
+        requires(GroupIndexConcept<Index<T>>)
+    const Data<T>& operator[](Index<T> index) const noexcept
+    {
+        assert(index != Index<T>::max() && "Unassigned index.");
+
+        const auto& repositories = get_container<T>(m_repository);
+
+        return repositories[index.group.value][index.get_index()];
+    }
+
+    template<typename T>
     const Data<T>& front() const
     {
         const auto& repository = get_container<T>(m_repository);
 
         return repository.front();
+    }
+
+    template<typename T>
+    const Data<T>& front(Index<T> group) const
+    {
+        const auto& repositories = get_container<T>(m_repository);
+
+        assert(size(group) > 0);
+
+        return repositories[group.value].front();
     }
 
     /// @brief Get the number of stored elements.
@@ -156,6 +226,17 @@ public:
         const auto& repository = get_container<T>(m_repository);
 
         return repository.size();
+    }
+
+    template<typename T>
+    size_t size(Index<T> group) const noexcept
+    {
+        const auto& repositories = get_container<T>(m_repository);
+
+        if (group.value >= repositories.size())
+            return 0;
+
+        return repositories[group.value].size();
     }
 
     /// @brief Clear the repository but keep memory allocated.

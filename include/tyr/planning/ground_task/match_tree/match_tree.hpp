@@ -188,7 +188,7 @@ struct GeneratorStackEntry
     {
         result.elements.insert(result.elements.end(), base.elements.begin(), base.elements.end());
 
-        std::cout << "Num elements in generator node: " << result.elements.size() << std::endl;
+        // std::cout << "Num elements in generator node: " << result.elements.size() << std::endl;
     }
 };
 
@@ -552,7 +552,7 @@ public:
         auto occurences = PreconditionOccurences<Tag> {};
         auto details = PreconditionDetails<Tag> {};
 
-        std::cout << "Num elements: " << m_elements.size() << std::endl;
+        // std::cout << "Num elements: " << m_elements.size() << std::endl;
 
         for (const auto element : m_elements)
         {
@@ -651,7 +651,7 @@ public:
             }
         }
 
-        std::cout << "Num nodes: " << num_nodes << std::endl;
+        // std::cout << "Num nodes: " << num_nodes << std::endl;
     }
 
     template<formalism::planning::Context C>
