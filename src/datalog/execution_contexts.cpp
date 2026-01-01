@@ -84,7 +84,15 @@ template void FactsExecutionContext::insert(View<IndexList<fd::GroundFunctionTer
  * RuleStageExecutionContext
  */
 
-RuleStageExecutionContext::RuleStageExecutionContext() : repository(std::make_shared<fd::Repository>()), binding(), ground_heads(), merge_cache() {}
+RuleStageExecutionContext::RuleStageExecutionContext(View<Index<fd::Program>, fd::Repository> program) :
+    repository(std::make_shared<fd::Repository>()),
+    binding(),
+    ground_heads(),
+    merge_cache()
+{
+    repository->notify_num_predicates<f::FluentTag>(program.get_predicates<f::FluentTag>().size());
+    repository->notify_num_functions<f::FluentTag>(program.get_functions<f::FluentTag>().size());
+}
 
 void RuleStageExecutionContext::clear() noexcept
 {
@@ -94,50 +102,11 @@ void RuleStageExecutionContext::clear() noexcept
 }
 
 /**
- * StaticRuleExecutionContext
- */
-
-StaticRuleExecutionContext StaticRuleExecutionContext::create(View<Index<fd::Rule>, fd::Repository> rule,
-                                                              fd::Repository& repository,
-                                                              const analysis::DomainListList& parameter_domains,
-                                                              const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets)
-{
-    auto builder = fd::Builder();
-
-    auto nullary_condition = make_view(create_ground_nullary_condition(rule.get_body(), builder, repository).first, repository);
-
-    auto unary_overapproximation_condition =
-        make_view(create_overapproximation_conjunctive_condition(1, rule.get_body(), builder, repository).first, repository);
-    auto binary_overapproximation_condition =
-        make_view(create_overapproximation_conjunctive_condition(2, rule.get_body(), builder, repository).first, repository);
-
-    auto unary_conflicting_overapproximation_condition =
-        make_view(create_overapproximation_conflicting_conjunctive_condition(1, rule.get_body(), builder, repository).first, repository);
-    auto binary_conflicting_overapproximation_condition =
-        make_view(create_overapproximation_conflicting_conjunctive_condition(2, rule.get_body(), builder, repository).first, repository);
-
-    auto static_consistency_graph = StaticConsistencyGraph(rule.get_body(),
-                                                           unary_overapproximation_condition,
-                                                           binary_overapproximation_condition,
-                                                           parameter_domains,
-                                                           0,
-                                                           rule.get_arity(),
-                                                           static_assignment_sets);
-
-    return StaticRuleExecutionContext { rule,
-                                        nullary_condition,
-                                        unary_overapproximation_condition,
-                                        binary_overapproximation_condition,
-                                        unary_conflicting_overapproximation_condition,
-                                        binary_conflicting_overapproximation_condition,
-                                        std::move(static_consistency_graph) };
-}
-
-/**
  * RuleExecutionContext
  */
 
-RuleExecutionContext::RuleExecutionContext(View<Index<fd::Rule>, fd::Repository> rule,
+RuleExecutionContext::RuleExecutionContext(View<Index<fd::Program>, fd::Repository> program,
+                                           View<Index<fd::Rule>, fd::Repository> rule,
                                            View<Index<fd::GroundConjunctiveCondition>, fd::Repository> nullary_condition,
                                            View<Index<fd::ConjunctiveCondition>, fd::Repository> unary_overapproximation_condition,
                                            View<Index<fd::ConjunctiveCondition>, fd::Repository> binary_overapproximation_condition,
@@ -166,6 +135,8 @@ RuleExecutionContext::RuleExecutionContext(View<Index<fd::Rule>, fd::Repository>
     binding(),
     ground_heads()
 {
+    repository->notify_num_predicates<f::FluentTag>(program.get_predicates<f::FluentTag>().size());
+    repository->notify_num_functions<f::FluentTag>(program.get_functions<f::FluentTag>().size());
 }
 
 void RuleExecutionContext::clear() noexcept
@@ -198,6 +169,12 @@ void ProgramToTaskExecutionContext::clear() noexcept { merge_cache.clear(); }
 void TaskToProgramExecutionContext::clear() noexcept { merge_cache.clear(); }
 
 /**
+ * RuleGroupExecutionContext
+ */
+
+void RuleGroupExecutionContext::clear() noexcept { discovered_new_fact = false; }
+
+/**
  * ProgramExecutionContext
  */
 
@@ -217,27 +194,32 @@ ProgramExecutionContext::ProgramExecutionContext(View<Index<fd::Program>, fd::Re
     facts_execution_context(program, domains),
     rule_execution_contexts(),
     rule_stage_execution_contexts(),
+    rule_group_execution_contexts(program.get_predicates<f::FluentTag>().size()),
     thread_execution_contexts(),
     program_to_task_execution_context(),
     task_to_program_execution_context()
 {
     for (uint_t i = 0; i < program.get_rules().size(); ++i)
     {
+        const auto rule = program.get_rules()[i];
+
         rule_execution_contexts.emplace_back(
-            program.get_rules()[i],
-            make_view(create_ground_nullary_condition(program.get_rules()[i].get_body(), datalog_builder, *repository).first, *repository),
-            make_view(create_overapproximation_conjunctive_condition(1, program.get_rules()[i].get_body(), datalog_builder, *repository).first, *repository),
-            make_view(create_overapproximation_conjunctive_condition(2, program.get_rules()[i].get_body(), datalog_builder, *repository).first, *repository),
-            make_view(create_overapproximation_conflicting_conjunctive_condition(1, program.get_rules()[i].get_body(), datalog_builder, *repository).first,
-                      *repository),
-            make_view(create_overapproximation_conflicting_conjunctive_condition(2, program.get_rules()[i].get_body(), datalog_builder, *repository).first,
-                      *repository),
+            program,
+            rule,
+            make_view(create_ground_nullary_condition(rule.get_body(), datalog_builder, *repository).first, *repository),
+            make_view(create_overapproximation_conjunctive_condition(1, rule.get_body(), datalog_builder, *repository).first, *repository),
+            make_view(create_overapproximation_conjunctive_condition(2, rule.get_body(), datalog_builder, *repository).first, *repository),
+            make_view(create_overapproximation_conflicting_conjunctive_condition(1, rule.get_body(), datalog_builder, *repository).first, *repository),
+            make_view(create_overapproximation_conflicting_conjunctive_condition(2, rule.get_body(), datalog_builder, *repository).first, *repository),
             domains.rule_domains[i],
             facts_execution_context.assignment_sets.static_sets,
             *repository);
         rule_execution_contexts.back().initialize(facts_execution_context.assignment_sets);
+
+        rule_group_execution_contexts[uint_t(rule.get_head().get_predicate().get_index())].rules.push_back(rule.get_index());
+
+        rule_stage_execution_contexts.emplace_back(program);
     }
-    rule_stage_execution_contexts.resize(rule_execution_contexts.size());
 }
 
 }

@@ -78,25 +78,9 @@ struct RuleStageExecutionContext
     UnorderedSet<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> ground_heads;
     formalism::datalog::MergeCache merge_cache;
 
-    RuleStageExecutionContext();
+    RuleStageExecutionContext(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program);
 
     void clear() noexcept;
-};
-
-struct StaticRuleExecutionContext
-{
-    View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule;
-    View<Index<formalism::datalog::GroundConjunctiveCondition>, formalism::datalog::Repository> nullary_condition;
-    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition;
-    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition;
-    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_conflicting_overapproximation_condition;
-    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_conflicting_overapproximation_condition;
-    StaticConsistencyGraph static_consistency_graph;
-
-    static StaticRuleExecutionContext create(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
-                                             formalism::datalog::Repository& repository,
-                                             const analysis::DomainListList& parameter_domains,
-                                             const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 };
 
 struct RuleExecutionContext
@@ -193,7 +177,8 @@ struct RuleExecutionContext
         return result;
     }
 
-    RuleExecutionContext(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
+    RuleExecutionContext(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program,
+                         View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
                          View<Index<formalism::datalog::GroundConjunctiveCondition>, formalism::datalog::Repository> nullary_condition,
                          View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition,
                          View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition,
@@ -237,6 +222,16 @@ struct TaskToProgramExecutionContext
     void clear() noexcept;
 };
 
+struct RuleGroupExecutionContext
+{
+    RuleGroupExecutionContext() = default;
+
+    IndexList<formalism::datalog::Rule> rules;
+    bool discovered_new_fact;
+
+    void clear() noexcept;
+};
+
 struct ProgramExecutionContext
 {
     /// --- Program & analysis
@@ -256,6 +251,8 @@ struct ProgramExecutionContext
 
     std::vector<RuleExecutionContext> rule_execution_contexts;
     std::vector<RuleStageExecutionContext> rule_stage_execution_contexts;
+
+    std::vector<RuleGroupExecutionContext> rule_group_execution_contexts;
 
     oneapi::tbb::enumerable_thread_specific<datalog::ThreadExecutionContext> thread_execution_contexts;
 

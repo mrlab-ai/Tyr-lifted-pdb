@@ -49,7 +49,8 @@ public:
 
     void on_finish_iteration();
 
-    View<IndexList<formalism::datalog::Rule>, formalism::datalog::Repository> get_active_rules();
+    const formalism::datalog::Repository& get_context() const noexcept { return m_context; }
+    const UnorderedSet<Index<formalism::datalog::Rule>> get_active_rules() const noexcept { return m_active_rules; }
 
 private:
     const analysis::RuleStratum& m_rules;
@@ -57,8 +58,7 @@ private:
     const formalism::datalog::Repository& m_context;
 
     boost::dynamic_bitset<> m_active_predicates;
-    UnorderedSet<Index<formalism::datalog::Rule>> m_active_set;  ///< build active set
-    IndexList<formalism::datalog::Rule> m_active;                ///< final active set
+    UnorderedSet<Index<formalism::datalog::Rule>> m_active_rules;
 };
 
 struct RuleSchedulerStrata

@@ -145,6 +145,8 @@ ApplicableActionProgram::ApplicableActionProgram(View<Index<fp::Task>, f::Overla
     m_listeners(analysis::compute_listeners(m_strata, m_program.get_context()))
 {
     // std::cout << m_program << std::endl;
+    m_repository->notify_num_predicates<f::FluentTag>(m_program.get_predicates<f::FluentTag>().size());
+    m_repository->notify_num_functions<f::FluentTag>(m_program.get_functions<f::FluentTag>().size());
 }
 
 const ApplicableActionProgram::AppPredicateToActionsMapping& ApplicableActionProgram::get_predicate_to_actions_mapping() const noexcept

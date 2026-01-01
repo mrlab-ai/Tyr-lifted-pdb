@@ -36,11 +36,13 @@
 #include <memory>                                   // for __shared_ptr_access
 #include <oneapi/tbb/enumerable_thread_specific.h>  // for enumerable_thread...
 #include <oneapi/tbb/parallel_for.h>                // for parallel_for
-#include <utility>                                  // for pair
-#include <vector>                                   // for vector
+#include <oneapi/tbb/parallel_for_each.h>
+#include <utility>  // for pair
+#include <vector>   // for vector
 
 namespace tyr::datalog
 {
+
 static void solve_bottom_up_for_stratum(datalog::ProgramExecutionContext& program_execution_context, datalog::RuleSchedulerStratum& scheduler)
 {
     scheduler.activate_all();
@@ -54,84 +56,111 @@ static void solve_bottom_up_for_stratum(datalog::ProgramExecutionContext& progra
         const auto active_rules = scheduler.get_active_rules();
         scheduler.on_start_iteration();
 
-        const uint_t num_rules = active_rules.size();
-
         {
             auto stopwatch = StopwatchScope(program_execution_context.statistics.ground_seq_total_time);
 
-            tbb::parallel_for(uint_t { 0 },
-                              num_rules,
-                              [&](uint_t j)
-                              {
-                                  const auto i = active_rules[j].get_index().get_value();
-                                  auto& facts_execution_context = program_execution_context.facts_execution_context;
-                                  auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
-                                  auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
-                                  auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();
+            oneapi::tbb::parallel_for_each(
+                active_rules.begin(),
+                active_rules.end(),
+                [&](auto&& rule_index)
+                {
+                    const auto i = uint_t(rule_index);
+                    auto& facts_execution_context = program_execution_context.facts_execution_context;
+                    auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
+                    auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
+                    auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();
 
-                                  {
-                                      ///--- Initialization phase
-                                      auto stopwatch = StopwatchScope(rule_execution_context.statistics.init_total_time);
+                    {
+                        ///--- Initialization phase
+                        auto stopwatch = StopwatchScope(rule_execution_context.statistics.init_total_time);
 
-                                      thread_execution_context.clear();
-                                      rule_execution_context.clear();
-                                      rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
-                                  }
+                        thread_execution_context.clear();
+                        rule_execution_context.clear();
+                        rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
+                    }
 
-                                  {
-                                      /// --- Grounding phase
-                                      auto stopwatch = StopwatchScope(rule_execution_context.statistics.ground_total_time);
-                                      ++rule_execution_context.statistics.num_executions;
+                    {
+                        /// --- Grounding phase
+                        auto stopwatch = StopwatchScope(rule_execution_context.statistics.ground_total_time);
+                        ++rule_execution_context.statistics.num_executions;
 
-                                      ground(facts_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
-                                  }
-                              });
+                        ground(facts_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
+                    }
+                });
         }
 
         /**
-         * Sequential merge.
+         * Parallel merge.
          */
 
         /// --- Sequentially combine results into a temporary staging repository to prevent modying the program's repository
 
+        for (auto& rule_group_execution_context : program_execution_context.rule_group_execution_contexts)
+            rule_group_execution_context.clear();
+
         {
             const auto stopwatch = StopwatchScope(program_execution_context.statistics.merge_seq_total_time);
 
+            oneapi::tbb::parallel_for_each(
+                program_execution_context.rule_group_execution_contexts.begin(),
+                program_execution_context.rule_group_execution_contexts.end(),
+                [&](auto&& rule_group_execution_context)
+                {
+                    for (const auto rule_index : rule_group_execution_context.rules)
+                    {
+                        if (!active_rules.contains(rule_index))
+                            continue;
+
+                        const auto i = rule_index.get_value();
+                        auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
+                        auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
+                        auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();
+                        thread_execution_context.clear();
+
+                        auto merge_context = formalism::datalog::MergeContext { thread_execution_context.builder,
+                                                                                *program_execution_context.repository,
+                                                                                thread_execution_context.merge_cache };
+
+                        for (const auto ground_head_index : rule_execution_context.ground_heads)
+                        {
+                            /// --- Program
+
+                            // Note: the head lives in the stage but its index is stored in rule because it is reset each iteration
+                            const auto ground_head_rule = make_view(ground_head_index, *rule_stage_execution_context.repository);
+
+                            // Merge it into the program
+                            const auto ground_head_index_program = merge_d2d(ground_head_rule, merge_context).first;
+
+                            // Insert new fact into fact sets and assigment sets
+                            if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head_index_program))
+                            {
+                                rule_group_execution_context.discovered_new_fact = true;
+
+                                const auto ground_head_program = make_view(ground_head_index_program, *program_execution_context.repository);
+
+                                program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(ground_head_program);
+                                program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head_program);
+                            }
+                        }
+                    }
+                });
+        }
+
+        /**
+         * Sequential scheduling.
+         */
+
+        {
             auto discovered_new_fact = bool { false };
 
-            for (uint_t j = 0; j < num_rules; ++j)
+            for (uint_t i = 0; i < program_execution_context.rule_group_execution_contexts.size(); ++i)
             {
-                const auto i = active_rules[j].get_index().get_value();
+                const auto& rule_group_execution_context = program_execution_context.rule_group_execution_contexts[i];
 
-                const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
-                auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
-
-                auto merge_context = formalism::datalog::MergeContext { program_execution_context.datalog_builder,
-                                                                        *program_execution_context.repository,
-                                                                        rule_stage_execution_context.merge_cache };
-
-                for (const auto ground_head_index : rule_execution_context.ground_heads)
+                if (rule_group_execution_context.discovered_new_fact)
                 {
-                    /// --- Program
-
-                    // Note: the head lives in the stage but its index is stored in rule because it is reset each iteration
-                    const auto ground_head_rule = make_view(ground_head_index, *rule_stage_execution_context.repository);
-
-                    // Merge it into the program
-                    const auto ground_head_index_program = merge_d2d(ground_head_rule, merge_context).first;
-
-                    // Insert new fact into fact sets and assigment sets
-                    if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head_index_program))
-                    {
-                        discovered_new_fact = true;
-
-                        const auto ground_head_program = make_view(ground_head_index_program, *program_execution_context.repository);
-
-                        scheduler.on_generate(ground_head_program.get_predicate().get_index());
-
-                        program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(ground_head_program);
-                        program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head_program);
-                    }
+                    scheduler.on_generate(Index<formalism::Predicate<formalism::FluentTag>>(i));
+                    discovered_new_fact = true;
                 }
             }
 

@@ -37,8 +37,7 @@ RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules, c
     m_listeners(listeners),
     m_context(context),
     m_active_predicates(),
-    m_active_set(),
-    m_active()
+    m_active_rules()
 {
     for (const auto rule : rules)
     {
@@ -50,9 +49,9 @@ RuleSchedulerStratum::RuleSchedulerStratum(const analysis::RuleStratum& rules, c
 
 void RuleSchedulerStratum::activate_all()
 {
-    m_active.clear();
+    m_active_rules.clear();
     for (const auto rule : m_rules)
-        m_active.push_back(rule);
+        m_active_rules.insert(rule);
 }
 
 void RuleSchedulerStratum::on_start_iteration() noexcept { m_active_predicates.reset(); }
@@ -66,18 +65,12 @@ void RuleSchedulerStratum::on_generate(Index<f::Predicate<f::FluentTag>> predica
 
 void RuleSchedulerStratum::on_finish_iteration()
 {
-    m_active_set.clear();
+    m_active_rules.clear();
     for (auto i = m_active_predicates.find_first(); i != boost::dynamic_bitset<>::npos; i = m_active_predicates.find_next(i))
         if (const auto it = m_listeners.find(Index<f::Predicate<f::FluentTag>>(i)); it != m_listeners.end())
             for (const auto rule : it->second)
-                m_active_set.insert(rule);
-
-    m_active.clear();
-    for (const auto rule : m_active_set)
-        m_active.push_back(rule);
+                m_active_rules.insert(rule);
 }
-
-View<IndexList<fd::Rule>, fd::Repository> RuleSchedulerStratum::get_active_rules() { return make_view(m_active, m_context); }
 
 RuleSchedulerStrata create_rule_scheduler_strata(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const fd::Repository& context)
 {
