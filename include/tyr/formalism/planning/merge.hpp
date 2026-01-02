@@ -398,7 +398,7 @@ auto merge_p2p(View<Index<GroundAtom<T>>, C_SRC> element, MergeContext<C_DST>& c
                                                         atom.clear();
 
                                                         atom.predicate = merge_p2p(element.get_predicate(), context).first;
-                                                        atom.binding = merge_p2p(element.get_binding(), context).first;
+                                                        atom.objects = element.get_data().objects;
 
                                                         canonicalize(atom);
                                                         return context.destination.get_or_create(atom, context.builder.get_buffer());
@@ -522,7 +522,7 @@ auto merge_p2p(View<Index<GroundFunctionTerm<T>>, C_SRC> element, MergeContext<C
                                                                         fterm.clear();
 
                                                                         fterm.function = element.get_function().get_index();
-                                                                        fterm.binding = merge_p2p(element.get_binding(), context).first;
+                                                                        fterm.objects = element.get_data().objects;
 
                                                                         canonicalize(fterm);
                                                                         return context.destination.get_or_create(fterm, context.builder.get_buffer());

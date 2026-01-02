@@ -263,6 +263,9 @@ struct ProgramExecutionContext
     {
         std::chrono::nanoseconds ground_seq_total_time { 0 };
         std::chrono::nanoseconds merge_seq_total_time { 0 };
+
+        size_t num_merges_inserted { 0 };
+        size_t num_merges_discarded { 0 };
     } statistics;
 
     ProgramExecutionContext(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program,

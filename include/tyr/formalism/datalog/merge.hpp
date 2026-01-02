@@ -359,7 +359,7 @@ auto merge_d2d(View<Index<GroundAtom<T>>, C_SRC> element, MergeContext<C_DST>& c
                                                         atom.clear();
 
                                                         atom.index.group = element.get_index().get_group();
-                                                        atom.binding = merge_d2d(element.get_binding(), context).first;
+                                                        atom.objects = element.get_data().objects;
 
                                                         canonicalize(atom);
                                                         return context.destination.get_or_create(atom, context.builder.get_buffer());
@@ -457,7 +457,7 @@ auto merge_d2d(View<Index<GroundFunctionTerm<T>>, C_SRC> element, MergeContext<C
                                                                         fterm.clear();
 
                                                                         fterm.function = element.get_function().get_index();
-                                                                        fterm.binding = merge_d2d(element.get_binding(), context).first;
+                                                                        fterm.objects = element.get_data().objects;
 
                                                                         canonicalize(fterm);
                                                                         return context.destination.get_or_create(fterm, context.builder.get_buffer());

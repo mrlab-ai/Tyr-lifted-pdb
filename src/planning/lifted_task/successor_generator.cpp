@@ -101,7 +101,7 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
 
                     const auto action = make_view(action_index, grounder_context.destination);
 
-                    m_action_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
+                    m_action_context.program_to_task_execution_context.binding = fact.get_objects().get_data();
 
                     const auto ground_action_index = ground(action,
                                                             grounder_context,

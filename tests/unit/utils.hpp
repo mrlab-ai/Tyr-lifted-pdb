@@ -265,14 +265,9 @@ inline IndexList<formalism::datalog::GroundAtom<formalism::StaticTag>> add_stati
 
         for (const auto& atom : atoms)
         {
-            auto binding_builder = Data<formalism::Binding> {};
-            binding_builder.objects.clear();
+            ground_atom_builder.objects.clear();
             for (const auto& term : atom)
-            {
-                binding_builder.objects.push_back(convert(term));
-            }
-            canonicalize(binding_builder);
-            ground_atom_builder.binding = repository.get_or_create(binding_builder, buffer).first;
+                ground_atom_builder.objects.push_back(convert(term));
 
             canonicalize(ground_atom_builder);
             result.push_back(repository.get_or_create(ground_atom_builder, buffer).first);
@@ -304,14 +299,9 @@ inline IndexList<formalism::datalog::GroundAtom<formalism::FluentTag>> add_fluen
         ground_atom_builder.index.group = convert(predicate);
         for (const auto& atom : atoms)
         {
-            auto binding_builder = Data<formalism::Binding> {};
-            binding_builder.objects.clear();
+            ground_atom_builder.objects.clear();
             for (const auto& term : atom)
-            {
-                binding_builder.objects.push_back(convert(term));
-            }
-            canonicalize(binding_builder);
-            ground_atom_builder.binding = repository.get_or_create(binding_builder, buffer).first;
+                ground_atom_builder.objects.push_back(convert(term));
 
             canonicalize(ground_atom_builder);
             result.push_back(repository.get_or_create(ground_atom_builder, buffer).first);

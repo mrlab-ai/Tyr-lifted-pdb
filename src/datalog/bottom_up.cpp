@@ -90,77 +90,58 @@ static void solve_bottom_up_for_stratum(datalog::ProgramExecutionContext& progra
         }
 
         /**
-         * Parallel merge.
+         * Sequential merge.
          */
 
         /// --- Sequentially combine results into a temporary staging repository to prevent modying the program's repository
 
-        for (auto& rule_group_execution_context : program_execution_context.rule_group_execution_contexts)
-            rule_group_execution_context.clear();
-
         {
             const auto stopwatch = StopwatchScope(program_execution_context.statistics.merge_seq_total_time);
 
-            oneapi::tbb::parallel_for_each(
-                program_execution_context.rule_group_execution_contexts.begin(),
-                program_execution_context.rule_group_execution_contexts.end(),
-                [&](auto&& rule_group_execution_context)
-                {
-                    for (const auto rule_index : rule_group_execution_context.rules)
-                    {
-                        if (!active_rules.contains(rule_index))
-                            continue;
-
-                        const auto i = rule_index.get_value();
-                        auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
-                        auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
-                        auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();
-                        thread_execution_context.clear();
-
-                        auto merge_context = formalism::datalog::MergeContext { thread_execution_context.builder,
-                                                                                *program_execution_context.repository,
-                                                                                thread_execution_context.merge_cache };
-
-                        for (const auto ground_head_index : rule_execution_context.ground_heads)
-                        {
-                            /// --- Program
-
-                            // Note: the head lives in the stage but its index is stored in rule because it is reset each iteration
-                            const auto ground_head_rule = make_view(ground_head_index, *rule_stage_execution_context.repository);
-
-                            // Merge it into the program
-                            const auto ground_head_index_program = merge_d2d(ground_head_rule, merge_context).first;
-
-                            // Insert new fact into fact sets and assigment sets
-                            if (!program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.contains(ground_head_index_program))
-                            {
-                                rule_group_execution_context.discovered_new_fact = true;
-
-                                const auto ground_head_program = make_view(ground_head_index_program, *program_execution_context.repository);
-
-                                program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate.insert(ground_head_program);
-                                program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate.insert(ground_head_program);
-                            }
-                        }
-                    }
-                });
-        }
-
-        /**
-         * Sequential scheduling.
-         */
-
-        {
             auto discovered_new_fact = bool { false };
 
-            for (uint_t i = 0; i < program_execution_context.rule_group_execution_contexts.size(); ++i)
-            {
-                const auto& rule_group_execution_context = program_execution_context.rule_group_execution_contexts[i];
+            auto& fluent_predicate_fact_sets = program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate;
+            auto& fluent_predicate_assignment_sets = program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate;
 
-                if (rule_group_execution_context.discovered_new_fact)
+            for (const auto rule_index : active_rules)
+            {
+                const auto i = uint_t(rule_index);
+
+                const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
+                auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
+
+                auto merge_context = formalism::datalog::MergeContext { program_execution_context.datalog_builder,
+                                                                        *program_execution_context.repository,
+                                                                        rule_stage_execution_context.merge_cache };
+
+                for (const auto ground_head_index : rule_execution_context.ground_heads)
                 {
-                    scheduler.on_generate(Index<formalism::Predicate<formalism::FluentTag>>(i));
-                    discovered_new_fact = true;
+                    /// --- Program
+
+                    // Note: the head lives in the stage but its index is stored in rule because it is reset each iteration
+                    const auto ground_head_rule = make_view(ground_head_index, *rule_stage_execution_context.repository);
+
+                    // Merge it into the program
+                    const auto ground_head_index_program = formalism::datalog::merge_d2d(ground_head_rule, merge_context).first;
+
+                    // Insert new fact into fact sets and assigment sets
+                    if (!fluent_predicate_fact_sets.contains(ground_head_index_program))
+                    {
+                        discovered_new_fact = true;
+
+                        const auto ground_head_program = make_view(ground_head_index_program, *program_execution_context.repository);
+
+                        scheduler.on_generate(ground_head_program.get_predicate().get_index());
+
+                        fluent_predicate_fact_sets.insert(ground_head_program);
+                        fluent_predicate_assignment_sets.insert(ground_head_program);
+
+                        ++program_execution_context.statistics.num_merges_inserted;
+                    }
+                    else
+                    {
+                        ++program_execution_context.statistics.num_merges_discarded;
+                    }
                 }
             }
 

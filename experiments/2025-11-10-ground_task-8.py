@@ -107,6 +107,7 @@ ATTRIBUTES = [
     "peak_memory_usage",
     
     Attribute("parallel_fraction", function=geometric_mean, min_wins=False),
+    Attribute("merge_fraction", function=geometric_mean),
     Attribute("coverage", min_wins=False),
 ]
 

@@ -96,7 +96,22 @@ auto ground(View<Index<FunctionTerm<T>>, C_SRC> element, GrounderContext<C_DST>&
 
     // Fill data
     fterm.function = element.get_function().get_index();
-    fterm.binding = ground(element.get_terms(), context).first;
+    for (const auto term : element.get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                    fterm.objects.push_back(context.binding[uint_t(arg)]);
+                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, C_SRC>>)
+                    fterm.objects.push_back(arg.get_index());
+                else
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+    }
 
     // Canonicalize and Serialize
     canonicalize(fterm);
@@ -193,7 +208,22 @@ auto ground(View<Index<Atom<T_SRC>>, C_SRC> element, MergeContext<C_DST>& merge_
 
     // Fill data
     atom.predicate = merge<T_SRC, C_SRC, C_DST, T_DST>(element.get_predicate(), merge_context).first;
-    atom.binding = ground(element.get_terms(), grounder_context).first;
+    for (const auto term : element.get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                    atom.objects.push_back(grounder_context.binding[uint_t(arg)]);
+                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, C_SRC>>)
+                    atom.objects.push_back(arg.get_index());
+                else
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+    }
 
     // Canonicalize and Serialize
     canonicalize(atom);
@@ -210,7 +240,22 @@ auto ground(View<Index<Atom<T_SRC>>, C_SRC> element, GrounderContext<C_DST>& con
 
     // Fill data
     atom.predicate = element.get_predicate().get_index();
-    atom.binding = ground(element.get_terms(), context).first;
+    for (const auto term : element.get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                    atom.objects.push_back(context.binding[uint_t(arg)]);
+                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, C_SRC>>)
+                    atom.objects.push_back(arg.get_index());
+                else
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+    }
 
     // Canonicalize and Serialize
     canonicalize(atom);

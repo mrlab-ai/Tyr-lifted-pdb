@@ -32,6 +32,7 @@ class GroundTaskParser(Parser):
         self.add_pattern("ground_seq_total_time", r"ground_seq_total_time: (.+) ms", type=float)
         self.add_pattern("merge_seq_total_time", r"merge_seq_total_time: (.+) ms", type=float)
         self.add_pattern("parallel_fraction", r"parallel_fraction: (.+)", type=float)
+        self.add_pattern("merge_fraction", r"merge_fraction: (.+)", type=float)
 
         self.add_pattern("num_fluent_atoms", r"Num fluent atoms: (\d+)", type=int)
         self.add_pattern("num_derived_atoms", r"Num derived atoms: (\d+)", type=int)

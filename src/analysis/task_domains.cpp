@@ -101,7 +101,7 @@ void insert_into_predicate_domain_sets(View<IndexList<fp::GroundAtom<T>>, C> ato
     {
         const auto predicate = atom.get_predicate();
         auto pos = size_t { 0 };
-        for (const auto object : atom.get_binding().get_objects())
+        for (const auto object : atom.get_objects())
             predicate_domain_sets[predicate.get_index().value][pos++].insert(object.get_index());
     }
 }
@@ -125,7 +125,7 @@ void insert_into_function_domain_sets(View<IndexList<fp::GroundFunctionTermValue
         const auto fterm = term_value.get_fterm();
         const auto function = fterm.get_function();
         auto pos = size_t { 0 };
-        for (const auto object : fterm.get_binding().get_objects())
+        for (const auto object : fterm.get_objects())
             function_domain_sets[function.get_index().value][pos++].insert(object.get_index());
     }
 }

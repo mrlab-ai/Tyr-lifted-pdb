@@ -294,6 +294,9 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
     const auto total_time = (ground_context.statistics.ground_seq_total_time + ground_context.statistics.merge_seq_total_time).count();
     const auto parallel_time = ground_context.statistics.ground_seq_total_time.count();
     std::cout << "parallel_fraction: " << ((total_time > 0) ? static_cast<double>(parallel_time) / total_time : 1.0) << std::endl;
+    const auto total_merges = ground_context.statistics.num_merges_inserted + ground_context.statistics.num_merges_discarded;
+    std::cout << "merge_fraction: " << ((total_merges > 0) ? static_cast<double>(ground_context.statistics.num_merges_inserted) / total_merges : 1.0)
+              << std::endl;
 
     ground_context.program_to_task_execution_context.clear();
 
@@ -334,7 +337,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
         {
             if (ground_program.get_predicate_to_actions_mapping().contains(fact.get_predicate().get_index()))
             {
-                ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
+                ground_context.program_to_task_execution_context.binding = fact.get_objects().get_data();
                 auto grounder_context = fp::GrounderContext { ground_context.planning_builder,
                                                               *lifted_task.get_repository(),
                                                               ground_context.program_to_task_execution_context.binding };
@@ -394,7 +397,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
         {
             if (ground_program.get_predicate_to_axioms_mapping().contains(fact.get_predicate().get_index()))
             {
-                ground_context.program_to_task_execution_context.binding = fact.get_binding().get_objects().get_data();
+                ground_context.program_to_task_execution_context.binding = fact.get_objects().get_data();
                 auto grounder_context = fp::GrounderContext { ground_context.planning_builder,
                                                               *lifted_task.get_repository(),
                                                               ground_context.program_to_task_execution_context.binding };

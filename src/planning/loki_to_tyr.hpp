@@ -1166,7 +1166,7 @@ private:
             auto& atom = *atom_ptr;
             atom.clear();
             atom.predicate = predicate_index;
-            atom.binding = to_binding(this->translate_grounded(element->get_terms(), builder, context), builder, context);
+            atom.objects = this->translate_grounded(element->get_terms(), builder, context);
             formalism::planning::canonicalize(atom);
             return context.get_or_create(atom, builder.get_buffer()).first;
         };
@@ -1398,7 +1398,7 @@ private:
             auto& fterm = *fterm_ptr;
             fterm.clear();
             fterm.function = function_index;
-            fterm.binding = to_binding(this->translate_grounded(element->get_terms(), builder, context), builder, context);
+            fterm.objects = this->translate_grounded(element->get_terms(), builder, context);
             formalism::planning::canonicalize(fterm);
             return context.get_or_create(fterm, builder.get_buffer()).first;
         };
