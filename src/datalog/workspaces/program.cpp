@@ -24,12 +24,12 @@ namespace fd = tyr::formalism::datalog;
 namespace tyr::datalog
 {
 
-ProgramWorkspace::ProgramWorkspace(const ProgramContext& context, const ConstProgramWorkspace& cws) :
-    repository(*context.repository),
+ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWorkspace& cws) :
+    repository(context.get_repository()),
     facts(context.get_program().get_predicates<formalism::FluentTag>(),
           context.get_program().get_functions<formalism::FluentTag>(),
-          context.domains.fluent_predicate_domains,
-          context.domains.fluent_function_domains,
+          context.get_domains().fluent_predicate_domains,
+          context.get_domains().fluent_function_domains,
           context.get_program().get_objects().size(),
           context.get_program().get_atoms<formalism::FluentTag>(),
           context.get_program().get_fterm_values<formalism::FluentTag>()),
@@ -40,20 +40,20 @@ ProgramWorkspace::ProgramWorkspace(const ProgramContext& context, const ConstPro
     worker(),
     planning_builder(),
     datalog_builder(),
-    rule_scheduler_strata(create_rule_scheduler_strata(context.strata, context.listeners, *context.repository)),
+    rule_scheduler_strata(create_rule_scheduler_strata(context.get_strata(), context.get_listeners(), context.get_repository())),
     statistics()
 {
     for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
     {
-        rules.emplace_back(*context.repository, cws.rules[i].static_consistency_graph);
+        rules.emplace_back(context.get_repository(), cws.rules[i].static_consistency_graph);
     }
 }
 
-ConstProgramWorkspace::ConstProgramWorkspace(const ProgramContext& context) :
+ConstProgramWorkspace::ConstProgramWorkspace(ProgramContext& context) :
     facts(context.get_program().get_predicates<formalism::StaticTag>(),
           context.get_program().get_functions<formalism::StaticTag>(),
-          context.domains.static_predicate_domains,
-          context.domains.static_function_domains,
+          context.get_domains().static_predicate_domains,
+          context.get_domains().static_function_domains,
           context.get_program().get_objects().size(),
           context.get_program().get_atoms<formalism::StaticTag>(),
           context.get_program().get_fterm_values<formalism::StaticTag>()),
@@ -61,7 +61,10 @@ ConstProgramWorkspace::ConstProgramWorkspace(const ProgramContext& context) :
 {
     for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
     {
-        rules.emplace_back(context.get_program().get_rules()[i].get_index(), *context.repository, context.domains.rule_domains[i], facts.assignment_sets);
+        rules.emplace_back(context.get_program().get_rules()[i].get_index(),
+                           context.get_repository(),
+                           context.get_domains().rule_domains[i],
+                           facts.assignment_sets);
     }
 }
 

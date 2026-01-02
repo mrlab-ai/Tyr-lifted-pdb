@@ -43,6 +43,7 @@ public:
     explicit AxiomEvaluatorProgram(View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task);
 
     const PredicateToPredicateMapping& get_predicate_to_predicate_mapping() const noexcept;
+    datalog::ProgramContext& get_program_context() noexcept;
     const datalog::ProgramContext& get_program_context() const noexcept;
     const datalog::ConstProgramWorkspace& get_const_program_workspace() const noexcept;
 

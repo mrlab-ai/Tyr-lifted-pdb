@@ -41,6 +41,7 @@ public:
     explicit ApplicableActionProgram(View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task);
 
     const AppPredicateToActionsMapping& get_predicate_to_actions_mapping() const noexcept;
+    datalog::ProgramContext& get_program_context() noexcept;
     const datalog::ProgramContext& get_program_context() const noexcept;
     const datalog::ConstProgramWorkspace& get_const_program_workspace() const noexcept;
 

@@ -63,7 +63,7 @@ struct ProgramWorkspace
         size_t num_merges_discarded { 0 };
     } statistics;
 
-    explicit ProgramWorkspace(const ProgramContext& context, const ConstProgramWorkspace& cws);
+    explicit ProgramWorkspace(ProgramContext& context, const ConstProgramWorkspace& cws);
 };
 
 struct ConstProgramWorkspace
@@ -72,7 +72,7 @@ struct ConstProgramWorkspace
 
     std::vector<ConstRuleWorkspace> rules;
 
-    explicit ConstProgramWorkspace(const ProgramContext& context);
+    explicit ConstProgramWorkspace(ProgramContext& context);
 };
 }
 

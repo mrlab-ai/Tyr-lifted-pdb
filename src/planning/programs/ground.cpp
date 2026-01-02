@@ -169,7 +169,7 @@ static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp
     auto strata = analysis::compute_rule_stratification(make_view(program, *repository));
     auto listeners = analysis::compute_listeners(strata, *repository);
 
-    return datalog::ProgramContext { program, std::move(repository), std::move(domains), std::move(strata), std::move(listeners) };
+    return datalog::ProgramContext(program, std::move(repository), std::move(domains), std::move(strata), std::move(listeners));
 }
 
 GroundTaskProgram::GroundTaskProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
@@ -184,6 +184,8 @@ GroundTaskProgram::GroundTaskProgram(View<Index<fp::Task>, f::OverlayRepository<
 const GroundTaskProgram::AppPredicateToActionsMapping& GroundTaskProgram::get_predicate_to_actions_mapping() const noexcept { return m_predicate_to_actions; }
 
 const GroundTaskProgram::AppPredicateToAxiomsMapping& GroundTaskProgram::get_predicate_to_axioms_mapping() const noexcept { return m_predicate_to_axioms; }
+
+datalog::ProgramContext& GroundTaskProgram::get_program_context() noexcept { return m_program_context; }
 
 const datalog::ProgramContext& GroundTaskProgram::get_program_context() const noexcept { return m_program_context; }
 

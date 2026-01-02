@@ -60,7 +60,9 @@ public:
 
     const auto& get_repository() const noexcept { return m_overlay_repository; }
 
+    auto& get_axiom_program() noexcept { return m_axiom_program; }
     const auto& get_axiom_program() const noexcept { return m_axiom_program; }
+    auto& get_action_program() noexcept { return m_action_program; }
     const auto& get_action_program() const noexcept { return m_action_program; }
     const auto& get_parameter_domains_per_cond_effect_per_action() const noexcept { return m_parameter_domains_per_cond_effect_per_action; }
 

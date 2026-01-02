@@ -44,6 +44,7 @@ public:
 
     const AppPredicateToActionsMapping& get_predicate_to_actions_mapping() const noexcept;
     const AppPredicateToAxiomsMapping& get_predicate_to_axioms_mapping() const noexcept;
+    datalog::ProgramContext& get_program_context() noexcept;
     const datalog::ProgramContext& get_program_context() const noexcept;
     const datalog::ConstProgramWorkspace& get_const_program_workspace() const noexcept;
 

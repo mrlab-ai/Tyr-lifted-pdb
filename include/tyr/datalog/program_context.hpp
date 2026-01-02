@@ -27,15 +27,34 @@
 namespace tyr::datalog
 {
 /// @brief `ProgramContext` stores the program and all derived necessities together.
-struct ProgramContext
+class ProgramContext
 {
+public:
+    ProgramContext(Index<formalism::datalog::Program> program,
+                   formalism::datalog::RepositoryPtr repository,
+                   analysis::ProgramVariableDomains domains,
+                   analysis::RuleStrata strata,
+                   analysis::ListenerStrata listeners) :
+        program(program),
+        repository(std::move(repository)),
+        domains(std::move(domains)),
+        strata(std::move(strata)),
+        listeners(std::move(listeners))
+    {
+    }
+    auto get_program() const noexcept { return make_view(program, *repository); }
+    auto& get_repository() noexcept { return *repository; }
+    const auto& get_repository() const noexcept { return *repository; }
+    const auto& get_domains() const noexcept { return domains; }
+    const auto& get_strata() const noexcept { return strata; }
+    const auto& get_listeners() const noexcept { return listeners; }
+
+private:
     Index<formalism::datalog::Program> program;
     formalism::datalog::RepositoryPtr repository;
     analysis::ProgramVariableDomains domains;
     analysis::RuleStrata strata;
     analysis::ListenerStrata listeners;
-
-    auto get_program() const noexcept { return make_view(program, *repository); }
 };
 }
 #endif
