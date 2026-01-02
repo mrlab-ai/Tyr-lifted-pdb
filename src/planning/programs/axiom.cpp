@@ -80,9 +80,9 @@ static auto create_axiom_rule(View<Index<fp::Axiom>, f::OverlayRepository<fp::Re
     return context.destination.get_or_create(rule, context.builder.get_buffer());
 }
 
-static View<Index<fd::Program>, fd::Repository> create(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                                       AxiomEvaluatorProgram::PredicateToPredicateMapping& predicate_to_predicate_mapping,
-                                                       fd::Repository& repository)
+static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                         AxiomEvaluatorProgram::PredicateToPredicateMapping& predicate_to_predicate_mapping,
+                                         fd::Repository& repository)
 {
     auto merge_cache = fp::MergeDatalogCache();
     auto builder = fd::Builder();
@@ -144,34 +144,32 @@ static View<Index<fd::Program>, fd::Repository> create(View<Index<fp::Task>, f::
         program.rules.push_back(create_axiom_rule(axiom, context).first);
 
     canonicalize(program);
-    return make_view(repository.get_or_create(program, builder.get_buffer()).first, context.destination);
+    return repository.get_or_create(program, builder.get_buffer()).first;
+}
+
+static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                   AxiomEvaluatorProgram::PredicateToPredicateMapping& mapping)
+{
+    auto repository = std::make_shared<fd::Repository>();
+    auto program = create_program(task, mapping, *repository);
+    auto domains = analysis::compute_variable_domains(make_view(program, *repository));
+    auto strata = analysis::compute_rule_stratification(make_view(program, *repository));
+    auto listeners = analysis::compute_listeners(strata, *repository);
+
+    return datalog::ProgramContext { program, std::move(repository), std::move(domains), std::move(strata), std::move(listeners) };
 }
 
 AxiomEvaluatorProgram::AxiomEvaluatorProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
     m_predicate_to_predicate(),
-    m_repository(std::make_shared<fd::Repository>()),
-    m_program(create(task, m_predicate_to_predicate, *m_repository)),
-    m_domains(analysis::compute_variable_domains(m_program)),
-    m_strata(analysis::compute_rule_stratification(m_program)),
-    m_listeners(analysis::compute_listeners(m_strata, m_program.get_context()))
+    m_program_context(create_program_context(task, m_predicate_to_predicate))
 {
     // std::cout << m_program << std::endl;
-    m_repository->notify_num_predicates<f::FluentTag>(m_program.get_predicates<f::FluentTag>().size());
-    m_repository->notify_num_functions<f::FluentTag>(m_program.get_functions<f::FluentTag>().size());
 }
+
+const datalog::ProgramContext& AxiomEvaluatorProgram::get_program_context() const noexcept { return m_program_context; }
 
 const AxiomEvaluatorProgram::PredicateToPredicateMapping& AxiomEvaluatorProgram::get_predicate_to_predicate_mapping() const noexcept
 {
     return m_predicate_to_predicate;
 }
-
-View<Index<fd::Program>, fd::Repository> AxiomEvaluatorProgram::get_program() const noexcept { return m_program; }
-
-const fd::RepositoryPtr& AxiomEvaluatorProgram::get_repository() const noexcept { return m_repository; }
-
-const analysis::ProgramVariableDomains& AxiomEvaluatorProgram::get_domains() const noexcept { return m_domains; }
-
-const analysis::RuleStrata& AxiomEvaluatorProgram::get_strata() const noexcept { return m_strata; }
-
-const analysis::ListenerStrata& AxiomEvaluatorProgram::get_listeners() const noexcept { return m_listeners; }
 }

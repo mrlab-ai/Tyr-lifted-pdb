@@ -386,6 +386,17 @@ struct TaggedAssignmentSets
     {
     }
 
+    TaggedAssignmentSets(View<IndexList<formalism::Predicate<T>>, formalism::datalog::Repository> predicates,
+                         View<IndexList<formalism::Function<T>>, formalism::datalog::Repository> functions,
+                         const analysis::DomainListListList& predicate_domains,
+                         const analysis::DomainListListList& function_domains,
+                         size_t num_objects,
+                         const TaggedFactSets<T>& fact_sets) :
+        TaggedAssignmentSets(predicates, functions, predicate_domains, function_domains, num_objects)
+    {
+        insert(fact_sets);
+    }
+
     void insert(const TaggedFactSets<T>& fact_sets)
     {
         for (const auto& set : fact_sets.predicate.get_sets())

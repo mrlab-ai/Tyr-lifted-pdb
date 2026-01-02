@@ -270,11 +270,11 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 {
     auto ground_program = GroundTaskProgram(lifted_task.get_task());
 
-    auto ground_context = d::ProgramExecutionContext(ground_program.get_program(),
-                                                     ground_program.get_repository(),
-                                                     ground_program.get_domains(),
-                                                     ground_program.get_strata(),
-                                                     ground_program.get_listeners());
+    auto ground_context = d::ProgramExecutionContext(ground_program.get_program_context().get_program(),
+                                                     ground_program.get_program_context().repository,
+                                                     ground_program.get_program_context().domains,
+                                                     ground_program.get_program_context().strata,
+                                                     ground_program.get_program_context().listeners);
 
     datalog::solve_bottom_up(ground_context);
 

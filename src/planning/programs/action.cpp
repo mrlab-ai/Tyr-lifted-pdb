@@ -35,9 +35,9 @@ namespace fd = tyr::formalism::datalog;
 namespace tyr::planning
 {
 
-static View<Index<fd::Program>, fd::Repository> create(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                                       ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping,
-                                                       fd::Repository& repository)
+static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                         ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping,
+                                         fd::Repository& repository)
 {
     auto merge_cache = fp::MergeDatalogCache();
     auto builder = fd::Builder();
@@ -133,35 +133,32 @@ static View<Index<fd::Program>, fd::Repository> create(View<Index<fp::Task>, f::
     }
 
     canonicalize(program);
-    return make_view(repository.get_or_create(program, builder.get_buffer()).first, repository);
+    return repository.get_or_create(program, builder.get_buffer()).first;
+}
+
+static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                   ApplicableActionProgram::AppPredicateToActionsMapping& mapping)
+{
+    auto repository = std::make_shared<fd::Repository>();
+    auto program = create_program(task, mapping, *repository);
+    auto domains = analysis::compute_variable_domains(make_view(program, *repository));
+    auto strata = analysis::compute_rule_stratification(make_view(program, *repository));
+    auto listeners = analysis::compute_listeners(strata, *repository);
+
+    return datalog::ProgramContext { program, std::move(repository), std::move(domains), std::move(strata), std::move(listeners) };
 }
 
 ApplicableActionProgram::ApplicableActionProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
     m_predicate_to_actions(),
-    m_repository(std::make_shared<fd::Repository>()),
-    m_program(create(task, m_predicate_to_actions, *m_repository)),
-    m_domains(analysis::compute_variable_domains(m_program)),
-    m_strata(analysis::compute_rule_stratification(m_program)),
-    m_listeners(analysis::compute_listeners(m_strata, m_program.get_context()))
+    m_program_context(create_program_context(task, m_predicate_to_actions))
 {
     // std::cout << m_program << std::endl;
-    m_repository->notify_num_predicates<f::FluentTag>(m_program.get_predicates<f::FluentTag>().size());
-    m_repository->notify_num_functions<f::FluentTag>(m_program.get_functions<f::FluentTag>().size());
 }
+
+const datalog::ProgramContext& ApplicableActionProgram::get_program_context() const noexcept { return m_program_context; }
 
 const ApplicableActionProgram::AppPredicateToActionsMapping& ApplicableActionProgram::get_predicate_to_actions_mapping() const noexcept
 {
     return m_predicate_to_actions;
 }
-
-View<Index<fd::Program>, fd::Repository> ApplicableActionProgram::get_program() const noexcept { return m_program; }
-
-const fd::RepositoryPtr& ApplicableActionProgram::get_repository() const noexcept { return m_repository; }
-
-const analysis::ProgramVariableDomains& ApplicableActionProgram::get_domains() const noexcept { return m_domains; }
-
-const analysis::RuleStrata& ApplicableActionProgram::get_strata() const noexcept { return m_strata; }
-
-const analysis::ListenerStrata& ApplicableActionProgram::get_listeners() const noexcept { return m_listeners; }
-
 }

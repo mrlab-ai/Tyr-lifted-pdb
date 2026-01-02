@@ -210,6 +210,16 @@ struct TaggedFactSets
     {
     }
 
+    TaggedFactSets(View<IndexList<formalism::Predicate<T>>, formalism::datalog::Repository> predicates,
+                   View<IndexList<formalism::Function<T>>, formalism::datalog::Repository> functions,
+                   View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> atoms,
+                   View<IndexList<formalism::datalog::GroundFunctionTermValue<T>>, formalism::datalog::Repository> fterm_values) :
+        TaggedFactSets(predicates, functions)
+    {
+        predicate.insert(atoms);
+        function.insert(fterm_values);
+    }
+
     void reset() noexcept
     {
         predicate.reset();

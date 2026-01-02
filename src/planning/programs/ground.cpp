@@ -95,10 +95,10 @@ static void translate_axiom_to_delete_free_axiom_rules(View<Index<fp::Axiom>, f:
             .first);
 }
 
-static View<Index<fd::Program>, fd::Repository> create(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                                       GroundTaskProgram::AppPredicateToActionsMapping& rule_to_actions_mapping,
-                                                       GroundTaskProgram::AppPredicateToAxiomsMapping& predicate_to_axioms_mapping,
-                                                       fd::Repository& destination)
+static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                         GroundTaskProgram::AppPredicateToActionsMapping& rule_to_actions_mapping,
+                                         GroundTaskProgram::AppPredicateToAxiomsMapping& predicate_to_axioms_mapping,
+                                         fd::Repository& destination)
 {
     auto merge_cache = fp::MergeDatalogCache();
     auto builder = fd::Builder();
@@ -156,35 +156,34 @@ static View<Index<fd::Program>, fd::Repository> create(View<Index<fp::Task>, f::
         translate_axiom_to_delete_free_axiom_rules(axiom, program, context, predicate_to_axioms_mapping);
 
     canonicalize(program);
-    return make_view(destination.get_or_create(program, builder.get_buffer()).first, destination);
+    return destination.get_or_create(program, builder.get_buffer()).first;
+}
+
+static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                   GroundTaskProgram::AppPredicateToActionsMapping& action_mapping,
+                                   GroundTaskProgram::AppPredicateToAxiomsMapping& axiom_mapping)
+{
+    auto repository = std::make_shared<fd::Repository>();
+    auto program = create_program(task, action_mapping, axiom_mapping, *repository);
+    auto domains = analysis::compute_variable_domains(make_view(program, *repository));
+    auto strata = analysis::compute_rule_stratification(make_view(program, *repository));
+    auto listeners = analysis::compute_listeners(strata, *repository);
+
+    return datalog::ProgramContext { program, std::move(repository), std::move(domains), std::move(strata), std::move(listeners) };
 }
 
 GroundTaskProgram::GroundTaskProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
     m_predicate_to_actions(),
     m_predicate_to_axioms(),
-    m_repository(std::make_shared<fd::Repository>()),
-    m_program(create(task, m_predicate_to_actions, m_predicate_to_axioms, *m_repository)),
-    m_domains(analysis::compute_variable_domains(m_program)),
-    m_strata(analysis::compute_rule_stratification(m_program)),
-    m_listeners(analysis::compute_listeners(m_strata, m_program.get_context()))
+    m_program_context(create_program_context(task, m_predicate_to_actions, m_predicate_to_axioms))
 {
     // std::cout << m_program << std::endl;
-    m_repository->notify_num_predicates<f::FluentTag>(m_program.get_predicates<f::FluentTag>().size());
-    m_repository->notify_num_functions<f::FluentTag>(m_program.get_functions<f::FluentTag>().size());
 }
+
+const datalog::ProgramContext& GroundTaskProgram::get_program_context() const noexcept { return m_program_context; }
 
 const GroundTaskProgram::AppPredicateToActionsMapping& GroundTaskProgram::get_predicate_to_actions_mapping() const noexcept { return m_predicate_to_actions; }
 
 const GroundTaskProgram::AppPredicateToAxiomsMapping& GroundTaskProgram::get_predicate_to_axioms_mapping() const noexcept { return m_predicate_to_axioms; }
-
-View<Index<fd::Program>, fd::Repository> GroundTaskProgram::get_program() const noexcept { return m_program; }
-
-const fd::RepositoryPtr& GroundTaskProgram::get_repository() const noexcept { return m_repository; }
-
-const analysis::ProgramVariableDomains& GroundTaskProgram::get_domains() const noexcept { return m_domains; }
-
-const analysis::RuleStrata& GroundTaskProgram::get_strata() const noexcept { return m_strata; }
-
-const analysis::ListenerStrata& GroundTaskProgram::get_listeners() const noexcept { return m_listeners; }
 
 }

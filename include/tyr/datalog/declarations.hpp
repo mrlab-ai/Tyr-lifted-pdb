@@ -64,6 +64,17 @@ struct ProgramExecutionContext;
 struct ThreadExecutionContext;
 struct PlanningExecutionContext;
 
+struct D2PWorkspace;
+struct FactsWorkspace;
+struct ConstFactsWorkspace;
+struct P2DWorkspace;
+struct ProgramWorkspace;
+struct ConstProgramWorkspace;
+struct RuleDeltaWorkspace;
+struct RuleWorkspace;
+struct ConstRuleWorkspace;
+struct WorkerWorkspace;
+
 namespace kpkc
 {
 struct DenseKPartiteGraph;

@@ -18,11 +18,9 @@
 #ifndef TYR_PLANNING_PROGRAMS_AXIOM_HPP_
 #define TYR_PLANNING_PROGRAMS_AXIOM_HPP_
 
-#include "tyr/analysis/domains.hpp"
-#include "tyr/analysis/listeners.hpp"
-#include "tyr/analysis/stratification.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
+#include "tyr/datalog/program_context.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -43,22 +41,13 @@ public:
 
     explicit AxiomEvaluatorProgram(View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task);
 
+    const datalog::ProgramContext& get_program_context() const noexcept;
     const PredicateToPredicateMapping& get_predicate_to_predicate_mapping() const noexcept;
-    View<Index<formalism::datalog::Program>, formalism::datalog::Repository> get_program() const noexcept;
-    const formalism::datalog::RepositoryPtr& get_repository() const noexcept;
-    const analysis::ProgramVariableDomains& get_domains() const noexcept;
-    const analysis::RuleStrata& get_strata() const noexcept;
-    const analysis::ListenerStrata& get_listeners() const noexcept;
 
 private:
     PredicateToPredicateMapping m_predicate_to_predicate;
 
-    formalism::datalog::RepositoryPtr m_repository;
-    View<Index<formalism::datalog::Program>, formalism::datalog::Repository> m_program;
-
-    analysis::ProgramVariableDomains m_domains;
-    analysis::RuleStrata m_strata;
-    analysis::ListenerStrata m_listeners;
+    datalog::ProgramContext m_program_context;
 };
 
 }

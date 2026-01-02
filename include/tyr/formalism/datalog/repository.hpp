@@ -246,18 +246,6 @@ public:
     {
         std::apply([](auto&... slots) { (slots.container.clear(), ...); }, m_repository);
     }
-
-    template<formalism::FactKind T>
-    void notify_num_predicates(size_t num_predicates)
-    {
-        get_container<GroundAtom<T>>(m_repository).resize(num_predicates);
-    }
-
-    template<formalism::FactKind T>
-    void notify_num_functions(size_t num_functions)
-    {
-        get_container<GroundFunctionTerm<T>>(m_repository).resize(num_functions);
-    }
 };
 
 static_assert(RepositoryConcept<Repository>);

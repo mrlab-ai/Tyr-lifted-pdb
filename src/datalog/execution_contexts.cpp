@@ -90,8 +90,6 @@ RuleStageExecutionContext::RuleStageExecutionContext(View<Index<fd::Program>, fd
     ground_heads(),
     merge_cache()
 {
-    repository->notify_num_predicates<f::FluentTag>(program.get_predicates<f::FluentTag>().size());
-    repository->notify_num_functions<f::FluentTag>(program.get_functions<f::FluentTag>().size());
 }
 
 void RuleStageExecutionContext::clear() noexcept
@@ -135,8 +133,6 @@ RuleExecutionContext::RuleExecutionContext(View<Index<fd::Program>, fd::Reposito
     binding(),
     ground_heads()
 {
-    repository->notify_num_predicates<f::FluentTag>(program.get_predicates<f::FluentTag>().size());
-    repository->notify_num_functions<f::FluentTag>(program.get_functions<f::FluentTag>().size());
 }
 
 void RuleExecutionContext::clear() noexcept

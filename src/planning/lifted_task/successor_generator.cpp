@@ -39,11 +39,11 @@ namespace tyr::planning
 
 SuccessorGenerator<LiftedTask>::SuccessorGenerator(std::shared_ptr<LiftedTask> task) :
     m_task(task),
-    m_action_context(m_task->get_action_program().get_program(),
-                     m_task->get_action_program().get_repository(),
-                     m_task->get_action_program().get_domains(),
-                     m_task->get_action_program().get_strata(),
-                     m_task->get_action_program().get_listeners()),
+    m_action_context(m_task->get_action_program().get_program_context().get_program(),
+                     m_task->get_action_program().get_program_context().repository,
+                     m_task->get_action_program().get_program_context().domains,
+                     m_task->get_action_program().get_program_context().strata,
+                     m_task->get_action_program().get_program_context().listeners),
     m_state_repository(std::make_shared<StateRepository<LiftedTask>>(task)),
     m_executor()
 {

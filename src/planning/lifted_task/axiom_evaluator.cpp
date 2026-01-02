@@ -90,11 +90,11 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
 
 AxiomEvaluator<LiftedTask>::AxiomEvaluator(std::shared_ptr<LiftedTask> task) :
     m_task(task),
-    m_axiom_context(task->get_axiom_program().get_program(),
-                    task->get_axiom_program().get_repository(),
-                    task->get_axiom_program().get_domains(),
-                    task->get_axiom_program().get_strata(),
-                    task->get_axiom_program().get_listeners())
+    m_axiom_context(task->get_axiom_program().get_program_context().get_program(),
+                    task->get_axiom_program().get_program_context().repository,
+                    task->get_axiom_program().get_program_context().domains,
+                    task->get_axiom_program().get_program_context().strata,
+                    task->get_axiom_program().get_program_context().listeners)
 {
 }
 
