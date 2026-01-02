@@ -22,8 +22,8 @@
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/datalog/bottom_up.hpp"
-#include "tyr/datalog/execution_contexts.hpp"
 #include "tyr/datalog/generator.hpp"
+#include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
@@ -270,35 +270,31 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 {
     auto ground_program = GroundTaskProgram(lifted_task.get_task());
 
-    auto ground_context = d::ProgramExecutionContext(ground_program.get_program_context().get_program(),
-                                                     ground_program.get_program_context().repository,
-                                                     ground_program.get_program_context().domains,
-                                                     ground_program.get_program_context().strata,
-                                                     ground_program.get_program_context().listeners);
+    auto const_workspace = d::ConstProgramWorkspace(ground_program.get_program_context());
+    auto workspace = d::ProgramWorkspace(ground_program.get_program_context(), const_workspace);
 
-    datalog::solve_bottom_up(ground_context);
+    datalog::solve_bottom_up(workspace, const_workspace);
 
-    auto aggregated_statistics = d::RuleExecutionContext::compute_aggregate_statistics(ground_context.rule_execution_contexts);
+    auto aggregated_statistics = d::RuleWorkspace::compute_aggregate_statistics(workspace.rules);
 
     auto to_ms = [](auto d) { return std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(d).count(); };
 
-    std::cout << "num_rules: " << ground_context.rule_execution_contexts.size() << std::endl;
+    std::cout << "num_rules: " << workspace.rules.size() << std::endl;
     std::cout << "init_total_time_min: " << to_ms(aggregated_statistics.init_total_time_min) << " ms" << std::endl;
     std::cout << "init_total_time_max: " << to_ms(aggregated_statistics.init_total_time_max) << " ms" << std::endl;
     std::cout << "init_total_time_median: " << to_ms(aggregated_statistics.init_total_time_median) << " ms" << std::endl;
     std::cout << "ground_total_time_min: " << to_ms(aggregated_statistics.ground_total_time_min) << " ms" << std::endl;
     std::cout << "ground_total_time_max: " << to_ms(aggregated_statistics.ground_total_time_max) << " ms" << std::endl;
     std::cout << "ground_total_time_median: " << to_ms(aggregated_statistics.ground_total_time_median) << " ms" << std::endl;
-    std::cout << "ground_seq_total_time: " << to_ms(ground_context.statistics.ground_seq_total_time) << " ms" << std::endl;
-    std::cout << "merge_seq_total_time: " << to_ms(ground_context.statistics.merge_seq_total_time) << " ms" << std::endl;
-    const auto total_time = (ground_context.statistics.ground_seq_total_time + ground_context.statistics.merge_seq_total_time).count();
-    const auto parallel_time = ground_context.statistics.ground_seq_total_time.count();
+    std::cout << "ground_seq_total_time: " << to_ms(workspace.statistics.ground_seq_total_time) << " ms" << std::endl;
+    std::cout << "merge_seq_total_time: " << to_ms(workspace.statistics.merge_seq_total_time) << " ms" << std::endl;
+    const auto total_time = (workspace.statistics.ground_seq_total_time + workspace.statistics.merge_seq_total_time).count();
+    const auto parallel_time = workspace.statistics.ground_seq_total_time.count();
     std::cout << "parallel_fraction: " << ((total_time > 0) ? static_cast<double>(parallel_time) / total_time : 1.0) << std::endl;
-    const auto total_merges = ground_context.statistics.num_merges_inserted + ground_context.statistics.num_merges_discarded;
-    std::cout << "merge_fraction: " << ((total_merges > 0) ? static_cast<double>(ground_context.statistics.num_merges_inserted) / total_merges : 1.0)
-              << std::endl;
+    const auto total_merges = workspace.statistics.num_merges_inserted + workspace.statistics.num_merges_discarded;
+    std::cout << "merge_fraction: " << ((total_merges > 0) ? static_cast<double>(workspace.statistics.num_merges_inserted) / total_merges : 1.0) << std::endl;
 
-    ground_context.program_to_task_execution_context.clear();
+    workspace.d2p.clear();
 
     auto fluent_assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
     auto derived_assign = UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, bool> {};
@@ -331,16 +327,14 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
         set(uint_t(atom.get_index()), true, static_atoms_bitset);
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_actions_mapping, then facts of the predicate
-    for (const auto& set : ground_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_sets())
+    for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
     {
         for (const auto& fact : set.get_facts())
         {
             if (ground_program.get_predicate_to_actions_mapping().contains(fact.get_predicate().get_index()))
             {
-                ground_context.program_to_task_execution_context.binding = fact.get_objects().get_data();
-                auto grounder_context = fp::GrounderContext { ground_context.planning_builder,
-                                                              *lifted_task.get_repository(),
-                                                              ground_context.program_to_task_execution_context.binding };
+                workspace.d2p.binding = fact.get_objects().get_data();
+                auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
 
                 for (const auto action_index : ground_program.get_predicate_to_actions_mapping().at(fact.get_predicate().get_index()))
                 {
@@ -391,16 +385,14 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
     auto ground_axioms_set = UnorderedSet<Index<fp::GroundAxiom>> {};
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_axioms_mapping, then facts of the predicate
-    for (const auto& set : ground_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_sets())
+    for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
     {
         for (const auto& fact : set.get_facts())
         {
             if (ground_program.get_predicate_to_axioms_mapping().contains(fact.get_predicate().get_index()))
             {
-                ground_context.program_to_task_execution_context.binding = fact.get_objects().get_data();
-                auto grounder_context = fp::GrounderContext { ground_context.planning_builder,
-                                                              *lifted_task.get_repository(),
-                                                              ground_context.program_to_task_execution_context.binding };
+                workspace.d2p.binding = fact.get_objects().get_data();
+                auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
 
                 for (const auto axiom_index : ground_program.get_predicate_to_axioms_mapping().at(fact.get_predicate().get_index()))
                 {

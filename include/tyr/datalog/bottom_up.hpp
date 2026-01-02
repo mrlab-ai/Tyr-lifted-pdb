@@ -23,7 +23,7 @@
 namespace tyr::datalog
 {
 
-extern void solve_bottom_up(datalog::ProgramExecutionContext& context);
+extern void solve_bottom_up(datalog::ProgramWorkspace& ws, const datalog::ConstProgramWorkspace& cws);
 
 }
 

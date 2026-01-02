@@ -17,25 +17,24 @@
 
 #include "tyr/datalog/bottom_up.hpp"
 
-#include "tyr/common/chrono.hpp"               // for StopwatchScope
-#include "tyr/common/comparators.hpp"          // for operator!=, opera...
-#include "tyr/common/config.hpp"               // for uint_t
-#include "tyr/common/formatter.hpp"            // for operator<<
-#include "tyr/common/types.hpp"                // for make_view, IndexList
-#include "tyr/common/vector.hpp"               // for View
-#include "tyr/datalog/assignment_sets.hpp"     // for AssignmentSets
-#include "tyr/datalog/execution_contexts.hpp"  // for ProgramExecutionC...
-#include "tyr/datalog/fact_sets.hpp"           // for FactSets, Predica...
-#include "tyr/datalog/generator.hpp"           // for ground
-#include "tyr/datalog/rule_scheduler.hpp"      // for RuleSchedulerStratum
-#include "tyr/formalism/datalog/merge.hpp"     // for merge, MergeContext
+#include "tyr/common/chrono.hpp"            // for StopwatchScope
+#include "tyr/common/comparators.hpp"       // for operator!=, opera...
+#include "tyr/common/config.hpp"            // for uint_t
+#include "tyr/common/formatter.hpp"         // for operator<<
+#include "tyr/common/types.hpp"             // for make_view, IndexList
+#include "tyr/common/vector.hpp"            // for View
+#include "tyr/datalog/assignment_sets.hpp"  // for AssignmentSets
+#include "tyr/datalog/fact_sets.hpp"        // for FactSets, Predica...
+#include "tyr/datalog/generator.hpp"        // for ground
+#include "tyr/datalog/rule_scheduler.hpp"   // for RuleSchedulerStratum
+#include "tyr/datalog/workspaces/program.hpp"
+#include "tyr/formalism/datalog/merge.hpp"  // for merge, MergeContext
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <cista/containers/hash_storage.h>          // for operator!=
 #include <gtl/phmap.hpp>                            // for operator!=
 #include <memory>                                   // for __shared_ptr_access
 #include <oneapi/tbb/enumerable_thread_specific.h>  // for enumerable_thread...
-#include <oneapi/tbb/parallel_for.h>                // for parallel_for
 #include <oneapi/tbb/parallel_for_each.h>
 #include <utility>  // for pair
 #include <vector>   // for vector
@@ -43,7 +42,7 @@
 namespace tyr::datalog
 {
 
-static void solve_bottom_up_for_stratum(datalog::ProgramExecutionContext& program_execution_context, datalog::RuleSchedulerStratum& scheduler)
+static void solve_bottom_up_for_stratum(datalog::RuleSchedulerStratum& scheduler, datalog::ProgramWorkspace& ws, const datalog::ConstProgramWorkspace& cws)
 {
     scheduler.activate_all();
 
@@ -57,36 +56,39 @@ static void solve_bottom_up_for_stratum(datalog::ProgramExecutionContext& progra
         scheduler.on_start_iteration();
 
         {
-            auto stopwatch = StopwatchScope(program_execution_context.statistics.ground_seq_total_time);
+            auto stopwatch = StopwatchScope(ws.statistics.ground_seq_total_time);
 
-            oneapi::tbb::parallel_for_each(
-                active_rules.begin(),
-                active_rules.end(),
-                [&](auto&& rule_index)
-                {
-                    const auto i = uint_t(rule_index);
-                    auto& facts_execution_context = program_execution_context.facts_execution_context;
-                    auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
-                    auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
-                    auto& thread_execution_context = program_execution_context.thread_execution_contexts.local();
+            oneapi::tbb::parallel_for_each(active_rules.begin(),
+                                           active_rules.end(),
+                                           [&](auto&& rule_index)
+                                           {
+                                               const auto i = uint_t(rule_index);
+                                               auto& facts = ws.facts;
+                                               const auto& const_facts = cws.facts;
 
-                    {
-                        ///--- Initialization phase
-                        auto stopwatch = StopwatchScope(rule_execution_context.statistics.init_total_time);
+                                               const auto assignment_sets = AssignmentSets { const_facts.assignment_sets, facts.assignment_sets };
+                                               auto& rule_ws = ws.rules[i];
+                                               const auto& const_rule_ws = cws.rules[i];
+                                               auto& rule_delta_ws = ws.rule_deltas[i];
+                                               auto& worker_ws = ws.worker.local();
 
-                        thread_execution_context.clear();
-                        rule_execution_context.clear();
-                        rule_execution_context.initialize(program_execution_context.facts_execution_context.assignment_sets);
-                    }
+                                               {
+                                                   ///--- Initialization phase
+                                                   auto stopwatch = StopwatchScope(rule_ws.statistics.init_total_time);
 
-                    {
-                        /// --- Grounding phase
-                        auto stopwatch = StopwatchScope(rule_execution_context.statistics.ground_total_time);
-                        ++rule_execution_context.statistics.num_executions;
+                                                   worker_ws.clear();
+                                                   rule_ws.clear();
+                                                   rule_ws.initialize(const_rule_ws.static_consistency_graph, assignment_sets);
+                                               }
 
-                        ground(facts_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
-                    }
-                });
+                                               {
+                                                   /// --- Grounding phase
+                                                   auto stopwatch = StopwatchScope(rule_ws.statistics.ground_total_time);
+                                                   ++rule_ws.statistics.num_executions;
+
+                                                   ground(facts, const_facts, rule_ws, const_rule_ws, rule_delta_ws, worker_ws);
+                                               }
+                                           });
         }
 
         /**
@@ -96,30 +98,28 @@ static void solve_bottom_up_for_stratum(datalog::ProgramExecutionContext& progra
         /// --- Sequentially combine results into a temporary staging repository to prevent modying the program's repository
 
         {
-            const auto stopwatch = StopwatchScope(program_execution_context.statistics.merge_seq_total_time);
+            const auto stopwatch = StopwatchScope(ws.statistics.merge_seq_total_time);
 
             auto discovered_new_fact = bool { false };
 
-            auto& fluent_predicate_fact_sets = program_execution_context.facts_execution_context.fact_sets.fluent_sets.predicate;
-            auto& fluent_predicate_assignment_sets = program_execution_context.facts_execution_context.assignment_sets.fluent_sets.predicate;
+            auto& fluent_predicate_fact_sets = ws.facts.fact_sets.predicate;
+            auto& fluent_predicate_assignment_sets = ws.facts.assignment_sets.predicate;
 
             for (const auto rule_index : active_rules)
             {
                 const auto i = uint_t(rule_index);
 
-                const auto& rule_execution_context = program_execution_context.rule_execution_contexts[i];
-                auto& rule_stage_execution_context = program_execution_context.rule_stage_execution_contexts[i];
+                const auto& rule_ws = ws.rules[i];
+                auto& rule_delta_ws = ws.rule_deltas[i];
 
-                auto merge_context = formalism::datalog::MergeContext { program_execution_context.datalog_builder,
-                                                                        *program_execution_context.repository,
-                                                                        rule_stage_execution_context.merge_cache };
+                auto merge_context = formalism::datalog::MergeContext { ws.datalog_builder, ws.repository, rule_delta_ws.merge_cache };
 
-                for (const auto ground_head_index : rule_execution_context.ground_heads)
+                for (const auto ground_head_index : rule_ws.ground_heads)
                 {
                     /// --- Program
 
                     // Note: the head lives in the stage but its index is stored in rule because it is reset each iteration
-                    const auto ground_head_rule = make_view(ground_head_index, *rule_stage_execution_context.repository);
+                    const auto ground_head_rule = make_view(ground_head_index, *rule_delta_ws.repository);
 
                     // Merge it into the program
                     const auto ground_head_index_program = formalism::datalog::merge_d2d(ground_head_rule, merge_context).first;
@@ -129,18 +129,18 @@ static void solve_bottom_up_for_stratum(datalog::ProgramExecutionContext& progra
                     {
                         discovered_new_fact = true;
 
-                        const auto ground_head_program = make_view(ground_head_index_program, *program_execution_context.repository);
+                        const auto ground_head_program = make_view(ground_head_index_program, ws.repository);
 
                         scheduler.on_generate(ground_head_program.get_predicate().get_index());
 
                         fluent_predicate_fact_sets.insert(ground_head_program);
                         fluent_predicate_assignment_sets.insert(ground_head_program);
 
-                        ++program_execution_context.statistics.num_merges_inserted;
+                        ++ws.statistics.num_merges_inserted;
                     }
                     else
                     {
-                        ++program_execution_context.statistics.num_merges_discarded;
+                        ++ws.statistics.num_merges_discarded;
                     }
                 }
             }
@@ -153,14 +153,14 @@ static void solve_bottom_up_for_stratum(datalog::ProgramExecutionContext& progra
     }
 }
 
-void solve_bottom_up(datalog::ProgramExecutionContext& program_execution_context)
+void solve_bottom_up(datalog::ProgramWorkspace& ws, const datalog::ConstProgramWorkspace& cws)
 {
-    for (auto& rule_stage_execution_context : program_execution_context.rule_stage_execution_contexts)
-        rule_stage_execution_context.clear();
+    for (auto& rule_delta_ws : ws.rule_deltas)
+        rule_delta_ws.clear();
 
-    for (auto& scheduler : program_execution_context.rule_scheduler_strata.data)
+    for (auto& scheduler : ws.rule_scheduler_strata.data)
     {
-        solve_bottom_up_for_stratum(program_execution_context, scheduler);
+        solve_bottom_up_for_stratum(scheduler, ws, cws);
     }
 }
 }

@@ -192,31 +192,4 @@ const std::vector<float_t>& FunctionFactSet<T>::get_values() const noexcept
 template class FunctionFactSet<f::StaticTag>;
 template class FunctionFactSet<f::FluentTag>;
 
-/**
- * FactSets
- */
-
-FactSets::FactSets(View<Index<fd::Program>, fd::Repository> program) :
-    static_sets(program.template get_predicates<f::StaticTag>(), program.template get_functions<f::StaticTag>()),
-    fluent_sets(program.template get_predicates<f::FluentTag>(), program.template get_functions<f::FluentTag>())
-{
-    static_sets.predicate.insert(program.template get_atoms<f::StaticTag>());
-    static_sets.function.insert(program.template get_fterm_values<f::StaticTag>());
-    fluent_sets.predicate.insert(program.template get_atoms<f::FluentTag>());
-    fluent_sets.function.insert(program.template get_fterm_values<f::FluentTag>());
-}
-
-FactSets::FactSets(View<Index<fd::Program>, fd::Repository> program, TaggedFactSets<f::FluentTag> fluent_facts) :
-    static_sets(program.template get_predicates<f::StaticTag>(), program.template get_functions<f::StaticTag>()),
-    fluent_sets(program.template get_predicates<f::FluentTag>(), program.template get_functions<f::FluentTag>())
-{
-    static_sets.predicate.insert(program.template get_atoms<f::StaticTag>());
-    static_sets.function.insert(program.template get_fterm_values<f::StaticTag>());
-
-    for (const auto& set : fluent_facts.predicate.get_sets())
-        fluent_sets.predicate.insert(set.get_facts());
-    for (const auto& set : fluent_facts.function.get_sets())
-        fluent_sets.function.insert(set.get_fterms(), set.get_values());
-}
-
 }

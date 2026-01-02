@@ -78,7 +78,9 @@ RuleSchedulerStrata create_rule_scheduler_strata(const analysis::RuleStrata& rul
 
     auto result = RuleSchedulerStrata {};
     for (uint_t i = 0; i < rules.data.size(); ++i)
+    {
         result.data.emplace_back(rules.data[i], listeners.data[i], context);
+    }
 
     return result;
 }

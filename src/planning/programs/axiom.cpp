@@ -161,15 +161,18 @@ static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp
 
 AxiomEvaluatorProgram::AxiomEvaluatorProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
     m_predicate_to_predicate(),
-    m_program_context(create_program_context(task, m_predicate_to_predicate))
+    m_program_context(create_program_context(task, m_predicate_to_predicate)),
+    m_program_workspace(m_program_context)
 {
-    // std::cout << m_program << std::endl;
+    // std::cout << m_program_context.get_program() << std::endl;
 }
-
-const datalog::ProgramContext& AxiomEvaluatorProgram::get_program_context() const noexcept { return m_program_context; }
 
 const AxiomEvaluatorProgram::PredicateToPredicateMapping& AxiomEvaluatorProgram::get_predicate_to_predicate_mapping() const noexcept
 {
     return m_predicate_to_predicate;
 }
+
+const datalog::ProgramContext& AxiomEvaluatorProgram::get_program_context() const noexcept { return m_program_context; }
+
+const datalog::ConstProgramWorkspace& AxiomEvaluatorProgram::get_const_program_workspace() const noexcept { return m_program_workspace; }
 }

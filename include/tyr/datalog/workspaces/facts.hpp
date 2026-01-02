@@ -37,7 +37,11 @@ struct FactsWorkspace
                             View<IndexList<formalism::Function<formalism::FluentTag>>, formalism::datalog::Repository> functions,
                             const analysis::DomainListListList& predicate_domains,
                             const analysis::DomainListListList& function_domains,
-                            size_t num_objects);
+                            size_t num_objects,
+                            View<IndexList<formalism::datalog::GroundAtom<formalism::FluentTag>>, formalism::datalog::Repository> atoms,
+                            View<IndexList<formalism::datalog::GroundFunctionTermValue<formalism::FluentTag>>, formalism::datalog::Repository> fterm_values);
+
+    void reset();
 };
 
 struct ConstFactsWorkspace

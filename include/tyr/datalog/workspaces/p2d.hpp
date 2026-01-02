@@ -18,10 +18,17 @@
 #ifndef TYR_DATALOG_WORKSPACES_P2D_HPP_
 #define TYR_DATALOG_WORKSPACES_P2D_HPP_
 
+#include "tyr/formalism/planning/merge_datalog.hpp"
+
 namespace tyr::datalog
 {
 struct P2DWorkspace
 {
+    P2DWorkspace() = default;
+
+    formalism::planning::MergeDatalogCache merge_cache;
+
+    void clear() noexcept;
 };
 }
 

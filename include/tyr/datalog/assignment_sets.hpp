@@ -414,77 +414,17 @@ struct TaggedAssignmentSets
 
 struct AssignmentSets
 {
-    TaggedAssignmentSets<formalism::StaticTag> static_sets;
-    TaggedAssignmentSets<formalism::FluentTag> fluent_sets;
+    const TaggedAssignmentSets<formalism::StaticTag>& static_sets;
+    const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets;
 
-    AssignmentSets(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program, const analysis::ProgramVariableDomains& domains) :
-        static_sets(program.template get_predicates<formalism::StaticTag>(),
-                    program.template get_functions<formalism::StaticTag>(),
-                    domains.static_predicate_domains,
-                    domains.static_function_domains,
-                    program.get_objects().size()),
-        fluent_sets(program.template get_predicates<formalism::FluentTag>(),
-                    program.template get_functions<formalism::FluentTag>(),
-                    domains.fluent_predicate_domains,
-                    domains.fluent_function_domains,
-                    program.get_objects().size())
+    AssignmentSets(const TaggedAssignmentSets<formalism::StaticTag>& static_sets, const TaggedAssignmentSets<formalism::FluentTag>& fluent_sets) :
+        static_sets(static_sets),
+        fluent_sets(fluent_sets)
     {
-    }
-
-    AssignmentSets(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program,
-                   const analysis::ProgramVariableDomains& domains,
-                   const FactSets& fact_sets) :
-        static_sets(program.template get_predicates<formalism::StaticTag>(),
-                    program.template get_functions<formalism::StaticTag>(),
-                    domains.static_predicate_domains,
-                    domains.static_function_domains,
-                    program.get_objects().size()),
-        fluent_sets(program.template get_predicates<formalism::FluentTag>(),
-                    program.template get_functions<formalism::FluentTag>(),
-                    domains.fluent_predicate_domains,
-                    domains.fluent_function_domains,
-                    program.get_objects().size())
-    {
-        insert(fact_sets);
     }
 
     template<formalism::FactKind T>
-    void reset() noexcept
-    {
-        get<T>().reset();
-    }
-
-    void reset() noexcept
-    {
-        reset<formalism::StaticTag>();
-        reset<formalism::FluentTag>();
-    }
-
-    template<formalism::FactKind T>
-    void insert(const TaggedFactSets<T>& fact_set)
-    {
-        get<T>().insert(fact_set);
-    }
-
-    void insert(const FactSets& fact_sets)
-    {
-        insert(fact_sets.template get<formalism::StaticTag>());
-        insert(fact_sets.template get<formalism::FluentTag>());
-    }
-
-    template<formalism::FactKind T>
-    TaggedAssignmentSets<T>& get()
-    {
-        if constexpr (std::is_same_v<T, formalism::StaticTag>)
-            return static_sets;
-        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-            return fluent_sets;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-    template<formalism::FactKind T>
-    const TaggedAssignmentSets<T>& get() const
+    const auto& get() const
     {
         if constexpr (std::is_same_v<T, formalism::StaticTag>)
             return static_sets;

@@ -28,10 +28,18 @@ FactsWorkspace::FactsWorkspace(View<IndexList<f::Predicate<f::FluentTag>>, fd::R
                                View<IndexList<f::Function<f::FluentTag>>, fd::Repository> functions,
                                const a::DomainListListList& predicate_domains,
                                const a::DomainListListList& function_domains,
-                               size_t num_objects) :
-    fact_sets(predicates, functions),
+                               size_t num_objects,
+                               View<IndexList<fd::GroundAtom<formalism::FluentTag>>, fd::Repository> atoms,
+                               View<IndexList<fd::GroundFunctionTermValue<formalism::FluentTag>>, fd::Repository> fterm_values) :
+    fact_sets(predicates, functions, atoms, fterm_values),
     assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects, fact_sets)
 {
+}
+
+void FactsWorkspace::reset()
+{
+    fact_sets.reset();
+    assignment_sets.reset();
 }
 
 ConstFactsWorkspace::ConstFactsWorkspace(View<IndexList<f::Predicate<f::StaticTag>>, fd::Repository> predicates,

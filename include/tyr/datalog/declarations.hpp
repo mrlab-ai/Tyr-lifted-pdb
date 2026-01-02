@@ -48,22 +48,6 @@ struct FactSets;
 
 class StaticConsistencyGraph;
 
-namespace details
-{
-class Vertex;
-class Edge;
-}
-
-struct VertexAssignment;
-struct EdgeAssignment;
-
-struct FactsExecutionContext;
-struct RuleStageExecutionContext;
-struct RuleExecutionContext;
-struct ProgramExecutionContext;
-struct ThreadExecutionContext;
-struct PlanningExecutionContext;
-
 struct D2PWorkspace;
 struct FactsWorkspace;
 struct ConstFactsWorkspace;
@@ -74,6 +58,15 @@ struct RuleDeltaWorkspace;
 struct RuleWorkspace;
 struct ConstRuleWorkspace;
 struct WorkerWorkspace;
+
+namespace details
+{
+class Vertex;
+class Edge;
+}
+
+struct VertexAssignment;
+struct EdgeAssignment;
 
 namespace kpkc
 {

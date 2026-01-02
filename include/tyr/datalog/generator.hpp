@@ -23,25 +23,33 @@
 namespace tyr::datalog
 {
 
-extern void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
-                                RuleExecutionContext& rule_execution_context,
-                                RuleStageExecutionContext& rule_stage_execution_context,
-                                ThreadExecutionContext& thread_execution_context);
+extern void ground_nullary_case(const FactsWorkspace& fact_ws,
+                                const ConstFactsWorkspace& const_fact_ws,
+                                RuleWorkspace& rule_ws,
+                                const ConstRuleWorkspace& const_rule_ws,
+                                RuleDeltaWorkspace& rule_delta_ws,
+                                WorkerWorkspace& worker_ws);
 
-extern void ground_unary_case(const FactsExecutionContext& fact_execution_context,
-                              RuleExecutionContext& rule_execution_context,
-                              RuleStageExecutionContext& rule_stage_execution_context,
-                              ThreadExecutionContext& thread_execution_context);
+extern void ground_unary_case(const FactsWorkspace& fact_ws,
+                              const ConstFactsWorkspace& const_fact_ws,
+                              RuleWorkspace& rule_ws,
+                              const ConstRuleWorkspace& const_rule_ws,
+                              RuleDeltaWorkspace& rule_delta_ws,
+                              WorkerWorkspace& worker_ws);
 
-extern void ground_general_case(const FactsExecutionContext& fact_execution_context,
-                                RuleExecutionContext& rule_execution_context,
-                                RuleStageExecutionContext& rule_stage_execution_context,
-                                ThreadExecutionContext& thread_execution_context);
+extern void ground_general_case(const FactsWorkspace& fact_ws,
+                                const ConstFactsWorkspace& const_fact_ws,
+                                RuleWorkspace& rule_ws,
+                                const ConstRuleWorkspace& const_rule_ws,
+                                RuleDeltaWorkspace& rule_delta_ws,
+                                WorkerWorkspace& worker_ws);
 
-extern void ground(const FactsExecutionContext& fact_execution_context,
-                   RuleExecutionContext& rule_execution_context,
-                   RuleStageExecutionContext& rule_stage_execution_context,
-                   ThreadExecutionContext& thread_execution_context);
+extern void ground(const FactsWorkspace& fact_ws,
+                   const ConstFactsWorkspace& const_fact_ws,
+                   RuleWorkspace& rule_ws,
+                   const ConstRuleWorkspace& const_rule_ws,
+                   RuleDeltaWorkspace& rule_delta_ws,
+                   WorkerWorkspace& worker_ws);
 
 }
 

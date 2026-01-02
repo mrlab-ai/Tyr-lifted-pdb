@@ -24,13 +24,29 @@ namespace fd = tyr::formalism::datalog;
 namespace tyr::datalog
 {
 
-ProgramWorkspace::ProgramWorkspace(const ProgramContext& context) :
+ProgramWorkspace::ProgramWorkspace(const ProgramContext& context, const ConstProgramWorkspace& cws) :
+    repository(*context.repository),
     facts(context.get_program().get_predicates<formalism::FluentTag>(),
           context.get_program().get_functions<formalism::FluentTag>(),
           context.domains.fluent_predicate_domains,
           context.domains.fluent_function_domains,
-          context.get_program().get_objects().size())
+          context.get_program().get_objects().size(),
+          context.get_program().get_atoms<formalism::FluentTag>(),
+          context.get_program().get_fterm_values<formalism::FluentTag>()),
+    rules(),
+    rule_deltas(context.get_program().get_rules().size()),
+    d2p(),
+    p2d(),
+    worker(),
+    planning_builder(),
+    datalog_builder(),
+    rule_scheduler_strata(create_rule_scheduler_strata(context.strata, context.listeners, *context.repository)),
+    statistics()
 {
+    for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
+    {
+        rules.emplace_back(*context.repository, cws.rules[i].static_consistency_graph);
+    }
 }
 
 ConstProgramWorkspace::ConstProgramWorkspace(const ProgramContext& context) :
@@ -40,8 +56,13 @@ ConstProgramWorkspace::ConstProgramWorkspace(const ProgramContext& context) :
           context.domains.static_function_domains,
           context.get_program().get_objects().size(),
           context.get_program().get_atoms<formalism::StaticTag>(),
-          context.get_program().get_fterm_values<formalism::StaticTag>())
+          context.get_program().get_fterm_values<formalism::StaticTag>()),
+    rules()
 {
+    for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
+    {
+        rules.emplace_back(context.get_program().get_rules()[i].get_index(), *context.repository, context.domains.rule_domains[i], facts.assignment_sets);
+    }
 }
 
 }

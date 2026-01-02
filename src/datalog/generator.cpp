@@ -27,12 +27,15 @@
 #include "tyr/datalog/applicability.hpp"      // for is_ap...
 #include "tyr/datalog/consistency_graph.hpp"  // for Vertex
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/execution_contexts.hpp"  // for RuleE...
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/generator.hpp"
-#include "tyr/datalog/kpkc.hpp"                                  // for for_e...
-#include "tyr/datalog/kpkc_data.hpp"                             // for Works...
+#include "tyr/datalog/kpkc.hpp"       // for for_e...
+#include "tyr/datalog/kpkc_data.hpp"  // for Works...
+#include "tyr/datalog/workspaces/facts.hpp"
+#include "tyr/datalog/workspaces/rule.hpp"
+#include "tyr/datalog/workspaces/rule_delta.hpp"
+#include "tyr/datalog/workspaces/worker.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"  // for View
 #include "tyr/formalism/datalog/declarations.hpp"                // for Context
 #include "tyr/formalism/datalog/formatter.hpp"                   // for opera...
@@ -134,126 +137,125 @@ static auto create_general_ground_head_in_stage(const std::vector<uint_t>& cliqu
     return ground(head, context);
 }
 
-void ground_nullary_case(const FactsExecutionContext& fact_execution_context,
-                         RuleExecutionContext& rule_execution_context,
-                         RuleStageExecutionContext& rule_stage_execution_context,
-                         ThreadExecutionContext& thread_execution_context)
+void ground_nullary_case(const FactsWorkspace& fact_ws,
+                         const ConstFactsWorkspace& const_fact_ws,
+                         RuleWorkspace& rule_ws,
+                         const ConstRuleWorkspace& const_rule_ws,
+                         RuleDeltaWorkspace& rule_delta_ws,
+                         WorkerWorkspace& worker_ws)
 {
-    auto ground_context_stage =
-        fd::GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
+    auto ground_context_stage = fd::GrounderContext { worker_ws.builder, *rule_delta_ws.repository, rule_delta_ws.binding };
+    auto fact_sets = FactSets(const_fact_ws.fact_sets, fact_ws.fact_sets);
 
     /// --- Rule stage
-    const auto ground_head = create_nullary_ground_head_in_stage(rule_execution_context.rule.get_head(), ground_context_stage).first;
+    const auto ground_head = create_nullary_ground_head_in_stage(const_rule_ws.get_rule().get_head(), ground_context_stage).first;
 
-    if (!rule_stage_execution_context.ground_heads.contains(ground_head))
+    if (!rule_delta_ws.ground_heads.contains(ground_head))
     {
         /// --- Rule
-        auto ground_context_rule =
-            fd::GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
+        auto ground_context_rule = fd::GrounderContext { worker_ws.builder, rule_ws.overlay_repository, rule_delta_ws.binding };
 
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
         // This should not occur very often anyways.
-        if (is_valid_binding(rule_execution_context.rule.get_body(), fact_execution_context.fact_sets, ground_context_rule))
+        if (is_valid_binding(const_rule_ws.get_rule().get_body(), fact_sets, ground_context_rule))
         {
-            rule_stage_execution_context.ground_heads.insert(ground_head);
-            rule_execution_context.ground_heads.push_back(ground_head);
+            rule_delta_ws.ground_heads.insert(ground_head);
+            rule_ws.ground_heads.push_back(ground_head);
         }
     }
 }
 
-void ground_unary_case(const FactsExecutionContext& fact_execution_context,
-                       RuleExecutionContext& rule_execution_context,
-                       RuleStageExecutionContext& rule_stage_execution_context,
-                       ThreadExecutionContext& thread_execution_context)
+void ground_unary_case(const FactsWorkspace& fact_ws,
+                       const ConstFactsWorkspace& const_fact_ws,
+                       RuleWorkspace& rule_ws,
+                       const ConstRuleWorkspace& const_rule_ws,
+                       RuleDeltaWorkspace& rule_delta_ws,
+                       WorkerWorkspace& worker_ws)
 {
-    auto ground_context_stage =
-        fd::GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
+    auto ground_context_stage = fd::GrounderContext { worker_ws.builder, *rule_delta_ws.repository, rule_delta_ws.binding };
+    auto fact_sets = FactSets(const_fact_ws.fact_sets, fact_ws.fact_sets);
 
-    for (const auto vertex_index : rule_execution_context.kpkc_workspace.consistent_vertices_vec)
+    for (const auto vertex_index : rule_ws.kpkc_workspace.consistent_vertices_vec)
     {
         /// --- Rule stage
-        const auto ground_head = create_unary_ground_head_in_stage(vertex_index,
-                                                                   rule_execution_context.static_consistency_graph,
-                                                                   rule_execution_context.rule.get_head(),
-                                                                   ground_context_stage)
-                                     .first;
+        const auto ground_head =
+            create_unary_ground_head_in_stage(vertex_index, const_rule_ws.static_consistency_graph, const_rule_ws.get_rule().get_head(), ground_context_stage)
+                .first;
 
-        if (!rule_stage_execution_context.ground_heads.contains(ground_head))
+        if (!rule_delta_ws.ground_heads.contains(ground_head))
         {
             /// --- Rule
-            auto ground_context_rule =
-                fd::GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
+            auto ground_context_rule = fd::GrounderContext { worker_ws.builder, rule_ws.overlay_repository, rule_delta_ws.binding };
 
-            if (is_valid_binding(rule_execution_context.unary_conflicting_overapproximation_condition, fact_execution_context.fact_sets, ground_context_rule))
+            if (is_valid_binding(const_rule_ws.get_unary_conflicting_overapproximation_condition(), fact_sets, ground_context_rule))
             {
                 // Ensure that ground rule is truly applicable
-                assert(is_applicable(make_view(ground(rule_execution_context.rule, ground_context_rule).first, rule_execution_context.overlay_repository),
-                                     fact_execution_context.fact_sets));
+                assert(is_applicable(make_view(ground(const_rule_ws.get_rule(), ground_context_rule).first, rule_ws.overlay_repository), fact_sets));
 
-                rule_stage_execution_context.ground_heads.insert(ground_head);
-                rule_execution_context.ground_heads.push_back(ground_head);
+                rule_delta_ws.ground_heads.insert(ground_head);
+                rule_ws.ground_heads.push_back(ground_head);
             }
         }
     }
 }
 
-void ground_general_case(const FactsExecutionContext& fact_execution_context,
-                         RuleExecutionContext& rule_execution_context,
-                         RuleStageExecutionContext& rule_stage_execution_context,
-                         ThreadExecutionContext& thread_execution_context)
+void ground_general_case(const FactsWorkspace& fact_ws,
+                         const ConstFactsWorkspace& const_fact_ws,
+                         RuleWorkspace& rule_ws,
+                         const ConstRuleWorkspace& const_rule_ws,
+                         RuleDeltaWorkspace& rule_delta_ws,
+                         WorkerWorkspace& worker_ws)
 {
-    auto ground_context_stage =
-        fd::GrounderContext { thread_execution_context.builder, *rule_stage_execution_context.repository, rule_stage_execution_context.binding };
+    auto ground_context_stage = fd::GrounderContext { worker_ws.builder, *rule_delta_ws.repository, rule_delta_ws.binding };
+    auto fact_sets = FactSets(const_fact_ws.fact_sets, fact_ws.fact_sets);
 
     kpkc::for_each_k_clique(
-        rule_execution_context.consistency_graph,
-        rule_execution_context.kpkc_workspace,
+        rule_ws.consistency_graph,
+        rule_ws.kpkc_workspace,
         [&](auto&& clique)
         {
             /// --- Rule stage
-            const auto ground_head = create_general_ground_head_in_stage(clique,
-                                                                         rule_execution_context.static_consistency_graph,
-                                                                         rule_execution_context.rule.get_head(),
-                                                                         ground_context_stage)
-                                         .first;
+            const auto ground_head =
+                create_general_ground_head_in_stage(clique, const_rule_ws.static_consistency_graph, const_rule_ws.get_rule().get_head(), ground_context_stage)
+                    .first;
 
-            if (!rule_stage_execution_context.ground_heads.contains(ground_head))
+            if (!rule_delta_ws.ground_heads.contains(ground_head))
             {
                 /// --- Rule
-                auto ground_context_rule =
-                    fd::GrounderContext { thread_execution_context.builder, rule_execution_context.overlay_repository, rule_stage_execution_context.binding };
+                auto ground_context_rule = fd::GrounderContext { worker_ws.builder, rule_ws.overlay_repository, rule_delta_ws.binding };
 
-                if (is_valid_binding(rule_execution_context.binary_conflicting_overapproximation_condition,
-                                     fact_execution_context.fact_sets,
-                                     ground_context_rule))
+                if (is_valid_binding(const_rule_ws.get_binary_conflicting_overapproximation_condition(), fact_sets, ground_context_rule))
                 {
                     // Ensure that ground rule is truly applicable
-                    assert(is_applicable(make_view(ground(rule_execution_context.rule, ground_context_rule).first, rule_execution_context.overlay_repository),
-                                         fact_execution_context.fact_sets));
+                    assert(is_applicable(make_view(ground(const_rule_ws.get_rule(), ground_context_rule).first, rule_ws.overlay_repository), fact_sets));
 
-                    rule_stage_execution_context.ground_heads.insert(ground_head);
-                    rule_execution_context.ground_heads.push_back(ground_head);
+                    rule_delta_ws.ground_heads.insert(ground_head);
+                    rule_ws.ground_heads.push_back(ground_head);
                 }
             }
         });
 }
 
-void ground(const FactsExecutionContext& fact_execution_context,
-            RuleExecutionContext& rule_execution_context,
-            RuleStageExecutionContext& rule_stage_execution_context,
-            ThreadExecutionContext& thread_execution_context)
+void ground(const FactsWorkspace& fact_ws,
+            const ConstFactsWorkspace& const_fact_ws,
+            RuleWorkspace& rule_ws,
+            const ConstRuleWorkspace& const_rule_ws,
+            RuleDeltaWorkspace& rule_delta_ws,
+            WorkerWorkspace& worker_ws)
 {
-    if (!is_applicable(rule_execution_context.nullary_condition, fact_execution_context.fact_sets))
+    auto fact_sets = FactSets(const_fact_ws.fact_sets, fact_ws.fact_sets);
+
+    if (!is_applicable(const_rule_ws.get_nullary_condition(), fact_sets))
         return;
 
-    const auto arity = rule_execution_context.rule.get_arity();
+    const auto arity = const_rule_ws.get_rule().get_arity();
 
     if (arity == 0)
-        ground_nullary_case(fact_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
+        ground_nullary_case(fact_ws, const_fact_ws, rule_ws, const_rule_ws, rule_delta_ws, worker_ws);
     else if (arity == 1)
-        ground_unary_case(fact_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
+        ground_unary_case(fact_ws, const_fact_ws, rule_ws, const_rule_ws, rule_delta_ws, worker_ws);
     else
-        ground_general_case(fact_execution_context, rule_execution_context, rule_stage_execution_context, thread_execution_context);
+        ground_general_case(fact_ws, const_fact_ws, rule_ws, const_rule_ws, rule_delta_ws, worker_ws);
 }
 
 }

@@ -150,15 +150,18 @@ static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp
 
 ApplicableActionProgram::ApplicableActionProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
     m_predicate_to_actions(),
-    m_program_context(create_program_context(task, m_predicate_to_actions))
+    m_program_context(create_program_context(task, m_predicate_to_actions)),
+    m_program_workspace(m_program_context)
 {
-    // std::cout << m_program << std::endl;
+    // std::cout << m_program_context.get_program() << std::endl;
 }
-
-const datalog::ProgramContext& ApplicableActionProgram::get_program_context() const noexcept { return m_program_context; }
 
 const ApplicableActionProgram::AppPredicateToActionsMapping& ApplicableActionProgram::get_predicate_to_actions_mapping() const noexcept
 {
     return m_predicate_to_actions;
 }
+
+const datalog::ProgramContext& ApplicableActionProgram::get_program_context() const noexcept { return m_program_context; }
+
+const datalog::ConstProgramWorkspace& ApplicableActionProgram::get_const_program_workspace() const noexcept { return m_program_workspace; }
 }

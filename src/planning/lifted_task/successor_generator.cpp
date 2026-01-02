@@ -20,7 +20,6 @@
 #include "../metric.hpp"
 #include "../task_utils.hpp"
 #include "tyr/datalog/bottom_up.hpp"
-#include "tyr/datalog/execution_contexts.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
@@ -39,11 +38,7 @@ namespace tyr::planning
 
 SuccessorGenerator<LiftedTask>::SuccessorGenerator(std::shared_ptr<LiftedTask> task) :
     m_task(task),
-    m_action_context(m_task->get_action_program().get_program_context().get_program(),
-                     m_task->get_action_program().get_program_context().repository,
-                     m_task->get_action_program().get_program_context().domains,
-                     m_task->get_action_program().get_program_context().strata,
-                     m_task->get_action_program().get_program_context().listeners),
+    m_workspace(task->get_action_program().get_program_context(), task->get_action_program().get_const_program_workspace()),
     m_state_repository(std::make_shared<StateRepository<LiftedTask>>(task)),
     m_executor()
 {
@@ -75,9 +70,9 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
 
     const auto state = node.get_state();
 
-    insert_extended_state(state.get_unpacked_state(), *m_task->get_repository(), m_action_context);
+    insert_extended_state(state.get_unpacked_state(), *m_task->get_repository(), m_workspace, m_task->get_action_program().get_const_program_workspace());
 
-    d::solve_bottom_up(m_action_context);
+    d::solve_bottom_up(m_workspace, m_task->get_action_program().get_const_program_workspace());
 
     const auto state_context = StateContext<LiftedTask>(*m_task, state.get_unpacked_state(), node.get_metric());
 
@@ -87,7 +82,7 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
     auto iter_workspace = itertools::cartesian_set::Workspace<Index<f::Object>> {};
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over predicate_to_actions_mapping, then facts of the predicate
-    for (const auto& set : m_action_context.facts_execution_context.fact_sets.fluent_sets.predicate.get_sets())
+    for (const auto& set : m_workspace.facts.fact_sets.predicate.get_sets())
     {
         for (const auto& fact : set.get_facts())
         {
@@ -95,13 +90,11 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
             {
                 for (const auto action_index : m_task->get_action_program().get_predicate_to_actions_mapping().at(fact.get_predicate().get_index()))
                 {
-                    auto grounder_context = fp::GrounderContext { m_action_context.planning_builder,
-                                                                  *m_task->get_repository(),
-                                                                  m_action_context.program_to_task_execution_context.binding };
+                    auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.d2p.binding };
 
                     const auto action = make_view(action_index, grounder_context.destination);
 
-                    m_action_context.program_to_task_execution_context.binding = fact.get_objects().get_data();
+                    m_workspace.d2p.binding = fact.get_objects().get_data();
 
                     const auto ground_action_index = ground(action,
                                                             grounder_context,

@@ -229,50 +229,17 @@ struct TaggedFactSets
 
 struct FactSets
 {
-    TaggedFactSets<formalism::StaticTag> static_sets;
-    TaggedFactSets<formalism::FluentTag> fluent_sets;
+    const TaggedFactSets<formalism::StaticTag>& static_sets;
+    const TaggedFactSets<formalism::FluentTag>& fluent_sets;
 
-    explicit FactSets(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program);
-
-    FactSets(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program, TaggedFactSets<formalism::FluentTag> fluent_facts);
-
-    template<formalism::FactKind T>
-    void reset() noexcept
+    FactSets(const TaggedFactSets<formalism::StaticTag>& static_sets, const TaggedFactSets<formalism::FluentTag>& fluent_sets) :
+        static_sets(static_sets),
+        fluent_sets(fluent_sets)
     {
-        get<T>().reset();
-    }
-
-    void reset() noexcept
-    {
-        reset<formalism::StaticTag>();
-        reset<formalism::FluentTag>();
     }
 
     template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view)
-    {
-        get<T>().predicate.insert(view);
-    }
-
-    template<formalism::FactKind T>
-    void insert(View<IndexList<formalism::datalog::GroundFunctionTermValue<T>>, formalism::datalog::Repository> view)
-    {
-        get<T>().function.insert(view);
-    }
-
-    template<formalism::FactKind T>
-    const TaggedFactSets<T>& get() const
-    {
-        if constexpr (std::is_same_v<T, formalism::StaticTag>)
-            return static_sets;
-        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-            return fluent_sets;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-    template<formalism::FactKind T>
-    TaggedFactSets<T>& get()
+    const auto& get() const
     {
         if constexpr (std::is_same_v<T, formalism::StaticTag>)
             return static_sets;
@@ -282,6 +249,7 @@ struct FactSets
             static_assert(dependent_false<T>::value, "Missing case");
     }
 };
+
 }
 
 #endif

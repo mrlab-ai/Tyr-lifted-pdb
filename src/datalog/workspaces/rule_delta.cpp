@@ -15,34 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_TASK_AXIOM_EVALUATOR_HPP_
-#define TYR_PLANNING_LIFTED_TASK_AXIOM_EVALUATOR_HPP_
+#include "tyr/datalog/workspaces/rule_delta.hpp"
 
-#include "tyr/planning/lifted_task/unpacked_state.hpp"
-//
-#include "tyr/datalog/workspaces/program.hpp"
-#include "tyr/planning/axiom_evaluator.hpp"
-#include "tyr/planning/declarations.hpp"
+namespace fd = tyr::formalism::datalog;
 
-#include <memory>
-
-namespace tyr::planning
+namespace tyr::datalog
 {
 
-template<>
-class AxiomEvaluator<LiftedTask>
+RuleDeltaWorkspace::RuleDeltaWorkspace() : repository(std::make_shared<fd::Repository>()), binding(), ground_heads(), merge_cache() {}
+
+void RuleDeltaWorkspace::clear() noexcept
 {
-public:
-    explicit AxiomEvaluator(std::shared_ptr<LiftedTask> task);
-
-    void compute_extended_state(UnpackedState<LiftedTask>& unpacked_state);
-
-private:
-    std::shared_ptr<LiftedTask> m_task;
-
-    datalog::ProgramWorkspace m_workspace;
-};
-
+    repository->clear();
+    ground_heads.clear();
+    merge_cache.clear();
 }
 
-#endif
+}

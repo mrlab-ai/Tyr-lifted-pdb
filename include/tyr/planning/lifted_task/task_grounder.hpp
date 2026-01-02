@@ -18,9 +18,7 @@
 #ifndef TYR_PLANNING_LIFTED_TASK_TASK_GROUNDER_HPP_
 #define TYR_PLANNING_LIFTED_TASK_TASK_GROUNDER_HPP_
 
-#include "tyr/datalog/execution_contexts.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/programs/ground.hpp"
 
 namespace tyr::planning
 {

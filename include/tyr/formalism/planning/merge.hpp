@@ -18,6 +18,8 @@
 #ifndef TYR_FORMALISM_PLANNING_MERGE_HPP_
 #define TYR_FORMALISM_PLANNING_MERGE_HPP_
 
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
 #include "tyr/common/tuple.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/canonicalization.hpp"

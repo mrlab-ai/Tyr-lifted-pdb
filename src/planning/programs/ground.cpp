@@ -175,15 +175,18 @@ static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp
 GroundTaskProgram::GroundTaskProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
     m_predicate_to_actions(),
     m_predicate_to_axioms(),
-    m_program_context(create_program_context(task, m_predicate_to_actions, m_predicate_to_axioms))
+    m_program_context(create_program_context(task, m_predicate_to_actions, m_predicate_to_axioms)),
+    m_program_workspace(m_program_context)
 {
-    // std::cout << m_program << std::endl;
+    // std::cout << m_program_context.get_program() << std::endl;
 }
-
-const datalog::ProgramContext& GroundTaskProgram::get_program_context() const noexcept { return m_program_context; }
 
 const GroundTaskProgram::AppPredicateToActionsMapping& GroundTaskProgram::get_predicate_to_actions_mapping() const noexcept { return m_predicate_to_actions; }
 
 const GroundTaskProgram::AppPredicateToAxiomsMapping& GroundTaskProgram::get_predicate_to_axioms_mapping() const noexcept { return m_predicate_to_axioms; }
+
+const datalog::ProgramContext& GroundTaskProgram::get_program_context() const noexcept { return m_program_context; }
+
+const datalog::ConstProgramWorkspace& GroundTaskProgram::get_const_program_workspace() const noexcept { return m_program_workspace; }
 
 }

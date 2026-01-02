@@ -205,19 +205,16 @@ private:
 
 extern std::pair<Index<formalism::datalog::GroundConjunctiveCondition>, bool>
 create_ground_nullary_condition(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
-                                formalism::datalog::Builder& builder,
                                 formalism::datalog::Repository& context);
 
 extern std::pair<Index<formalism::datalog::ConjunctiveCondition>, bool>
 create_overapproximation_conjunctive_condition(size_t k,
                                                View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
-                                               formalism::datalog::Builder& builder,
                                                formalism::datalog::Repository& context);
 
 extern std::pair<Index<formalism::datalog::ConjunctiveCondition>, bool>
 create_overapproximation_conflicting_conjunctive_condition(size_t k,
                                                            View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
-                                                           formalism::datalog::Builder& builder,
                                                            formalism::datalog::Repository& context);
 
 }

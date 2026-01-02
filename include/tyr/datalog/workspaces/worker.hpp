@@ -18,10 +18,19 @@
 #ifndef TYR_DATALOG_WORKSPACES_WORKER_HPP_
 #define TYR_DATALOG_WORKSPACES_WORKER_HPP_
 
+#include "tyr/formalism/datalog/builder.hpp"
+#include "tyr/formalism/datalog/merge.hpp"
+
 namespace tyr::datalog
 {
 struct WorkerWorkspace
 {
+    formalism::datalog::Builder builder;
+    formalism::datalog::MergeCache merge_cache;
+
+    WorkerWorkspace() = default;
+
+    void clear() noexcept;
 };
 }
 

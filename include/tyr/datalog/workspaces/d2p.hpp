@@ -18,10 +18,19 @@
 #ifndef TYR_DATALOG_WORKSPACES_D2P_HPP_
 #define TYR_DATALOG_WORKSPACES_D2P_HPP_
 
+#include "tyr/formalism/object_index.hpp"
+#include "tyr/formalism/planning/merge_planning.hpp"
+
 namespace tyr::datalog
 {
 struct D2PWorkspace
 {
+    D2PWorkspace() = default;
+
+    formalism::planning::MergePlanningCache merge_cache;
+    IndexList<formalism::Object> binding;
+
+    void clear() noexcept;
 };
 }
 
