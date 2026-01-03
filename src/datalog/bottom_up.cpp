@@ -181,15 +181,15 @@ void generate_nullary_case(GenerateContext<AndAP>& gc)
                 gc.rule_ws.heads.push_back(head);
             }
 
-            gc.and_ap.annotate(gc.const_rule_ws.rule,
-                               gc.const_rule_ws.fluent_rule,
-                               gc.ground_context_delta.binding,
-                               head,
-                               gc.or_annot,
-                               gc.and_annot,
-                               gc.head_to_witness,
-                               gc.ground_context_rule,
-                               gc.ground_context_delta);
+            gc.and_ap.update_annotation(gc.const_rule_ws.rule,
+                                        gc.const_rule_ws.fluent_rule,
+                                        gc.ground_context_delta.binding,
+                                        head,
+                                        gc.or_annot,
+                                        gc.and_annot,
+                                        gc.head_to_witness,
+                                        gc.ground_context_rule,
+                                        gc.ground_context_delta);
         }
     }
 }
@@ -221,17 +221,15 @@ void generate_unary_case(GenerateContext<AndAP>& gc)
                     gc.rule_ws.heads.push_back(head);
                 }
 
-                gc.and_ap.annotate(gc.const_rule_ws.rule,
-                                   gc.const_rule_ws.fluent_rule,
-                                   gc.ground_context_delta.binding,
-                                   head,
-                                   gc.or_annot,
-                                   gc.and_annot,
-                                   gc.head_to_witness,
-                                   gc.ground_context_rule,
-                                   gc.ground_context_delta);
-
-                // TODO: must also store witness for head with minimal cost to make sequential update cheap
+                gc.and_ap.update_annotation(gc.const_rule_ws.rule,
+                                            gc.const_rule_ws.fluent_rule,
+                                            gc.ground_context_delta.binding,
+                                            head,
+                                            gc.or_annot,
+                                            gc.and_annot,
+                                            gc.head_to_witness,
+                                            gc.ground_context_rule,
+                                            gc.ground_context_delta);
             }
         }
     }
@@ -267,15 +265,15 @@ void generate_general_case(GenerateContext<AndAP>& gc)
                         gc.rule_ws.heads.push_back(head);
                     }
 
-                    gc.and_ap.annotate(gc.const_rule_ws.rule,
-                                       gc.const_rule_ws.fluent_rule,
-                                       gc.ground_context_delta.binding,
-                                       head,
-                                       gc.or_annot,
-                                       gc.and_annot,
-                                       gc.head_to_witness,
-                                       gc.ground_context_rule,
-                                       gc.ground_context_delta);
+                    gc.and_ap.update_annotation(gc.const_rule_ws.rule,
+                                                gc.const_rule_ws.fluent_rule,
+                                                gc.ground_context_delta.binding,
+                                                head,
+                                                gc.or_annot,
+                                                gc.and_annot,
+                                                gc.head_to_witness,
+                                                gc.ground_context_rule,
+                                                gc.ground_context_delta);
                 }
             }
         });
@@ -305,6 +303,9 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                                  TP& tp)
 {
     scheduler.activate_all();
+
+    auto cost = Cost(0);
+    ws.cost_buckets.resize(1);
 
     while (true)
     {
@@ -337,7 +338,7 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                     auto& and_ap = aps.and_aps[i];
                     const auto& or_annot = aps.or_annot;
                     auto& and_annot = aps.and_annots[i];
-                    auto& head_to_witness = aps.head_to_witnesss[i];
+                    auto& head_to_witness = aps.head_to_witness[i];
 
                     {
                         ///--- Initialization phase
@@ -382,10 +383,11 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
         {
             const auto stopwatch = StopwatchScope(ws.statistics.merge_seq_total_time);
 
-            auto discovered_new_fact = bool { false };
+            // Set upper bound of min cost for scanning.
+            auto min_cost = uint_t(ws.cost_buckets.size());
 
-            auto& fluent_predicate_fact_sets = ws.facts.fact_sets.predicate;
-            auto& fluent_predicate_assignment_sets = ws.facts.assignment_sets.predicate;
+            // Clear current bucket to avoid duplicate handling
+            ws.cost_buckets[cost].clear();
 
             for (const auto rule_index : active_rules)
             {
@@ -399,50 +401,52 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                 auto& or_ap = aps.or_ap;
                 auto& or_annot = aps.or_annot;
                 const auto& and_annot = aps.and_annots[i];
-                const auto& head_to_witness = aps.head_to_witnesss[i];
+                const auto& head_to_witness = aps.head_to_witness[i];
 
                 auto merge_context = fd::MergeContext { ws.datalog_builder, ws.repository, rule_delta_ws.merge_cache };
 
-                for (const auto ground_head_index : rule_ws.heads)
+                for (const auto head_index : rule_ws.heads)
                 {
-                    /// --- Program
+                    // Merge head from delta into the program
+                    const auto head = fd::merge_d2d(make_view(head_index, *rule_delta_ws.repository), merge_context).first;
 
-                    // Note: the head lives in the stage but its index is stored in rule because it is reset each iteration
-                    const auto ground_head_rule = make_view(ground_head_index, *rule_delta_ws.repository);
+                    // Update annotation
+                    const auto [old_cost, new_cost] = or_ap.update_annotation(rule_index, head, or_annot, and_annot, head_to_witness);
 
-                    // Merge it into the program
-                    const auto ground_head_index_program = fd::merge_d2d(ground_head_rule, merge_context).first;
+                    // Erase from old bucket
+                    if (old_cost != std::numeric_limits<Cost>::max())
+                        ws.cost_buckets[old_cost].erase(head);
 
-                    // Insert new fact into fact sets and assigment sets
-                    if (!fluent_predicate_fact_sets.contains(ground_head_index_program))
-                    {
-                        discovered_new_fact = true;
+                    // Insert into new bucket
+                    if (ws.cost_buckets.size() <= new_cost)
+                        ws.cost_buckets.resize(new_cost + 1);
+                    ws.cost_buckets[new_cost].insert(head);
 
-                        const auto ground_head_program = make_view(ground_head_index_program, ws.repository);
-
-                        scheduler.on_generate(ground_head_program.get_predicate().get_index());
-
-                        fluent_predicate_fact_sets.insert(ground_head_program);
-                        fluent_predicate_assignment_sets.insert(ground_head_program);
-
-                        ++ws.statistics.num_merges_inserted;
-
-                        // TODO: we have to take the minimum among all rules that achieve the head
-                        // We should store in the rule delta the witness that achieves the head with minimal cost
-                        or_ap.annotate(rule_index, ground_head_index_program, or_annot, and_annot, head_to_witness);
-
-                        if (tp.achieve(ground_head_index_program))
-                            return;
-                    }
-                    else
-                    {
-                        ++ws.statistics.num_merges_discarded;
-                    }
+                    min_cost = std::min(min_cost, new_cost);
                 }
             }
 
-            if (!discovered_new_fact)
-                return;  ///< Reached fixed point
+            // Scan for next bucket.
+            while (cost < ws.cost_buckets.size() && ws.cost_buckets[cost].empty())
+                ++cost;
+
+            // Terminate if no-nonempty bucket was found.
+            if (cost == ws.cost_buckets.size())
+                return;  // fixed point
+
+            // Insert next bucket heads into fact and assignment sets + trigger scheduler.
+            for (const auto head_index : ws.cost_buckets[cost])
+            {
+                if (!ws.facts.fact_sets.predicate.contains(head_index))
+                {
+                    const auto head = make_view(head_index, ws.repository);
+
+                    scheduler.on_generate(head.get_predicate().get_index());
+
+                    ws.facts.fact_sets.predicate.insert(head);
+                    ws.facts.assignment_sets.predicate.insert(head);
+                }
+            }
         }
 
         scheduler.on_finish_iteration();

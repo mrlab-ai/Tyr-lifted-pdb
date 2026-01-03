@@ -18,6 +18,8 @@
 #ifndef TYR_DATALOG_WORKSPACES_PROGRAM_HPP_
 #define TYR_DATALOG_WORKSPACES_PROGRAM_HPP_
 
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
 #include "tyr/datalog/program_context.hpp"
 #include "tyr/datalog/rule_scheduler.hpp"
 #include "tyr/datalog/workspaces/d2p.hpp"
@@ -34,6 +36,8 @@
 
 namespace tyr::datalog
 {
+using CostBuckets = std::vector<UnorderedSet<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>>>;
+
 struct ProgramWorkspace
 {
     formalism::datalog::Repository& repository;
@@ -47,12 +51,12 @@ struct ProgramWorkspace
 
     oneapi::tbb::enumerable_thread_specific<WorkerWorkspace> worker;
 
-    /// --- Builder
     formalism::planning::Builder planning_builder;
     formalism::datalog::Builder datalog_builder;
 
-    // --- Scheduler
     RuleSchedulerStrata schedulers;
+
+    CostBuckets cost_buckets;
 
     struct Statistics
     {
@@ -64,6 +68,8 @@ struct ProgramWorkspace
     } statistics;
 
     explicit ProgramWorkspace(ProgramContext& context, const ConstProgramWorkspace& cws);
+
+    void clear() noexcept;
 };
 
 struct ConstProgramWorkspace

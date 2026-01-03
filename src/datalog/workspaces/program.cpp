@@ -41,13 +41,14 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
     planning_builder(),
     datalog_builder(),
     schedulers(create_schedulers(context.get_strata(), context.get_listeners(), context.get_repository())),
+    cost_buckets(),
     statistics()
 {
     for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
-    {
         rules.emplace_back(context.get_repository(), cws.rules[i].static_consistency_graph);
-    }
 }
+
+void ProgramWorkspace::clear() noexcept { cost_buckets.clear(); }
 
 ConstProgramWorkspace::ConstProgramWorkspace(ProgramContext& context) :
     facts(context.get_program().get_predicates<formalism::StaticTag>(),
@@ -60,12 +61,10 @@ ConstProgramWorkspace::ConstProgramWorkspace(ProgramContext& context) :
     rules()
 {
     for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
-    {
         rules.emplace_back(context.get_program().get_rules()[i].get_index(),
                            context.get_repository(),
                            context.get_domains().rule_domains[i],
                            facts.assignment_sets);
-    }
 }
 
 }
