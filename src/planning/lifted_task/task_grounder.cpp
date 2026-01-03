@@ -273,7 +273,11 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
     const auto const_workspace = d::ConstProgramWorkspace(ground_program.get_program_context());
     auto workspace = d::ProgramWorkspace(ground_program.get_program_context(), const_workspace);
-    auto aps = d::AnnotationPolicies(d::NoOrAnnotationPolicy(), std::vector<d::NoAndAnnotationPolicy>(workspace.rule_deltas.size()));
+    auto aps = d::AnnotationPolicies(d::NoOrAnnotationPolicy(),
+                                     std::vector<d::NoAndAnnotationPolicy>(workspace.rule_deltas.size()),
+                                     d::OrAnnotationsList(),
+                                     std::vector<d::AndAnnotationsMap>(workspace.rule_deltas.size()),
+                                     std::vector<d::HeadToBinding>(workspace.rule_deltas.size()));
     auto tp = d::NoTerminationPolicy();
 
     datalog::solve_bottom_up(workspace, const_workspace, aps, tp);

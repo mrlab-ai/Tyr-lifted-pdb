@@ -21,23 +21,26 @@
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
+#include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
 #include "tyr/formalism/datalog/merge.hpp"
-#include "tyr/formalism/datalog/program_view.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/object_index.hpp"
 
 namespace tyr::datalog
 {
+
 struct RuleDeltaWorkspace
 {
     /// Merge thread into staging area
     formalism::datalog::RepositoryPtr repository;
 
-    /// Ground heads encountered across iterations
+    /// Results across iterations
     IndexList<formalism::Object> binding;
-    UnorderedSet<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> ground_heads;
     formalism::datalog::MergeCache merge_cache;
+
+    UnorderedSet<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> heads;
 
     RuleDeltaWorkspace();
 

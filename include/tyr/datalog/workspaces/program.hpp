@@ -52,7 +52,7 @@ struct ProgramWorkspace
     formalism::datalog::Builder datalog_builder;
 
     // --- Scheduler
-    RuleSchedulerStrata rule_scheduler_strata;
+    RuleSchedulerStrata schedulers;
 
     struct Statistics
     {

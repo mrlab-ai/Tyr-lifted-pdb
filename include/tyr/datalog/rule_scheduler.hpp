@@ -67,7 +67,7 @@ struct RuleSchedulerStrata
 };
 
 extern RuleSchedulerStrata
-create_rule_scheduler_strata(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const formalism::datalog::Repository& context);
+create_schedulers(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const formalism::datalog::Repository& context);
 
 }
 

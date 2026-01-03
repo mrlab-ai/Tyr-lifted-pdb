@@ -39,7 +39,11 @@ namespace tyr::planning
 SuccessorGenerator<LiftedTask>::SuccessorGenerator(std::shared_ptr<LiftedTask> task) :
     m_task(std::move(task)),
     m_workspace(m_task->get_action_program().get_program_context(), m_task->get_action_program().get_const_program_workspace()),
-    m_aps(d::NoOrAnnotationPolicy(), std::vector<d::NoAndAnnotationPolicy>(m_workspace.rule_deltas.size())),
+    m_aps(d::NoOrAnnotationPolicy(),
+          std::vector<d::NoAndAnnotationPolicy>(m_workspace.rule_deltas.size()),
+          d::OrAnnotationsList(),
+          std::vector<d::AndAnnotationsMap>(m_workspace.rule_deltas.size()),
+          std::vector<d::HeadToBinding>(m_workspace.rule_deltas.size())),
     m_tp(d::NoTerminationPolicy()),
     m_state_repository(std::make_shared<StateRepository<LiftedTask>>(m_task)),
     m_executor()

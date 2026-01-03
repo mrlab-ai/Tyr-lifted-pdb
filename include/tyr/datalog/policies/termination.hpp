@@ -29,14 +29,14 @@ namespace tyr::datalog
 
 template<typename T>
 concept TerminationPolicy = requires(T& p, Index<formalism::datalog::GroundAtom<formalism::FluentTag>> atom) {
-    { p.achieve_or_node(atom) } -> std::same_as<bool>;
+    { p.achieve(atom) } -> std::same_as<bool>;
     { p.clear() } -> std::same_as<void>;
 };
 
 class NoTerminationPolicy
 {
 public:
-    bool achieve_or_node(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> atom) const noexcept { return false; }
+    bool achieve(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> atom) const noexcept { return false; }
     void clear() noexcept {}
 };
 }

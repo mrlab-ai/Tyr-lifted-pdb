@@ -91,7 +91,11 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
 AxiomEvaluator<LiftedTask>::AxiomEvaluator(std::shared_ptr<LiftedTask> task) :
     m_task(std::move(task)),
     m_workspace(m_task->get_axiom_program().get_program_context(), m_task->get_axiom_program().get_const_program_workspace()),
-    m_aps(d::NoOrAnnotationPolicy(), std::vector<d::NoAndAnnotationPolicy>(m_workspace.rule_deltas.size())),
+    m_aps(d::NoOrAnnotationPolicy(),
+          std::vector<d::NoAndAnnotationPolicy>(m_workspace.rule_deltas.size()),
+          d::OrAnnotationsList(),
+          std::vector<d::AndAnnotationsMap>(m_workspace.rule_deltas.size()),
+          std::vector<d::HeadToBinding>(m_workspace.rule_deltas.size())),
     m_tp(d::NoTerminationPolicy())
 {
 }

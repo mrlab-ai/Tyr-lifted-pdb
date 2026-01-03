@@ -72,7 +72,7 @@ void RuleSchedulerStratum::on_finish_iteration()
                 m_active_rules.insert(rule);
 }
 
-RuleSchedulerStrata create_rule_scheduler_strata(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const fd::Repository& context)
+RuleSchedulerStrata create_schedulers(const analysis::RuleStrata& rules, const analysis::ListenerStrata& listeners, const fd::Repository& context)
 {
     assert(rules.data.size() == listeners.data.size());
 

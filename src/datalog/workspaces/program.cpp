@@ -40,7 +40,7 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
     worker(),
     planning_builder(),
     datalog_builder(),
-    rule_scheduler_strata(create_rule_scheduler_strata(context.get_strata(), context.get_listeners(), context.get_repository())),
+    schedulers(create_schedulers(context.get_strata(), context.get_listeners(), context.get_repository())),
     statistics()
 {
     for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
