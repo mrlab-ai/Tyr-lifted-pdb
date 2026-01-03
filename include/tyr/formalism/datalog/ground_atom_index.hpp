@@ -21,6 +21,7 @@
 #include "tyr/common/index_mixins.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/predicate_index.hpp"
 
 namespace tyr
 {

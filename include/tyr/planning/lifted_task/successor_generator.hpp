@@ -18,6 +18,8 @@
 #ifndef TYR_PLANNING_LIFTED_TASK_SUCCESSOR_GENERATOR_HPP_
 #define TYR_PLANNING_LIFTED_TASK_SUCCESSOR_GENERATOR_HPP_
 
+#include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -48,6 +50,9 @@ private:
     std::shared_ptr<LiftedTask> m_task;
 
     datalog::ProgramWorkspace m_workspace;
+
+    datalog::AnnotationPolicies<datalog::NoOrAnnotationPolicy, datalog::NoAndAnnotationPolicy> m_aps;
+    datalog::NoTerminationPolicy m_tp;
 
     std::shared_ptr<StateRepository<LiftedTask>> m_state_repository;
 

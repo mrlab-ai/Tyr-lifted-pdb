@@ -20,6 +20,7 @@
 
 #include "tyr/common/index_mixins.hpp"
 #include "tyr/common/types.hpp"
+#include "tyr/formalism/function_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 namespace tyr

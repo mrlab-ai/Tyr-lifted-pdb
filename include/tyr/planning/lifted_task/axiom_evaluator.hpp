@@ -20,6 +20,8 @@
 
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 //
+#include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/planning/axiom_evaluator.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -41,6 +43,9 @@ private:
     std::shared_ptr<LiftedTask> m_task;
 
     datalog::ProgramWorkspace m_workspace;
+
+    datalog::AnnotationPolicies<datalog::NoOrAnnotationPolicy, datalog::NoAndAnnotationPolicy> m_aps;
+    datalog::NoTerminationPolicy m_tp;
 };
 
 }

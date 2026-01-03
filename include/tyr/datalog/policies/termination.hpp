@@ -15,22 +15,29 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_GROUND_FUNCTION_TERM_INDEX_HPP_
-#define TYR_FORMALISM_DATALOG_GROUND_FUNCTION_TERM_INDEX_HPP_
+#ifndef TYR_SOLVER_POLICIES_TERMINATION_HPP_
+#define TYR_SOLVER_POLICIES_TERMINATION_HPP_
 
-#include "tyr/common/index_mixins.hpp"
-#include "tyr/common/types.hpp"
+#include "tyr/common/config.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/function_index.hpp"
+#include "tyr/formalism/datalog/ground_atom_index.hpp"
 
-namespace tyr
+#include <concepts>
+
+namespace tyr::datalog
 {
-template<formalism::FactKind T>
-struct Index<formalism::datalog::GroundFunctionTerm<T>> : GroupIndexMixin<Index<formalism::datalog::GroundFunctionTerm<T>>, Index<formalism::Function<T>>>
+
+template<typename T>
+concept TerminationPolicy = requires(T& p, Index<formalism::datalog::GroundAtom<formalism::FluentTag>> atom) {
+    { p.achieve_or_node(atom) } -> std::same_as<bool>;
+    { p.clear() } -> std::same_as<void>;
+};
+
+class NoTerminationPolicy
 {
-    // Inherit constructors
-    using Base = GroupIndexMixin<Index<formalism::datalog::GroundFunctionTerm<T>>, Index<formalism::Function<T>>>;
-    using Base::Base;
+public:
+    bool achieve_or_node(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> atom) const noexcept { return false; }
+    void clear() noexcept {}
 };
 }
 

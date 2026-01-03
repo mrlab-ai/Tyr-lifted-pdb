@@ -37,9 +37,11 @@ namespace tyr::planning
 {
 
 SuccessorGenerator<LiftedTask>::SuccessorGenerator(std::shared_ptr<LiftedTask> task) :
-    m_task(task),
-    m_workspace(task->get_action_program().get_program_context(), task->get_action_program().get_const_program_workspace()),
-    m_state_repository(std::make_shared<StateRepository<LiftedTask>>(task)),
+    m_task(std::move(task)),
+    m_workspace(m_task->get_action_program().get_program_context(), m_task->get_action_program().get_const_program_workspace()),
+    m_aps(d::NoOrAnnotationPolicy(), std::vector<d::NoAndAnnotationPolicy>(m_workspace.rule_deltas.size())),
+    m_tp(d::NoTerminationPolicy()),
+    m_state_repository(std::make_shared<StateRepository<LiftedTask>>(m_task)),
     m_executor()
 {
 }
@@ -72,7 +74,7 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
 
     insert_extended_state(state.get_unpacked_state(), *m_task->get_repository(), m_workspace, m_task->get_action_program().get_const_program_workspace());
 
-    d::solve_bottom_up(m_workspace, m_task->get_action_program().get_const_program_workspace());
+    d::solve_bottom_up(m_workspace, m_task->get_action_program().get_const_program_workspace(), m_aps, m_tp);
 
     const auto state_context = StateContext<LiftedTask>(*m_task, state.get_unpacked_state(), node.get_metric());
 

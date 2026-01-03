@@ -25,7 +25,6 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/generator.hpp"
 #include "tyr/datalog/kpkc.hpp"
 #include "tyr/datalog/kpkc_data.hpp"
 #include "tyr/datalog/kpkc_utils.hpp"

@@ -39,32 +39,37 @@
 #include <gtl/phmap.hpp>                    // for operator!=
 #include <utility>                          // for pair
 
+namespace d = tyr::datalog;
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
+namespace fp = tyr::formalism::planning;
+
 namespace tyr::planning
 {
 
 static void insert_unextended_state(const UnpackedState<LiftedTask>& unpacked_state,
-                                    const formalism::OverlayRepository<formalism::planning::Repository>& atoms_context,
-                                    datalog::ProgramWorkspace& ws,
-                                    const datalog::ConstProgramWorkspace& cws)
+                                    const f::OverlayRepository<fp::Repository>& atoms_context,
+                                    d::ProgramWorkspace& ws,
+                                    const d::ConstProgramWorkspace& cws)
 {
     ws.facts.reset();
     ws.p2d.clear();
 
-    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<formalism::FluentTag>(), atoms_context, ws);
+    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<f::FluentTag>(), atoms_context, ws);
 
     insert_fact_sets_into_assignment_sets(ws, cws);
 }
 
 static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram& axiom_program,
                                                     UnpackedState<LiftedTask>& unpacked_state,
-                                                    formalism::OverlayRepository<formalism::planning::Repository>& task_repository,
-                                                    datalog::ProgramWorkspace& ws)
+                                                    f::OverlayRepository<fp::Repository>& task_repository,
+                                                    d::ProgramWorkspace& ws)
 {
     ws.d2p.clear();
 
     /// --- Initialize derived atoms in unpacked state
 
-    auto merge_context = formalism::planning::MergePlanningContext { ws.planning_builder, task_repository, ws.d2p.merge_cache };
+    auto merge_context = fp::MergePlanningContext { ws.planning_builder, task_repository, ws.d2p.merge_cache };
 
     /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_predicate_mapping, then facts of the predicate
     for (const auto& set : ws.facts.fact_sets.predicate.get_sets())
@@ -74,11 +79,8 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
             if (axiom_program.get_predicate_to_predicate_mapping().contains(fact.get_predicate().get_index()))
             {
                 // TODO: pass the predicate mapping here so that we can skip merging the predicate :)
-                const auto ground_atom = formalism::planning::merge_d2p<formalism::FluentTag,
-                                                                        formalism::datalog::Repository,
-                                                                        formalism::OverlayRepository<formalism::planning::Repository>,
-                                                                        formalism::DerivedTag>(fact, merge_context)
-                                             .first;
+                const auto ground_atom =
+                    fp::merge_d2p<f::FluentTag, fd::Repository, f::OverlayRepository<fp::Repository>, f::DerivedTag>(fact, merge_context).first;
 
                 unpacked_state.set(ground_atom);
             }
@@ -87,8 +89,10 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
 }
 
 AxiomEvaluator<LiftedTask>::AxiomEvaluator(std::shared_ptr<LiftedTask> task) :
-    m_task(task),
-    m_workspace(task->get_axiom_program().get_program_context(), m_task->get_axiom_program().get_const_program_workspace())
+    m_task(std::move(task)),
+    m_workspace(m_task->get_axiom_program().get_program_context(), m_task->get_axiom_program().get_const_program_workspace()),
+    m_aps(d::NoOrAnnotationPolicy(), std::vector<d::NoAndAnnotationPolicy>(m_workspace.rule_deltas.size())),
+    m_tp(d::NoTerminationPolicy())
 {
 }
 
@@ -96,7 +100,7 @@ void AxiomEvaluator<LiftedTask>::compute_extended_state(UnpackedState<LiftedTask
 {
     insert_unextended_state(unpacked_state, *m_task->get_repository(), m_workspace, m_task->get_axiom_program().get_const_program_workspace());
 
-    datalog::solve_bottom_up(m_workspace, m_task->get_axiom_program().get_const_program_workspace());
+    d::solve_bottom_up(m_workspace, m_task->get_axiom_program().get_const_program_workspace(), m_aps, m_tp);
 
     read_derived_atoms_from_program_context(m_task->get_axiom_program(), unpacked_state, *m_task->get_repository(), m_workspace);
 }

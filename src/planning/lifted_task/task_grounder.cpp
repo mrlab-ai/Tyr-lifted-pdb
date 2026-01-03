@@ -22,7 +22,8 @@
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/datalog/bottom_up.hpp"
-#include "tyr/datalog/generator.hpp"
+#include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/planning/builder.hpp"
@@ -270,10 +271,12 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 {
     auto ground_program = GroundTaskProgram(lifted_task.get_task());
 
-    auto const_workspace = d::ConstProgramWorkspace(ground_program.get_program_context());
+    const auto const_workspace = d::ConstProgramWorkspace(ground_program.get_program_context());
     auto workspace = d::ProgramWorkspace(ground_program.get_program_context(), const_workspace);
+    auto aps = d::AnnotationPolicies(d::NoOrAnnotationPolicy(), std::vector<d::NoAndAnnotationPolicy>(workspace.rule_deltas.size()));
+    auto tp = d::NoTerminationPolicy();
 
-    datalog::solve_bottom_up(workspace, const_workspace);
+    datalog::solve_bottom_up(workspace, const_workspace, aps, tp);
 
     auto aggregated_statistics = d::RuleWorkspace::compute_aggregate_statistics(workspace.rules);
 
