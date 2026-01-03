@@ -140,170 +140,145 @@ static auto create_general_ground_head_in_delta(const std::vector<uint_t>& cliqu
     return ground(head, context);
 }
 
-template<OrAnnotationPolicy OrAP, AndAnnotationPolicy AndAP>
-void ground_nullary_case(const FactsWorkspace& fact_ws,
-                         const ConstFactsWorkspace& const_fact_ws,
-                         RuleWorkspace& rule_ws,
-                         const ConstRuleWorkspace& const_rule_ws,
-                         RuleDeltaWorkspace& rule_delta_ws,
-                         WorkerWorkspace& worker_ws,
-                         const OrAP& or_ap,
-                         AndAP& and_ap,
-                         const OrAnnotationsList& or_annot,
-                         AndAnnotationsMap& and_annot,
-                         HeadToBinding& head_to_binding)
+template<AndAnnotationPolicy AndAP>
+struct GenerateContext
 {
-    auto ground_context_delta = fd::GrounderContext { worker_ws.builder, *rule_delta_ws.repository, rule_delta_ws.binding };
-    auto ground_context_rule = fd::GrounderContext { worker_ws.builder, rule_ws.overlay_repository, rule_delta_ws.binding };
-    auto fact_sets = FactSets(const_fact_ws.fact_sets, fact_ws.fact_sets);
+    /// Workspaces
+    const FactsWorkspace& facts_ws;
+    const ConstFactsWorkspace& const_facts_ws;
+    RuleWorkspace& rule_ws;
+    const ConstRuleWorkspace& const_rule_ws;
+    RuleDeltaWorkspace& rule_delta_ws;
+    WorkerWorkspace& worker_ws;
 
-    const auto head = create_nullary_ground_head_in_delta(const_rule_ws.get_rule().get_head(), ground_context_delta).first;
+    /// Annotations
+    AndAP& and_ap;
+    const OrAnnotationsList& or_annot;
+    AndAnnotationsMap& and_annot;
+    HeadToBinding& head_to_binding;
 
-    if (!rule_delta_ws.heads.contains(head))
+    /// Derivatives
+    FactSets fact_sets;
+    fd::GrounderContext<fd::Repository> ground_context_delta;
+    fd::GrounderContext<f::OverlayRepository<fd::Repository>> ground_context_rule;
+};
+
+template<AndAnnotationPolicy AndAP>
+void generate_nullary_case(GenerateContext<AndAP>& gc)
+{
+    const auto head = create_nullary_ground_head_in_delta(gc.const_rule_ws.get_rule().get_head(), gc.ground_context_delta).first;
+
+    if (!gc.rule_delta_ws.heads.contains(head))
     {
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
         // This should not occur very often anyways.
-        if (is_valid_binding(const_rule_ws.get_rule().get_body(), fact_sets, ground_context_rule))
+        if (is_valid_binding(gc.const_rule_ws.get_rule().get_body(), gc.fact_sets, gc.ground_context_rule))
         {
-            rule_delta_ws.heads.insert(head);
-            rule_ws.ground_heads.push_back(head);
+            gc.rule_delta_ws.heads.insert(head);
+            gc.rule_ws.ground_heads.push_back(head);
 
-            and_ap.annotate(const_rule_ws.fluent_rule,
-                            ground_context_delta.binding,
-                            head,
-                            or_annot,
-                            and_annot,
-                            head_to_binding,
-                            ground_context_rule,
-                            ground_context_delta);
+            gc.and_ap.annotate(gc.const_rule_ws.fluent_rule,
+                               gc.ground_context_delta.binding,
+                               head,
+                               gc.or_annot,
+                               gc.and_annot,
+                               gc.head_to_binding,
+                               gc.ground_context_rule,
+                               gc.ground_context_delta);
         }
     }
 }
 
-template<OrAnnotationPolicy OrAP, AndAnnotationPolicy AndAP>
-void ground_unary_case(const FactsWorkspace& fact_ws,
-                       const ConstFactsWorkspace& const_fact_ws,
-                       RuleWorkspace& rule_ws,
-                       const ConstRuleWorkspace& const_rule_ws,
-                       RuleDeltaWorkspace& rule_delta_ws,
-                       WorkerWorkspace& worker_ws,
-                       const OrAP& or_ap,
-                       AndAP& and_ap,
-                       const OrAnnotationsList& or_annot,
-                       AndAnnotationsMap& and_annot,
-                       HeadToBinding& head_to_binding)
+template<AndAnnotationPolicy AndAP>
+void generate_unary_case(GenerateContext<AndAP>& gc)
 {
-    auto ground_context_delta = fd::GrounderContext { worker_ws.builder, *rule_delta_ws.repository, rule_delta_ws.binding };
-    auto ground_context_rule = fd::GrounderContext { worker_ws.builder, rule_ws.overlay_repository, rule_delta_ws.binding };
-    auto fact_sets = FactSets(const_fact_ws.fact_sets, fact_ws.fact_sets);
-
-    for (const auto vertex_index : rule_ws.kpkc_workspace.consistent_vertices_vec)
+    for (const auto vertex_index : gc.rule_ws.kpkc_workspace.consistent_vertices_vec)
     {
-        const auto head =
-            create_unary_ground_head_in_delta(vertex_index, const_rule_ws.static_consistency_graph, const_rule_ws.get_rule().get_head(), ground_context_delta)
-                .first;
+        const auto head = create_unary_ground_head_in_delta(vertex_index,
+                                                            gc.const_rule_ws.static_consistency_graph,
+                                                            gc.const_rule_ws.get_rule().get_head(),
+                                                            gc.ground_context_delta)
+                              .first;
 
-        if (!rule_delta_ws.heads.contains(head))
+        if (!gc.rule_delta_ws.heads.contains(head))
         {
-            if (is_valid_binding(const_rule_ws.get_unary_conflicting_overapproximation_condition(), fact_sets, ground_context_rule))
+            if (is_valid_binding(gc.const_rule_ws.get_unary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_rule))
             {
                 // Ensure that ground rule is truly applicable
-                assert(is_applicable(make_view(ground(const_rule_ws.get_rule(), ground_context_rule).first, rule_ws.overlay_repository), fact_sets));
+                assert(
+                    is_applicable(make_view(ground(gc.const_rule_ws.get_rule(), gc.ground_context_rule).first, gc.rule_ws.overlay_repository), gc.fact_sets));
 
-                rule_delta_ws.heads.insert(head);
-                rule_ws.ground_heads.push_back(head);
+                gc.rule_delta_ws.heads.insert(head);
+                gc.rule_ws.ground_heads.push_back(head);
 
-                and_ap.annotate(const_rule_ws.fluent_rule,
-                                ground_context_delta.binding,
-                                head,
-                                or_annot,
-                                and_annot,
-                                head_to_binding,
-                                ground_context_rule,
-                                ground_context_delta);
+                gc.and_ap.annotate(gc.const_rule_ws.fluent_rule,
+                                   gc.ground_context_delta.binding,
+                                   head,
+                                   gc.or_annot,
+                                   gc.and_annot,
+                                   gc.head_to_binding,
+                                   gc.ground_context_rule,
+                                   gc.ground_context_delta);
             }
         }
     }
 }
 
-template<OrAnnotationPolicy OrAP, AndAnnotationPolicy AndAP>
-void ground_general_case(const FactsWorkspace& fact_ws,
-                         const ConstFactsWorkspace& const_fact_ws,
-                         RuleWorkspace& rule_ws,
-                         const ConstRuleWorkspace& const_rule_ws,
-                         RuleDeltaWorkspace& rule_delta_ws,
-                         WorkerWorkspace& worker_ws,
-                         const OrAP& or_ap,
-                         AndAP& and_ap,
-                         const OrAnnotationsList& or_annot,
-                         AndAnnotationsMap& and_annot,
-                         HeadToBinding& head_to_binding)
+template<AndAnnotationPolicy AndAP>
+void generate_general_case(GenerateContext<AndAP>& gc)
 {
-    auto ground_context_delta = fd::GrounderContext { worker_ws.builder, *rule_delta_ws.repository, rule_delta_ws.binding };
-    auto ground_context_rule = fd::GrounderContext { worker_ws.builder, rule_ws.overlay_repository, rule_delta_ws.binding };
-    auto fact_sets = FactSets(const_fact_ws.fact_sets, fact_ws.fact_sets);
-
     kpkc::for_each_k_clique(
-        rule_ws.consistency_graph,
-        rule_ws.kpkc_workspace,
+        gc.rule_ws.consistency_graph,
+        gc.rule_ws.kpkc_workspace,
         [&](auto&& clique)
         {
-            const auto head =
-                create_general_ground_head_in_delta(clique, const_rule_ws.static_consistency_graph, const_rule_ws.get_rule().get_head(), ground_context_delta)
-                    .first;
+            const auto head = create_general_ground_head_in_delta(clique,
+                                                                  gc.const_rule_ws.static_consistency_graph,
+                                                                  gc.const_rule_ws.get_rule().get_head(),
+                                                                  gc.ground_context_delta)
+                                  .first;
 
-            if (!rule_delta_ws.heads.contains(head))
+            if (!gc.rule_delta_ws.heads.contains(head))
             {
-                if (is_valid_binding(const_rule_ws.get_binary_conflicting_overapproximation_condition(), fact_sets, ground_context_rule))
+                if (is_valid_binding(gc.const_rule_ws.get_binary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_rule))
                 {
                     // Ensure that ground rule is truly applicable
-                    assert(is_applicable(make_view(ground(const_rule_ws.get_rule(), ground_context_rule).first, rule_ws.overlay_repository), fact_sets));
+                    assert(is_applicable(make_view(ground(gc.const_rule_ws.get_rule(), gc.ground_context_rule).first, gc.rule_ws.overlay_repository),
+                                         gc.fact_sets));
 
-                    rule_delta_ws.heads.insert(head);
-                    rule_ws.ground_heads.push_back(head);
+                    gc.rule_delta_ws.heads.insert(head);
+                    gc.rule_ws.ground_heads.push_back(head);
 
                     // TODO: cost is aggregated cost of body fluents, so we need to pass or_ap
                     // TODO: and_ap needs access to or_ap through its constructor to be able to fetch costs.
                     // TODO: and_ap needs an aggregation function
-                    and_ap.annotate(const_rule_ws.fluent_rule,
-                                    ground_context_delta.binding,
-                                    head,
-                                    or_annot,
-                                    and_annot,
-                                    head_to_binding,
-                                    ground_context_rule,
-                                    ground_context_delta);
+                    gc.and_ap.annotate(gc.const_rule_ws.fluent_rule,
+                                       gc.ground_context_delta.binding,
+                                       head,
+                                       gc.or_annot,
+                                       gc.and_annot,
+                                       gc.head_to_binding,
+                                       gc.ground_context_rule,
+                                       gc.ground_context_delta);
                 }
             }
         });
 }
 
-template<OrAnnotationPolicy OrAP, AndAnnotationPolicy AndAP>
-void ground(const FactsWorkspace& fact_ws,
-            const ConstFactsWorkspace& const_fact_ws,
-            RuleWorkspace& rule_ws,
-            const ConstRuleWorkspace& const_rule_ws,
-            RuleDeltaWorkspace& rule_delta_ws,
-            WorkerWorkspace& worker_ws,
-            const OrAP& or_ap,
-            AndAP& and_ap,
-            const OrAnnotationsList& or_annot,
-            AndAnnotationsMap& and_annot,
-            HeadToBinding& head_to_binding)
+template<AndAnnotationPolicy AndAP>
+void generate(GenerateContext<AndAP>& gc)
 {
-    auto fact_sets = FactSets(const_fact_ws.fact_sets, fact_ws.fact_sets);
-
-    if (!is_applicable(const_rule_ws.get_nullary_condition(), fact_sets))
+    if (!is_applicable(gc.const_rule_ws.get_nullary_condition(), gc.fact_sets))
         return;
 
-    const auto arity = const_rule_ws.get_rule().get_arity();
+    const auto arity = gc.const_rule_ws.get_rule().get_arity();
 
     if (arity == 0)
-        ground_nullary_case(fact_ws, const_fact_ws, rule_ws, const_rule_ws, rule_delta_ws, worker_ws, or_ap, and_ap, or_annot, and_annot, head_to_binding);
+        generate_nullary_case(gc);
     else if (arity == 1)
-        ground_unary_case(fact_ws, const_fact_ws, rule_ws, const_rule_ws, rule_delta_ws, worker_ws, or_ap, and_ap, or_annot, and_annot, head_to_binding);
+        generate_unary_case(gc);
     else
-        ground_general_case(fact_ws, const_fact_ws, rule_ws, const_rule_ws, rule_delta_ws, worker_ws, or_ap, and_ap, or_annot, and_annot, head_to_binding);
+        generate_general_case(gc);
 }
 
 template<OrAnnotationPolicy OrAP, AndAnnotationPolicy AndAP, TerminationPolicy TP>
@@ -339,10 +314,6 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                     const auto& const_rule_ws = cws.rules[i];
                     auto& rule_delta_ws = ws.rule_deltas[i];
                     auto& worker_ws = ws.worker.local();
-
-                    const auto assignment_sets = AssignmentSets { const_facts_ws.assignment_sets, facts_ws.assignment_sets };
-
-                    const auto& or_ap = aps.or_ap;
                     auto& and_ap = aps.and_aps[i];
                     const auto& or_annot = aps.or_annot;
                     auto& and_annot = aps.and_annots[i];
@@ -354,7 +325,7 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
 
                         worker_ws.clear();
                         rule_ws.clear();
-                        rule_ws.initialize(const_rule_ws.static_consistency_graph, assignment_sets);
+                        rule_ws.initialize(const_rule_ws.static_consistency_graph, AssignmentSets { const_facts_ws.assignment_sets, facts_ws.assignment_sets });
                     }
 
                     {
@@ -362,7 +333,22 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                         auto stopwatch = StopwatchScope(rule_ws.statistics.ground_total_time);
                         ++rule_ws.statistics.num_executions;
 
-                        ground(facts_ws, const_facts_ws, rule_ws, const_rule_ws, rule_delta_ws, worker_ws, or_ap, and_ap, or_annot, and_annot, head_to_binding);
+                        auto generate_context =
+                            GenerateContext { facts_ws,
+                                              const_facts_ws,
+                                              rule_ws,
+                                              const_rule_ws,
+                                              rule_delta_ws,
+                                              worker_ws,
+                                              and_ap,
+                                              or_annot,
+                                              and_annot,
+                                              head_to_binding,
+                                              FactSets(const_facts_ws.fact_sets, facts_ws.fact_sets),
+                                              fd::GrounderContext { worker_ws.builder, *rule_delta_ws.repository, rule_delta_ws.binding },
+                                              fd::GrounderContext { worker_ws.builder, rule_ws.overlay_repository, rule_delta_ws.binding } };
+
+                        generate(generate_context);
                     }
                 });
         }
