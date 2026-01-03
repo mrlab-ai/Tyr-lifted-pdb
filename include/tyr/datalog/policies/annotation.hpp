@@ -151,8 +151,6 @@ class OrAnnotationPolicy
 public:
     static constexpr bool ShouldAnnotate = true;
 
-    explicit OrAnnotationPolicy(const formalism::datalog::Repository& repository) : m_repository(repository) {}
-
     void annotate(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head, OrAnnotationsList& or_annot)
     {
         resize_or_annot_to_fit(head, or_annot);
@@ -167,13 +165,11 @@ public:
                   const HeadToWitness& head_to_witness) noexcept
     {
         resize_or_annot_to_fit(head, or_annot);
-
-        const auto rule_cost = make_view(rule, m_repository).get_cost();
-        const auto annot_cost = and_annot.at(head_to_witness.at(head));
+        const auto cost = and_annot.at(head_to_witness.at(head));
 
         /// cost(u) = min({ cost(v_1), ..., cost(v_k) })
         auto& annot = or_annot[uint_t(head.group)][head.value];
-        annot = std::min(annot, rule_cost + annot_cost);
+        annot = std::min(annot, cost);
     }
 
     void clear() noexcept {}
@@ -186,9 +182,6 @@ private:
         if (head.value >= or_annot[uint_t(head.group)].size())
             or_annot[uint_t(head.group)].resize(head.value + 1, std::numeric_limits<Cost>::max());
     }
-
-private:
-    const formalism::datalog::Repository& m_repository;
 };
 
 struct SumAggregation
@@ -236,6 +229,8 @@ public:
                 cost = agg(cost, or_annot[uint_t(atom_index.group)][atom_index.value]);
             }
         }
+        /// Add cost of rule itself.
+        cost += make_view(rule, rule_context.destination).get_cost();
 
         const auto witness = Witness { rule, binding };
 

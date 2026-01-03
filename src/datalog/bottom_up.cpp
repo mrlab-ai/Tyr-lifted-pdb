@@ -324,12 +324,16 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                 [&](auto&& rule_index)
                 {
                     const auto i = uint_t(rule_index);
+
+                    // Fetch workspaces
                     auto& facts_ws = ws.facts;
                     const auto& const_facts_ws = cws.facts;
                     auto& rule_ws = ws.rules[i];
                     const auto& const_rule_ws = cws.rules[i];
                     auto& rule_delta_ws = ws.rule_deltas[i];
                     auto& worker_ws = ws.worker.local();
+
+                    // Fetch annotation policies
                     auto& and_ap = aps.and_aps[i];
                     const auto& or_annot = aps.or_annot;
                     auto& and_annot = aps.and_annots[i];
@@ -387,9 +391,11 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
             {
                 const auto i = uint_t(rule_index);
 
+                // Fetch workspaces
                 const auto& rule_ws = ws.rules[i];
                 auto& rule_delta_ws = ws.rule_deltas[i];
 
+                // Fetch annotation policies
                 auto& or_ap = aps.or_ap;
                 auto& or_annot = aps.or_annot;
                 const auto& and_annot = aps.and_annots[i];
