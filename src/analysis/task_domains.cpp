@@ -25,6 +25,7 @@
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/datas.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
@@ -247,8 +248,49 @@ void insert_constants_into_parameter_domain(View<Data<fp::BooleanOperator<Data<f
  * Restrict
  */
 
+static void restrict_parameter_domain(float_t, DomainSetList&, const DomainSetListList&);
+
+template<f::OpKind O, fp::Context C>
+void restrict_parameter_domain(View<Index<fp::UnaryOperator<O, Data<fp::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
+template<f::OpKind O, fp::Context C>
+void restrict_parameter_domain(View<Index<fp::BinaryOperator<O, Data<fp::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
+template<f::OpKind O, fp::Context C>
+void restrict_parameter_domain(View<Index<fp::MultiOperator<O, Data<fp::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
+template<f::FactKind T, fp::Context C>
+void restrict_parameter_domain(View<Index<fp::Atom<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& predicate_domain_sets);
+
+template<f::FactKind T, fp::Context C>
+void restrict_parameter_domain(View<Index<fp::Literal<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& predicate_domain_sets);
+
+template<f::FactKind T, fp::Context C>
+void restrict_parameter_domain(View<Index<fp::FunctionTerm<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets);
+
+template<fp::Context C>
+void restrict_parameter_domain(View<Index<fp::FunctionTerm<f::FluentTag>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
+template<fp::Context C>
+void restrict_parameter_domain(View<Data<fp::ArithmeticOperator<Data<fp::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
 template<fp::Context C>
 void restrict_parameter_domain(View<Data<fp::FunctionExpression>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets);
+
+template<fp::Context C>
+void restrict_parameter_domain(View<Data<fp::BooleanOperator<Data<fp::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
 
 static void restrict_parameter_domain(float_t, DomainSetList&, const DomainSetListList&) {}
 
@@ -311,6 +353,15 @@ void restrict_parameter_domain(View<Index<fp::Atom<T>>, C> element, DomainSetLis
             term.get_variant());
         ++pos;
     }
+}
+
+template<f::FactKind T, fp::Context C>
+void restrict_parameter_domain(View<Index<fp::Literal<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& predicate_domain_sets)
+{
+    if (!element.get_polarity())
+        return;  // IMPORTANT: do NOT restrict from negated literals
+
+    restrict_parameter_domain(element.get_atom(), parameter_domains, predicate_domain_sets);
 }
 
 template<f::FactKind T, fp::Context C>
@@ -407,6 +458,9 @@ bool lift_parameter_domain(View<Index<fp::NumericEffect<Op, T>>, C> element, con
 
 template<f::FactKind T, fp::Context C>
 bool lift_parameter_domain(View<Index<fp::Atom<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets);
+
+template<f::FactKind T, fp::Context C>
+bool lift_parameter_domain(View<Index<fp::Literal<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets);
 
 template<f::FactKind T, fp::Context C>
 bool lift_parameter_domain(View<Index<fp::FunctionTerm<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
@@ -515,6 +569,12 @@ bool lift_parameter_domain(View<Index<fp::Atom<T>>, C> element, const DomainSetL
         ++pos;
     }
     return changed;
+}
+
+template<f::FactKind T, fp::Context C>
+bool lift_parameter_domain(View<Index<fp::Literal<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets)
+{
+    return lift_parameter_domain(element.get_atom(), parameter_domains, predicate_domain_sets);
 }
 
 template<f::FactKind T, fp::Context C>
@@ -676,7 +736,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
             auto parameter_domains = DomainSetList(variables.size(), universe);
 
             for (const auto literal : action.get_condition().get_literals<f::StaticTag>())
-                restrict_parameter_domain(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
+                restrict_parameter_domain(literal, parameter_domains, static_predicate_domain_sets);
 
             for (const auto op : action.get_condition().get_numeric_constraints())
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
@@ -691,7 +751,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
                 c_parameter_domains.resize(variables.size() + c_variables.size(), universe);
 
                 for (const auto literal : c_effect.get_condition().get_literals<f::StaticTag>())
-                    restrict_parameter_domain(literal.get_atom(), c_parameter_domains, static_predicate_domain_sets);
+                    restrict_parameter_domain(literal, c_parameter_domains, static_predicate_domain_sets);
 
                 for (const auto op : c_effect.get_condition().get_numeric_constraints())
                     restrict_parameter_domain(op, c_parameter_domains, static_function_domain_sets);
@@ -712,7 +772,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
             auto parameter_domains = DomainSetList(variables.size(), universe);
 
             for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
-                restrict_parameter_domain(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
+                restrict_parameter_domain(literal, parameter_domains, static_predicate_domain_sets);
 
             for (const auto op : axiom.get_body().get_numeric_constraints())
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
@@ -727,7 +787,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
             auto parameter_domains = DomainSetList(variables.size(), universe);
 
             for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
-                restrict_parameter_domain(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
+                restrict_parameter_domain(literal, parameter_domains, static_predicate_domain_sets);
 
             for (const auto op : axiom.get_body().get_numeric_constraints())
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
@@ -749,12 +809,16 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
         {
             auto& [parameter_domains, parameter_domains_per_cond_effect] = action_domain_sets[action.get_index().value];
 
+            for (const auto literal : action.get_condition().get_literals<f::StaticTag>())
+                if (lift_parameter_domain(literal, parameter_domains, static_predicate_domain_sets))
+                    changed = true;
+
             for (const auto literal : action.get_condition().get_literals<f::FluentTag>())
-                if (lift_parameter_domain(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets))
+                if (lift_parameter_domain(literal, parameter_domains, fluent_predicate_domain_sets))
                     changed = true;
 
             for (const auto literal : action.get_condition().get_literals<f::DerivedTag>())
-                if (lift_parameter_domain(literal.get_atom(), parameter_domains, derived_predicate_domain_sets))
+                if (lift_parameter_domain(literal, parameter_domains, derived_predicate_domain_sets))
                     changed = true;
 
             for (const auto op : action.get_condition().get_numeric_constraints())
@@ -766,8 +830,12 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
                 const auto c_effect = action.get_effects()[i];
                 auto& c_parameter_domains = parameter_domains_per_cond_effect[i];
 
+                for (const auto literal : c_effect.get_condition().get_literals<f::StaticTag>())
+                    if (lift_parameter_domain(literal, c_parameter_domains, static_predicate_domain_sets))
+                        changed = true;
+
                 for (const auto literal : c_effect.get_condition().get_literals<f::FluentTag>())
-                    if (lift_parameter_domain(literal.get_atom(), c_parameter_domains, fluent_predicate_domain_sets))
+                    if (lift_parameter_domain(literal, c_parameter_domains, fluent_predicate_domain_sets))
                         changed = true;
 
                 for (const auto op : c_effect.get_condition().get_numeric_constraints())
@@ -775,7 +843,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
                         changed = true;
 
                 for (const auto literal : c_effect.get_effect().get_literals())
-                    if (lift_parameter_domain(literal.get_atom(), c_parameter_domains, fluent_predicate_domain_sets))
+                    if (lift_parameter_domain(literal, c_parameter_domains, fluent_predicate_domain_sets))
                         changed = true;
 
                 for (const auto op : c_effect.get_effect().get_numeric_effects())
@@ -788,12 +856,16 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
         {
             auto& parameter_domains = axiom_domain_sets[axiom.get_index().value];
 
+            for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
+                if (lift_parameter_domain(literal, parameter_domains, static_predicate_domain_sets))
+                    changed = true;
+
             for (const auto literal : axiom.get_body().get_literals<f::FluentTag>())
-                if (lift_parameter_domain(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets))
+                if (lift_parameter_domain(literal, parameter_domains, fluent_predicate_domain_sets))
                     changed = true;
 
             for (const auto literal : axiom.get_body().get_literals<f::DerivedTag>())
-                if (lift_parameter_domain(literal.get_atom(), parameter_domains, derived_predicate_domain_sets))
+                if (lift_parameter_domain(literal, parameter_domains, derived_predicate_domain_sets))
                     changed = true;
 
             for (const auto op : axiom.get_body().get_numeric_constraints())
@@ -808,12 +880,16 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, f::OverlayRep
         {
             auto& parameter_domains = axiom_domain_sets[axiom.get_index().value];
 
+            for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
+                if (lift_parameter_domain(literal, parameter_domains, static_predicate_domain_sets))
+                    changed = true;
+
             for (const auto literal : axiom.get_body().get_literals<f::FluentTag>())
-                if (lift_parameter_domain(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets))
+                if (lift_parameter_domain(literal, parameter_domains, fluent_predicate_domain_sets))
                     changed = true;
 
             for (const auto literal : axiom.get_body().get_literals<f::DerivedTag>())
-                if (lift_parameter_domain(literal.get_atom(), parameter_domains, derived_predicate_domain_sets))
+                if (lift_parameter_domain(literal, parameter_domains, derived_predicate_domain_sets))
                     changed = true;
 
             for (const auto op : axiom.get_body().get_numeric_constraints())

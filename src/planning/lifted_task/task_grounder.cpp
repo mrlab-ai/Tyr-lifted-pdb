@@ -357,7 +357,9 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
                     const auto ground_action = make_view(ground_action_index, grounder_context.destination);
 
-                    if (is_statically_applicable(ground_action, static_atoms_bitset) && is_consistent(ground_action, fluent_assign, derived_assign))
+                    assert(is_statically_applicable(ground_action, static_atoms_bitset));
+
+                    if (is_consistent(ground_action, fluent_assign, derived_assign))
                     {
                         ground_actions_set.insert(ground_action.get_index());
 
@@ -409,7 +411,9 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
                     const auto ground_axiom = make_view(ground_axiom_index, grounder_context.destination);
 
-                    if (is_statically_applicable(ground_axiom, static_atoms_bitset) && is_consistent(ground_axiom, fluent_assign, derived_assign))
+                    assert(is_statically_applicable(ground_axiom, static_atoms_bitset));
+
+                    if (is_consistent(ground_axiom, fluent_assign, derived_assign))
                     {
                         ground_axioms_set.insert(ground_axiom.get_index());
 

@@ -346,9 +346,9 @@ TEST(TyrTests, TyrPlanningGroundTaskPushworld)
 {
     auto ground_task = compute_ground_task(absolute("pushworld/domain.pddl"), absolute("pushworld/test_problem.pddl"));
 
-    EXPECT_EQ(ground_task->get_num_atoms<f::FluentTag>(), 228);
+    EXPECT_EQ(ground_task->get_num_atoms<f::FluentTag>(), 327);
     EXPECT_EQ(ground_task->get_num_atoms<f::DerivedTag>(), 0);
-    EXPECT_EQ(ground_task->get_num_actions(), 8);
+    EXPECT_EQ(ground_task->get_num_actions(), 1126);
     EXPECT_EQ(ground_task->get_num_axioms(), 0);
 
     auto successor_generator = p::SuccessorGenerator<p::GroundTask>(ground_task);

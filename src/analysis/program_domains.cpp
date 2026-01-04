@@ -24,6 +24,7 @@
 #include "tyr/common/variant.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
@@ -223,8 +224,49 @@ void insert_constants_into_parameter_domain(View<Data<fd::BooleanOperator<Data<f
  * Restrict
  */
 
+static void restrict_parameter_domain(float_t, DomainSetList&, const DomainSetListList&);
+
+template<f::OpKind O, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::UnaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
+template<f::OpKind O, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::BinaryOperator<O, Data<fd::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
+template<f::OpKind O, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::MultiOperator<O, Data<fd::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
+template<f::FactKind T, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::Atom<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& predicate_domain_sets);
+
+template<f::FactKind T, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::Literal<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& predicate_domain_sets);
+
+template<f::FactKind T, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::FunctionTerm<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets);
+
+template<fd::Context C>
+void restrict_parameter_domain(View<Index<fd::FunctionTerm<f::FluentTag>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
+template<fd::Context C>
+void restrict_parameter_domain(View<Data<fd::ArithmeticOperator<Data<fd::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
+
 template<fd::Context C>
 void restrict_parameter_domain(View<Data<fd::FunctionExpression>, C> element, DomainSetList& parameter_domains, const DomainSetListList& function_domain_sets);
+
+template<fd::Context C>
+void restrict_parameter_domain(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, C> element,
+                               DomainSetList& parameter_domains,
+                               const DomainSetListList& function_domain_sets);
 
 static void restrict_parameter_domain(float_t, DomainSetList&, const DomainSetListList&) {}
 
@@ -287,6 +329,15 @@ void restrict_parameter_domain(View<Index<fd::Atom<T>>, C> element, DomainSetLis
             term.get_variant());
         ++pos;
     }
+}
+
+template<f::FactKind T, fd::Context C>
+void restrict_parameter_domain(View<Index<fd::Literal<T>>, C> element, DomainSetList& parameter_domains, const DomainSetListList& predicate_domain_sets)
+{
+    if (!element.get_polarity())
+        return;  // IMPORTANT: do NOT restrict from negated literals
+
+    restrict_parameter_domain(element.get_atom(), parameter_domains, predicate_domain_sets);
 }
 
 template<f::FactKind T, fd::Context C>
@@ -380,6 +431,9 @@ bool lift_parameter_domain(View<Index<fd::MultiOperator<O, Data<fd::FunctionExpr
 
 template<f::FactKind T, fd::Context C>
 bool lift_parameter_domain(View<Index<fd::Atom<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets);
+
+template<f::FactKind T, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::Literal<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets);
 
 template<f::FactKind T, fd::Context C>
 bool lift_parameter_domain(View<Index<fd::FunctionTerm<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& function_domain_sets);
@@ -476,6 +530,12 @@ bool lift_parameter_domain(View<Index<fd::Atom<T>>, C> element, const DomainSetL
         ++pos;
     }
     return changed;
+}
+
+template<f::FactKind T, fd::Context C>
+bool lift_parameter_domain(View<Index<fd::Literal<T>>, C> element, const DomainSetList& parameter_domains, DomainSetListList& predicate_domain_sets)
+{
+    return lift_parameter_domain(element.get_atom(), parameter_domains, predicate_domain_sets);
 }
 
 template<f::FactKind T, fd::Context C>
@@ -593,7 +653,7 @@ ProgramVariableDomains compute_variable_domains(View<Index<fd::Program>, fd::Rep
             auto parameter_domains = DomainSetList(variables.size(), universe);
 
             for (const auto literal : rule.get_body().get_literals<f::StaticTag>())
-                restrict_parameter_domain(literal.get_atom(), parameter_domains, static_predicate_domain_sets);
+                restrict_parameter_domain(literal, parameter_domains, static_predicate_domain_sets);
 
             for (const auto op : rule.get_body().get_numeric_constraints())
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
@@ -615,8 +675,12 @@ ProgramVariableDomains compute_variable_domains(View<Index<fd::Program>, fd::Rep
         {
             auto& parameter_domains = rule_domain_sets[rule.get_index().value];
 
+            for (const auto literal : rule.get_body().get_literals<f::StaticTag>())
+                if (lift_parameter_domain(literal, parameter_domains, static_predicate_domain_sets))
+                    changed = true;
+
             for (const auto literal : rule.get_body().get_literals<f::FluentTag>())
-                if (lift_parameter_domain(literal.get_atom(), parameter_domains, fluent_predicate_domain_sets))
+                if (lift_parameter_domain(literal, parameter_domains, fluent_predicate_domain_sets))
                     changed = true;
 
             for (const auto op : rule.get_body().get_numeric_constraints())
@@ -637,11 +701,21 @@ ProgramVariableDomains compute_variable_domains(View<Index<fd::Program>, fd::Rep
     auto rule_domains = to_list(rule_domain_sets);
 
     // std::cout << std::endl;
-    // std::cout << "static_predicate_domains: " << static_predicate_domains << std::endl;
-    // std::cout << "fluent_predicate_domains: " << fluent_predicate_domains << std::endl;
-    // std::cout << "static_function_domains: " << static_function_domains << std::endl;
-    // std::cout << "fluent_function_domains: " << fluent_function_domains << std::endl;
-    // std::cout << "rule_domains: " << rule_domains << std::endl;
+    // std::cout << "Result domains: " << std::endl;
+    // std::cout << "static_predicate_domains:" << std::endl;
+    // for (uint_t i = 0; i < program.get_predicates<f::StaticTag>().size(); ++i)
+    //     std::cout << program.get_predicates<f::StaticTag>()[i] << ": " << static_predicate_domains[i] << std::endl;
+    // std::cout << "fluent_predicate_domains:" << std::endl;
+    // for (uint_t i = 0; i < program.get_predicates<f::FluentTag>().size(); ++i)
+    //     std::cout << program.get_predicates<f::FluentTag>()[i] << ": " << fluent_predicate_domains[i] << std::endl;
+    // std::cout << "static_function_domains:" << std::endl;
+    // for (uint_t i = 0; i < program.get_functions<f::StaticTag>().size(); ++i)
+    //     std::cout << program.get_functions<f::StaticTag>()[i] << ": " << static_function_domains[i] << std::endl;
+    // std::cout << "fluent_function_domains:" << std::endl;
+    // for (uint_t i = 0; i < program.get_functions<f::FluentTag>().size(); ++i)
+    //     std::cout << program.get_functions<f::FluentTag>()[i] << ": " << fluent_function_domains[i] << std::endl;
+    // for (uint_t i = 0; i < program.get_rules().size(); ++i)
+    //     std::cout << program.get_rules()[i] << ": " << rule_domains[i] << std::endl;
     // std::cout << std::endl;
 
     return ProgramVariableDomains { std::move(static_predicate_domains),

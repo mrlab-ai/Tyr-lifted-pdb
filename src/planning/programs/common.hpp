@@ -47,9 +47,9 @@ inline void append_from_condition(View<Index<formalism::planning::ConjunctiveCon
                                   formalism::planning::MergeDatalogContext<formalism::datalog::Repository>& context,
                                   Data<formalism::datalog::ConjunctiveCondition>& conj_cond)
 {
+    // Keep negated static atoms because they are monotonic
     for (const auto literal : cond.template get_literals<formalism::StaticTag>())
-        if (literal.get_polarity())
-            conj_cond.static_literals.push_back(merge_p2d(literal, context).first);
+        conj_cond.static_literals.push_back(merge_p2d(literal, context).first);
 
     for (const auto literal : cond.template get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
@@ -199,14 +199,13 @@ inline auto create_triggered_rule(View<Index<formalism::planning::Action>, forma
 
     for (const auto variable : action.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first);
+    for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
+        conj_cond.static_literals.push_back(merge_p2d(literal, context).first);
+    conj_cond.fluent_literals.push_back(create_applicability_literal(action, context).first);
+
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first);
-    for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, context).first);
-    for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, context).first);
     append_from_condition(cond_eff.get_condition(), context, conj_cond);
-    conj_cond.fluent_literals.push_back(create_applicability_literal(action, context).first);
 
     canonicalize(conj_cond);
     const auto new_conj_cond = make_view(context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first, context.destination);
@@ -234,6 +233,7 @@ inline auto create_effect_rule(View<Index<formalism::planning::Action>, formalis
 
     for (const auto variable : action.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first);
+
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first);
     conj_cond.fluent_literals.push_back(create_triggered_literal(action, cond_eff, context).first);
@@ -264,12 +264,13 @@ inline auto create_cond_effect_rule(View<Index<formalism::planning::Action>, for
 
     for (const auto variable : action.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first);
-    for (const auto variable : cond_eff.get_variables())
-        conj_cond.variables.push_back(merge_p2d(variable, context).first);
     for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
         conj_cond.static_literals.push_back(merge_p2d(literal, context).first);
-    append_from_condition(cond_eff.get_condition(), context, conj_cond);
     conj_cond.fluent_literals.push_back(create_applicability_literal(action, context).first);
+
+    for (const auto variable : cond_eff.get_variables())
+        conj_cond.variables.push_back(merge_p2d(variable, context).first);
+    append_from_condition(cond_eff.get_condition(), context, conj_cond);
 
     canonicalize(conj_cond);
     const auto new_conj_cond = make_view(context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first, context.destination);
@@ -298,9 +299,10 @@ create_full_cond_effect_rule(View<Index<formalism::planning::Action>, formalism:
 
     for (const auto variable : action.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first);
+    append_from_condition(action.get_condition(), context, conj_cond);
+
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first);
-    append_from_condition(action.get_condition(), context, conj_cond);
     append_from_condition(cond_eff.get_condition(), context, conj_cond);
 
     canonicalize(conj_cond);
