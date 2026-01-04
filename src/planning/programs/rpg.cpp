@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/programs/ff.hpp"
+#include "tyr/planning/programs/rpg.hpp"
 
 #include "common.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
@@ -233,17 +233,17 @@ static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp
     return datalog::ProgramContext(program, std::move(repository), std::move(domains), std::move(strata), std::move(listeners));
 }
 
-FFProgram::FFProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
+RPGProgram::RPGProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
     m_program_context(create_program_context(task)),
     m_program_workspace(m_program_context)
 {
     // std::cout << m_program_context.get_program() << std::endl;
 }
 
-datalog::ProgramContext& FFProgram::get_program_context() noexcept { return m_program_context; }
+datalog::ProgramContext& RPGProgram::get_program_context() noexcept { return m_program_context; }
 
-const datalog::ProgramContext& FFProgram::get_program_context() const noexcept { return m_program_context; }
+const datalog::ProgramContext& RPGProgram::get_program_context() const noexcept { return m_program_context; }
 
-const datalog::ConstProgramWorkspace& FFProgram::get_const_program_workspace() const noexcept { return m_program_workspace; }
+const datalog::ConstProgramWorkspace& RPGProgram::get_const_program_workspace() const noexcept { return m_program_workspace; }
 
 }

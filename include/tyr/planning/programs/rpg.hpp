@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_PROGRAMS_FF_HPP_
-#define TYR_PLANNING_PROGRAMS_FF_HPP_
+#ifndef TYR_PLANNING_PROGRAMS_RPG_HPP_
+#define TYR_PLANNING_PROGRAMS_RPG_HPP_
 
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
@@ -32,10 +32,10 @@
 namespace tyr::planning
 {
 
-class FFProgram
+class RPGProgram
 {
 public:
-    explicit FFProgram(View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task);
+    explicit RPGProgram(View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task);
 
     datalog::ProgramContext& get_program_context() noexcept;
     const datalog::ProgramContext& get_program_context() const noexcept;
