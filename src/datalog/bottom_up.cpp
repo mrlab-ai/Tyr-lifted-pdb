@@ -325,12 +325,11 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
 
     while (true)
     {
-        std::cout << "Cost: " << ws.cost_buckets.current_cost() << std::endl;
+        // std::cout << "Cost: " << ws.cost_buckets.current_cost() << std::endl;
 
         // Check whether min cost for goal was proven.
         if (tp.check())
         {
-            std::cout << "GOAL ACHIEVED!: " << tp.get_total_cost(aps.or_annot) << std::endl;
             return;
         }
 
@@ -383,7 +382,8 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                     const auto head = fd::merge_d2d(make_view(head_index, *ws.rule_deltas[i].repository), merge_context).first;
 
                     // Update annotation
-                    const auto [old_cost, new_cost] = aps.or_ap.update_annotation(rule_index, head, aps.or_annot, aps.and_annots[i], aps.head_to_witness[i]);
+                    const auto [old_cost, new_cost] =
+                        aps.or_ap.update_annotation(rule_index, head, head_index, aps.or_annot, aps.and_annots[i], aps.head_to_witness[i]);
 
                     // Ensure monotonically decreasing costs.
                     assert(!old_cost || new_cost <= old_cost);
@@ -428,16 +428,18 @@ void solve_bottom_up(ProgramWorkspace& ws, const ConstProgramWorkspace& cws, Ann
     aps.clear();
     tp.clear();
 
+    // Initialize the termination policy.
+    tp.set_goals(ws.facts.goal_fact_sets);
+
     // Initialize first fact layer.
     for (const auto& set : ws.facts.fact_sets.predicate.get_sets())
+    {
         for (const auto fact : set.get_facts())
         {
             aps.or_ap.initialize_annotation(fact.get_index(), aps.or_annot);
             tp.achieve(fact.get_index());
         }
-
-    // Initialize the termination policy.
-    tp.set_goals(ws.facts.goal_fact_sets);
+    }
 
     // Solve for each strata.
     for (auto& scheduler : ws.schedulers.data)
@@ -458,5 +460,4 @@ template void solve_bottom_up(ProgramWorkspace& ws,
                               const ConstProgramWorkspace& cws,
                               AnnotationPolicies<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>>& aps,
                               TerminationPolicy& tp);
-
 }

@@ -82,13 +82,14 @@ template<typename T>
 concept OrAnnotationPolicyConcept = requires(const T& p,
                                              Index<formalism::datalog::Rule> rule,
                                              Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
+                                             Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
                                              OrAnnotationsList& or_annot,
                                              const AndAnnotationsMap& and_annot,
                                              const HeadToWitness& head_to_witness) {
     /// Annotate the initial cost of the atom.
     { p.initialize_annotation(head, or_annot) } -> std::same_as<void>;
     /// Annotate the cost of the atom from the given witness and annotations.
-    { p.update_annotation(rule, head, or_annot, and_annot, head_to_witness) } -> std::same_as<std::pair<std::optional<Cost>, Cost>>;
+    { p.update_annotation(rule, head, delta_head, or_annot, and_annot, head_to_witness) } -> std::same_as<std::pair<std::optional<Cost>, Cost>>;
 };
 
 // rectangular "and"-node
@@ -118,6 +119,7 @@ public:
 
     std::pair<std::optional<Cost>, Cost> update_annotation(Index<formalism::datalog::Rule> rule,
                                                            Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
+                                                           Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
                                                            OrAnnotationsList& or_annot,
                                                            const AndAnnotationsMap& and_annot,
                                                            const HeadToWitness& head_to_witness) const noexcept
@@ -160,12 +162,15 @@ public:
 
     std::pair<std::optional<Cost>, Cost> update_annotation(Index<formalism::datalog::Rule> rule,
                                                            Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
+                                                           Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
                                                            OrAnnotationsList& or_annot,
                                                            const AndAnnotationsMap& and_annot,
                                                            const HeadToWitness& head_to_witness) const
     {
         resize_or_annot_to_fit(head, or_annot);
-        const auto cost = and_annot.at(head_to_witness.at(head));
+        assert(head_to_witness.contains(delta_head));
+        assert(and_annot.contains(head_to_witness.at(delta_head)));
+        const auto cost = and_annot.at(head_to_witness.at(delta_head));
 
         /// cost(u) = min({ cost(v_1), ..., cost(v_k) })
         assert(uint_t(head.group) < or_annot.size());
