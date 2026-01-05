@@ -18,7 +18,6 @@
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 
 #include "../metric.hpp"
-#include "../task_utils.hpp"
 #include "tyr/datalog/bottom_up.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -28,6 +27,7 @@
 #include "tyr/planning/lifted_task/state_repository.hpp"
 #include "tyr/planning/programs/action.hpp"
 #include "tyr/planning/successor_generator.hpp"
+#include "tyr/planning/task_utils.hpp"
 
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;

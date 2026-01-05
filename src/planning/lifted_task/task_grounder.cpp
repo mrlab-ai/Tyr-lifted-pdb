@@ -17,7 +17,6 @@
 
 #include "tyr/planning/lifted_task/task_grounder.hpp"
 
-#include "../task_utils.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/vector.hpp"
@@ -36,6 +35,7 @@
 #include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/programs/ground.hpp"
+#include "tyr/planning/task_utils.hpp"
 
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;

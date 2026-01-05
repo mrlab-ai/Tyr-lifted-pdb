@@ -17,13 +17,13 @@
 
 #include "tyr/planning/lifted_task.hpp"
 
-#include "task_utils.hpp"
 #include "tyr/common/comparators.hpp"            // for operat...
 #include "tyr/common/dynamic_bitset.hpp"         // for set
 #include "tyr/common/vector.hpp"                 // for View, set
 #include "tyr/formalism/overlay_repository.hpp"  // for Overla...
 #include "tyr/formalism/planning/views.hpp"      // for View
 #include "tyr/planning/lifted_task/task_grounder.hpp"
+#include "tyr/planning/task_utils.hpp"
 
 #include <tuple>
 #include <utility>
@@ -48,7 +48,8 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_static_numeric_variables(),
     m_axiom_program(m_task),
     m_action_program(m_task),
-    m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(m_task))
+    m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(m_task)),
+    m_rpg_program(m_task)
 {
     for (const auto atom : m_task.template get_atoms<f::StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);

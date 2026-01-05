@@ -17,7 +17,6 @@
 
 #include "tyr/planning/lifted_task/axiom_evaluator.hpp"
 
-#include "../task_utils.hpp"                     // for insert_fact_s...
 #include "tyr/common/comparators.hpp"            // for operator!=
 #include "tyr/common/equal_to.hpp"               // for EqualTo
 #include "tyr/common/formatter.hpp"              // for operator<<
@@ -34,6 +33,7 @@
 #include "tyr/planning/lifted_task.hpp"  // for LiftedTask
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"  // for UnpackedState
+#include "tyr/planning/task_utils.hpp"                  // for insert_fact_s...
 
 #include <cista/containers/hash_storage.h>  // for operator!=
 #include <gtl/phmap.hpp>                    // for operator!=

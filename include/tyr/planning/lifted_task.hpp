@@ -28,6 +28,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/action.hpp"
 #include "tyr/planning/programs/axiom.hpp"
+#include "tyr/planning/programs/rpg.hpp"
 
 #include <boost/dynamic_bitset.hpp>  // for dynamic_bitset
 #include <limits>                    // for numeric_limits
@@ -64,6 +65,8 @@ public:
     const auto& get_axiom_program() const noexcept { return m_axiom_program; }
     auto& get_action_program() noexcept { return m_action_program; }
     const auto& get_action_program() const noexcept { return m_action_program; }
+    auto& get_rpg_program() noexcept { return m_rpg_program; }
+    const auto& get_rpg_program() const noexcept { return m_rpg_program; }
     const auto& get_parameter_domains_per_cond_effect_per_action() const noexcept { return m_parameter_domains_per_cond_effect_per_action; }
 
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
@@ -87,6 +90,8 @@ private:
 
     ApplicableActionProgram m_action_program;
     std::vector<analysis::DomainListListList> m_parameter_domains_per_cond_effect_per_action;
+
+    RPGProgram m_rpg_program;
 };
 
 }

@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_SRC_PLANNING_TASK_UTILS_HPP_
-#define TYR_SRC_PLANNING_TASK_UTILS_HPP_
+#ifndef TYR_PLANNING_TASK_UTILS_HPP_
+#define TYR_PLANNING_TASK_UTILS_HPP_
 
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/config.hpp"

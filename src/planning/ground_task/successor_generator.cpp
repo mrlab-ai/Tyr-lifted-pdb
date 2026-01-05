@@ -18,7 +18,6 @@
 #include "tyr/planning/ground_task/successor_generator.hpp"
 
 #include "../metric.hpp"
-#include "../task_utils.hpp"
 #include "tyr/formalism/overlay_repository.hpp"  // for View
 #include "tyr/formalism/planning/views.hpp"      // for View
 #include "tyr/planning/applicability.hpp"        // for StateC...
@@ -27,6 +26,7 @@
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
 #include "tyr/planning/ground_task/state_repository.hpp"
 #include "tyr/planning/state_index.hpp"
+#include "tyr/planning/task_utils.hpp"
 
 namespace tyr::planning
 {

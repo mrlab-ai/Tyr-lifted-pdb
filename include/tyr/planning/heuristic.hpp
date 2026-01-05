@@ -15,27 +15,25 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_SOLVER_BOTTOM_UP_HPP_
-#define TYR_SOLVER_BOTTOM_UP_HPP_
+#ifndef TYR_PLANNING_HEURISTIC_HPP_
+#define TYR_PLANNING_HEURISTIC_HPP_
 
 #include "tyr/common/config.hpp"
-#include "tyr/common/types.hpp"
-#include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/policies/annotation.hpp"
-#include "tyr/datalog/policies/termination.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/ground_atom_index.hpp"
+#include "tyr/planning/declarations.hpp"
 
-#include <concepts>
-#include <vector>
-
-namespace tyr::datalog
+namespace tyr::planning
 {
 
-template<OrAnnotationPolicyConcept OrAP = NoOrAnnotationPolicy,
-         AndAnnotationPolicyConcept AndAP = NoAndAnnotationPolicy,
-         TerminationPolicyConcept TP = NoTerminationPolicy>
-void solve_bottom_up(datalog::ProgramWorkspace& ws, const datalog::ConstProgramWorkspace& cws, AnnotationPolicies<OrAP, AndAP>& aps, TP& tp);
+template<typename Task>
+class Heuristic
+{
+public:
+    virtual ~Heuristic() = default;
+
+    virtual void set_goal(View<Index<formalism::planning::GroundConjunctiveCondition>, formalism::OverlayRepository<formalism::planning::Repository>> goal) = 0;
+
+    virtual float_t evaluate(const State<Task>& state) = 0;
+};
 
 }
 

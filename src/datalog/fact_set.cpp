@@ -49,41 +49,45 @@ void PredicateFactSet<T>::reset()
 }
 
 template<f::FactKind T>
-void PredicateFactSet<T>::insert(View<Index<fd::GroundAtom<T>>, fd::Repository> view)
+void PredicateFactSet<T>::insert(Index<formalism::datalog::GroundAtom<T>> ground_atom)
 {
-    if (&m_context != &view.get_context())
+    if (ground_atom.value >= m_bitset.size())
+        m_bitset.resize(ground_atom.value + 1, false);
+
+    if (!m_bitset.test(ground_atom.value))
+        m_indices.push_back(ground_atom);
+
+    m_bitset.set(ground_atom.value);
+}
+
+template<f::FactKind T>
+void PredicateFactSet<T>::insert(View<Index<fd::GroundAtom<T>>, fd::Repository> ground_atom)
+{
+    if (&m_context != &ground_atom.get_context())
         throw std::runtime_error("Incompatible contexts.");
 
-    const auto index = view.get_index();
-
-    if (index.get_value() >= m_bitset.size())
-        m_bitset.resize(index.get_value() + 1, false);
-
-    if (!m_bitset.test(index.get_value()))
-        m_indices.push_back(index);
-
-    m_bitset.set(index.get_value());
+    return insert(ground_atom.get_index());
 }
 
 template<f::FactKind T>
-void PredicateFactSet<T>::insert(View<IndexList<fd::GroundAtom<T>>, fd::Repository> view)
+void PredicateFactSet<T>::insert(View<IndexList<fd::GroundAtom<T>>, fd::Repository> ground_atoms)
 {
-    for (const auto atom : view)
-        insert(atom);
+    for (const auto ground_atom : ground_atoms)
+        insert(ground_atom);
 }
 
 template<f::FactKind T>
-bool PredicateFactSet<T>::contains(Index<fd::GroundAtom<T>> index) const noexcept
+bool PredicateFactSet<T>::contains(Index<fd::GroundAtom<T>> ground_atom) const noexcept
 {
-    if (index.get_value() >= m_bitset.size())
+    if (ground_atom.get_value() >= m_bitset.size())
         return false;
-    return m_bitset.test(index.get_value());
+    return m_bitset.test(ground_atom.get_value());
 }
 
 template<f::FactKind T>
-bool PredicateFactSet<T>::contains(View<Index<fd::GroundAtom<T>>, fd::Repository> view) const noexcept
+bool PredicateFactSet<T>::contains(View<Index<fd::GroundAtom<T>>, fd::Repository> ground_atom) const noexcept
 {
-    return contains(view.get_index());
+    return contains(ground_atom.get_index());
 }
 
 template<f::FactKind T>

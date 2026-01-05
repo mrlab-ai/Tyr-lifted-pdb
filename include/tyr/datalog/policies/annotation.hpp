@@ -19,8 +19,10 @@
 #define TYR_SOLVER_POLICIES_ANNOTATION_HPP_
 
 #include "tyr/common/config.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -164,6 +166,7 @@ public:
         const auto cost = and_annot.at(head_to_witness.at(head));
 
         /// cost(u) = min({ cost(v_1), ..., cost(v_k) })
+        assert(uint_t(head.group) < or_annot.size());
         auto& new_cost = or_annot[uint_t(head.group)][head.value];
         const auto old_cost = new_cost;
 
@@ -175,8 +178,7 @@ public:
 private:
     void resize_or_annot_to_fit(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head, OrAnnotationsList& or_annot) const
     {
-        if (uint_t(head.group) >= or_annot.size())
-            or_annot.resize(uint_t(head.group) + 1);
+        assert(uint_t(head.group) < or_annot.size());
         if (head.value >= or_annot[uint_t(head.group)].size())
             or_annot[uint_t(head.group)].resize(head.value + 1, std::numeric_limits<Cost>::max());
     }
@@ -219,11 +221,14 @@ public:
         /// cost(u) = cost(v_1) o ... o cost(v_k)
         AggregationFunction agg {};
         auto cost = AggregationFunction::identity();
+
         for (const auto& literal : ground_fluent_rule_view.get_body().get_literals<formalism::FluentTag>())
         {
             if (literal.get_polarity())
             {
                 const auto atom_index = literal.get_atom().get_index();
+                assert(uint_t(atom_index.group) < or_annot.size());
+                assert(atom_index.value < or_annot[uint_t(atom_index.group)].size());
                 cost = agg(cost, or_annot[uint_t(atom_index.group)][atom_index.value]);
             }
         }

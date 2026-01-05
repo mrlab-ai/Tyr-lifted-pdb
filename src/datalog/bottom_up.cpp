@@ -295,7 +295,7 @@ void generate(GenerateContext<AndAP>& gc)
         generate_general_case(gc);
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicy TP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                                  ProgramWorkspace& ws,
                                  const ConstProgramWorkspace& cws,
@@ -305,10 +305,13 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
     scheduler.activate_all();
 
     auto cost = Cost(0);
+    ws.cost_buckets.clear();
     ws.cost_buckets.resize(1);
 
     while (true)
     {
+        // std::cout << "Cost: " << cost << std::endl;
+
         /**
          * Parallel evaluation.
          */
@@ -410,6 +413,9 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                     // Merge head from delta into the program
                     const auto head = fd::merge_d2d(make_view(head_index, *rule_delta_ws.repository), merge_context).first;
 
+                    // Notify termination policy
+                    tp.achieve(head);
+
                     // Update annotation
                     const auto [old_cost, new_cost] = or_ap.update_annotation(rule_index, head, or_annot, and_annot, head_to_witness);
 
@@ -425,6 +431,9 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
                     min_cost = std::min(min_cost, new_cost);
                 }
             }
+
+            // if (tp.check())
+            //     std::cout << "GOAL ACHIEVED!: " << tp.get_total_cost(aps.or_annot) << std::endl;
 
             // Scan for next bucket.
             while (cost < ws.cost_buckets.size() && ws.cost_buckets[cost].empty())
@@ -453,14 +462,27 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicy TP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void solve_bottom_up(ProgramWorkspace& ws, const ConstProgramWorkspace& cws, AnnotationPolicies<OrAP, AndAP>& aps, TP& tp)
 {
+    // Clear cross strata data structures.
     for (auto& rule_delta_ws : ws.rule_deltas)
         rule_delta_ws.clear();
     aps.clear();
     tp.clear();
 
+    // Initialize first fact layer.
+    for (const auto& set : ws.facts.fact_sets.predicate.get_sets())
+        for (const auto fact : set.get_facts())
+        {
+            aps.or_ap.initialize_annotation(fact.get_index(), aps.or_annot);
+            tp.achieve(fact.get_index());
+        }
+
+    // Initialize the termination policy.
+    tp.set_goals(ws.facts.goal_fact_sets);
+
+    // Solve for each strata.
     for (auto& scheduler : ws.schedulers.data)
         solve_bottom_up_for_stratum(scheduler, ws, cws, aps, tp);
 }
@@ -474,5 +496,10 @@ template void solve_bottom_up(ProgramWorkspace& ws,
                               const ConstProgramWorkspace& cws,
                               AnnotationPolicies<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>>& aps,
                               NoTerminationPolicy& tp);
+
+template void solve_bottom_up(ProgramWorkspace& ws,
+                              const ConstProgramWorkspace& cws,
+                              AnnotationPolicies<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>>& aps,
+                              TerminationPolicy& tp);
 
 }

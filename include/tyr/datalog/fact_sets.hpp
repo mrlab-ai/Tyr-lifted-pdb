@@ -43,13 +43,15 @@ public:
 
     void reset();
 
-    void insert(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view);
+    void insert(Index<formalism::datalog::GroundAtom<T>> ground_atom);
 
-    void insert(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view);
+    void insert(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atom);
 
-    bool contains(Index<formalism::datalog::GroundAtom<T>> index) const noexcept;
+    void insert(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atoms);
 
-    bool contains(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> view) const noexcept;
+    bool contains(Index<formalism::datalog::GroundAtom<T>> ground_atom) const noexcept;
+
+    bool contains(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atom) const noexcept;
 
     View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> get_facts() const noexcept;
 
@@ -80,10 +82,9 @@ public:
             set.reset();
     }
 
-    void insert(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atom)
-    {
-        m_sets[uint_t(ground_atom.get_index().get_group())].insert(ground_atom);
-    }
+    void insert(Index<formalism::datalog::GroundAtom<T>> ground_atom) { m_sets[uint_t(ground_atom.get_group())].insert(ground_atom); }
+
+    void insert(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atom) { insert(ground_atom.get_index()); }
 
     void insert(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atoms)
     {

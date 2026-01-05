@@ -82,46 +82,6 @@ inline auto create_applicability_rule(View<Index<formalism::planning::Action>, f
     rule.variables = new_conj_cond.get_variables().get_data();
     rule.body = new_conj_cond.get_index();
     rule.head = create_applicability_atom(action, context).first;
-
-    canonicalize(rule);
-    return context.destination.get_or_create(rule, context.builder.get_buffer());
-}
-
-inline auto create_applicability_literal(View<Index<formalism::planning::Axiom>, formalism::OverlayRepository<formalism::planning::Repository>> axiom,
-                                         formalism::planning::MergeDatalogContext<formalism::datalog::Repository>& context)
-{
-    auto literal_ptr = context.builder.get_builder<formalism::datalog::Literal<formalism::FluentTag>>();
-    auto& literal = *literal_ptr;
-    literal.clear();
-
-    literal.polarity = true;
-    literal.atom = create_applicability_atom(axiom, context).first;
-
-    canonicalize(literal);
-    return context.destination.get_or_create(literal, context.builder.get_buffer());
-}
-
-inline auto create_applicability_rule(View<Index<formalism::planning::Axiom>, formalism::OverlayRepository<formalism::planning::Repository>> axiom,
-                                      formalism::planning::MergeDatalogContext<formalism::datalog::Repository>& context)
-{
-    auto rule_ptr = context.builder.get_builder<formalism::datalog::Rule>();
-    auto& rule = *rule_ptr;
-    rule.clear();
-
-    auto conj_cond_ptr = context.builder.get_builder<formalism::datalog::ConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
-
-    for (const auto variable : axiom.get_variables())
-        conj_cond.variables.push_back(merge_p2d(variable, context).first);
-    append_from_condition(axiom.get_body(), context, conj_cond);
-
-    canonicalize(conj_cond);
-    const auto new_conj_cond = make_view(context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first, context.destination);
-
-    rule.variables = new_conj_cond.get_variables().get_data();
-    rule.body = new_conj_cond.get_index();
-    rule.head = create_applicability_atom(axiom, context).first;
     rule.cost = uint_t(1);
 
     canonicalize(rule);
@@ -157,6 +117,7 @@ inline auto create_cond_effect_rule(View<Index<formalism::planning::Action>, for
     rule.variables = new_conj_cond.get_variables().get_data();
     rule.body = new_conj_cond.get_index();
     rule.head = effect.get_index();
+    rule.cost = uint_t(0);
 
     canonicalize(rule);
     return context.destination.get_or_create(rule, context.builder.get_buffer());
@@ -237,7 +198,7 @@ RPGProgram::RPGProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository
     m_program_context(create_program_context(task)),
     m_program_workspace(m_program_context)
 {
-    // std::cout << m_program_context.get_program() << std::endl;
+    std::cout << m_program_context.get_program() << std::endl;
 }
 
 datalog::ProgramContext& RPGProgram::get_program_context() noexcept { return m_program_context; }
