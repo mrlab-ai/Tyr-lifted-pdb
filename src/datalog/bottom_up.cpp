@@ -140,52 +140,75 @@ static auto create_general_ground_head_in_delta(const std::vector<uint_t>& cliqu
     return ground(head, context);
 }
 
-template<AndAnnotationPolicyConcept AndAP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP>
 struct GenerateContext
 {
+    Index<fd::Rule> rule;
+    ProgramWorkspace& ws;
+    const ConstProgramWorkspace& cws;
+    AnnotationPolicies<OrAP, AndAP>& aps;
+
     /// Workspaces
-    const FactsWorkspace& facts_ws;
-    const ConstFactsWorkspace& const_facts_ws;
-    RuleWorkspace& rule_ws;
-    const ConstRuleWorkspace& const_rule_ws;
-    RuleDeltaWorkspace& rule_delta_ws;
-    WorkerWorkspace& worker_ws;
+    RuleWorkspace& ws_rule;
+    const ConstRuleWorkspace& cws_rule;
+    RuleDeltaWorkspace& ws_rule_delta;
+    WorkerWorkspace& ws_worker;
 
     /// Annotations
     AndAP& and_ap;
-    const OrAnnotationsList& or_annot;
     AndAnnotationsMap& and_annot;
     HeadToWitness& head_to_witness;
 
-    /// Derivatives
+    // Derivatives
     FactSets fact_sets;
     fd::GrounderContext<fd::Repository> ground_context_delta;
     fd::GrounderContext<f::OverlayRepository<fd::Repository>> ground_context_rule;
+
+    GenerateContext(Index<fd::Rule> rule, ProgramWorkspace& ws, const ConstProgramWorkspace& cws, AnnotationPolicies<OrAP, AndAP>& aps) :
+        rule(rule),
+        ws(ws),
+        cws(cws),
+        aps(aps),
+        ws_rule(ws.rules[uint_t(rule)]),
+        cws_rule(cws.rules[uint_t(rule)]),
+        ws_rule_delta(ws.rule_deltas[uint_t(rule)]),
+        ws_worker(ws.worker.local()),
+        and_ap(aps.and_aps[uint_t(rule)]),
+        and_annot(aps.and_annots[uint_t(rule)]),
+        head_to_witness(aps.head_to_witness[uint_t(rule)]),
+        fact_sets(FactSets(cws.facts.fact_sets, ws.facts.fact_sets)),
+        ground_context_delta(fd::GrounderContext { ws_worker.builder, *ws_rule_delta.repository, ws_rule_delta.binding }),
+        ground_context_rule(fd::GrounderContext { ws_worker.builder, ws_rule.overlay_repository, ws_rule_delta.binding })
+    {
+        ws_worker.clear();
+        ws_rule.clear();
+        ws_rule.initialize(cws_rule.static_consistency_graph, AssignmentSets { cws.facts.assignment_sets, ws.facts.assignment_sets });
+    }
 };
 
-template<AndAnnotationPolicyConcept AndAP>
-void generate_nullary_case(GenerateContext<AndAP>& gc)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP>
+void generate_nullary_case(GenerateContext<OrAP, AndAP>& gc)
 {
-    const auto head_index = create_nullary_ground_head_in_delta(gc.const_rule_ws.get_rule().get_head(), gc.ground_context_delta).first;
+    const auto head_index = create_nullary_ground_head_in_delta(gc.cws_rule.get_rule().get_head(), gc.ground_context_delta).first;
 
-    const auto exists = gc.rule_delta_ws.heads.contains(head_index);
+    const auto exists = gc.ws_rule_delta.heads.contains(head_index);
 
     if (!exists || AndAP::ShouldAnnotate)
     {
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
-        if (is_valid_binding(gc.const_rule_ws.get_rule().get_body(), gc.fact_sets, gc.ground_context_rule))
+        if (is_valid_binding(gc.cws_rule.get_rule().get_body(), gc.fact_sets, gc.ground_context_rule))
         {
             if (!exists)
             {
-                gc.rule_delta_ws.heads.insert(head_index);
-                gc.rule_ws.heads.push_back(head_index);
+                gc.ws_rule_delta.heads.insert(head_index);
+                gc.ws_rule.heads.push_back(head_index);
             }
 
-            gc.and_ap.update_annotation(gc.const_rule_ws.rule,
-                                        gc.const_rule_ws.fluent_rule,
+            gc.and_ap.update_annotation(gc.cws_rule.rule,
+                                        gc.cws_rule.fluent_rule,
                                         gc.ground_context_delta.binding,
                                         head_index,
-                                        gc.or_annot,
+                                        gc.aps.or_annot,
                                         gc.and_annot,
                                         gc.head_to_witness,
                                         gc.ground_context_rule,
@@ -194,38 +217,35 @@ void generate_nullary_case(GenerateContext<AndAP>& gc)
     }
 }
 
-template<AndAnnotationPolicyConcept AndAP>
-void generate_unary_case(GenerateContext<AndAP>& gc)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP>
+void generate_unary_case(GenerateContext<OrAP, AndAP>& gc)
 {
-    for (const auto vertex_index : gc.rule_ws.kpkc_workspace.consistent_vertices_vec)
+    for (const auto vertex_index : gc.ws_rule.kpkc_workspace.consistent_vertices_vec)
     {
-        const auto head_index = create_unary_ground_head_in_delta(vertex_index,
-                                                                  gc.const_rule_ws.static_consistency_graph,
-                                                                  gc.const_rule_ws.get_rule().get_head(),
-                                                                  gc.ground_context_delta)
-                                    .first;
+        const auto head_index =
+            create_unary_ground_head_in_delta(vertex_index, gc.cws_rule.static_consistency_graph, gc.cws_rule.get_rule().get_head(), gc.ground_context_delta)
+                .first;
 
-        const auto exists = gc.rule_delta_ws.heads.contains(head_index);
+        const auto exists = gc.ws_rule_delta.heads.contains(head_index);
 
         if (!exists || AndAP::ShouldAnnotate)
         {
-            if (is_valid_binding(gc.const_rule_ws.get_unary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_rule))
+            if (is_valid_binding(gc.cws_rule.get_unary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_rule))
             {
                 // Ensure that ground rule is truly applicable
-                assert(
-                    is_applicable(make_view(ground(gc.const_rule_ws.get_rule(), gc.ground_context_rule).first, gc.rule_ws.overlay_repository), gc.fact_sets));
+                assert(is_applicable(make_view(ground(gc.cws_rule.get_rule(), gc.ground_context_rule).first, gc.ws_rule.overlay_repository), gc.fact_sets));
 
                 if (!exists)
                 {
-                    gc.rule_delta_ws.heads.insert(head_index);
-                    gc.rule_ws.heads.push_back(head_index);
+                    gc.ws_rule_delta.heads.insert(head_index);
+                    gc.ws_rule.heads.push_back(head_index);
                 }
 
-                gc.and_ap.update_annotation(gc.const_rule_ws.rule,
-                                            gc.const_rule_ws.fluent_rule,
+                gc.and_ap.update_annotation(gc.cws_rule.rule,
+                                            gc.cws_rule.fluent_rule,
                                             gc.ground_context_delta.binding,
                                             head_index,
-                                            gc.or_annot,
+                                            gc.aps.or_annot,
                                             gc.and_annot,
                                             gc.head_to_witness,
                                             gc.ground_context_rule,
@@ -235,41 +255,38 @@ void generate_unary_case(GenerateContext<AndAP>& gc)
     }
 }
 
-template<AndAnnotationPolicyConcept AndAP>
-void generate_general_case(GenerateContext<AndAP>& gc)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP>
+void generate_general_case(GenerateContext<OrAP, AndAP>& gc)
 {
     kpkc::for_each_k_clique(
-        gc.rule_ws.consistency_graph,
-        gc.rule_ws.kpkc_workspace,
+        gc.ws_rule.consistency_graph,
+        gc.ws_rule.kpkc_workspace,
         [&](auto&& clique)
         {
-            const auto head_index = create_general_ground_head_in_delta(clique,
-                                                                        gc.const_rule_ws.static_consistency_graph,
-                                                                        gc.const_rule_ws.get_rule().get_head(),
-                                                                        gc.ground_context_delta)
-                                        .first;
+            const auto head_index =
+                create_general_ground_head_in_delta(clique, gc.cws_rule.static_consistency_graph, gc.cws_rule.get_rule().get_head(), gc.ground_context_delta)
+                    .first;
 
-            const auto exists = gc.rule_delta_ws.heads.contains(head_index);
+            const auto exists = gc.ws_rule_delta.heads.contains(head_index);
 
             if (!exists || AndAP::ShouldAnnotate)
             {
-                if (is_valid_binding(gc.const_rule_ws.get_binary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_rule))
+                if (is_valid_binding(gc.cws_rule.get_binary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_rule))
                 {
                     // Ensure that ground rule is truly applicable
-                    assert(is_applicable(make_view(ground(gc.const_rule_ws.get_rule(), gc.ground_context_rule).first, gc.rule_ws.overlay_repository),
-                                         gc.fact_sets));
+                    assert(is_applicable(make_view(ground(gc.cws_rule.get_rule(), gc.ground_context_rule).first, gc.ws_rule.overlay_repository), gc.fact_sets));
 
                     if (!exists)
                     {
-                        gc.rule_delta_ws.heads.insert(head_index);
-                        gc.rule_ws.heads.push_back(head_index);
+                        gc.ws_rule_delta.heads.insert(head_index);
+                        gc.ws_rule.heads.push_back(head_index);
                     }
 
-                    gc.and_ap.update_annotation(gc.const_rule_ws.rule,
-                                                gc.const_rule_ws.fluent_rule,
+                    gc.and_ap.update_annotation(gc.cws_rule.rule,
+                                                gc.cws_rule.fluent_rule,
                                                 gc.ground_context_delta.binding,
                                                 head_index,
-                                                gc.or_annot,
+                                                gc.aps.or_annot,
                                                 gc.and_annot,
                                                 gc.head_to_witness,
                                                 gc.ground_context_rule,
@@ -279,13 +296,13 @@ void generate_general_case(GenerateContext<AndAP>& gc)
         });
 }
 
-template<AndAnnotationPolicyConcept AndAP>
-void generate(GenerateContext<AndAP>& gc)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP>
+void generate(GenerateContext<OrAP, AndAP>& gc)
 {
-    if (!is_applicable(gc.const_rule_ws.get_nullary_condition(), gc.fact_sets))
+    if (!is_applicable(gc.cws_rule.get_nullary_condition(), gc.fact_sets))
         return;
 
-    const auto arity = gc.const_rule_ws.get_rule().get_arity();
+    const auto arity = gc.cws_rule.get_rule().get_arity();
 
     if (arity == 0)
         generate_nullary_case(gc);
@@ -327,59 +344,19 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
         {
             auto stopwatch = StopwatchScope(ws.statistics.ground_seq_total_time);
 
-            oneapi::tbb::parallel_for_each(
-                active_rules.begin(),
-                active_rules.end(),
-                [&](auto&& rule_index)
-                {
-                    const auto i = uint_t(rule_index);
+            oneapi::tbb::parallel_for_each(active_rules.begin(),
+                                           active_rules.end(),
+                                           [&](auto&& rule_index)
+                                           {
+                                               const auto i = uint_t(rule_index);
 
-                    // Fetch workspaces
-                    auto& facts_ws = ws.facts;
-                    const auto& const_facts_ws = cws.facts;
-                    auto& rule_ws = ws.rules[i];
-                    const auto& const_rule_ws = cws.rules[i];
-                    auto& rule_delta_ws = ws.rule_deltas[i];
-                    auto& worker_ws = ws.worker.local();
+                                               auto stopwatch = StopwatchScope(ws.rules[i].statistics.ground_total_time);
+                                               ++ws.rules[i].statistics.num_executions;
 
-                    // Fetch annotation policies
-                    auto& and_ap = aps.and_aps[i];
-                    const auto& or_annot = aps.or_annot;
-                    auto& and_annot = aps.and_annots[i];
-                    auto& head_to_witness = aps.head_to_witness[i];
+                                               auto generate_context = GenerateContext(rule_index, ws, cws, aps);
 
-                    {
-                        ///--- Initialization phase
-                        auto stopwatch = StopwatchScope(rule_ws.statistics.init_total_time);
-
-                        worker_ws.clear();
-                        rule_ws.clear();
-                        rule_ws.initialize(const_rule_ws.static_consistency_graph, AssignmentSets { const_facts_ws.assignment_sets, facts_ws.assignment_sets });
-                    }
-
-                    {
-                        /// --- Grounding phase
-                        auto stopwatch = StopwatchScope(rule_ws.statistics.ground_total_time);
-                        ++rule_ws.statistics.num_executions;
-
-                        auto generate_context =
-                            GenerateContext { facts_ws,
-                                              const_facts_ws,
-                                              rule_ws,
-                                              const_rule_ws,
-                                              rule_delta_ws,
-                                              worker_ws,
-                                              and_ap,
-                                              or_annot,
-                                              and_annot,
-                                              head_to_witness,
-                                              FactSets(const_facts_ws.fact_sets, facts_ws.fact_sets),
-                                              fd::GrounderContext { worker_ws.builder, *rule_delta_ws.repository, rule_delta_ws.binding },
-                                              fd::GrounderContext { worker_ws.builder, rule_ws.overlay_repository, rule_delta_ws.binding } };
-
-                        generate(generate_context);
-                    }
-                });
+                                               generate(generate_context);
+                                           });
         }
 
         /**
@@ -398,25 +375,18 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
             {
                 const auto i = uint_t(rule_index);
 
-                // Fetch workspaces
-                const auto& rule_ws = ws.rules[i];
-                auto& rule_delta_ws = ws.rule_deltas[i];
+                auto merge_context = fd::MergeContext { ws.datalog_builder, ws.repository, ws.rule_deltas[i].merge_cache };
 
-                // Fetch annotation policies
-                auto& or_ap = aps.or_ap;
-                auto& or_annot = aps.or_annot;
-                const auto& and_annot = aps.and_annots[i];
-                const auto& head_to_witness = aps.head_to_witness[i];
-
-                auto merge_context = fd::MergeContext { ws.datalog_builder, ws.repository, rule_delta_ws.merge_cache };
-
-                for (const auto head_index : rule_ws.heads)
+                for (const auto head_index : ws.rules[i].heads)
                 {
                     // Merge head from delta into the program
-                    const auto head = fd::merge_d2d(make_view(head_index, *rule_delta_ws.repository), merge_context).first;
+                    const auto head = fd::merge_d2d(make_view(head_index, *ws.rule_deltas[i].repository), merge_context).first;
 
                     // Update annotation
-                    const auto [old_cost, new_cost] = or_ap.update_annotation(rule_index, head, or_annot, and_annot, head_to_witness);
+                    const auto [old_cost, new_cost] = aps.or_ap.update_annotation(rule_index, head, aps.or_annot, aps.and_annots[i], aps.head_to_witness[i]);
+
+                    // Ensure monotonically decreasing costs.
+                    assert(!old_cost || new_cost <= old_cost);
 
                     ws.cost_buckets.update(old_cost, new_cost, head);
                 }
