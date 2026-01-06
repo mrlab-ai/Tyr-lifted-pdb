@@ -125,11 +125,14 @@ inline auto create_cond_effect_rule(View<Index<formalism::planning::Action>, for
 
 static void translate_action_to_delete_free_rules(View<Index<fp::Action>, f::OverlayRepository<fp::Repository>> action,
                                                   Data<fd::Program>& program,
-                                                  fp::MergeDatalogContext<fd::Repository>& context)
+                                                  fp::MergeDatalogContext<fd::Repository>& context,
+                                                  RPGProgram::AppPredicateToActionsMapping& predicate_to_actions)
 {
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
     program.fluent_predicates.push_back(applicability_predicate);
+
+    predicate_to_actions[applicability_predicate].emplace_back(action.get_index());
 
     const auto applicability_rule = create_applicability_rule(action, context).first;
 
@@ -148,7 +151,9 @@ static void translate_action_to_delete_free_rules(View<Index<fp::Action>, f::Ove
     }
 }
 
-static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task, fd::Repository& destination)
+static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                         fd::Repository& destination,
+                                         RPGProgram::AppPredicateToActionsMapping& predicate_to_actions)
 {
     auto merge_cache = fp::MergeDatalogCache();
     auto builder = fd::Builder();
@@ -177,16 +182,17 @@ static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayReposit
         program.fluent_atoms.push_back(fp::merge_p2d(atom, context).first);
 
     for (const auto action : task.get_domain().get_actions())
-        translate_action_to_delete_free_rules(action, program, context);
+        translate_action_to_delete_free_rules(action, program, context, predicate_to_actions);
 
     canonicalize(program);
     return destination.get_or_create(program, builder.get_buffer()).first;
 }
 
-static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task)
+static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
+                                   RPGProgram::AppPredicateToActionsMapping& predicate_to_actions)
 {
     auto repository = std::make_shared<fd::Repository>();
-    auto program = create_program(task, *repository);
+    auto program = create_program(task, *repository, predicate_to_actions);
     auto domains = analysis::compute_variable_domains(make_view(program, *repository));
     auto strata = analysis::compute_rule_stratification(make_view(program, *repository));
     auto listeners = analysis::compute_listeners(strata, *repository);
@@ -195,11 +201,14 @@ static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp
 }
 
 RPGProgram::RPGProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task) :
-    m_program_context(create_program_context(task)),
+    m_predicate_to_actions(),
+    m_program_context(create_program_context(task, m_predicate_to_actions)),
     m_program_workspace(m_program_context)
 {
     // std::cout << m_program_context.get_program() << std::endl;
 }
+
+const RPGProgram::AppPredicateToActionsMapping& RPGProgram::get_predicate_to_actions_mapping() const noexcept { return m_predicate_to_actions; }
 
 datalog::ProgramContext& RPGProgram::get_program_context() noexcept { return m_program_context; }
 

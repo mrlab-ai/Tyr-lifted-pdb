@@ -35,13 +35,18 @@ namespace tyr::planning
 class RPGProgram
 {
 public:
+    using AppPredicateToActionsMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, std::vector<Index<formalism::planning::Action>>>;
+
     explicit RPGProgram(View<Index<formalism::planning::Task>, formalism::OverlayRepository<formalism::planning::Repository>> task);
 
+    const AppPredicateToActionsMapping& get_predicate_to_actions_mapping() const noexcept;
     datalog::ProgramContext& get_program_context() noexcept;
     const datalog::ProgramContext& get_program_context() const noexcept;
     const datalog::ConstProgramWorkspace& get_const_program_workspace() const noexcept;
 
 private:
+    AppPredicateToActionsMapping m_predicate_to_actions;
+
     datalog::ProgramContext m_program_context;
 
     datalog::ConstProgramWorkspace m_program_workspace;

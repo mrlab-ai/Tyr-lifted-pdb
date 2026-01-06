@@ -35,7 +35,7 @@ namespace tyr::planning
 class GroundTaskProgram
 {
 public:
-    // Mapping from program rule to task action; there may be multiple actions
+    // Mapping from program predicate to task action; there may be multiple actions
     using AppPredicateToActionsMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, std::vector<Index<formalism::planning::Action>>>;
 
     using AppPredicateToAxiomsMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, std::vector<Index<formalism::planning::Axiom>>>;

@@ -40,20 +40,6 @@ public:
     {
     }
 
-    void set_goal_impl(View<Index<formalism::planning::GroundConjunctiveCondition>, formalism::OverlayRepository<formalism::planning::Repository>> goal)
-    {
-        this->m_workspace.facts.goal_fact_sets.reset();
-
-        auto merge_context =
-            formalism::planning::MergeDatalogContext { this->m_workspace.datalog_builder, this->m_workspace.repository, this->m_workspace.p2d.merge_cache };
-
-        for (const auto fact : goal.get_facts<formalism::FluentTag>())
-        {
-            if (fact.get_value() != formalism::planning::FDRValue::none())
-                this->m_workspace.facts.goal_fact_sets.insert(formalism::planning::merge_p2d(fact.get_atom(), merge_context).first);
-        }
-    }
-
     float_t extract_cost_and_set_preferred_actions_impl(const State<LiftedTask>& state) { return m_tp.get_total_cost(m_aps.or_annot); }
 
     auto& get_annotation_policies_impl() noexcept { return m_aps; }

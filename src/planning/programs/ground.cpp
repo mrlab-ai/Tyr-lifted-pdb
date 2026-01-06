@@ -210,11 +210,11 @@ inline auto create_effect_rule(View<Index<formalism::planning::Axiom>, formalism
 static void translate_action_to_delete_free_rules(View<Index<fp::Action>, f::OverlayRepository<fp::Repository>> action,
                                                   Data<fd::Program>& program,
                                                   fp::MergeDatalogContext<fd::Repository>& context,
-                                                  GroundTaskProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping)
+                                                  GroundTaskProgram::AppPredicateToActionsMapping& predicate_to_actions)
 {
     const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
-    predicate_to_actions_mapping[applicability_predicate].emplace_back(action.get_index());
+    predicate_to_actions[applicability_predicate].emplace_back(action.get_index());
 
     program.fluent_predicates.push_back(applicability_predicate);
 
@@ -238,13 +238,13 @@ static void translate_action_to_delete_free_rules(View<Index<fp::Action>, f::Ove
 static void translate_axiom_to_delete_free_axiom_rules(View<Index<fp::Axiom>, f::OverlayRepository<fp::Repository>> axiom,
                                                        Data<fd::Program>& program,
                                                        fp::MergeDatalogContext<fd::Repository>& context,
-                                                       GroundTaskProgram::AppPredicateToAxiomsMapping& predicate_to_axioms_mapping)
+                                                       GroundTaskProgram::AppPredicateToAxiomsMapping& predicate_to_axioms)
 {
     const auto applicability_predicate = create_applicability_predicate(axiom, context).first;
 
     program.fluent_predicates.push_back(applicability_predicate);
 
-    predicate_to_axioms_mapping[applicability_predicate].emplace_back(axiom.get_index());
+    predicate_to_axioms[applicability_predicate].emplace_back(axiom.get_index());
 
     const auto applicability_rule = create_applicability_rule(axiom, context).first;
 
@@ -260,8 +260,8 @@ static void translate_axiom_to_delete_free_axiom_rules(View<Index<fp::Axiom>, f:
 }
 
 static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                         GroundTaskProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping,
-                                         GroundTaskProgram::AppPredicateToAxiomsMapping& predicate_to_axioms_mapping,
+                                         GroundTaskProgram::AppPredicateToActionsMapping& predicate_to_actions,
+                                         GroundTaskProgram::AppPredicateToAxiomsMapping& predicate_to_axioms,
                                          fd::Repository& destination)
 {
     auto merge_cache = fp::MergeDatalogCache();
@@ -311,24 +311,24 @@ static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayReposit
         program.fluent_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first);
 
     for (const auto action : task.get_domain().get_actions())
-        translate_action_to_delete_free_rules(action, program, context, predicate_to_actions_mapping);
+        translate_action_to_delete_free_rules(action, program, context, predicate_to_actions);
 
     for (const auto axiom : task.get_domain().get_axioms())
-        translate_axiom_to_delete_free_axiom_rules(axiom, program, context, predicate_to_axioms_mapping);
+        translate_axiom_to_delete_free_axiom_rules(axiom, program, context, predicate_to_axioms);
 
     for (const auto axiom : task.get_axioms())
-        translate_axiom_to_delete_free_axiom_rules(axiom, program, context, predicate_to_axioms_mapping);
+        translate_axiom_to_delete_free_axiom_rules(axiom, program, context, predicate_to_axioms);
 
     canonicalize(program);
     return destination.get_or_create(program, builder.get_buffer()).first;
 }
 
 static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                   GroundTaskProgram::AppPredicateToActionsMapping& action_mapping,
-                                   GroundTaskProgram::AppPredicateToAxiomsMapping& axiom_mapping)
+                                   GroundTaskProgram::AppPredicateToActionsMapping& predicate_to_actions,
+                                   GroundTaskProgram::AppPredicateToAxiomsMapping& predicate_to_axioms)
 {
     auto repository = std::make_shared<fd::Repository>();
-    auto program = create_program(task, action_mapping, axiom_mapping, *repository);
+    auto program = create_program(task, predicate_to_actions, predicate_to_axioms, *repository);
     auto domains = analysis::compute_variable_domains(make_view(program, *repository));
     auto strata = analysis::compute_rule_stratification(make_view(program, *repository));
     auto listeners = analysis::compute_listeners(strata, *repository);

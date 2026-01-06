@@ -36,7 +36,7 @@ namespace tyr::planning
 {
 
 static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                         ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions_mapping,
+                                         ApplicableActionProgram::AppPredicateToActionsMapping& predicate_to_actions,
                                          fd::Repository& repository)
 {
     auto merge_cache = fp::MergeDatalogCache();
@@ -86,7 +86,7 @@ static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayReposit
     {
         const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
-        predicate_to_actions_mapping[applicability_predicate].emplace_back(action.get_index());
+        predicate_to_actions[applicability_predicate].emplace_back(action.get_index());
 
         program.fluent_predicates.push_back(applicability_predicate);
 

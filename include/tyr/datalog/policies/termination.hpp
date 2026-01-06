@@ -123,6 +123,8 @@ public:
         atoms.clear();
     }
 
+    const IndexList<formalism::datalog::GroundAtom<formalism::FluentTag>>& get_atoms() const noexcept { return atoms; }
+
 private:
     std::vector<boost::dynamic_bitset<>> unsat_goals;
     size_t num_unsat_goals;

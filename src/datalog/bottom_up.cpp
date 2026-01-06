@@ -158,7 +158,7 @@ struct GenerateContext
     /// Annotations
     AndAP& and_ap;
     AndAnnotationsMap& and_annot;
-    HeadToWitness& head_to_witness;
+    HeadToWitness& delta_head_to_witness;
 
     // Derivatives
     FactSets fact_sets;
@@ -178,7 +178,7 @@ struct GenerateContext
         ws_worker(ws.worker.local()),
         and_ap(aps.and_aps[uint_t(rule)]),
         and_annot(aps.and_annots[uint_t(rule)]),
-        head_to_witness(aps.head_to_witness[uint_t(rule)]),
+        delta_head_to_witness(aps.delta_head_to_witness[uint_t(rule)]),
         fact_sets(FactSets(cws.facts.fact_sets, ws.facts.fact_sets)),
         ground_context_delta(fd::GrounderContext { ws_worker.builder, *ws_rule_delta.repository, ws_rule_delta.binding }),
         ground_context_iteration(fd::GrounderContext { ws_worker.builder, ws_rule.overlay_repository, ws_rule_delta.binding }),
@@ -213,7 +213,7 @@ void generate_nullary_case(GenerateContext<OrAP, AndAP>& gc)
                                         head_index,
                                         gc.aps.or_annot,
                                         gc.and_annot,
-                                        gc.head_to_witness,
+                                        gc.delta_head_to_witness,
                                         gc.ground_context_iteration,
                                         gc.ground_context_delta,
                                         gc.ground_context_persistent);
@@ -251,7 +251,7 @@ void generate_unary_case(GenerateContext<OrAP, AndAP>& gc)
                                             head_index,
                                             gc.aps.or_annot,
                                             gc.and_annot,
-                                            gc.head_to_witness,
+                                            gc.delta_head_to_witness,
                                             gc.ground_context_iteration,
                                             gc.ground_context_delta,
                                             gc.ground_context_persistent);
@@ -293,7 +293,7 @@ void generate_general_case(GenerateContext<OrAP, AndAP>& gc)
                                                 head_index,
                                                 gc.aps.or_annot,
                                                 gc.and_annot,
-                                                gc.head_to_witness,
+                                                gc.delta_head_to_witness,
                                                 gc.ground_context_iteration,
                                                 gc.ground_context_delta,
                                                 gc.ground_context_persistent);
@@ -382,15 +382,20 @@ void solve_bottom_up_for_stratum(RuleSchedulerStratum& scheduler,
 
                 auto merge_context = fd::MergeContext { ws.datalog_builder, ws.repository, ws.rule_deltas[i].merge_cache };
 
-                for (const auto head_index : ws.rules[i].heads)
+                for (const auto delta_head : ws.rules[i].heads)
                 {
                     // Merge head from delta into the program
-                    const auto head = fd::merge_d2d(make_view(head_index, *ws.rule_deltas[i].repository), merge_context).first;
+                    const auto program_head = fd::merge_d2d(make_view(delta_head, *ws.rule_deltas[i].repository), merge_context).first;
 
                     // Update annotation
-                    const auto cost_update = aps.or_ap.update_annotation(head, head_index, aps.or_annot, aps.and_annots[i], aps.head_to_witness[i]);
+                    const auto cost_update = aps.or_ap.update_annotation(program_head,
+                                                                         delta_head,
+                                                                         aps.or_annot,
+                                                                         aps.and_annots[i],
+                                                                         aps.delta_head_to_witness[i],
+                                                                         aps.program_head_to_witness);
 
-                    ws.cost_buckets.update(cost_update, head);
+                    ws.cost_buckets.update(cost_update, program_head);
                 }
             }
 

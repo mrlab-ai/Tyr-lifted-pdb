@@ -47,7 +47,15 @@ public:
 
     void set_goal(View<Index<formalism::planning::GroundConjunctiveCondition>, formalism::OverlayRepository<formalism::planning::Repository>> goal) override
     {
-        self().set_goal_impl(goal);
+        m_workspace.facts.goal_fact_sets.reset();
+
+        auto merge_context = formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.repository, m_workspace.p2d.merge_cache };
+
+        for (const auto fact : goal.get_facts<formalism::FluentTag>())
+        {
+            if (fact.get_value() != formalism::planning::FDRValue::none())
+                m_workspace.facts.goal_fact_sets.insert(formalism::planning::merge_p2d(fact.get_atom(), merge_context).first);
+        }
     }
 
     float_t evaluate(const State<LiftedTask>& state) override

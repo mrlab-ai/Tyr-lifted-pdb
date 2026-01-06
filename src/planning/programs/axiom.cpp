@@ -81,7 +81,7 @@ static auto create_axiom_rule(View<Index<fp::Axiom>, f::OverlayRepository<fp::Re
 }
 
 static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                         AxiomEvaluatorProgram::PredicateToPredicateMapping& predicate_to_predicate_mapping,
+                                         AxiomEvaluatorProgram::PredicateToPredicateMapping& predicate_to_predicate,
                                          fd::Repository& repository)
 {
     auto merge_cache = fp::MergeDatalogCache();
@@ -101,7 +101,7 @@ static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayReposit
     {
         const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::OverlayRepository<fp::Repository>, fd::Repository, f::FluentTag>(predicate, context).first;
 
-        predicate_to_predicate_mapping.emplace(new_predicate, predicate.get_index());
+        predicate_to_predicate.emplace(new_predicate, predicate.get_index());
 
         program.fluent_predicates.push_back(new_predicate);
     }
@@ -110,7 +110,7 @@ static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayReposit
     {
         const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::OverlayRepository<fp::Repository>, fd::Repository, f::FluentTag>(predicate, context).first;
 
-        predicate_to_predicate_mapping.emplace(new_predicate, predicate.get_index());
+        predicate_to_predicate.emplace(new_predicate, predicate.get_index());
 
         program.fluent_predicates.push_back(new_predicate);
     }
