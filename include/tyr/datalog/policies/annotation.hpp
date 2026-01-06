@@ -114,7 +114,6 @@ template<typename T>
 concept AndAnnotationPolicyConcept = requires(const T& p,
                                               Index<formalism::datalog::Rule> rule,
                                               Index<formalism::datalog::Rule> fluent_rule,
-                                              const IndexList<formalism::Object>& objects,
                                               Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
                                               const OrAnnotationsList& or_annot,
                                               AndAnnotationsMap& and_annot,
@@ -122,7 +121,7 @@ concept AndAnnotationPolicyConcept = requires(const T& p,
                                               formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context,
                                               formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) {
     /// Ground the witness and annotate the cost of it from the given annotations.
-    { p.update_annotation(rule, fluent_rule, objects, head, or_annot, and_annot, head_to_witness, rule_context, delta_context) } -> std::same_as<CostUpdate>;
+    { p.update_annotation(rule, fluent_rule, head, or_annot, and_annot, head_to_witness, rule_context, delta_context) } -> std::same_as<CostUpdate>;
 };
 
 class NoOrAnnotationPolicy
@@ -149,7 +148,6 @@ public:
 
     CostUpdate update_annotation(Index<formalism::datalog::Rule> rule,
                                  Index<formalism::datalog::Rule> fluent_rule,
-                                 const IndexList<formalism::Object>& objects,
                                  Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
                                  const OrAnnotationsList& or_annot,
                                  AndAnnotationsMap& and_annot,
@@ -239,10 +237,10 @@ class AndAnnotationPolicy
 {
 public:
     static constexpr bool ShouldAnnotate = true;
+    static constexpr AggregationFunction agg = AggregationFunction {};
 
     CostUpdate update_annotation(Index<formalism::datalog::Rule> rule,
                                  Index<formalism::datalog::Rule> fluent_rule,
-                                 const IndexList<formalism::Object>& objects,
                                  Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
                                  const OrAnnotationsList& or_annot,
                                  AndAnnotationsMap& and_annot,
@@ -250,47 +248,90 @@ public:
                                  formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context,
                                  formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) const
     {
-        /// Ground binding in delta to remain persistent across iterations.
-        const auto binding = formalism::datalog::ground(objects, delta_context).first;
-        /// Ground fluent rule in rule to use ground atom identifies to fetch costs.
-        const auto ground_fluent_rule = formalism::datalog::ground(make_view(fluent_rule, rule_context.destination), rule_context).first;
-        const auto ground_fluent_rule_view = make_view(ground_fluent_rule, rule_context.destination);
+        assert(rule_context.binding == delta_context.binding);
 
-        /// cost(u) = cost(v_1) o ... o cost(v_k)
-        AggregationFunction agg {};
-        auto cost = AggregationFunction::identity();
+        const auto witness = ground_delta_witness(rule, delta_context);
 
-        for (const auto& literal : ground_fluent_rule_view.get_body().get_literals<formalism::FluentTag>())
-        {
-            if (literal.get_polarity())
-            {
-                const auto atom_index = literal.get_atom().get_index();
+        const auto ground_fluent_rule_index = ground_fluent_rule(fluent_rule, rule_context);
 
-                assert(uint_t(atom_index.group) < or_annot.size());
-                assert(atom_index.value < or_annot[uint_t(atom_index.group)].size());
-                assert(or_annot[uint_t(atom_index.group)][atom_index.value] != std::numeric_limits<Cost>::max());
+        auto cost = compute_aggregate_body_cost(ground_fluent_rule_index, or_annot, rule_context);
 
-                cost = agg(cost, or_annot[uint_t(atom_index.group)][atom_index.value]);
-            }
-        }
         /// Add cost of rule itself.
         cost += make_view(rule, rule_context.destination).get_cost();
 
-        const auto witness = Witness { rule, binding };
-
         auto [it, inserted] = and_annot.try_emplace(witness, std::numeric_limits<Cost>::max());
-        const auto old_cost = it->second;
 
-        // Update per-witness cost
-        if (cost < it->second)
-            it->second = cost;
+        const auto cost_update = update_min_cost(it->second, cost);
 
-        // Update best witness for head (if better than current best)
-        auto hit = head_to_witness.find(head);
-        if (hit == head_to_witness.end() || it->second < and_annot.at(hit->second))
-            head_to_witness[head] = witness;
+        update_if_better_witness_for_head(head, witness, it->second, and_annot, head_to_witness);
 
-        return CostUpdate(old_cost, it->second);
+        return cost_update;
+    }
+
+private:
+    static Witness ground_delta_witness(Index<formalism::datalog::Rule> rule,
+                                        formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context)
+    {
+        const auto binding = formalism::datalog::ground(delta_context.binding, delta_context).first;
+        return Witness { rule, binding };
+    }
+
+    static auto ground_fluent_rule(Index<formalism::datalog::Rule> fluent_rule,
+                                   formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context)
+    {
+        return formalism::datalog::ground(make_view(fluent_rule, rule_context.destination), rule_context).first;
+    }
+
+    /// @brief cost(u) = cost(v_1) o ... o cost(v_k)
+    static Cost
+    compute_aggregate_body_cost(Index<formalism::datalog::GroundRule> ground_fluent_rule,
+                                const OrAnnotationsList& or_annot,
+                                const formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context)
+    {
+        auto cost = AggregationFunction::identity();
+
+        for (const auto& literal : make_view(ground_fluent_rule, rule_context.destination).get_body().get_literals<formalism::FluentTag>())
+        {
+            if (!literal.get_polarity())
+                continue;
+
+            const auto atom_index = literal.get_atom().get_index();
+
+            assert(uint_t(atom_index.group) < or_annot.size());
+            assert(atom_index.value < or_annot[uint_t(atom_index.group)].size());
+            assert(or_annot[uint_t(atom_index.group)][atom_index.value] != std::numeric_limits<Cost>::max());
+
+            cost = agg(cost, or_annot[uint_t(atom_index.group)][atom_index.value]);
+        }
+
+        return cost;
+    }
+
+    /// @brief Update per-witness cost (min)
+    static CostUpdate update_min_cost(Cost& slot, Cost candidate)
+    {
+        const Cost old = slot;
+        if (candidate < slot)
+            slot = candidate;
+        return CostUpdate(old, slot);
+    }
+
+    /// @brief Update best witness for head based on updated witness cost
+    static void update_if_better_witness_for_head(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
+                                                  const Witness& candidate,
+                                                  Cost candidate_cost,
+                                                  const AndAnnotationsMap& and_annot,
+                                                  HeadToWitness& head_to_witness)
+    {
+        auto [hit, inserted] = head_to_witness.try_emplace(head, candidate);
+        if (inserted)
+            return;
+
+        const auto it_best = and_annot.find(hit->second);
+        assert(it_best != and_annot.end());
+
+        if (candidate_cost < it_best->second)
+            hit->second = candidate;
     }
 };
 

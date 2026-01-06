@@ -206,7 +206,6 @@ void generate_nullary_case(GenerateContext<OrAP, AndAP>& gc)
 
             gc.and_ap.update_annotation(gc.cws_rule.rule,
                                         gc.cws_rule.fluent_rule,
-                                        gc.ground_context_delta.binding,
                                         head_index,
                                         gc.aps.or_annot,
                                         gc.and_annot,
@@ -243,7 +242,6 @@ void generate_unary_case(GenerateContext<OrAP, AndAP>& gc)
 
                 gc.and_ap.update_annotation(gc.cws_rule.rule,
                                             gc.cws_rule.fluent_rule,
-                                            gc.ground_context_delta.binding,
                                             head_index,
                                             gc.aps.or_annot,
                                             gc.and_annot,
@@ -284,7 +282,6 @@ void generate_general_case(GenerateContext<OrAP, AndAP>& gc)
 
                     gc.and_ap.update_annotation(gc.cws_rule.rule,
                                                 gc.cws_rule.fluent_rule,
-                                                gc.ground_context_delta.binding,
                                                 head_index,
                                                 gc.aps.or_annot,
                                                 gc.and_annot,
