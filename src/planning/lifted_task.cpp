@@ -21,7 +21,9 @@
 #include "tyr/common/dynamic_bitset.hpp"         // for set
 #include "tyr/common/vector.hpp"                 // for View, set
 #include "tyr/formalism/overlay_repository.hpp"  // for Overla...
-#include "tyr/formalism/planning/views.hpp"      // for View
+#include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/views.hpp"  // for View
+#include "tyr/planning/domain.hpp"
 #include "tyr/planning/lifted_task/task_grounder.hpp"
 #include "tyr/planning/task_utils.hpp"
 
@@ -51,6 +53,9 @@ LiftedTask::LiftedTask(DomainPtr domain,
     m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(m_task)),
     m_rpg_program(m_task)
 {
+    // std::cout << m_domain->get_domain() << std::endl;
+    // std::cout << m_task << std::endl;
+
     for (const auto atom : m_task.template get_atoms<f::StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);
 

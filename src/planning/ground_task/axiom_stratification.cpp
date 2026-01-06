@@ -24,6 +24,10 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/strong_components.hpp>
+#include <boost/graph/topological_sort.hpp>
+
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
 
@@ -32,132 +36,168 @@ namespace tyr::planning
 
 namespace details
 {
-enum class StratumStatus
+enum class EdgeKind : uint8_t
 {
-    UNCONSTRAINED = 0,
-    LOWER = 1,
-    STRICTLY_LOWER = 2,
+    NonStrict = 0,
+    Strict = 1
 };
 
-struct GroundAtomStrata
+struct EdgeProps
 {
-    std::vector<UnorderedSet<Index<fp::GroundAtom<f::DerivedTag>>>> strata;
+    EdgeKind kind = EdgeKind::NonStrict;
 };
 
-static GroundAtomStrata compute_atom_stratification(View<Index<fp::FDRTask>, f::OverlayRepository<fp::Repository>> task)
+// Graph of derived atom dependencies
+using DepGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, EdgeProps>;
+
+using DepV = boost::graph_traits<DepGraph>::vertex_descriptor;
+using DepE = boost::graph_traits<DepGraph>::edge_descriptor;
+
+// Directed acyclic graph of strongly connected components of the dependency graph
+using Dag = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, EdgeProps>;
+
+using DagV = boost::graph_traits<Dag>::vertex_descriptor;
+using DagE = boost::graph_traits<Dag>::edge_descriptor;
+
+// Build dependency graph: nodes = derived ground atoms
+static DepGraph build_dependency_graph(View<Index<fp::FDRTask>, f::OverlayRepository<fp::Repository>> task, size_t num_atoms)
 {
-    auto R = UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, StratumStatus>> {};
+    DepGraph graph(num_atoms);
 
-    const auto& atoms = task.get_atoms<f::DerivedTag>().get_data();
-
-    // lines 2-4
-    for (const auto atom_1 : atoms)
-    {
-        for (const auto atom_2 : atoms)
-        {
-            R[atom_1][atom_2] = StratumStatus::UNCONSTRAINED;
-        }
-    }
-
-    // lines 5-10
     for (const auto axiom : task.get_ground_axioms())
     {
-        const auto head_atom = axiom.get_head().get_index();
+        const auto h_atom = axiom.get_head().get_index();
 
         for (const auto literal : axiom.get_body().get_facts<f::DerivedTag>())
         {
-            const auto body_atom = literal.get_atom().get_index();
+            const auto b_atom = literal.get_atom().get_index();
 
-            if (!literal.get_polarity())
-            {
-                R[body_atom][head_atom] = StratumStatus::STRICTLY_LOWER;
-            }
-            else
-            {
-                R[body_atom][head_atom] = StratumStatus::LOWER;
-            }
+            EdgeProps ep;
+            ep.kind = literal.get_polarity() ? EdgeKind::NonStrict : EdgeKind::Strict;
+            boost::add_edge(b_atom.value, h_atom.value, ep, graph);
         }
     }
 
-    // lines 11-15
-    for (const auto& atom_1 : atoms)
+    return graph;
+}
+
+// Run SCCs, check stratifiability, return component id per vertex and #components
+static std::pair<std::vector<uint_t>, uint_t> compute_scc_and_check(const DepGraph& g)
+{
+    auto comp = std::vector<uint_t>(boost::num_vertices(g), std::numeric_limits<uint_t>::max());
+    const auto num = boost::strong_components(g, boost::make_iterator_property_map(comp.begin(), boost::get(boost::vertex_index, g)));
+
+    // Stratifiable iff no STRICT edge stays within the same SCC
+    for (auto e_it = boost::edges(g); e_it.first != e_it.second; ++e_it.first)
     {
-        for (const auto& atom_2 : atoms)
-        {
-            for (const auto& atom_3 : atoms)
-            {
-                if (std::min(static_cast<int>(R.at(atom_2).at(atom_1)), static_cast<int>(R.at(atom_1).at(atom_3))) > 0)
-                {
-                    R.at(atom_2).at(atom_3) = static_cast<StratumStatus>(std::max(
-                        { static_cast<int>(R.at(atom_2).at(atom_1)), static_cast<int>(R.at(atom_1).at(atom_3)), static_cast<int>(R.at(atom_2).at(atom_3)) }));
-                }
-            }
-        }
+        DepE e = *e_it.first;
+        if (g[e].kind != EdgeKind::Strict)
+            continue;
+
+        DepV u = boost::source(e, g);
+        DepV v = boost::target(e, g);
+        if (comp[u] == comp[v])
+            throw std::runtime_error("Set of ground axioms is not stratifiable (negative cycle within SCC).");
     }
 
-    // lines 16-27
-    if (std::any_of(atoms.begin(), atoms.end(), [&R](const auto& atom) { return R.at(atom).at(atom) == StratumStatus::STRICTLY_LOWER; }))
+    return { comp, num };
+}
+
+// Build condensed DAG of SCCs, with edge weight inc=1 if any strict edge exists between SCCs
+static Dag build_condensation_dag(const DepGraph& g, const std::vector<uint_t>& comp, uint_t num_comps)
+{
+    Dag dag(num_comps);
+
+    auto best = UnorderedMap<std::pair<uint_t, uint_t>, EdgeKind> {};
+    best.reserve(boost::num_edges(g));
+
+    for (auto e_it = boost::edges(g); e_it.first != e_it.second; ++e_it.first)
     {
-        throw std::runtime_error("Set of rules is not stratifiable.");
+        DepE e = *e_it.first;
+        DepV u = boost::source(e, g);
+        DepV v = boost::target(e, g);
+
+        const auto cu = comp[u];
+        const auto cv = comp[v];
+        if (cu == cv)
+            continue;
+
+        const auto k = std::make_pair(cu, cv);
+        auto& slot = best[k];
+        slot = std::max(slot, g[e].kind);
     }
 
-    auto atoms_strata = GroundAtomStrata {};
-    auto remaining = UnorderedSet<Index<fp::GroundAtom<f::DerivedTag>>>(atoms.begin(), atoms.end());
-    while (!remaining.empty())
+    for (const auto& [k, inc] : best)
     {
-        auto stratum = UnorderedSet<Index<fp::GroundAtom<f::DerivedTag>>> {};
-        for (const auto& atom_1 : remaining)
-        {
-            if (std::all_of(remaining.begin(),
-                            remaining.end(),
-                            [&R, &atom_1](const auto& atom_2) { return R.at(atom_2).at(atom_1) != StratumStatus::STRICTLY_LOWER; }))
-            {
-                stratum.insert(atom_1);
-            }
-        }
-
-        for (const auto& atom : stratum)
-        {
-            remaining.erase(atom);
-        }
-
-        atoms_strata.strata.push_back(std::move(stratum));
+        const auto cu = k.first;
+        const auto cv = k.second;
+        EdgeProps ep;
+        ep.kind = inc;
+        boost::add_edge(cu, cv, ep, dag);
     }
 
-    return atoms_strata;
+    return dag;
+}
+
+// Compute minimal strata on SCC DAG: s[dst] = max(s[dst], s[src] + inc)
+static std::vector<uint_t> compute_component_strata(const Dag& dag)
+{
+    auto topo = std::vector<DagV> {};
+    topo.reserve(boost::num_vertices(dag));
+    boost::topological_sort(dag, std::back_inserter(topo));  // reverse topological order
+
+    std::reverse(topo.begin(), topo.end());
+
+    auto s = std::vector<uint_t>(boost::num_vertices(dag), 0);
+
+    for (DagV u : topo)
+    {
+        for (auto oe = boost::out_edges(u, dag); oe.first != oe.second; ++oe.first)
+        {
+            DagE e = *oe.first;
+            DagV v = boost::target(e, dag);
+            s[v] = std::max(s[v], s[u] + (dag[e].kind == EdgeKind::Strict ? 1u : 0u));
+        }
+    }
+    return s;
 }
 }
 
 GroundAxiomStrata compute_ground_axiom_stratification(View<Index<fp::FDRTask>, f::OverlayRepository<fp::Repository>> task)
 {
-    const auto atom_stratification = details::compute_atom_stratification(task);
+    const auto num_atoms = task.get_atoms<f::DerivedTag>().size();
 
-    auto axiom_strata = GroundAxiomStrata {};
+    // 1) dependency graph
+    const auto dep = details::build_dependency_graph(task, num_atoms);
 
-    auto remaining_axioms = UnorderedSet<Index<fp::GroundAxiom>>(task.get_ground_axioms().get_data().begin(), task.get_ground_axioms().get_data().end());
+    // 2) SCC + check
+    const auto [comp, num_comps] = details::compute_scc_and_check(dep);
 
-    for (const auto& atom_stratum : atom_stratification.strata)
-    {
-        auto stratum = UnorderedSet<Index<fp::GroundAxiom>> {};
+    // 3) Condensed DAG
+    const auto dag = details::build_condensation_dag(dep, comp, num_comps);
 
-        for (const auto axiom : remaining_axioms)
-        {
-            if (atom_stratum.count(make_view(axiom, task.get_context()).get_head().get_index()))
-            {
-                stratum.insert(axiom);
-            }
-        }
+    // 4) Component strata
+    const auto comp_stratum = details::compute_component_strata(dag);
 
-        for (const auto axiom : stratum)
-        {
-            remaining_axioms.erase(axiom);
-        }
+    // 5) Assign each derived atom a stratum
+    auto atom_stratum = std::vector<uint_t>(num_atoms, 0);
+    for (uint_t i = 0; i < num_atoms; ++i)
+        atom_stratum[i] = comp_stratum[comp[i]];
 
-        axiom_strata.data.push_back(GroundAxiomStratum(stratum.begin(), stratum.end()));
-    }
+    // 6) Bucket axioms by head stratum
+    auto max_s = uint_t(0);
+    for (auto s : comp_stratum)
+        max_s = std::max(max_s, s);
 
-    // std::cout << rule_strata.data << std::endl;
+    auto buckets = std::vector<IndexList<fp::GroundAxiom>>(max_s + 1);
+    for (const auto axiom : task.get_ground_axioms())
+        buckets[atom_stratum[uint_t(axiom.get_head().get_index())]].push_back(axiom.get_index());
 
-    return axiom_strata;
+    auto out = GroundAxiomStrata {};
+    out.data.reserve(buckets.size());
+    for (auto& b : buckets)
+        out.data.emplace_back(GroundAxiomStratum(std::move(b)));
+
+    return out;
 }
 }

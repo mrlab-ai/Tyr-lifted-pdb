@@ -52,7 +52,12 @@ public:
 
     float_t evaluate(const State<LiftedTask>& state) override
     {
-        insert_extended_state(state.get_unpacked_state(), *m_task->get_repository(), m_workspace, m_task->get_rpg_program().get_const_program_workspace());
+        m_workspace.facts.reset();
+        m_workspace.p2d.clear();
+
+        insert_fluent_atoms_to_fact_set(state.get_unpacked_state().get_atoms<formalism::FluentTag>(), *m_task->get_repository(), m_workspace);
+
+        insert_fact_sets_into_assignment_sets(m_workspace, m_task->get_rpg_program().get_const_program_workspace());
 
         datalog::solve_bottom_up(m_workspace,
                                  m_task->get_rpg_program().get_const_program_workspace(),

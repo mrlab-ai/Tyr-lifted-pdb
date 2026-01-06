@@ -82,7 +82,11 @@ public:
             set.reset();
     }
 
-    void insert(Index<formalism::datalog::GroundAtom<T>> ground_atom) { m_sets[uint_t(ground_atom.get_group())].insert(ground_atom); }
+    void insert(Index<formalism::datalog::GroundAtom<T>> ground_atom)
+    {
+        assert(uint_t(ground_atom.group) < m_sets.size());
+        m_sets[uint_t(ground_atom.group)].insert(ground_atom);
+    }
 
     void insert(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atom) { insert(ground_atom.get_index()); }
 

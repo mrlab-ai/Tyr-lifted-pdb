@@ -198,7 +198,7 @@ RPGProgram::RPGProgram(View<Index<fp::Task>, f::OverlayRepository<fp::Repository
     m_program_context(create_program_context(task)),
     m_program_workspace(m_program_context)
 {
-    std::cout << m_program_context.get_program() << std::endl;
+    // std::cout << m_program_context.get_program() << std::endl;
 }
 
 datalog::ProgramContext& RPGProgram::get_program_context() noexcept { return m_program_context; }
