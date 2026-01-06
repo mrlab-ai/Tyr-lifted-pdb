@@ -282,7 +282,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
     datalog::solve_bottom_up(workspace, const_workspace, aps, tp);
 
-    auto aggregated_statistics = d::RuleWorkspace::compute_aggregate_statistics(workspace.rules);
+    auto aggregated_statistics = d::RuleIterationWorkspace::compute_aggregate_statistics(workspace.rules);
 
     auto to_ms = [](auto d) { return std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(d).count(); };
 

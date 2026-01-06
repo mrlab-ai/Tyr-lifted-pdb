@@ -28,7 +28,7 @@
 
 namespace tyr::datalog
 {
-struct RuleWorkspace
+struct RuleIterationWorkspace
 {
     kpkc::DenseKPartiteGraph consistency_graph;
     kpkc::Workspace kpkc_workspace;
@@ -59,7 +59,7 @@ struct RuleWorkspace
         std::chrono::nanoseconds ground_total_time_median { 0 };
     };
 
-    static AggregatedStatistics compute_aggregate_statistics(const std::vector<RuleWorkspace>& contexts)
+    static AggregatedStatistics compute_aggregate_statistics(const std::vector<RuleIterationWorkspace>& contexts)
     {
         AggregatedStatistics result {};
 
@@ -114,11 +114,21 @@ struct RuleWorkspace
         return result;
     }
 
-    RuleWorkspace(const formalism::datalog::Repository& parent, const StaticConsistencyGraph& static_consistency_graph);
+    RuleIterationWorkspace(const formalism::datalog::Repository& parent, const StaticConsistencyGraph& static_consistency_graph);
 
     void clear() noexcept;
 
     void initialize(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
+};
+
+struct RulePersistentWorkspace
+{
+    formalism::datalog::RepositoryPtr repository;
+    formalism::OverlayRepository<formalism::datalog::Repository> overlay_repository;
+
+    explicit RulePersistentWorkspace(const formalism::datalog::Repository& parent);
+
+    void clear() noexcept;
 };
 
 struct ConstRuleWorkspace
@@ -126,7 +136,7 @@ struct ConstRuleWorkspace
     Index<formalism::datalog::Rule> rule;
     const formalism::datalog::Repository& repository;
 
-    Index<formalism::datalog::Rule> fluent_rule;
+    Index<formalism::datalog::ConjunctiveCondition> witness_condition;
     Index<formalism::datalog::GroundConjunctiveCondition> nullary_condition;
     Index<formalism::datalog::ConjunctiveCondition> unary_overapproximation_condition;
     Index<formalism::datalog::ConjunctiveCondition> binary_overapproximation_condition;
@@ -136,7 +146,7 @@ struct ConstRuleWorkspace
     StaticConsistencyGraph static_consistency_graph;
 
     auto get_rule() const noexcept { return make_view(rule, repository); }
-    auto get_fluent_rule() const noexcept { return make_view(fluent_rule, repository); }
+    auto get_witness_condition() const noexcept { return make_view(witness_condition, repository); }
     auto get_nullary_condition() const noexcept { return make_view(nullary_condition, repository); }
     auto get_unary_overapproximation_condition() const noexcept { return make_view(unary_overapproximation_condition, repository); }
     auto get_binary_overapproximation_condition() const noexcept { return make_view(binary_overapproximation_condition, repository); }

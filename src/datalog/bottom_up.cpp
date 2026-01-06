@@ -149,9 +149,10 @@ struct GenerateContext
     AnnotationPolicies<OrAP, AndAP>& aps;
 
     /// Workspaces
-    RuleWorkspace& ws_rule;
+    RuleIterationWorkspace& ws_rule;
     const ConstRuleWorkspace& cws_rule;
     RuleDeltaWorkspace& ws_rule_delta;
+    RulePersistentWorkspace& ws_rule_persistent;
     WorkerWorkspace& ws_worker;
 
     /// Annotations
@@ -162,7 +163,8 @@ struct GenerateContext
     // Derivatives
     FactSets fact_sets;
     fd::GrounderContext<fd::Repository> ground_context_delta;
-    fd::GrounderContext<f::OverlayRepository<fd::Repository>> ground_context_rule;
+    fd::GrounderContext<f::OverlayRepository<fd::Repository>> ground_context_iteration;
+    fd::GrounderContext<f::OverlayRepository<fd::Repository>> ground_context_persistent;
 
     GenerateContext(Index<fd::Rule> rule, ProgramWorkspace& ws, const ConstProgramWorkspace& cws, AnnotationPolicies<OrAP, AndAP>& aps) :
         rule(rule),
@@ -172,13 +174,15 @@ struct GenerateContext
         ws_rule(ws.rules[uint_t(rule)]),
         cws_rule(cws.rules[uint_t(rule)]),
         ws_rule_delta(ws.rule_deltas[uint_t(rule)]),
+        ws_rule_persistent(ws.rule_persistents[uint_t(rule)]),
         ws_worker(ws.worker.local()),
         and_ap(aps.and_aps[uint_t(rule)]),
         and_annot(aps.and_annots[uint_t(rule)]),
         head_to_witness(aps.head_to_witness[uint_t(rule)]),
         fact_sets(FactSets(cws.facts.fact_sets, ws.facts.fact_sets)),
         ground_context_delta(fd::GrounderContext { ws_worker.builder, *ws_rule_delta.repository, ws_rule_delta.binding }),
-        ground_context_rule(fd::GrounderContext { ws_worker.builder, ws_rule.overlay_repository, ws_rule_delta.binding })
+        ground_context_iteration(fd::GrounderContext { ws_worker.builder, ws_rule.overlay_repository, ws_rule_delta.binding }),
+        ground_context_persistent(fd::GrounderContext { ws_worker.builder, ws_rule_persistent.overlay_repository, ws_rule_delta.binding })
     {
         ws_worker.clear();
         ws_rule.clear();
@@ -196,7 +200,7 @@ void generate_nullary_case(GenerateContext<OrAP, AndAP>& gc)
     if (!exists || AndAP::ShouldAnnotate)
     {
         // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
-        if (is_valid_binding(gc.cws_rule.get_rule().get_body(), gc.fact_sets, gc.ground_context_rule))
+        if (is_valid_binding(gc.cws_rule.get_rule().get_body(), gc.fact_sets, gc.ground_context_iteration))
         {
             if (!exists)
             {
@@ -205,13 +209,14 @@ void generate_nullary_case(GenerateContext<OrAP, AndAP>& gc)
             }
 
             gc.and_ap.update_annotation(gc.cws_rule.rule,
-                                        gc.cws_rule.fluent_rule,
+                                        gc.cws_rule.witness_condition,
                                         head_index,
                                         gc.aps.or_annot,
                                         gc.and_annot,
                                         gc.head_to_witness,
-                                        gc.ground_context_rule,
-                                        gc.ground_context_delta);
+                                        gc.ground_context_iteration,
+                                        gc.ground_context_delta,
+                                        gc.ground_context_persistent);
         }
     }
 }
@@ -229,10 +234,11 @@ void generate_unary_case(GenerateContext<OrAP, AndAP>& gc)
 
         if (!exists || AndAP::ShouldAnnotate)
         {
-            if (is_valid_binding(gc.cws_rule.get_unary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_rule))
+            if (is_valid_binding(gc.cws_rule.get_unary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_iteration))
             {
                 // Ensure that ground rule is truly applicable
-                assert(is_applicable(make_view(ground(gc.cws_rule.get_rule(), gc.ground_context_rule).first, gc.ws_rule.overlay_repository), gc.fact_sets));
+                assert(
+                    is_applicable(make_view(ground(gc.cws_rule.get_rule(), gc.ground_context_iteration).first, gc.ws_rule.overlay_repository), gc.fact_sets));
 
                 if (!exists)
                 {
@@ -241,13 +247,14 @@ void generate_unary_case(GenerateContext<OrAP, AndAP>& gc)
                 }
 
                 gc.and_ap.update_annotation(gc.cws_rule.rule,
-                                            gc.cws_rule.fluent_rule,
+                                            gc.cws_rule.witness_condition,
                                             head_index,
                                             gc.aps.or_annot,
                                             gc.and_annot,
                                             gc.head_to_witness,
-                                            gc.ground_context_rule,
-                                            gc.ground_context_delta);
+                                            gc.ground_context_iteration,
+                                            gc.ground_context_delta,
+                                            gc.ground_context_persistent);
             }
         }
     }
@@ -269,10 +276,11 @@ void generate_general_case(GenerateContext<OrAP, AndAP>& gc)
 
             if (!exists || AndAP::ShouldAnnotate)
             {
-                if (is_valid_binding(gc.cws_rule.get_binary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_rule))
+                if (is_valid_binding(gc.cws_rule.get_binary_conflicting_overapproximation_condition(), gc.fact_sets, gc.ground_context_iteration))
                 {
                     // Ensure that ground rule is truly applicable
-                    assert(is_applicable(make_view(ground(gc.cws_rule.get_rule(), gc.ground_context_rule).first, gc.ws_rule.overlay_repository), gc.fact_sets));
+                    assert(is_applicable(make_view(ground(gc.cws_rule.get_rule(), gc.ground_context_iteration).first, gc.ws_rule.overlay_repository),
+                                         gc.fact_sets));
 
                     if (!exists)
                     {
@@ -281,13 +289,14 @@ void generate_general_case(GenerateContext<OrAP, AndAP>& gc)
                     }
 
                     gc.and_ap.update_annotation(gc.cws_rule.rule,
-                                                gc.cws_rule.fluent_rule,
+                                                gc.cws_rule.witness_condition,
                                                 head_index,
                                                 gc.aps.or_annot,
                                                 gc.and_annot,
                                                 gc.head_to_witness,
-                                                gc.ground_context_rule,
-                                                gc.ground_context_delta);
+                                                gc.ground_context_iteration,
+                                                gc.ground_context_delta,
+                                                gc.ground_context_persistent);
                 }
             }
         });
@@ -416,8 +425,10 @@ template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, Termi
 void solve_bottom_up(ProgramWorkspace& ws, const ConstProgramWorkspace& cws, AnnotationPolicies<OrAP, AndAP>& aps, TP& tp)
 {
     // Clear cross strata data structures.
-    for (auto& rule_delta_ws : ws.rule_deltas)
-        rule_delta_ws.clear();
+    for (auto& rule_delta : ws.rule_deltas)
+        rule_delta.clear();
+    for (auto& rule_persistent : ws.rule_persistents)
+        rule_persistent.clear();
     aps.clear();
     tp.clear();
 

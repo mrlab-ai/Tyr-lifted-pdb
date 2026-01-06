@@ -55,7 +55,7 @@ struct P2DWorkspace;
 struct ProgramWorkspace;
 struct ConstProgramWorkspace;
 struct RuleDeltaWorkspace;
-struct RuleWorkspace;
+struct RuleIterationWorkspace;
 struct ConstRuleWorkspace;
 struct WorkerWorkspace;
 

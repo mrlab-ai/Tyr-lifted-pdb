@@ -124,8 +124,9 @@ struct ProgramWorkspace
     formalism::datalog::Repository& repository;
     FactsWorkspace facts;
 
-    std::vector<RuleWorkspace> rules;
+    std::vector<RuleIterationWorkspace> rules;
     std::vector<RuleDeltaWorkspace> rule_deltas;
+    std::vector<RulePersistentWorkspace> rule_persistents;
 
     D2PWorkspace d2p;
     P2DWorkspace p2d;

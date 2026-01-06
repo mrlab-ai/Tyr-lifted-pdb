@@ -29,7 +29,10 @@
 #include "tyr/formalism/datalog/rule_index.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 
+#include <algorithm>
+#include <cassert>
 #include <concepts>
+#include <limits>
 #include <optional>
 #include <tuple>
 #include <vector>
@@ -50,6 +53,7 @@ struct Witness
 {
     Index<formalism::datalog::Rule> rule;
     Index<formalism::Binding> binding;
+    Index<formalism::datalog::GroundConjunctiveCondition> witness_condition;
 
     auto identifying_members() const noexcept { return std::tie(rule, binding); }
 };
@@ -111,18 +115,22 @@ concept OrAnnotationPolicyConcept = requires(const T& p,
 
 // rectangular "and"-node
 template<typename T>
-concept AndAnnotationPolicyConcept = requires(const T& p,
-                                              Index<formalism::datalog::Rule> rule,
-                                              Index<formalism::datalog::Rule> fluent_rule,
-                                              Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
-                                              const OrAnnotationsList& or_annot,
-                                              AndAnnotationsMap& and_annot,
-                                              HeadToWitness& head_to_witness,
-                                              formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context,
-                                              formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) {
-    /// Ground the witness and annotate the cost of it from the given annotations.
-    { p.update_annotation(rule, fluent_rule, head, or_annot, and_annot, head_to_witness, rule_context, delta_context) } -> std::same_as<CostUpdate>;
-};
+concept AndAnnotationPolicyConcept =
+    requires(const T& p,
+             Index<formalism::datalog::Rule> rule,
+             Index<formalism::datalog::ConjunctiveCondition> witness_condition,
+             Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
+             const OrAnnotationsList& or_annot,
+             AndAnnotationsMap& and_annot,
+             HeadToWitness& head_to_witness,
+             formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& iteration_context,
+             formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
+             formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& persistent_context) {
+        /// Ground the witness and annotate the cost of it from the given annotations.
+        {
+            p.update_annotation(rule, witness_condition, head, or_annot, and_annot, head_to_witness, iteration_context, delta_context, persistent_context)
+        } -> std::same_as<CostUpdate>;
+    };
 
 class NoOrAnnotationPolicy
 {
@@ -146,14 +154,16 @@ class NoAndAnnotationPolicy
 public:
     static constexpr bool ShouldAnnotate = false;
 
-    CostUpdate update_annotation(Index<formalism::datalog::Rule> rule,
-                                 Index<formalism::datalog::Rule> fluent_rule,
-                                 Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
-                                 const OrAnnotationsList& or_annot,
-                                 AndAnnotationsMap& and_annot,
-                                 HeadToWitness& head_to_witness,
-                                 formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context,
-                                 formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) const noexcept
+    CostUpdate
+    update_annotation(Index<formalism::datalog::Rule> rule,
+                      Index<formalism::datalog::ConjunctiveCondition> witness_condition,
+                      Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
+                      const OrAnnotationsList& or_annot,
+                      AndAnnotationsMap& and_annot,
+                      HeadToWitness& head_to_witness,
+                      formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& iteration_context,
+                      formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
+                      formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& persistent_context) const noexcept
     {
         return CostUpdate();
     }
@@ -240,24 +250,24 @@ public:
     static constexpr AggregationFunction agg = AggregationFunction {};
 
     CostUpdate update_annotation(Index<formalism::datalog::Rule> rule,
-                                 Index<formalism::datalog::Rule> fluent_rule,
+                                 Index<formalism::datalog::ConjunctiveCondition> witness_condition,
                                  Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head,
                                  const OrAnnotationsList& or_annot,
                                  AndAnnotationsMap& and_annot,
                                  HeadToWitness& head_to_witness,
-                                 formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context,
-                                 formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) const
+                                 formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& iteration_context,
+                                 formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
+                                 formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& persistent_context) const
     {
-        assert(rule_context.binding == delta_context.binding);
+        assert(iteration_context.binding == delta_context.binding);
+        assert(delta_context.binding == persistent_context.binding);
 
-        const auto witness = ground_delta_witness(rule, delta_context);
+        const auto witness = ground_witness(rule, witness_condition, delta_context, persistent_context);
 
-        const auto ground_fluent_rule_index = ground_fluent_rule(fluent_rule, rule_context);
-
-        auto cost = compute_aggregate_body_cost(ground_fluent_rule_index, or_annot, rule_context);
+        auto cost = compute_aggregate_witness_condition_cost(witness.witness_condition, or_annot, persistent_context);
 
         /// Add cost of rule itself.
-        cost += make_view(rule, rule_context.destination).get_cost();
+        cost += make_view(rule, iteration_context.destination).get_cost();
 
         auto [it, inserted] = and_annot.try_emplace(witness, std::numeric_limits<Cost>::max());
 
@@ -269,28 +279,28 @@ public:
     }
 
 private:
-    static Witness ground_delta_witness(Index<formalism::datalog::Rule> rule,
-                                        formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context)
+    /// @brief Grounds two components to create the witness:
+    /// 1) the binding into the persistent delta context, allowing merge into program when necessary.
+    /// 2) the witness condition into the program context, which is sound, be
+    static Witness ground_witness(Index<formalism::datalog::Rule> rule,
+                                  Index<formalism::datalog::ConjunctiveCondition> witness_condition,
+                                  formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
+                                  formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& persistent_context)
     {
-        const auto binding = formalism::datalog::ground(delta_context.binding, delta_context).first;
-        return Witness { rule, binding };
-    }
-
-    static auto ground_fluent_rule(Index<formalism::datalog::Rule> fluent_rule,
-                                   formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context)
-    {
-        return formalism::datalog::ground(make_view(fluent_rule, rule_context.destination), rule_context).first;
+        return Witness { rule,
+                         formalism::datalog::ground(delta_context.binding, delta_context).first,
+                         formalism::datalog::ground(make_view(witness_condition, persistent_context.destination), persistent_context).first };
     }
 
     /// @brief cost(u) = cost(v_1) o ... o cost(v_k)
-    static Cost
-    compute_aggregate_body_cost(Index<formalism::datalog::GroundRule> ground_fluent_rule,
-                                const OrAnnotationsList& or_annot,
-                                const formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& rule_context)
+    static Cost compute_aggregate_witness_condition_cost(
+        Index<formalism::datalog::GroundConjunctiveCondition> witness_condition,
+        const OrAnnotationsList& or_annot,
+        const formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>>& persistent_context)
     {
         auto cost = AggregationFunction::identity();
 
-        for (const auto& literal : make_view(ground_fluent_rule, rule_context.destination).get_body().get_literals<formalism::FluentTag>())
+        for (const auto& literal : make_view(witness_condition, persistent_context.destination).get_literals<formalism::FluentTag>())
         {
             if (!literal.get_polarity())
                 continue;
@@ -361,12 +371,12 @@ struct AnnotationPolicies
 
     void clear() noexcept
     {
-        for (auto& pred_or_annot : or_annot)
-            pred_or_annot.clear();
-        for (auto& and_annot : and_annots)
-            and_annot.clear();
-
-        head_to_witness.clear();
+        for (auto& vec : or_annot)
+            vec.clear();
+        for (auto& map : and_annots)
+            map.clear();
+        for (auto& map : head_to_witness)
+            map.clear();
     }
 };
 
