@@ -29,7 +29,7 @@
 #include "tyr/formalism/planning/formatter.hpp"      // for operator<<
 #include "tyr/formalism/planning/repository.hpp"     // for Repository
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/algorithms/gbfs_lazy/statistics.hpp"  // for Statistics
+#include "tyr/planning/algorithms/statistics.hpp"  // for Statistics
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"             // for Domain
 #include "tyr/planning/ground_task.hpp"        // for GroundTask
@@ -227,7 +227,7 @@ std::ostream& print(std::ostream& os, const planning::State<planning::GroundTask
     return os;
 }
 
-std::ostream& print(std::ostream& os, const planning::gbfs_lazy::Statistics& el)
+std::ostream& print(std::ostream& os, const planning::Statistics& el)
 {
     fmt::print(os,
                "[GBFS] Search time: {}ms\n"
@@ -266,9 +266,6 @@ std::ostream& operator<<(std::ostream& os, const UnpackedState<GroundTask>& el) 
 
 std::ostream& operator<<(std::ostream& os, const State<GroundTask>& el) { return tyr::print(os, el); }
 
-namespace gbfs_lazy
-{
 std::ostream& operator<<(std::ostream& os, const Statistics& el) { return tyr::print(os, el); }
-}  // end gbfs_lazy
 }
 }

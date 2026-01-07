@@ -19,7 +19,7 @@
 #define TYR_PLANNING_ALGORITHMS_GBFS_LAZY_EVENT_HANDLER_HPP_
 
 #include "tyr/formalism/planning/ground_action_view.hpp"
-#include "tyr/planning/algorithms/gbfs_lazy/statistics.hpp"
+#include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <chrono>
@@ -72,7 +72,7 @@ public:
     /// @brief React on exhausting a search.
     virtual void on_exhausted() = 0;
 
-    virtual const Statistics& get_statistics() const = 0;
+    virtual const tyr::planning::Statistics& get_statistics() const = 0;
 };
 
 /**
@@ -84,7 +84,7 @@ template<typename Derived, typename Task>
 class EventHandlerBase : public EventHandler<Task>
 {
 protected:
-    Statistics m_statistics;
+    tyr::planning::Statistics m_statistics;
     size_t m_verbosity;
 
 private:
@@ -191,7 +191,7 @@ public:
      * Getters
      */
 
-    const Statistics& get_statistics() const override { return m_statistics; }
+    const tyr::planning::Statistics& get_statistics() const override { return m_statistics; }
 };
 
 template<typename Task>

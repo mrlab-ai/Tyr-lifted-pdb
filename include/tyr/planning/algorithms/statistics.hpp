@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_ALGORITHMS_GBFS_LAZY_STATISTICS_HPP_
-#define TYR_PLANNING_ALGORITHMS_GBFS_LAZY_STATISTICS_HPP_
+#ifndef TYR_PLANNING_ALGORITHMS_STATISTICS_HPP_
+#define TYR_PLANNING_ALGORITHMS_STATISTICS_HPP_
 
 #include <chrono>
 #include <cstdint>
@@ -24,7 +24,7 @@
 #include <ostream>
 #include <vector>
 
-namespace tyr::planning::gbfs_lazy
+namespace tyr::planning
 {
 
 class Statistics
