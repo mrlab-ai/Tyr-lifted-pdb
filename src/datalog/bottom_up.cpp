@@ -273,7 +273,7 @@ void generate(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 }
 
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP> ctx)
+void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 {
     ctx.scheduler.activate_all();
 

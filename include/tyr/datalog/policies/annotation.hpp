@@ -25,6 +25,7 @@
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
+#include "tyr/formalism/datalog/ground_conjunctive_condition_index.hpp"
 #include "tyr/formalism/datalog/grounder.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/rule_index.hpp"
