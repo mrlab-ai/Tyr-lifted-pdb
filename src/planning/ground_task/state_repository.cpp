@@ -99,7 +99,7 @@ State<GroundTask> StateRepository<GroundTask>::get_registered_state(StateIndex s
 
     auto unpacked_state = get_unregistered_state();
 
-    unpacked_state->get_index() = state_index;
+    unpacked_state->set(state_index);
     const auto fluent_ptr = m_fluent_repository[packed_state.get_facts<f::FluentTag>()];
     auto& fluent_values = unpacked_state->get_fluent_values();
     for (uint_t i = 0; i < m_fluent_layout.layouts.size(); ++i)

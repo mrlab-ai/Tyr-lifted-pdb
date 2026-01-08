@@ -61,6 +61,10 @@ struct WorkerWorkspace;
 
 class RuleSchedulerStratum;
 
+struct ProgramStatistics;
+struct RuleStatistics;
+struct AggregatedRuleStatistics;
+
 namespace details
 {
 class Vertex;

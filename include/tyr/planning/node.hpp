@@ -48,6 +48,9 @@ struct LabeledNode
     Node<Task> node;
 };
 
+template<typename Task>
+using LabeledNodeList = std::vector<LabeledNode<Task>>;
+
 template<typename T, typename Task>
 concept NodeConcept = requires(const T& cn) {
     { cn.get_state() } -> std::same_as<const State<Task>&>;

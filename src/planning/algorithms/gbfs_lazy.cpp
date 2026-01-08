@@ -38,6 +38,7 @@
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 #include "tyr/planning/search_node.hpp"
+#include "tyr/planning/search_space.hpp"
 #include "tyr/planning/state_index.hpp"
 
 namespace tyr::planning::gbfs_lazy
@@ -142,7 +143,7 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
     {
         event_handler->on_end_search();
 
-        result.plan = Plan(NodeList<Task> { start_node }, IndexList<formalism::planning::GroundAction> {}, float_t(0));
+        result.plan = Plan(start_node, LabeledNodeList<Task> {});
         result.goal_node = start_node;
         result.status = SearchStatus::SOLVED;
 
@@ -153,7 +154,7 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
 
     auto preferred_openlist = ExhaustiveQueue();
     auto standard_openlist = ExhaustiveQueue();
-    auto openlist = AlternatingOpenList<ExhaustiveQueue, ExhaustiveQueue>(preferred_openlist, standard_openlist, std::array<size_t, 2> { 128, 1 });
+    auto openlist = AlternatingOpenList<ExhaustiveQueue, ExhaustiveQueue>(preferred_openlist, standard_openlist, std::array<size_t, 2> { 1000, 1 });
 
     if (std::isnan(start_node.get_metric()))
     {
@@ -198,6 +199,7 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
 
         const auto state_index = openlist.top();
         const auto state = successor_generator.get_state(state_index);
+
         openlist.pop();
 
         auto& search_node = get_or_create_search_node(state_index, search_nodes);
@@ -282,12 +284,11 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
 
                 event_handler->on_end_search();
 
-                // result.plan = extract_total_ordered_plan(start_state, start_g_value, successor_search_node, successor_state.get_index(), search_nodes,
-                // context); assert(result.plan->get_cost() == successor_state_metric_value);
+                result.plan = extract_total_ordered_plan(successor_search_node, succ_node, search_nodes, successor_generator);
                 result.goal_node = succ_node;
                 result.status = SearchStatus::SOLVED;
 
-                // event_handler->on_solved(result.plan.value());
+                event_handler->on_solved(result.plan.value());
 
                 return result;
             }

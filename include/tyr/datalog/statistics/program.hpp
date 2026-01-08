@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Dominik Drexler and Simon Stahlberg
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,32 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_SEARCH_NODE_HPP_
-#define TYR_PLANNING_SEARCH_NODE_HPP_
+#ifndef TYR_DATALOG_STATISTICS_PROGRAM_HPP_
+#define TYR_DATALOG_STATISTICS_PROGRAM_HPP_
 
-#include "tyr/planning/state_index.hpp"
+#include <chrono>
 
-#include <concepts>
-#include <cstdint>
-
-namespace tyr::planning
+namespace tyr::datalog
 {
-
-enum SearchNodeStatus : uint8_t
+struct ProgramStatistics
 {
-    GOAL = 0,
-    DEAD_END = 1,
-    CLOSED = 2,
-    OPEN = 3,
-    NEW = 4,
+    std::chrono::nanoseconds parallel_time { 0 };
+    std::chrono::nanoseconds total_time { 0 };
 };
-
-template<typename T>
-concept SearchNodeConcept = requires(const T a) {
-    { a.parent_state } -> std::convertible_to<StateIndex>;
-    { a.g_value } -> std::convertible_to<float_t>;
-};
-
 }
 
 #endif

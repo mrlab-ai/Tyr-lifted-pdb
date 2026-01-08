@@ -288,25 +288,6 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
     d::solve_bottom_up(ctx);
 
-    auto aggregated_statistics = d::RuleIterationWorkspace::compute_aggregate_statistics(workspace.rules);
-
-    auto to_ms = [](auto d) { return std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(d).count(); };
-
-    std::cout << "num_rules: " << workspace.rules.size() << std::endl;
-    std::cout << "init_total_time_min: " << to_ms(aggregated_statistics.init_total_time_min) << " ms" << std::endl;
-    std::cout << "init_total_time_max: " << to_ms(aggregated_statistics.init_total_time_max) << " ms" << std::endl;
-    std::cout << "init_total_time_median: " << to_ms(aggregated_statistics.init_total_time_median) << " ms" << std::endl;
-    std::cout << "ground_total_time_min: " << to_ms(aggregated_statistics.ground_total_time_min) << " ms" << std::endl;
-    std::cout << "ground_total_time_max: " << to_ms(aggregated_statistics.ground_total_time_max) << " ms" << std::endl;
-    std::cout << "ground_total_time_median: " << to_ms(aggregated_statistics.ground_total_time_median) << " ms" << std::endl;
-    std::cout << "ground_seq_total_time: " << to_ms(workspace.statistics.ground_seq_total_time) << " ms" << std::endl;
-    std::cout << "merge_seq_total_time: " << to_ms(workspace.statistics.merge_seq_total_time) << " ms" << std::endl;
-    const auto total_time = (workspace.statistics.ground_seq_total_time + workspace.statistics.merge_seq_total_time).count();
-    const auto parallel_time = workspace.statistics.ground_seq_total_time.count();
-    std::cout << "parallel_fraction: " << ((total_time > 0) ? static_cast<double>(parallel_time) / total_time : 1.0) << std::endl;
-    const auto total_merges = workspace.statistics.num_merges_inserted + workspace.statistics.num_merges_discarded;
-    std::cout << "merge_fraction: " << ((total_merges > 0) ? static_cast<double>(workspace.statistics.num_merges_inserted) / total_merges : 1.0) << std::endl;
-
     workspace.d2p.clear();
 
     auto fluent_assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};

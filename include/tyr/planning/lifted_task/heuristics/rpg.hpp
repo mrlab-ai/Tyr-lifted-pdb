@@ -79,6 +79,8 @@ public:
                                                                 std::numeric_limits<float_t>::infinity();
     }
 
+    const datalog::ProgramWorkspace& get_workspace() const noexcept { return m_workspace; }
+
 protected:
     std::shared_ptr<LiftedTask> m_task;
 

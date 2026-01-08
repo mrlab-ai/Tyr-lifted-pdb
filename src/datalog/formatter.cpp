@@ -17,10 +17,13 @@
 
 #include "tyr/datalog/formatter.hpp"
 
+#include "tyr/common/chrono.hpp"
 #include "tyr/common/formatter.hpp"    // for to_string
 #include "tyr/datalog/assignment.hpp"  // for EdgeAssignment, VertexAssignment
 #include "tyr/datalog/consistency_graph.hpp"
 #include "tyr/datalog/formatter.hpp"
+#include "tyr/datalog/statistics/program.hpp"
+#include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <fmt/base.h>     // for vformat_to
@@ -71,6 +74,55 @@ std::ostream& print(std::ostream& os, const datalog::StaticConsistencyGraph& el)
     return os;
 }
 
+extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& el)
+{
+    const double parallel_ms = static_cast<double>(to_ms(el.parallel_time));
+    const double total_ms = static_cast<double>(to_ms(el.total_time));
+    const double frac = parallel_ms > 0.0 && total_ms > 0.0 ? parallel_ms / total_ms : 1.0;
+
+    fmt::print(os,
+               "[ProgramStatistics] T_par_region - wallclock time inside parallel region: {} ms\n"
+               "[ProgramStatistics] T_total - wallclock time total: {} ms\n"
+               "[ProgramStatistics] Parallel fraction: {:.2f}",
+               to_ms(el.parallel_time),
+               to_ms(el.total_time),
+               frac);
+
+    return os;
+}
+
+extern std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el)
+{
+    fmt::print(os,
+               "[RuleStatistics] Num executions: {}\n"
+               "[RuleStatistics] T_par_region - wallclock time inside parallel region: {} ms",
+               el.num_executions,
+               to_ms(el.parallel_time));
+
+    return os;
+}
+
+extern std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& el)
+{
+    const double parallel_max_ms = static_cast<double>(to_ms(el.parallel_time_max));
+    const double parallel_med_ms = static_cast<double>(to_ms(el.parallel_time_median));
+    const double skew = parallel_max_ms > 0.0 && parallel_med_ms > 0.0 ? parallel_max_ms / parallel_med_ms : 1.0;
+
+    fmt::print(os,
+               "[AggregatedRuleStatistics] Number of samples: {}\n"
+               "[AggregatedRuleStatistics] T_min_par_region - minimum wallclock time inside parallel region: {} ms\n"
+               "[AggregatedRuleStatistics] T_max_par_region - maximum wallclock time inside parallel region: {} ms\n"
+               "[AggregatedRuleStatistics] T_med_par_region - median wallclock time inside parallel region: {} ms\n"
+               "[AggregatedRuleStatistics] T_max_par_region / T_med_par_region - Skew: {:.2f}",
+               el.sample_count,
+               to_ms(el.parallel_time_min),
+               to_ms(el.parallel_time_max),
+               to_ms(el.parallel_time_median),
+               skew);
+
+    return os;
+}
+
 namespace datalog
 {
 namespace details
@@ -86,6 +138,12 @@ std::ostream& operator<<(std::ostream& os, const VertexAssignment& el) { return 
 std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el) { return print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph& el) { return print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const ProgramStatistics& el) { return print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const RuleStatistics& el) { return print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const AggregatedRuleStatistics& el) { return print(os, el); }
 
 }  // end namespace datalog
 }

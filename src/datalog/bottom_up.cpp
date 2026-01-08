@@ -343,7 +343,7 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP> ctx)
         ctx.scheduler.on_start_iteration();
 
         {
-            auto stopwatch = StopwatchScope(ctx.ctx.ws.statistics.ground_seq_total_time);
+            const auto program_stopwatch = StopwatchScope(ctx.ctx.ws.statistics.parallel_time);
 
             oneapi::tbb::parallel_for_each(active_rules.begin(),
                                            active_rules.end(),
@@ -351,7 +351,7 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP> ctx)
                                            {
                                                const auto i = uint_t(rule_index);
 
-                                               auto stopwatch = StopwatchScope(ctx.ctx.ws.rules[i].statistics.ground_total_time);
+                                               const auto rule_stopwatch = StopwatchScope(ctx.ctx.ws.rules[i].statistics.parallel_time);
                                                ++ctx.ctx.ws.rules[i].statistics.num_executions;
 
                                                auto generate_context = GenerateContext(rule_index, ctx.ctx.ws, ctx.ctx.cws, ctx.ctx.aps);
@@ -367,8 +367,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP> ctx)
         /// --- Sequentially combine results into a temporary staging repository to prevent modying the program's repository
 
         {
-            const auto stopwatch = StopwatchScope(ctx.ctx.ws.statistics.merge_seq_total_time);
-
             // Clear current bucket to avoid duplicate handling
             ctx.ctx.ws.cost_buckets.clear_current();
 
@@ -425,6 +423,8 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP> ctx)
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP>& ctx)
 {
+    const auto program_stopwatch = StopwatchScope(ctx.ws.statistics.total_time);
+
     ctx.on_solve_bottom_up();
 
     for (auto stratum_ctx : ctx.get_stratum_execution_contexts())

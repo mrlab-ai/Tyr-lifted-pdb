@@ -46,6 +46,9 @@ public:
 
     State<LiftedTask> get_state(StateIndex state_index);
 
+    const std::shared_ptr<StateRepository<LiftedTask>>& get_state_repository() const noexcept { return m_state_repository; }
+    const datalog::ProgramWorkspace& get_workspace() const noexcept { return m_workspace; }
+
 private:
     std::shared_ptr<LiftedTask> m_task;
 

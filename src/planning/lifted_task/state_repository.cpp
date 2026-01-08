@@ -67,7 +67,7 @@ State<LiftedTask> StateRepository<LiftedTask>::get_registered_state(StateIndex s
 
     auto unpacked_state = get_unregistered_state();
 
-    unpacked_state->get_index() = state_index;
+    unpacked_state->set(state_index);
     fill_atoms(packed_state.template get_atoms<f::FluentTag>(), m_uint_nodes, m_nodes_buffer, unpacked_state->template get_atoms<f::FluentTag>());
     fill_atoms(packed_state.template get_atoms<f::DerivedTag>(), m_uint_nodes, m_nodes_buffer, unpacked_state->template get_atoms<f::DerivedTag>());
     fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, m_nodes_buffer, unpacked_state->get_numeric_variables());

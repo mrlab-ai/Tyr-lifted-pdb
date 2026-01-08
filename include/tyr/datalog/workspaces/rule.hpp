@@ -20,6 +20,7 @@
 
 #include "tyr/datalog/consistency_graph.hpp"
 #include "tyr/datalog/kpkc_data.hpp"
+#include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
 
@@ -41,78 +42,7 @@ struct RuleIterationWorkspace
     IndexList<formalism::Object> binding;
     std::vector<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> heads;
 
-    struct Statistics
-    {
-        uint64_t num_executions = 0;
-        std::chrono::nanoseconds init_total_time { 0 };
-        std::chrono::nanoseconds ground_total_time { 0 };
-    } statistics;
-
-    struct AggregatedStatistics
-    {
-        std::chrono::nanoseconds init_total_time_min { 0 };
-        std::chrono::nanoseconds init_total_time_max { 0 };
-        std::chrono::nanoseconds init_total_time_median { 0 };
-
-        std::chrono::nanoseconds ground_total_time_min { 0 };
-        std::chrono::nanoseconds ground_total_time_max { 0 };
-        std::chrono::nanoseconds ground_total_time_median { 0 };
-    };
-
-    static AggregatedStatistics compute_aggregate_statistics(const std::vector<RuleIterationWorkspace>& contexts)
-    {
-        AggregatedStatistics result {};
-
-        std::vector<std::chrono::nanoseconds> init_times;
-        std::vector<std::chrono::nanoseconds> ground_times;
-
-        init_times.reserve(contexts.size());
-        ground_times.reserve(contexts.size());
-
-        // Collect samples
-        for (const auto& ctx : contexts)
-        {
-            if (ctx.statistics.num_executions == 0)
-                continue;
-
-            init_times.push_back(ctx.statistics.init_total_time);
-            ground_times.push_back(ctx.statistics.ground_total_time);
-        }
-
-        if (init_times.empty())
-            return result;  // all zero
-
-        // Sort for min/max/median
-        auto compute_stats = [](std::vector<std::chrono::nanoseconds>& v,
-                                std::chrono::nanoseconds& out_min,
-                                std::chrono::nanoseconds& out_max,
-                                std::chrono::nanoseconds& out_median)
-        {
-            std::sort(v.begin(), v.end(), [](auto a, auto b) { return a.count() < b.count(); });
-
-            out_min = v.front();
-            out_max = v.back();
-
-            size_t n = v.size();
-            if (n % 2 == 1)
-            {
-                out_median = v[n / 2];
-            }
-            else
-            {
-                // average two middle values
-                auto a = v[n / 2 - 1].count();
-                auto b = v[n / 2].count();
-                out_median = std::chrono::nanoseconds { (a + b) / 2 };
-            }
-        };
-
-        compute_stats(init_times, result.init_total_time_min, result.init_total_time_max, result.init_total_time_median);
-
-        compute_stats(ground_times, result.ground_total_time_min, result.ground_total_time_max, result.ground_total_time_median);
-
-        return result;
-    }
+    RuleStatistics statistics;
 
     RuleIterationWorkspace(const formalism::datalog::Repository& parent, const StaticConsistencyGraph& static_consistency_graph);
 

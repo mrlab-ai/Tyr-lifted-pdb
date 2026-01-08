@@ -133,6 +133,8 @@ std::ostream& print(std::ostream& os, const planning::State<planning::LiftedTask
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.get_index() << "\n";
+
         os << print_indent << "static atoms = " << make_view(static_atoms, context) << "\n";
 
         os << print_indent << "fluent atoms = " << make_view(fluent_atoms, context) << "\n";
@@ -230,17 +232,29 @@ std::ostream& print(std::ostream& os, const planning::State<planning::GroundTask
 std::ostream& print(std::ostream& os, const planning::Statistics& el)
 {
     fmt::print(os,
-               "[GBFS] Search time: {}ms\n"
-               "[GBFS] Number of generated states: {}\n"
-               "[GBFS] Number of expanded states: {}\n"
-               "[GBFS] Number of pruned states: {}",
+               "[Search] Search time: {} ms\n"
+               "[Search] Number of expanded states: {}\n"
+               "[Search] Number of generated states: {}\n"
+               "[Search] Number of pruned states: {}",
                el.get_search_time_ms().count(),
-               el.get_num_generated(),
                el.get_num_expanded(),
+               el.get_num_generated(),
                el.get_num_pruned());
 
     return os;
 }
+
+template<typename Task>
+std::ostream& print(std::ostream& os, const planning::Plan<Task>& el)
+{
+    for (const auto& labeled_node : el.get_labeled_succ_nodes())
+        os << std::make_pair(labeled_node.label, formalism::planning::PlanFormatting()) << "\n";
+
+    return os;
+}
+
+template std::ostream& print(std::ostream& os, const planning::Plan<planning::LiftedTask>& el);
+template std::ostream& print(std::ostream& os, const planning::Plan<planning::GroundTask>& el);
 
 namespace planning
 {
@@ -267,5 +281,15 @@ std::ostream& operator<<(std::ostream& os, const UnpackedState<GroundTask>& el) 
 std::ostream& operator<<(std::ostream& os, const State<GroundTask>& el) { return tyr::print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const Statistics& el) { return tyr::print(os, el); }
+
+template<typename Task>
+std::ostream& operator<<(std::ostream& os, const Plan<Task>& el)
+{
+    return tyr::print(os, el);
+}
+
+template std::ostream& operator<<(std::ostream& os, const Plan<LiftedTask>& el);
+template std::ostream& operator<<(std::ostream& os, const Plan<GroundTask>& el);
+
 }
 }

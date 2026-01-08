@@ -23,6 +23,12 @@
 namespace tyr
 {
 
+template<typename Rep, typename Period>
+[[nodiscard]] inline uint64_t to_ms(std::chrono::duration<Rep, Period> d) noexcept
+{
+    return std::chrono::duration_cast<std::chrono::duration<uint64_t, std::milli>>(d).count();
+}
+
 template<typename T>
 struct StopwatchScope
 {

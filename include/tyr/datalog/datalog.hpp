@@ -28,6 +28,8 @@
 #include "tyr/datalog/kpkc.hpp"
 #include "tyr/datalog/kpkc_data.hpp"
 #include "tyr/datalog/kpkc_utils.hpp"
+#include "tyr/datalog/statistics/program.hpp"
+#include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/datalog/workspaces/d2p.hpp"
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/datalog/workspaces/p2d.hpp"

@@ -77,7 +77,9 @@ void DefaultEventHandler<Task>::on_solved_impl(const Plan<Task>& plan) const
 {
     std::cout << "[GBFS] Plan found.\n"
               << "[GBFS] Plan cost: " << plan.get_cost() << "\n"
-              << "[GBFS] Plan length: " << plan.get_actions().size() << std::endl;
+              << "[GBFS] Plan length: " << plan.get_length() << std::endl;
+
+    std::cout << plan << std::endl;
 }
 
 template<typename Task>

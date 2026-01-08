@@ -44,26 +44,55 @@ int main(int argc, char** argv)
         std::exit(1);
     }
 
-    auto domain_filepath = program.get<std::string>("--domain-filepath");
-    auto problem_filepath = program.get<std::string>("--problem-filepath");
-    oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, program.get<std::size_t>("--num-worker-threads"));
-    auto verbosity = program.get<size_t>("--verbosity");
+    auto total_time = std::chrono::nanoseconds { 0 };
+    {
+        auto stop_watch = StopwatchScope(total_time);
 
-    auto parser = planning::Parser(domain_filepath);
-    auto domain = parser.get_domain();
+        auto domain_filepath = program.get<std::string>("--domain-filepath");
+        auto problem_filepath = program.get<std::string>("--problem-filepath");
+        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, program.get<std::size_t>("--num-worker-threads"));
+        auto verbosity = program.get<size_t>("--verbosity");
 
-    auto lifted_task = parser.parse_task(problem_filepath);
+        auto parser = planning::Parser(domain_filepath);
+        auto domain = parser.get_domain();
 
-    auto successor_generator = planning::SuccessorGenerator<planning::LiftedTask>(lifted_task);
+        auto lifted_task = parser.parse_task(problem_filepath);
 
-    auto options = planning::gbfs_lazy::Options<planning::LiftedTask>();
-    options.start_node = successor_generator.get_initial_node();
-    options.event_handler = planning::gbfs_lazy::DefaultEventHandler<planning::LiftedTask>::create(verbosity);
+        auto successor_generator = planning::SuccessorGenerator<planning::LiftedTask>(lifted_task);
 
-    auto ff_heuristic = std::make_shared<planning::FF>(lifted_task);
-    ff_heuristic->set_goal(lifted_task->get_task().get_goal());
+        auto options = planning::gbfs_lazy::Options<planning::LiftedTask>();
+        options.start_node = successor_generator.get_initial_node();
+        options.event_handler = planning::gbfs_lazy::DefaultEventHandler<planning::LiftedTask>::create(verbosity);
 
-    auto result = planning::gbfs_lazy::find_solution(*lifted_task, successor_generator, *ff_heuristic, options);
+        auto ff_heuristic = std::make_shared<planning::FF>(lifted_task);
+        ff_heuristic->set_goal(lifted_task->get_task().get_goal());
+
+        auto result = planning::gbfs_lazy::find_solution(*lifted_task, successor_generator, *ff_heuristic, options);
+
+        std::cout << "[Successor generator] Summary" << std::endl;
+        std::cout << successor_generator.get_workspace().statistics << std::endl;
+        auto successor_generator_rule_statistics = std::vector<datalog::RuleStatistics> {};
+        for (const auto& rule_ws : successor_generator.get_workspace().rules)
+            successor_generator_rule_statistics.push_back(rule_ws.statistics);
+        std::cout << datalog::compute_aggregated_rule_statistics(successor_generator_rule_statistics) << std::endl;
+
+        std::cout << "[Axiom evaluator] Summary" << std::endl;
+        std::cout << successor_generator.get_state_repository()->get_axiom_evaluator()->get_workspace().statistics << std::endl;
+        auto axiom_evaluator_rule_statistics = std::vector<datalog::RuleStatistics> {};
+        for (const auto& rule_ws : successor_generator.get_state_repository()->get_axiom_evaluator()->get_workspace().rules)
+            axiom_evaluator_rule_statistics.push_back(rule_ws.statistics);
+        std::cout << datalog::compute_aggregated_rule_statistics(axiom_evaluator_rule_statistics) << std::endl;
+
+        std::cout << "[FFHeuristic] Summary" << std::endl;
+        std::cout << ff_heuristic->get_workspace().statistics << std::endl;
+        auto ff_heuristic_rule_statistics = std::vector<datalog::RuleStatistics> {};
+        for (const auto& rule_ws : ff_heuristic->get_workspace().rules)
+            ff_heuristic_rule_statistics.push_back(rule_ws.statistics);
+        std::cout << datalog::compute_aggregated_rule_statistics(ff_heuristic_rule_statistics) << std::endl;
+    }
+
+    std::cout << "[Total] Peak memory usage: " << get_peak_memory_usage_in_bytes() << " bytes" << std::endl;
+    std::cout << "[Total] Total time: " << to_ms(total_time) << " ms" << std::endl;
 
     return 0;
 }

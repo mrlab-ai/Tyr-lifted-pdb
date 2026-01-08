@@ -29,22 +29,20 @@ template<typename Task>
 class Plan
 {
 private:
-    NodeList<Task> m_nodes;
-    IndexList<formalism::planning::GroundAction> m_actions;
-    float_t m_cost;
+    Node<Task> m_start_node;
+    LabeledNodeList<Task> m_labeled_succ_nodes;
 
 public:
-    Plan(NodeList<Task> nodes, IndexList<formalism::planning::GroundAction> actions, float_t cost) :
-        m_nodes(std::move(nodes)),
-        m_actions(std::move(actions)),
-        m_cost(cost)
+    Plan(Node<Task> start_node, LabeledNodeList<Task> labeled_succ_nodes) :
+        m_start_node(std::move(start_node)),
+        m_labeled_succ_nodes(std::move(labeled_succ_nodes))
     {
     }
 
-    const NodeList<Task>& get_nodes() const noexcept { return m_nodes; }
-    const IndexList<formalism::planning::GroundAction>& get_actions() const noexcept { return m_actions; }
-    float_t get_cost() const noexcept { return m_cost; }
-    size_t get_length() const noexcept { return m_actions.size(); }
+    const Node<Task>& get_start_node() const noexcept { return m_start_node; }
+    const LabeledNodeList<Task>& get_labeled_succ_nodes() const noexcept { return m_labeled_succ_nodes; }
+    float_t get_cost() const noexcept { return get_length() > 0 ? m_labeled_succ_nodes.back().node.get_metric() : 0.; }
+    size_t get_length() const noexcept { return m_labeled_succ_nodes.size(); }
 };
 }
 

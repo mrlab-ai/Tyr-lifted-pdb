@@ -22,6 +22,7 @@
 #include "tyr/common/hash.hpp"
 #include "tyr/datalog/program_context.hpp"
 #include "tyr/datalog/rule_scheduler.hpp"
+#include "tyr/datalog/statistics/program.hpp"
 #include "tyr/datalog/workspaces/d2p.hpp"
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/datalog/workspaces/p2d.hpp"
@@ -140,14 +141,7 @@ struct ProgramWorkspace
 
     CostBuckets cost_buckets;
 
-    struct Statistics
-    {
-        std::chrono::nanoseconds ground_seq_total_time { 0 };
-        std::chrono::nanoseconds merge_seq_total_time { 0 };
-
-        size_t num_merges_inserted { 0 };
-        size_t num_merges_discarded { 0 };
-    } statistics;
+    ProgramStatistics statistics;
 
     explicit ProgramWorkspace(ProgramContext& context, const ConstProgramWorkspace& cws);
 

@@ -49,6 +49,8 @@ public:
 
     State<LiftedTask> register_state(SharedObjectPoolPtr<UnpackedState<LiftedTask>> state);
 
+    const std::shared_ptr<AxiomEvaluator<LiftedTask>>& get_axiom_evaluator() const noexcept { return m_axiom_evaluator; }
+
 private:
     std::shared_ptr<LiftedTask> m_task;
 

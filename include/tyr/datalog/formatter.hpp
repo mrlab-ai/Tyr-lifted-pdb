@@ -36,6 +36,12 @@ extern std::ostream& print(std::ostream& os, const datalog::details::Edge& el);
 
 extern std::ostream& print(std::ostream& os, const datalog::StaticConsistencyGraph& el);
 
+extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& el);
+
+extern std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el);
+
+extern std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& el);
+
 namespace datalog
 {
 namespace details
@@ -50,6 +56,12 @@ extern std::ostream& operator<<(std::ostream& os, const VertexAssignment& el);
 extern std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el);
 
 extern std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph& el);
+
+extern std::ostream& operator<<(std::ostream& os, const ProgramStatistics& el);
+
+extern std::ostream& operator<<(std::ostream& os, const RuleStatistics& el);
+
+extern std::ostream& operator<<(std::ostream& os, const AggregatedRuleStatistics& el);
 }  // end namespace datalog
 }
 
