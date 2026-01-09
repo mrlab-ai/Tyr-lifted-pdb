@@ -104,21 +104,33 @@ extern std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el)
 
 extern std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& el)
 {
-    const double parallel_max_ms = static_cast<double>(to_ms(el.parallel_time_max));
-    const double parallel_med_ms = static_cast<double>(to_ms(el.parallel_time_median));
-    const double skew = parallel_max_ms > 0.0 && parallel_med_ms > 0.0 ? parallel_max_ms / parallel_med_ms : 1.0;
+    const double tot_parallel_max_ms = static_cast<double>(to_ms(el.tot_parallel_time_max));
+    const double tot_parallel_med_ms = static_cast<double>(to_ms(el.tot_parallel_time_median));
+    const double tot_skew = tot_parallel_max_ms > 0.0 && tot_parallel_med_ms > 0.0 ? tot_parallel_max_ms / tot_parallel_med_ms : 1.0;
+
+    const double avg_parallel_max_ns = static_cast<double>(el.avg_parallel_time_max.count());
+    const double avg_parallel_med_ns = static_cast<double>(el.avg_parallel_time_median.count());
+    const double avg_skew = avg_parallel_max_ns > 0.0 && avg_parallel_med_ns > 0.0 ? avg_parallel_max_ns / avg_parallel_med_ns : 1.0;
 
     fmt::print(os,
                "[AggregatedRuleStatistics] Number of samples: {}\n"
-               "[AggregatedRuleStatistics] T_min_par_region - minimum wallclock time inside parallel region: {} ms\n"
-               "[AggregatedRuleStatistics] T_max_par_region - maximum wallclock time inside parallel region: {} ms\n"
-               "[AggregatedRuleStatistics] T_med_par_region - median wallclock time inside parallel region: {} ms\n"
-               "[AggregatedRuleStatistics] T_max_par_region / T_med_par_region - Skew: {:.2f}",
+               "[AggregatedRuleStatistics] T_tot_min_par_region - minimum total wallclock time inside parallel region: {} ms\n"
+               "[AggregatedRuleStatistics] T_tot_max_par_region - maximum total wallclock time inside parallel region: {} ms\n"
+               "[AggregatedRuleStatistics] T_tot_med_par_region - median total wallclock time inside parallel region: {} ms\n"
+               "[AggregatedRuleStatistics] T_tot_max_par_region / T_tot_med_par_region - Total skew: {:.2f}\n"
+               "[AggregatedRuleStatistics] T_avg_min_par_region - minimum average wallclock time inside parallel region: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_max_par_region - maximum average wallclock time inside parallel region: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_med_par_region - median average wallclock time inside parallel region: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_max_par_region / T_avg_med_par_region - Average skew: {:.2f}",
                el.sample_count,
-               to_ms(el.parallel_time_min),
-               to_ms(el.parallel_time_max),
-               to_ms(el.parallel_time_median),
-               skew);
+               to_ms(el.tot_parallel_time_min),
+               to_ms(el.tot_parallel_time_max),
+               to_ms(el.tot_parallel_time_median),
+               tot_skew,
+               el.avg_parallel_time_min.count(),
+               el.avg_parallel_time_max.count(),
+               el.avg_parallel_time_median.count(),
+               avg_skew);
 
     return os;
 }

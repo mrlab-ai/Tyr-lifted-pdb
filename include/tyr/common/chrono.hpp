@@ -24,9 +24,15 @@ namespace tyr
 {
 
 template<typename Rep, typename Period>
+[[nodiscard]] inline std::chrono::microseconds::rep to_us(std::chrono::duration<Rep, Period> d) noexcept
+{
+    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+}
+
+template<typename Rep, typename Period>
 [[nodiscard]] inline std::chrono::milliseconds::rep to_ms(std::chrono::duration<Rep, Period> d) noexcept
 {
-    return std::chrono::duration_cast<std::chrono::duration<std::chrono::milliseconds::rep, std::milli>>(d).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
 }
 
 template<typename T>

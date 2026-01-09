@@ -18,7 +18,11 @@
 #ifndef TYR_DATALOG_STATISTICS_RULE_HPP_
 #define TYR_DATALOG_STATISTICS_RULE_HPP_
 
+#include <algorithm>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <vector>
 
 namespace tyr::datalog
 {
@@ -31,9 +35,12 @@ struct RuleStatistics
 struct AggregatedRuleStatistics
 {
     size_t sample_count { 0 };
-    std::chrono::nanoseconds parallel_time_min { 0 };
-    std::chrono::nanoseconds parallel_time_max { 0 };
-    std::chrono::nanoseconds parallel_time_median { 0 };
+    std::chrono::nanoseconds tot_parallel_time_min { 0 };
+    std::chrono::nanoseconds tot_parallel_time_max { 0 };
+    std::chrono::nanoseconds tot_parallel_time_median { 0 };
+    std::chrono::nanoseconds avg_parallel_time_min { 0 };
+    std::chrono::nanoseconds avg_parallel_time_max { 0 };
+    std::chrono::nanoseconds avg_parallel_time_median { 0 };
 };
 
 inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::vector<datalog::RuleStatistics>& rules)
@@ -42,12 +49,15 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
 
     std::vector<std::chrono::nanoseconds> samples;
     samples.reserve(rules.size());
+    std::vector<std::chrono::nanoseconds> avg_samples;
+    avg_samples.reserve(rules.size());
 
     for (const auto& rs : rules)
     {
         if (rs.num_executions == 0)
             continue;
         samples.push_back(rs.parallel_time);
+        avg_samples.push_back(rs.parallel_time / rs.num_executions);
     }
 
     result.sample_count = samples.size();
@@ -55,20 +65,32 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
         return result;
 
     std::sort(samples.begin(), samples.end(), [](auto a, auto b) { return a.count() < b.count(); });
+    std::sort(avg_samples.begin(), avg_samples.end(), [](auto a, auto b) { return a.count() < b.count(); });
 
-    result.parallel_time_min = samples.front();
-    result.parallel_time_max = samples.back();
+    result.tot_parallel_time_min = samples.front();
+    result.tot_parallel_time_max = samples.back();
+
+    result.avg_parallel_time_min = avg_samples.front();
+    result.avg_parallel_time_max = avg_samples.back();
 
     const std::size_t n = samples.size();
     if (n % 2 == 1)
     {
-        result.parallel_time_median = samples[n / 2];
+        result.tot_parallel_time_median = samples[n / 2];
+        result.avg_parallel_time_median = avg_samples[n / 2];
     }
     else
     {
-        const auto a = samples[n / 2 - 1].count();
-        const auto b = samples[n / 2].count();
-        result.parallel_time_median = std::chrono::nanoseconds { (a + b) / 2 };
+        {
+            const auto a = samples[n / 2 - 1].count();
+            const auto b = samples[n / 2].count();
+            result.tot_parallel_time_median = std::chrono::nanoseconds { (a + b) / 2 };
+        }
+        {
+            const auto a = avg_samples[n / 2 - 1].count();
+            const auto b = avg_samples[n / 2].count();
+            result.avg_parallel_time_median = std::chrono::nanoseconds { (a + b) / 2 };
+        }
     }
 
     return result;

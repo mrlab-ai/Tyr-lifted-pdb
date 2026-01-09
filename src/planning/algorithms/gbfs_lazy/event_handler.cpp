@@ -85,11 +85,13 @@ void DefaultEventHandler<Task>::on_solved_impl(const Plan<Task>& plan) const
 template<typename Task>
 void DefaultEventHandler<Task>::on_unsolvable_impl() const
 {
+    std::cout << "[GBFS] Task is unsolvable!" << std::endl;
 }
 
 template<typename Task>
 void DefaultEventHandler<Task>::on_exhausted_impl() const
 {
+    std::cout << "[GBFS] Task is unsolvable!" << std::endl;
 }
 
 template<typename Task>
