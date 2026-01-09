@@ -17,6 +17,7 @@
 
 #include <argparse/argparse.hpp>
 #include <chrono>
+#include <fstream>
 #include <queue>
 #include <tyr/tyr.hpp>
 
@@ -27,6 +28,7 @@ int main(int argc, char** argv)
     auto program = argparse::ArgumentParser("Lazy GBFS search.");
     program.add_argument("-D", "--domain-filepath").required().help("The path to the PDDL domain file.");
     program.add_argument("-P", "--problem-filepath").required().help("The path to the PDDL problem file.");
+    program.add_argument("-O", "--plan-filepath").default_value(std::string("plan.out")).help("The path to the output plan file.");
     program.add_argument("-N", "--num-worker-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of worker threads.");
     program.add_argument("-V", "--verbosity")
         .default_value(size_t(0))
@@ -50,6 +52,7 @@ int main(int argc, char** argv)
 
         auto domain_filepath = program.get<std::string>("--domain-filepath");
         auto problem_filepath = program.get<std::string>("--problem-filepath");
+        auto plan_filepath = program.get<std::string>("--plan-filepath");
         oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, program.get<std::size_t>("--num-worker-threads"));
         auto verbosity = program.get<size_t>("--verbosity");
 
@@ -68,6 +71,19 @@ int main(int argc, char** argv)
         ff_heuristic->set_goal(lifted_task->get_task().get_goal());
 
         auto result = planning::gbfs_lazy::find_solution(*lifted_task, successor_generator, *ff_heuristic, options);
+
+        if (result.status == planning::SearchStatus::SOLVED)
+        {
+            std::ofstream plan_file;
+            plan_file.open(plan_filepath);
+            if (!plan_file.is_open())
+            {
+                std::cerr << "Error opening file!" << std::endl;
+                return 1;
+            }
+            plan_file << result.plan.value();
+            plan_file.close();
+        }
 
         std::cout << "[Successor generator] Summary" << std::endl;
         std::cout << successor_generator.get_workspace().statistics << std::endl;

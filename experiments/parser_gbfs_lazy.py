@@ -5,11 +5,11 @@ from lab import tools
 
 import re
 
+def process_invalid(content, props):
+    props["invalid"] = int("invalid" in props)
+
 def process_unsolvable(content, props):
-    if props.get("unsolvable", False):
-        props["unsolvable"] = 1
-    else:
-        props["unsolvable"] = 0
+    props["unsolvable"] = int("unsolvable" in props)
 
 def add_coverage(content, props):
     if "plan_length" in props or props.get("unsolvable", 0):
@@ -209,7 +209,7 @@ class GBFSLazyParser(Parser):
         super().__init__()
         self.add_pattern("plan_cost", r"\[GBFS\] Plan cost: (\d+)", type=int)
         self.add_pattern("plan_length", r"\[GBFS\] Plan length: (\d+)", type=int)
-        self.add_pattern("unsolvable", r"\[GBFS\] (Task is unsolvable!)", type=bool)
+        
 
         self.add_pattern("search_time_ms", r"\[Search\] Search time: (\d+) ms", type=int)
         self.add_pattern("expansions", r"\[Search\] Number of expanded states: (\d+)", type=int)
@@ -217,7 +217,11 @@ class GBFSLazyParser(Parser):
 
         self.add_pattern("total_time_ms", r"\[Total\] Total time: (\d+) ms", type=int)
         self.add_pattern("peak_memory_usage_bytes", r"\[Total\] Peak memory usage: (\d+) bytes", type=int)
+
+        self.add_pattern("unsolvable", r"(Task is unsolvable!)", type=str)
+        self.add_pattern("invalid", r"(Plan invalid)", type=str)
         
+        self.add_function(process_invalid)
         self.add_function(process_unsolvable)
         self.add_function(add_coverage)
         self.add_function(parse_datalog_summaries)

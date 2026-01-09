@@ -769,12 +769,10 @@ std::ostream& print(std::ostream& os, const View<Index<formalism::planning::Grou
 template<formalism::planning::Context C>
 std::ostream& print(std::ostream& os, const std::pair<View<Index<formalism::planning::GroundAction>, C>, formalism::planning::PlanFormatting>& el)
 {
-    fmt::print(os, "{}(", to_string(el.first.get_action().get_name()));
+    fmt::print(os, "({}", to_string(el.first.get_action().get_name()));
     for (size_t i = 0; i < el.first.get_action().get_original_arity(); ++i)
     {
-        if (i)
-            os << " ";
-        os << el.first.get_binding().get_objects()[i];
+        os << " " << el.first.get_binding().get_objects()[i];
     }
     fmt::print(os, ")");
 

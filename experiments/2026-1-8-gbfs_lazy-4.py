@@ -94,6 +94,10 @@ ATTRIBUTES = [
     # GBFS Lazy
     "plan_cost",
     "plan_length",
+    "unsolvable",
+
+    # VAL
+    "invalid",
 
     # Search
     "search_time_ms",
@@ -157,6 +161,7 @@ exp.add_parser(GBFSLazyParser())
 PLANNER_DIR = REPO / "build" / "exe" / "gbfs_lazy"
 
 exp.add_resource("planner_exe", PLANNER_DIR)
+exp.add_resource("run_planner", DIR / "gbfs_lazy.sh")
 
 for prefix, SUITE in SUITES:
     for task in suites.build_suite(BENCHMARKS_DIR / prefix, SUITE):
@@ -166,14 +171,13 @@ for prefix, SUITE in SUITES:
             run.add_resource("problem", task.problem_file, symlink=True)
 
             run.add_command(
-                f"gbfs-lazy-ff-{NUM_THREADS}",
+                f"run_planner-gbfs-lazy-ff-{NUM_THREADS}",
                 [
-                    "./{planner_exe}", 
-                    "-D",
+                    "{run_planner}", 
+                    "{planner_exe}", 
                     "{domain}", 
-                    "-P",
-                    "{problem}", 
-                    "-N", 
+                    "{problem}",
+                    "plan.out",
                     str(NUM_THREADS)
                 ],
                 TIME_LIMIT,
