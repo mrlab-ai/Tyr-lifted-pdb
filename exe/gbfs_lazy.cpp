@@ -61,6 +61,12 @@ int main(int argc, char** argv)
 
         auto lifted_task = parser.parse_task(problem_filepath);
 
+        if (verbosity > 0)
+            std::cout << *domain << std::endl;
+
+        if (verbosity > 0)
+            std::cout << *lifted_task << std::endl;
+
         auto successor_generator = planning::SuccessorGenerator<planning::LiftedTask>(lifted_task);
 
         auto options = planning::gbfs_lazy::Options<planning::LiftedTask>();
