@@ -44,6 +44,7 @@ public:
         m_task(std::move(task)),
         m_workspace(m_task->get_rpg_program().get_program_context(), m_task->get_rpg_program().get_const_program_workspace())
     {
+        std::cout << "RPGBase::RPGBase" << std::endl;
     }
 
     void set_goal(View<Index<formalism::planning::GroundConjunctiveCondition>, formalism::OverlayRepository<formalism::planning::Repository>> goal) override
@@ -65,8 +66,6 @@ public:
         m_workspace.p2d.clear();
 
         insert_fluent_atoms_to_fact_set(state.get_unpacked_state().get_atoms<formalism::FluentTag>(), *m_task->get_repository(), m_workspace);
-
-        insert_fact_sets_into_assignment_sets(m_workspace, m_task->get_rpg_program().get_const_program_workspace());
 
         auto ctx = datalog::ProgramExecutionContext(m_workspace,
                                                     m_task->get_rpg_program().get_const_program_workspace(),

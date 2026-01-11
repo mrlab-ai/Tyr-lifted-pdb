@@ -18,10 +18,13 @@
 #include "tyr/datalog/delta_kpkc.hpp"
 
 #include "tyr/common/formatter.hpp"
+#include "tyr/formalism/formalism.hpp"
+#include "tyr/planning/planning.hpp"
 
 #include <gtest/gtest.h>
 
 namespace d = tyr::datalog;
+namespace p = tyr::planning;
 
 namespace tyr::tests
 {

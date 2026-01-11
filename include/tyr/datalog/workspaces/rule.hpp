@@ -19,7 +19,7 @@
 #define TYR_DATALOG_WORKSPACES_RULE_HPP_
 
 #include "tyr/datalog/consistency_graph.hpp"
-#include "tyr/datalog/kpkc_data.hpp"
+#include "tyr/datalog/delta_kpkc.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/overlay_repository.hpp"
@@ -31,8 +31,7 @@ namespace tyr::datalog
 {
 struct RuleIterationWorkspace
 {
-    kpkc::DenseKPartiteGraph consistency_graph;
-    kpkc::Workspace kpkc_workspace;
+    DeltaKPKC kpkc;
 
     /// Merge stage into rule execution context
     std::shared_ptr<formalism::datalog::Repository> repository;

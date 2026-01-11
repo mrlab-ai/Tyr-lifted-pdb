@@ -190,6 +190,7 @@ public:
 
     size_t size() const noexcept { return m_set.size(); }
     const PerfectAssignmentHash& get_hash() const noexcept { return m_hash; }
+    const boost::dynamic_bitset<>& get_set() const noexcept { return m_set; }
 };
 
 template<formalism::FactKind T>
@@ -209,12 +210,12 @@ public:
         /* Validate inputs. */
         for (uint_t i = 0; i < predicates.size(); ++i)
         {
-            assert(predicates[i].get_index().get_value() == i);
+            assert(uint_t(predicates[i].get_index()) == i);
         }
 
         /* Initialize sets. */
         for (const auto predicate : predicates)
-            m_sets.emplace_back(PredicateAssignmentSet<T>(predicate, predicate_domains[predicate.get_index().get_value()], num_objects));
+            m_sets.emplace_back(PredicateAssignmentSet<T>(predicate, predicate_domains[uint_t(predicate.get_index())], num_objects));
     }
 
     void reset() noexcept
@@ -226,20 +227,23 @@ public:
     void insert(View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atoms)
     {
         for (const auto ground_atom : ground_atoms)
-            m_sets[ground_atom.get_predicate().get_index().get_value()].insert(ground_atom);
+            insert(ground_atom);
     }
 
     void insert(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atom)
     {
-        m_sets[ground_atom.get_predicate().get_index().get_value()].insert(ground_atom);
+        std::cout << "Insert: " << ground_atom << std::endl;
+        m_sets[uint_t(ground_atom.get_predicate().get_index())].insert(ground_atom);
     }
 
-    const PredicateAssignmentSet<T>& get_set(Index<formalism::Predicate<T>> index) const noexcept { return m_sets[index.get_value()]; }
+    const PredicateAssignmentSet<T>& get_set(Index<formalism::Predicate<T>> index) const noexcept { return m_sets[uint_t(index)]; }
 
     size_t size() const noexcept
     {
         return std::accumulate(m_sets.begin(), m_sets.end(), size_t { 0 }, [](auto&& lhs, auto&& rhs) { return lhs + rhs.size(); });
     }
+
+    const auto& get_sets() const noexcept { return m_sets; }
 };
 
 template<formalism::FactKind T>
@@ -394,6 +398,7 @@ struct TaggedAssignmentSets
                          const TaggedFactSets<T>& fact_sets) :
         TaggedAssignmentSets(predicates, functions, predicate_domains, function_domains, num_objects)
     {
+        std::cout << "TaggedAssignmentSets::TaggedAssignmentSets" << std::endl;
         insert(fact_sets);
     }
 

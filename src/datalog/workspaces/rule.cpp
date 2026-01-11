@@ -18,7 +18,6 @@
 #include "tyr/datalog/workspaces/rule.hpp"
 
 #include "tyr/datalog/assignment_sets.hpp"
-#include "tyr/datalog/kpkc_utils.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -37,8 +36,7 @@ namespace tyr::datalog
  */
 
 RuleIterationWorkspace::RuleIterationWorkspace(const formalism::datalog::Repository& parent, const StaticConsistencyGraph& static_consistency_graph) :
-    consistency_graph(datalog::kpkc::allocate_dense_graph(static_consistency_graph)),
-    kpkc_workspace(datalog::kpkc::allocate_workspace(static_consistency_graph)),
+    kpkc(static_consistency_graph),
     repository(std::make_shared<fd::Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
     overlay_repository(parent, *repository),
     binding(),
@@ -55,7 +53,7 @@ void RuleIterationWorkspace::clear() noexcept
 
 void RuleIterationWorkspace::initialize(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets)
 {
-    datalog::kpkc::initialize_dense_graph_and_workspace(static_consistency_graph, assignment_sets, consistency_graph, kpkc_workspace);
+    kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
 }
 
 /**

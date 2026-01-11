@@ -155,14 +155,7 @@ void insert_fact_sets_into_assignment_sets(datalog::ProgramWorkspace& ws, const 
     auto& fluent_fact_sets = ws.facts.fact_sets;
     auto& fluent_assignment_sets = ws.facts.assignment_sets;
 
-    /// --- Initialize AssignmentSets
     fluent_assignment_sets.insert(fluent_fact_sets);
-
-    const auto assignment_sets = datalog::AssignmentSets(cws.facts.assignment_sets, fluent_assignment_sets);
-
-    /// --- Initialize RuleExecutionContext
-    for (uint_t i = 0; i < ws.rules.size(); ++i)
-        ws.rules[i].initialize(cws.rules[i].static_consistency_graph, assignment_sets);
 }
 
 void insert_extended_state(const UnpackedState<LiftedTask>& unpacked_state,

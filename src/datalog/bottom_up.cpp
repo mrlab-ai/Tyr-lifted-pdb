@@ -29,10 +29,9 @@
 #include "tyr/datalog/assignment_sets.hpp"    // for AssignmentSets
 #include "tyr/datalog/consistency_graph.hpp"  // for Vertex
 #include "tyr/datalog/declarations.hpp"
+#include "tyr/datalog/delta_kpkc.hpp"  // for Works...
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/formatter.hpp"
-#include "tyr/datalog/kpkc.hpp"            // for for_e...
-#include "tyr/datalog/kpkc_data.hpp"       // for Works...
 #include "tyr/datalog/rule_scheduler.hpp"  // for RuleSchedulerStratum
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
@@ -175,7 +174,10 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void generate_unary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
-    for (const auto vertex_index : rctx.ws_rule.kpkc_workspace.consistent_vertices_vec)
+    const auto& consistent_vertices = rctx.ws_rule.kpkc.get_delta_graph().vertices;
+
+    for (auto vertex_index = consistent_vertices.find_first(); vertex_index != boost::dynamic_bitset<>::npos;
+         vertex_index = consistent_vertices.find_next(vertex_index))
     {
         const auto head_index = create_unary_ground_head_in_delta(vertex_index,
                                                                   rctx.cws_rule.static_consistency_graph,
@@ -217,11 +219,15 @@ void generate_unary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
-    kpkc::for_each_k_clique(
-        rctx.ws_rule.consistency_graph,
-        rctx.ws_rule.kpkc_workspace,
+    std::cout << rctx.cws_rule.get_rule() << std::endl;
+
+    rctx.ws_rule.kpkc.for_each_new_k_clique(
         [&](auto&& clique)
         {
+            std::cout << "Clique: ";
+            print(std::cout, clique);
+            std::cout << std::endl;
+
             const auto head_index = create_general_ground_head_in_delta(clique,
                                                                         rctx.cws_rule.static_consistency_graph,
                                                                         rctx.cws_rule.get_rule().get_head(),
@@ -284,7 +290,13 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 
     while (true)
     {
-        // std::cout << "Cost: " << ws.cost_buckets.current_cost() << std::endl;
+        std::cout << "Cost: " << ctx.ctx.ws.cost_buckets.current_cost() << std::endl;
+
+        std::cout << "Assignment sets: " << std::endl;
+        for (const auto& set : ctx.ctx.ws.facts.assignment_sets.predicate.get_sets())
+        {
+            std::cout << set.get_set() << std::endl;
+        }
 
         // Check whether min cost for goal was proven.
         if (ctx.ctx.tp.check())
@@ -369,6 +381,8 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                     // Update fact sets
                     ctx.ctx.ws.facts.fact_sets.predicate.insert(head);
                     ctx.ctx.ws.facts.assignment_sets.predicate.insert(head);
+
+                    std::cout << "Discovered fact: " << head << std::endl;
                 }
             }
         }

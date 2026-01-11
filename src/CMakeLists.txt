@@ -37,7 +37,6 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     datalog/delta_kpkc.cpp
     datalog/fact_set.cpp
     datalog/formatter.cpp
-    datalog/kpkc_utils.cpp
     datalog/rule_scheduler.cpp
 
     planning/ground_task/axiom_evaluator.cpp
