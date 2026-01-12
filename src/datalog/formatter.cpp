@@ -80,6 +80,8 @@ extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& e
     const double total_ms = static_cast<double>(to_ms(el.total_time));
     const double frac = parallel_ms > 0.0 && total_ms > 0.0 ? parallel_ms / total_ms : 1.0;
 
+    const auto avg_total = el.num_executions > 0 ? to_us(el.total_time) / el.num_executions : 0.0;
+
     fmt::print(os,
                "[ProgramStatistics] Num executions: {}\n"
                "[ProgramStatistics] T_par_region - wallclock time inside parallel region: {} ms\n"
@@ -89,7 +91,7 @@ extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& e
                el.num_executions,
                to_ms(el.parallel_time),
                to_ms(el.total_time),
-               to_us(el.total_time) / el.num_executions,
+               avg_total,
                frac);
 
     return os;
