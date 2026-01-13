@@ -245,6 +245,22 @@ void generate_unary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 }
 
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
+bool ensure_general_applicability(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
+{
+    const auto ground_rule = make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iteration).first, rctx.ws_rule.overlay_repository);
+
+    const auto applicable = is_applicable(ground_rule, rctx.fact_sets);
+
+    if (!applicable)
+    {
+        std::cout << "Delta-KPKC generated false positive." << std::endl;
+        std::cout << ground_rule << std::endl;
+    }
+
+    return applicable;
+}
+
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
     rctx.ws_rule.kpkc.for_each_new_k_clique(
@@ -266,8 +282,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                 && is_valid_binding(rctx.cws_rule.get_binary_conflicting_overapproximation_condition(), rctx.fact_sets, rctx.ground_context_iteration))
             {
                 // Ensure that ground rule is truly applicable
-                assert(is_applicable(make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iteration).first, rctx.ws_rule.overlay_repository),
-                                     rctx.fact_sets));
+                assert(ensure_general_applicability(rctx));
 
                 // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
 

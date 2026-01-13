@@ -140,6 +140,7 @@ void insert_numeric_variables_to_fact_set(const std::vector<float_t>& numeric_va
     for (uint_t i = 0; i < numeric_variables.size(); ++i)
     {
         if (!std::isnan(numeric_variables[i]))
+        {
             ws.facts.fact_sets.function.insert(
                 make_view(formalism::planning::merge_p2d(
                               make_view(Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>(i), numeric_variables_context),
@@ -147,6 +148,7 @@ void insert_numeric_variables_to_fact_set(const std::vector<float_t>& numeric_va
                               .first,
                           merge_context.destination),
                 numeric_variables[i]);
+        }
     }
 }
 
