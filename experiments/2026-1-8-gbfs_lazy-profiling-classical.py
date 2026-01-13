@@ -62,11 +62,9 @@ if REMOTE:
         ("ipc2023-learning", SUITE_IPC_LEARNING),
         ("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS),
         ("htg-domains/flat", SUITE_HTG),
-        ("ipc2023-numeric", SUITE_IPC2023_NUMERIC),
         ("pushworld", SUITE_PUSHWORLD),
         ("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
         ("mine-pddl", SUITE_MINEPDDL),
-        ("mine-pddl-numeric", SUITE_MINEPDDL)
     ]
     TIME_LIMIT = 5 * 60
 else:
@@ -79,11 +77,9 @@ else:
         #("ipc2023-learning", SUITE_IPC_LEARNING_TEST),
         #("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS_TEST),
         #("htg-domains/flat", SUITE_HTG_TEST),
-        #("ipc2023-numeric", SUITE_IPC2023_NUMERIC_TEST),
         #("pushworld", SUITE_PUSHWORLD_TEST),
         #("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC_TEST),
         #("mine-pddl", SUITE_MINEPDDL_TEST),
-        #("mine-pddl-numeric", SUITE_MINEPDDL_TEST)
     ]
     TIME_LIMIT = 5
 
