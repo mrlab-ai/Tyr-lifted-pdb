@@ -22,19 +22,18 @@
 #include <concepts>
 #include <memory>
 #include <mutex>
-#include <stack>
 #include <vector>
 
 namespace tyr
 {
-template<typename T>
+template<typename T, bool ThreadSafe = false>
 class UniqueObjectPool;
 
-template<typename T>
+template<typename T, bool ThreadSafe = false>
 class UniqueObjectPoolPtr
 {
 private:
-    UniqueObjectPool<T>* m_pool;
+    UniqueObjectPool<T, ThreadSafe>* m_pool;
     T* m_entry;
 
 private:
@@ -56,9 +55,9 @@ private:
     }
 
 public:
-    UniqueObjectPoolPtr() noexcept : UniqueObjectPoolPtr(nullptr, nullptr) {}
+    UniqueObjectPoolPtr() noexcept : UniqueObjectPoolPtr<T, ThreadSafe>(nullptr, nullptr) {}
 
-    UniqueObjectPoolPtr(UniqueObjectPool<T>* pool, T* object) noexcept : m_pool(pool), m_entry(object) {}
+    UniqueObjectPoolPtr(UniqueObjectPool<T, ThreadSafe>* pool, T* object) noexcept : m_pool(pool), m_entry(object) {}
 
     UniqueObjectPoolPtr(const UniqueObjectPoolPtr& other) = delete;
 
@@ -126,28 +125,22 @@ public:
 };
 
 template<typename T>
-class UniqueObjectPool
+class UniqueObjectPool<T, true>
 {
 private:
     std::vector<std::unique_ptr<T>> m_storage;
-    std::stack<T*> m_stack;
+    std::vector<T*> m_stack;
     mutable std::mutex m_mutex;
 
-    template<typename... Args>
     void allocate()
     {
         m_storage.push_back(std::make_unique<T>());
-        m_stack.push(m_storage.back().get());
+        m_stack.push_back(m_storage.back().get());
     }
 
-    void free(T* element)
-    {
-        std::lock_guard<std::mutex> lg(m_mutex);
+    void free(T* element) { m_stack.push_back(element); }
 
-        m_stack.push(element);
-    }
-
-    friend class UniqueObjectPoolPtr<T>;
+    friend class UniqueObjectPoolPtr<T, true>;
 
 public:
     // Non-copyable to prevent dangling memory pool pointers.
@@ -157,28 +150,28 @@ public:
     UniqueObjectPool(UniqueObjectPool&& other) noexcept = delete;
     UniqueObjectPool& operator=(UniqueObjectPool&& other) noexcept = delete;
 
-    [[nodiscard]] UniqueObjectPoolPtr<T> get_or_allocate()
+    [[nodiscard]] UniqueObjectPoolPtr<T, true> get_or_allocate()
     {
         std::lock_guard<std::mutex> lg(m_mutex);
 
         if (m_stack.empty())
             allocate();
-        T* element = m_stack.top();
-        m_stack.pop();
-        return UniqueObjectPoolPtr<T>(this, element);
+        T* element = m_stack.back();
+        m_stack.pop_back();
+        return UniqueObjectPoolPtr<T, true>(this, element);
     }
 
     template<typename... Args>
-    [[nodiscard]] UniqueObjectPoolPtr<T> get_or_allocate(Args&&... args)
+    [[nodiscard]] UniqueObjectPoolPtr<T, true> get_or_allocate(Args&&... args)
     {
         std::lock_guard<std::mutex> lg(m_mutex);
 
         if (m_stack.empty())
             allocate();
-        T* element = m_stack.top();
-        m_stack.pop();
+        T* element = m_stack.back();
+        m_stack.pop_back();
         element->initialize(std::forward<Args>(args)...);
-        return UniqueObjectPoolPtr<T>(this, element);
+        return UniqueObjectPoolPtr<T, true>(this, element);
     }
 
     [[nodiscard]] size_t get_size() const noexcept
@@ -194,6 +187,56 @@ public:
 
         return m_stack.size();
     }
+};
+
+template<typename T>
+class UniqueObjectPool<T, false>
+{
+private:
+    std::vector<std::unique_ptr<T>> m_storage;
+    std::vector<T*> m_stack;
+
+    void allocate()
+    {
+        m_storage.push_back(std::make_unique<T>());
+        m_stack.push_back(m_storage.back().get());
+    }
+
+    void free(T* element) { m_stack.push_back(element); }
+
+    friend class UniqueObjectPoolPtr<T, false>;
+
+public:
+    // Non-copyable to prevent dangling memory pool pointers.
+    UniqueObjectPool() noexcept = default;
+    UniqueObjectPool(const UniqueObjectPool& other) = delete;
+    UniqueObjectPool& operator=(const UniqueObjectPool& other) = delete;
+    UniqueObjectPool(UniqueObjectPool&& other) noexcept = delete;
+    UniqueObjectPool& operator=(UniqueObjectPool&& other) noexcept = delete;
+
+    [[nodiscard]] UniqueObjectPoolPtr<T, false> get_or_allocate()
+    {
+        if (m_stack.empty())
+            allocate();
+        T* element = m_stack.back();
+        m_stack.pop_back();
+        return UniqueObjectPoolPtr<T, false>(this, element);
+    }
+
+    template<typename... Args>
+    [[nodiscard]] UniqueObjectPoolPtr<T, false> get_or_allocate(Args&&... args)
+    {
+        if (m_stack.empty())
+            allocate();
+        T* element = m_stack.back();
+        m_stack.pop_back();
+        element->initialize(std::forward<Args>(args)...);
+        return UniqueObjectPoolPtr<T, false>(this, element);
+    }
+
+    [[nodiscard]] size_t get_size() const noexcept { return m_storage.size(); }
+
+    [[nodiscard]] size_t get_num_free() const noexcept { return m_stack.size(); }
 };
 
 }

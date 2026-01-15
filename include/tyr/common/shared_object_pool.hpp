@@ -22,7 +22,6 @@
 #include <cassert>
 #include <memory>
 #include <mutex>
-#include <stack>
 #include <utility>
 #include <vector>
 
@@ -33,11 +32,14 @@ namespace tyr
  * A thread-safe shared object pool
  */
 
-template<typename T>
+template<typename T, bool ThreadSafe = false>
 class SharedObjectPool;
 
+template<typename T, bool ThreadSafe = false>
+struct SharedObjectPoolEntry;
+
 template<typename T>
-struct SharedObjectPoolEntry
+struct SharedObjectPoolEntry<T, true>
 {
     std::atomic_size_t refcount;
     T object;
@@ -48,15 +50,44 @@ struct SharedObjectPoolEntry
     explicit SharedObjectPoolEntry(Args&&... args) : refcount(0), object(std::forward<Args>(args)...)
     {
     }
+
+    template<typename... Args>
+    void initialize(Args&&... args)
+    {
+        object.initialize(std::forward<Args>(args)...);
+    }
 };
 
 template<typename T>
-class SharedObjectPoolPtr
+struct SharedObjectPoolEntry<T, false>
+{
+    size_t refcount;
+    T object;
+
+    SharedObjectPoolEntry() : refcount(0), object() {}
+
+    template<typename... Args>
+    explicit SharedObjectPoolEntry(Args&&... args) : refcount(0), object(std::forward<Args>(args)...)
+    {
+    }
+
+    template<typename... Args>
+    void initialize(Args&&... args)
+    {
+        object.initialize(std::forward<Args>(args)...);
+    }
+};
+
+template<typename T, bool ThreadSafe = false>
+class SharedObjectPoolPtr;
+
+template<typename T>
+class SharedObjectPoolPtr<T, true>
 {
 private:
-    using Entry = SharedObjectPoolEntry<T>;
+    using Entry = SharedObjectPoolEntry<T, true>;
 
-    SharedObjectPool<T>* m_pool;
+    SharedObjectPool<T, true>* m_pool;
     Entry* m_entry;
 
 private:
@@ -100,7 +131,7 @@ private:
 public:
     SharedObjectPoolPtr() noexcept : SharedObjectPoolPtr(nullptr, nullptr) {}
 
-    SharedObjectPoolPtr(SharedObjectPool<T>* pool, Entry* object) noexcept : m_pool(pool), m_entry(object)
+    SharedObjectPoolPtr(SharedObjectPool<T, true>* pool, Entry* object) noexcept : m_pool(pool), m_entry(object)
     {
         if (m_pool && m_entry)
             inc_ref_count();
@@ -197,30 +228,173 @@ public:
 };
 
 template<typename T>
-class SharedObjectPool
+class SharedObjectPoolPtr<T, false>
 {
 private:
-    using Entry = SharedObjectPoolEntry<T>;
+    using Entry = SharedObjectPoolEntry<T, false>;
+
+    SharedObjectPool<T, false>* m_pool;
+    Entry* m_entry;
+
+private:
+    void deallocate()
+    {
+        assert(m_pool && m_entry);
+
+        m_pool->free(m_entry);
+        m_pool = nullptr;
+        m_entry = nullptr;
+    }
+
+    Entry* release() noexcept
+    {
+        Entry* temp = m_entry;
+        m_entry = nullptr;
+        m_pool = nullptr;
+        return temp;
+    }
+
+    void inc_ref_count() noexcept
+    {
+        assert(m_entry);
+
+        ++m_entry->refcount;
+    }
+
+    void dec_ref_count()
+    {
+        assert(m_entry);
+        assert(m_entry->refcount > 0);
+
+        if (--m_entry->refcount == 0)
+        {
+            deallocate();  // returns to pool with mutex
+        }
+    }
+
+public:
+    SharedObjectPoolPtr() noexcept : SharedObjectPoolPtr(nullptr, nullptr) {}
+
+    SharedObjectPoolPtr(SharedObjectPool<T, false>* pool, Entry* object) noexcept : m_pool(pool), m_entry(object)
+    {
+        if (m_pool && m_entry)
+            inc_ref_count();
+    }
+
+    SharedObjectPoolPtr(const SharedObjectPoolPtr& other) noexcept : SharedObjectPoolPtr()
+    {
+        m_pool = other.m_pool;
+        m_entry = other.m_entry;
+
+        if (m_pool && m_entry)
+            inc_ref_count();
+    }
+
+    SharedObjectPoolPtr& operator=(const SharedObjectPoolPtr& other)
+    {
+        if (this != &other)
+        {
+            if (m_pool && m_entry)
+                dec_ref_count();
+
+            m_pool = other.m_pool;
+            m_entry = other.m_entry;
+
+            if (m_pool && m_entry)
+                inc_ref_count();
+        }
+        return *this;
+    }
+
+    // Movable
+    SharedObjectPoolPtr(SharedObjectPoolPtr&& other) noexcept : m_pool(other.m_pool), m_entry(other.m_entry)
+    {
+        other.m_pool = nullptr;
+        other.m_entry = nullptr;
+    }
+
+    SharedObjectPoolPtr& operator=(SharedObjectPoolPtr&& other) noexcept
+    {
+        if (this != &other)
+        {
+            if (m_pool && m_entry)
+                dec_ref_count();
+
+            m_pool = other.m_pool;
+            m_entry = other.m_entry;
+
+            other.m_pool = nullptr;
+            other.m_entry = nullptr;
+        }
+        return *this;
+    }
+
+    ~SharedObjectPoolPtr()
+    {
+        if (m_pool && m_entry)
+            dec_ref_count();
+    }
+
+    SharedObjectPoolPtr clone() const
+        requires std::is_copy_assignable_v<T>
+    {
+        if (m_pool && m_entry)
+        {
+            SharedObjectPoolPtr pointer = m_pool->get_or_allocate();
+            *pointer = this->operator*();  // copy-assign T
+            return pointer;
+        }
+        else
+        {
+            return SharedObjectPoolPtr();
+        }
+    }
+
+    T& operator*() const noexcept
+    {
+        assert(m_entry);
+        return m_entry->object;
+    }
+
+    T* operator->() const noexcept
+    {
+        assert(m_entry);
+        return &m_entry->object;
+    }
+
+    size_t ref_count() const noexcept
+    {
+        assert(m_entry);
+        return m_entry->refcount;
+    }
+
+    explicit operator bool() const noexcept { return m_entry != nullptr; }
+};
+
+template<typename T>
+class SharedObjectPool<T, true>
+{
+private:
+    using Entry = SharedObjectPoolEntry<T, true>;
 
     std::vector<std::unique_ptr<Entry>> m_storage;
-    std::stack<Entry*> m_stack;
+    std::vector<Entry*> m_stack;
     mutable std::mutex m_mutex;
 
-    template<typename... Args>
-    void allocate(Args&&... args)
+    void allocate()
     {
-        m_storage.push_back(std::make_unique<Entry>(std::forward<Args>(args)...));
-        m_stack.push(m_storage.back().get());
+        m_storage.push_back(std::make_unique<Entry>());
+        m_stack.push_back(m_storage.back().get());
     }
 
     void free(Entry* element)
     {
         std::lock_guard<std::mutex> lg(m_mutex);
 
-        m_stack.push(element);
+        m_stack.push_back(element);
     }
 
-    friend class SharedObjectPoolPtr<T>;
+    friend class SharedObjectPoolPtr<T, true>;
 
 public:
     // Non-copyable to prevent dangling memory pool pointers.
@@ -230,18 +404,28 @@ public:
     SharedObjectPool(SharedObjectPool&& other) noexcept = delete;
     SharedObjectPool& operator=(SharedObjectPool&& other) noexcept = delete;
 
-    [[nodiscard]] SharedObjectPoolPtr<T> get_or_allocate() { return get_or_allocate<>(); }
-
-    template<typename... Args>
-    [[nodiscard]] SharedObjectPoolPtr<T> get_or_allocate(Args&&... args)
+    [[nodiscard]] SharedObjectPoolPtr<T, true> get_or_allocate()
     {
         std::lock_guard<std::mutex> lg(m_mutex);
 
         if (m_stack.empty())
-            allocate(std::forward<Args>(args)...);
-        Entry* element = m_stack.top();
-        m_stack.pop();
-        return SharedObjectPoolPtr<T>(this, element);
+            allocate();
+        Entry* element = m_stack.back();
+        m_stack.pop_back();
+        return SharedObjectPoolPtr<T, true>(this, element);
+    }
+
+    template<typename... Args>
+    [[nodiscard]] SharedObjectPoolPtr<T, true> get_or_allocate(Args&&... args)
+    {
+        std::lock_guard<std::mutex> lg(m_mutex);
+
+        if (m_stack.empty())
+            allocate();
+        Entry* element = m_stack.back();
+        m_stack.pop_back();
+        element->initialize(std::forward<Args>(args)...);
+        return SharedObjectPoolPtr<T, true>(this, element);
     }
 
     [[nodiscard]] size_t get_size() const noexcept
@@ -257,6 +441,58 @@ public:
 
         return m_stack.size();
     }
+};
+
+template<typename T>
+class SharedObjectPool<T, false>
+{
+private:
+    using Entry = SharedObjectPoolEntry<T, false>;
+
+    std::vector<std::unique_ptr<Entry>> m_storage;
+    std::vector<Entry*> m_stack;
+
+    void allocate()
+    {
+        m_storage.push_back(std::make_unique<Entry>());
+        m_stack.push_back(m_storage.back().get());
+    }
+
+    void free(Entry* element) { m_stack.push_back(element); }
+
+    friend class SharedObjectPoolPtr<T, false>;
+
+public:
+    // Non-copyable to prevent dangling memory pool pointers.
+    SharedObjectPool() noexcept = default;
+    SharedObjectPool(const SharedObjectPool& other) = delete;
+    SharedObjectPool& operator=(const SharedObjectPool& other) = delete;
+    SharedObjectPool(SharedObjectPool&& other) noexcept = delete;
+    SharedObjectPool& operator=(SharedObjectPool&& other) noexcept = delete;
+
+    [[nodiscard]] SharedObjectPoolPtr<T, false> get_or_allocate()
+    {
+        if (m_stack.empty())
+            allocate();
+        Entry* element = m_stack.back();
+        m_stack.pop_back();
+        return SharedObjectPoolPtr<T, false>(this, element);
+    }
+
+    template<typename... Args>
+    [[nodiscard]] SharedObjectPoolPtr<T, false> get_or_allocate(Args&&... args)
+    {
+        if (m_stack.empty())
+            allocate();
+        Entry* element = m_stack.back();
+        m_stack.pop_back();
+        element->initialize(std::forward<Args>(args)...);
+        return SharedObjectPoolPtr<T, false>(this, element);
+    }
+
+    [[nodiscard]] size_t get_size() const noexcept { return m_storage.size(); }
+
+    [[nodiscard]] size_t get_num_free() const noexcept { return m_stack.size(); }
 };
 
 }
