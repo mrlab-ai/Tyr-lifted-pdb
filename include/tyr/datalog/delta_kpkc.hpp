@@ -30,6 +30,21 @@ namespace tyr::datalog
 {
 namespace delta_kpkc
 {
+struct Vertex
+{
+    uint_t index;
+
+    constexpr explicit Vertex(uint_t i) : index(i) {}
+};
+
+struct Edge
+{
+    Vertex src;
+    Vertex dst;
+
+    constexpr Edge(Vertex u, Vertex v) : src(u.index < v.index ? u : v), dst(u.index < v.index ? v : u) {}
+};
+
 struct ConstGraph
 {
     /// Meta
@@ -53,6 +68,111 @@ struct Graph
         for (auto& bitset : adjacency_matrix)
             bitset.reset();
     }
+
+    struct VertexIterator
+    {
+    private:
+        const Graph* m_graph;
+        boost::dynamic_bitset<>::size_type i;
+
+    private:
+        void advance_to_next()
+        {
+            if (i != boost::dynamic_bitset<>::npos)
+                i = m_graph->vertices.find_next(i);
+        }
+
+    public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = Vertex;
+        using iterator_category = std::input_iterator_tag;
+        using iterator_concept = std::input_iterator_tag;
+
+        VertexIterator() : m_graph(nullptr), i(boost::dynamic_bitset<>::npos) {}
+        VertexIterator(const Graph& graph, bool begin) : m_graph(&graph), i(begin ? graph.vertices.find_first() : boost::dynamic_bitset<>::npos) {}
+
+        value_type operator*() const { return Vertex { uint_t(i) }; }
+
+        VertexIterator& operator++()
+        {
+            advance_to_next();
+            return *this;
+        }
+
+        VertexIterator operator++(int)
+        {
+            VertexIterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        friend bool operator==(const VertexIterator& lhs, const VertexIterator& rhs) { return lhs.m_graph == rhs.m_graph && lhs.i == rhs.i; }
+        friend bool operator!=(const VertexIterator& lhs, const VertexIterator& rhs) { return !(lhs == rhs); }
+    };
+
+    struct EdgeIterator
+    {
+    private:
+        const Graph* m_graph;
+        uint_t i;
+        boost::dynamic_bitset<>::size_type j;
+
+    private:
+        void advance_to_next()
+        {
+            const auto n = uint_t(m_graph->vertices.size());
+
+            while (i < n)
+            {
+                const auto& row = m_graph->adjacency_matrix[i];
+
+                if (j == boost::dynamic_bitset<>::npos)
+                    j = row.find_next(i);  // find first from i; enforces i < j
+                else
+                    j = row.find_next(j);  // continue scanning row
+
+                if (j != boost::dynamic_bitset<>::npos)
+                    return;  // found edge (i,j)
+
+                ++i;
+                j = boost::dynamic_bitset<>::npos;
+            }
+        }
+
+    public:
+        using difference_type = std::ptrdiff_t;
+        using value_type = Edge;
+        using iterator_category = std::input_iterator_tag;
+        using iterator_concept = std::input_iterator_tag;
+
+        EdgeIterator() : m_graph(nullptr), i(0), j(boost::dynamic_bitset<>::npos) {}
+        EdgeIterator(const Graph& graph, bool begin) : m_graph(&graph), i(begin ? 0 : uint_t(graph.vertices.size())), j(boost::dynamic_bitset<>::npos)
+        {
+            if (begin)
+                advance_to_next();
+        }
+
+        value_type operator*() const { return Edge { Vertex { i }, Vertex { uint_t(j) } }; }
+
+        EdgeIterator& operator++()
+        {
+            advance_to_next();
+            return *this;
+        }
+
+        EdgeIterator operator++(int)
+        {
+            EdgeIterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        friend bool operator==(const EdgeIterator& lhs, const EdgeIterator& rhs) { return lhs.m_graph == rhs.m_graph && lhs.i == rhs.i && lhs.j == rhs.j; }
+        friend bool operator!=(const EdgeIterator& lhs, const EdgeIterator& rhs) { return !(lhs == rhs); }
+    };
+
+    auto vertices_range() const noexcept { return std::ranges::subrange(VertexIterator(*this, true), VertexIterator(*this, false)); }
+    auto edges_range() const noexcept { return std::ranges::subrange(EdgeIterator(*this, true), EdgeIterator(*this, false)); }
 };
 
 /// @brief `Workspace` is preallocated memory for a rule.
@@ -84,37 +204,56 @@ public:
         m_full_graph.reset();
     }
 
+    /**
+     * Parallel interface
+     */
+
+    auto delta_vertices_range() const noexcept { return m_delta_graph.vertices_range(); }
+    auto delta_edges_range() const noexcept { return m_delta_graph.edges_range(); }
+    auto full_vertices_range() const noexcept { return m_full_graph.vertices_range(); }
+    auto full_edges_range() const noexcept { return m_full_graph.edges_range(); }
+
+    template<typename Callback>
+    void for_each_new_k_clique(const delta_kpkc::Edge& edge, Callback&& callback)
+    {
+        assert(m_const_graph.k >= 2);
+
+        // Special case
+        if (m_const_graph.k == 2)
+        {
+            m_workspace.partial_solution.clear();
+            m_workspace.partial_solution.push_back(edge.src.index);
+            m_workspace.partial_solution.push_back(edge.dst.index);
+            callback(m_workspace.partial_solution);
+            return;
+        }
+
+        seed_from_anchor(edge);
+
+        complete_from_seed<true>(callback, 0);
+    }
+
+    /**
+     * Sequential interface
+     */
+
+    template<typename Callback>
+    void for_each_k_clique(Callback&& callback)
+    {
+        assert(m_const_graph.k >= 2);
+
+        seed_without_anchor();
+
+        complete_from_seed<false>(callback, 0);
+    }
+
     template<typename Callback>
     void for_each_new_k_clique(Callback&& callback)
     {
         assert(m_const_graph.k >= 2);
 
-        for (uint_t i = 0; i < m_const_graph.num_vertices; ++i)
-        {
-            const auto& row = m_delta_graph.adjacency_matrix[i];
-
-            for (auto j = row.find_next(i); j != boost::dynamic_bitset<>::npos; j = row.find_next(j))
-            {
-                assert(m_full_graph.vertices.test(i));
-                assert(m_full_graph.vertices.test(j));
-
-                // std::cout << "Anchor: " << i << " " << j << std::endl;
-
-                // Special case
-                if (m_const_graph.k == 2)
-                {
-                    m_workspace.partial_solution.clear();
-                    m_workspace.partial_solution.push_back(i);
-                    m_workspace.partial_solution.push_back(j);
-                    callback(m_workspace.partial_solution);
-                    continue;
-                }
-
-                seed_from_anchor(i, j);
-
-                complete_from_seed(callback, 0);
-            }
-        }
+        for (const auto& edge : delta_edges_range())
+            for_each_new_k_clique(edge, callback);
     }
 
     const delta_kpkc::ConstGraph& get_const_graph() const noexcept { return m_const_graph; }
@@ -136,7 +275,7 @@ private:
         return m_delta_graph.adjacency_matrix[a].test(b);
     }
 
-    bool is_vertex_compatible_with_anchor(uint_t u, uint_t v, uint_t vertex, uint_t anchor_edge_rank) const
+    bool is_vertex_compatible_with_anchor(uint_t u, uint_t v, uint_t vertex) const
     {
         return (m_full_graph.vertices.test(vertex)                                                     //
                 && m_full_graph.adjacency_matrix[u].test(vertex)                                       //
@@ -145,16 +284,34 @@ private:
                 && (!is_delta_edge(v, vertex) || edge_rank(v, vertex) > m_workspace.anchor_edge_rank));
     }
 
-    void seed_from_anchor(uint_t i, uint_t j)
+    void seed_without_anchor()
+    {
+        m_workspace.partial_solution.clear();
+        m_workspace.partition_bits.reset();
+
+        auto& cv_0 = m_workspace.compatible_vertices[0];
+        for (uint_t p = 0; p < m_const_graph.k; ++p)
+        {
+            auto& cv_0_p = cv_0[p];
+            cv_0_p.reset();
+
+            const auto& part = m_const_graph.partitions[p];
+            for (uint_t bit = 0; bit < part.size(); ++bit)
+                if (m_full_graph.vertices.test(part[bit]))
+                    cv_0_p.set(bit);
+        }
+    }
+
+    void seed_from_anchor(const delta_kpkc::Edge& edge)
     {
         // Reset workspace state for this anchored run
         m_workspace.partial_solution.clear();
-        m_workspace.partial_solution.push_back(i);
-        m_workspace.partial_solution.push_back(j);
-        m_workspace.anchor_edge_rank = edge_rank(i, j);
+        m_workspace.partial_solution.push_back(edge.src.index);
+        m_workspace.partial_solution.push_back(edge.dst.index);
+        m_workspace.anchor_edge_rank = edge_rank(edge.src.index, edge.dst.index);
 
-        const uint_t pi = m_const_graph.vertex_to_partition[i];
-        const uint_t pj = m_const_graph.vertex_to_partition[j];
+        const uint_t pi = m_const_graph.vertex_to_partition[edge.src.index];
+        const uint_t pj = m_const_graph.vertex_to_partition[edge.dst.index];
         assert(pi != pj);
 
         m_workspace.partition_bits.reset();
@@ -162,26 +319,26 @@ private:
         m_workspace.partition_bits.set(pj);
 
         // Seed candidates for each partition
-        auto& compatible_vertices_0 = m_workspace.compatible_vertices[0];
+        auto& cv_0 = m_workspace.compatible_vertices[0];
         for (uint_t p = 0; p < m_const_graph.k; ++p)
         {
-            auto& partition_compatible_vertices_0 = compatible_vertices_0[p];
-            partition_compatible_vertices_0.reset();
+            auto& cv_0_p = cv_0[p];
+            cv_0_p.reset();
 
             if (p == pi || p == pj)
                 continue;
 
             const auto& part = m_const_graph.partitions[p];
             for (uint_t bit = 0; bit < part.size(); ++bit)
-                if (is_vertex_compatible_with_anchor(i, j, part[bit], m_workspace.anchor_edge_rank))
-                    partition_compatible_vertices_0.set(bit);
+                if (is_vertex_compatible_with_anchor(edge.src.index, edge.dst.index, part[bit]))
+                    cv_0_p.set(bit);
         }
     }
 
     uint_t choose_best_partition(size_t depth) const
     {
         const uint_t k = m_const_graph.k;
-        const auto& compatible_vertices = m_workspace.compatible_vertices[depth];
+        const auto& cv_d = m_workspace.compatible_vertices[depth];
         const auto& partition_bits = m_workspace.partition_bits;
 
         uint_t best_partition = std::numeric_limits<uint_t>::max();
@@ -192,7 +349,7 @@ private:
             if (partition_bits.test(p))
                 continue;
 
-            auto num_set_bits = compatible_vertices[p].count();
+            auto num_set_bits = cv_d[p].count();
             if (num_set_bits < best_set_bits)
             {
                 best_set_bits = num_set_bits;
@@ -205,37 +362,38 @@ private:
     void copy_current_compatible_vertices_to_next_depth(size_t depth)
     {
         const uint_t k = m_const_graph.k;
-        auto& current = m_workspace.compatible_vertices[depth];
+        auto& cv_d = m_workspace.compatible_vertices[depth];
         auto& next = m_workspace.compatible_vertices[depth + 1];
 
         for (uint_t p = 0; p < k; ++p)
-            next[p] = current[p];
+            next[p] = cv_d[p];
     }
 
+    template<bool Delta>
     void update_compatible_adjacent_vertices_at_next_depth(uint_t vertex, size_t depth)
     {
         const uint_t k = m_const_graph.k;
-        auto& next = m_workspace.compatible_vertices[depth + 1];
+        auto& cv_d_next = m_workspace.compatible_vertices[depth + 1];
         const auto& partition_bits = m_workspace.partition_bits;
 
         // Offset trick assumes that vertices in lower partition have lower indices.
         uint_t offset = 0;
         for (uint_t partition = 0; partition < k; ++partition)
         {
-            auto& partition_compatible_vertices_next = next[partition];
-            auto partition_size = partition_compatible_vertices_next.size();
+            auto& cv_d_next_p = cv_d_next[partition];
+            auto partition_size = cv_d_next_p.size();
             if (!partition_bits.test(partition))
             {
                 for (uint_t bit = 0; bit < partition_size; ++bit)
                 {
                     const auto target_vertex = bit + offset;
 
-                    partition_compatible_vertices_next[bit] &= m_full_graph.adjacency_matrix[vertex].test(target_vertex);
+                    cv_d_next_p[bit] &= m_full_graph.adjacency_matrix[vertex].test(target_vertex);
 
                     // monotone delta-rank pruning
-                    if (partition_compatible_vertices_next.test(bit) && is_delta_edge(vertex, target_vertex)
-                        && edge_rank(vertex, target_vertex) < m_workspace.anchor_edge_rank)
-                        partition_compatible_vertices_next.reset(bit);
+                    if constexpr (Delta)
+                        if (cv_d_next_p.test(bit) && is_delta_edge(vertex, target_vertex) && edge_rank(vertex, target_vertex) < m_workspace.anchor_edge_rank)
+                            cv_d_next_p.reset(bit);
                 }
             }
             offset += partition_size;
@@ -245,36 +403,37 @@ private:
     uint_t num_possible_additions_at_next_depth(size_t depth)
     {
         const uint_t k = m_const_graph.k;
-        const auto& next = m_workspace.compatible_vertices[depth + 1];
+        const auto& cv_d_next = m_workspace.compatible_vertices[depth + 1];
         const auto& partition_bits = m_workspace.partition_bits;
 
         uint_t possible_additions = 0;
         for (uint_t partition = 0; partition < k; ++partition)
-            if (!partition_bits.test(partition) && next[partition].any())
+            if (!partition_bits.test(partition) && cv_d_next[partition].any())
                 ++possible_additions;
 
         return possible_additions;
     }
 
-    template<class Callback>
+    template<bool Delta, class Callback>
     void complete_from_seed(Callback&& callback, size_t depth)
     {
         assert(depth < m_const_graph.k);
 
-        uint_t p = choose_best_partition(depth);
+        const uint_t p = choose_best_partition(depth);
         if (p == std::numeric_limits<uint_t>::max())
             return;  // dead branch: no unused partition has candidates
 
-        uint_t k = m_const_graph.k;
-        auto& best = m_workspace.compatible_vertices[depth][p];
+        const uint_t k = m_const_graph.k;
+        auto& cv_d_p = m_workspace.compatible_vertices[depth][p];
         auto& partition_bits = m_workspace.partition_bits;
         auto& partial_solution = m_workspace.partial_solution;
 
         // Iterate through compatible vertices in the best partition
-        for (auto bit = best.find_first(); bit != boost::dynamic_bitset<>::npos; bit = best.find_next(bit))
+        for (auto bit = cv_d_p.find_first(); bit != boost::dynamic_bitset<>::npos; bit = cv_d_p.find_next(bit))
         {
-            uint_t vertex = m_const_graph.partitions[p][bit];
-            best.reset(bit);
+            cv_d_p.reset(bit);
+
+            const uint_t vertex = m_const_graph.partitions[p][bit];
 
             partial_solution.push_back(vertex);
 
@@ -286,12 +445,12 @@ private:
             {
                 copy_current_compatible_vertices_to_next_depth(depth);
 
-                update_compatible_adjacent_vertices_at_next_depth(vertex, depth);
+                update_compatible_adjacent_vertices_at_next_depth<Delta>(vertex, depth);
 
                 partition_bits.set(p);
 
                 if ((partial_solution.size() + num_possible_additions_at_next_depth(depth)) == k)
-                    complete_from_seed(callback, depth + 1);
+                    complete_from_seed<Delta>(callback, depth + 1);
 
                 partition_bits.reset(p);
             }

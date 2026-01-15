@@ -122,12 +122,12 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-bool ensure_applicability(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
+[[maybe_unused]] static bool
+ensure_applicability(View<Index<fd::Rule>, fd::Repository> rule, fd::GrounderContext<f::OverlayRepository<fd::Repository>>& context, const FactSets& fact_sets)
 {
-    const auto ground_rule = make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iteration).first, rctx.ws_rule.overlay_repository);
+    const auto ground_rule = make_view(ground(rule, context).first, context.destination);
 
-    const auto applicable = is_applicable(ground_rule, rctx.fact_sets);
+    const auto applicable = is_applicable(ground_rule, fact_sets);
 
     if (!applicable)
     {
@@ -138,10 +138,9 @@ bool ensure_applicability(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     return applicable;
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-bool ensure_novel_binding(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
+[[maybe_unused]] static bool ensure_novel_binding(const IndexList<f::Object>& binding, UnorderedSet<IndexList<f::Object>>& set)
 {
-    const auto inserted = rctx.ws_rule_delta.seen_bindings_dbg.insert(rctx.ground_context_delta.binding).second;
+    const auto inserted = set.insert(binding).second;
 
     if (!inserted)
     {
@@ -165,7 +164,7 @@ void generate_unary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                                                                   rctx.ground_context_delta)
                                     .first;
 
-        assert(ensure_novel_binding(rctx));
+        assert(ensure_novel_binding(rctx.ground_context_delta.binding, rctx.ws_rule_delta.seen_bindings_dbg));
 
         auto applicability_check =
             rctx.ws_rule_delta.applicability_check_pool.get_or_allocate(rctx.cws_rule.get_nullary_condition(),
@@ -181,7 +180,7 @@ void generate_unary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
         // Therefore we must store it as pending (keyed by binding + head_index or equivalent) and recheck in the next fact envelope.
         if (applicability_check->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
         {
-            assert(ensure_applicability(rctx));
+            assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
 
             rctx.ws_rule.heads.insert(head_index);
 
@@ -210,7 +209,7 @@ void generate_unary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
         if (it->second->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
         {
-            assert(ensure_applicability(rctx));
+            assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
 
             // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
 
@@ -248,7 +247,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                                                                         rctx.ground_context_delta)
                                         .first;
 
-            assert(ensure_novel_binding(rctx));
+            assert(ensure_novel_binding(rctx.ground_context_delta.binding, rctx.ws_rule_delta.seen_bindings_dbg));
 
             auto applicability_check =
                 rctx.ws_rule_delta.applicability_check_pool.get_or_allocate(rctx.cws_rule.get_nullary_condition(),
@@ -264,7 +263,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
             // Therefore we must store it as pending (keyed by binding + head_index or equivalent) and recheck in the next fact envelope.
             if (applicability_check->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
             {
-                assert(ensure_applicability(rctx));
+                assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
 
                 // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
 
@@ -295,7 +294,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
         if (it->second->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
         {
-            assert(ensure_applicability(rctx));
+            assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
 
             // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
 
