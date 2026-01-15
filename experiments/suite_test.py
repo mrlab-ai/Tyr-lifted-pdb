@@ -167,6 +167,28 @@ SUITE_IPC_SATISFICING_STRIPS_TEST = [
     "zenotravel:p01.pddl"
 ]
 
+SUITE_IPC_SATISFICING_ADL_TEST = [
+    "assembly:prob01.pddl", 
+    "caldera-sat18-adl:p01.pddl", 
+    "caldera-split-sat18-adl:p01.pddl", 
+    "cavediving-14-adl:testing01_easy.pddl", 
+    "citycar-sat14-adl:p3-2-2-0-1.pddl", 
+    "flashfill-sat18-adl:p01.pddl", 
+    "maintenance-sat14-adl:maintenance-1-3-060-180-5-000.pddl", 
+    "miconic-fulladl:f1-0.pddl", 
+    "miconic-simpleadl:s1-0.pddl", 
+    "nurikabe-sat18-adl:p01.pddl", 
+    "openstacks:p01.pddl", 
+    "openstacks-sat08-adl:p01.pddl", 
+    "optical-telegraphs:p01-opt2.pddl", 
+    "philosophers:p01-phil2.pddl", 
+    "psr-large:p01-s29-n2-l5-f30.pddl", 
+    "psr-middle:p01-s17-n2-l2-f30.pddl", 
+    "schedule:probschedule-2-0.pddl", 
+    "settlers-sat18-adl:p01.pddl", 
+    "trucks:p01.pddl"
+]
+
 SUITE_IPC_LEARNING_TEST = [
     "blocksworld_ipc2023_learning:easy_p01.pddl",
     "childsnack_ipc2023_learning:easy_p01.pddl",

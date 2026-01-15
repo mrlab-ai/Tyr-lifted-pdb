@@ -167,6 +167,28 @@ SUITE_IPC_SATISFICING_STRIPS = [
     "zenotravel",
 ]
 
+SUITE_IPC_SATISFICING_ADL_TEST = [
+    "assembly", 
+    "caldera-sat18-adl", 
+    "caldera-split-sat18-adl", 
+    "cavediving-14-adl", 
+    "citycar-sat14-adl", 
+    "flashfill-sat18-adl", 
+    "maintenance-sat14-adl", 
+    "miconic-fulladl", 
+    "miconic-simpleadl", 
+    "nurikabe-sat18-adl", 
+    "openstacks", 
+    "openstacks-sat08-adl", 
+    "optical-telegraphs", 
+    "philosophers", 
+    "psr-large", 
+    "psr-middle", 
+    "schedule", 
+    "settlers-sat18-adl", 
+    "trucks"
+]
+
 SUITE_IPC_LEARNING = [
     "blocksworld_ipc2023_learning",
     "childsnack_ipc2023_learning",

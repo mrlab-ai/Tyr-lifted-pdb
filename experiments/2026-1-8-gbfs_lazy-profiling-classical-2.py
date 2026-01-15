@@ -20,8 +20,8 @@ sys.path.append(str(DIR.parent))
 
 from experiments.parser_gbfs_lazy import GBFSLazyParser
 
-from suite import SUITE_CNOT_SYNTHESIS, SUITE_IPC_OPTIMAL_STRIPS, SUITE_IPC_OPTIMAL_ADL, SUITE_IPC_SATISFICING_STRIPS, SUITE_IPC_LEARNING, SUITE_AUTOSCALE_OPTIMAL_STRIPS, SUITE_HTG, SUITE_IPC2023_NUMERIC, SUITE_PUSHWORLD, SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC, SUITE_MINEPDDL
-from suite_test import SUITE_CNOT_SYNTHESIS_TEST, SUITE_IPC_OPTIMAL_STRIPS_TEST, SUITE_IPC_OPTIMAL_ADL_TEST, SUITE_IPC_SATISFICING_STRIPS_TEST, SUITE_IPC_LEARNING_TEST, SUITE_AUTOSCALE_OPTIMAL_STRIPS_TEST, SUITE_HTG_TEST, SUITE_IPC2023_NUMERIC_TEST, SUITE_PUSHWORLD_TEST, SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC_TEST, SUITE_MINEPDDL_TEST
+from suite import SUITE_CNOT_SYNTHESIS, SUITE_IPC_OPTIMAL_STRIPS, SUITE_IPC_OPTIMAL_ADL, SUITE_IPC_SATISFICING_STRIPS, SUITE_IPC_LEARNING, SUITE_AUTOSCALE_OPTIMAL_STRIPS, SUITE_HTG, SUITE_IPC2023_NUMERIC, SUITE_PUSHWORLD, SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC, SUITE_MINEPDDL, SUITE_IPC_SATISFICING_ADL
+from suite_test import SUITE_CNOT_SYNTHESIS_TEST, SUITE_IPC_OPTIMAL_STRIPS_TEST, SUITE_IPC_OPTIMAL_ADL_TEST, SUITE_IPC_SATISFICING_STRIPS_TEST, SUITE_IPC_LEARNING_TEST, SUITE_AUTOSCALE_OPTIMAL_STRIPS_TEST, SUITE_HTG_TEST, SUITE_IPC2023_NUMERIC_TEST, SUITE_PUSHWORLD_TEST, SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC_TEST, SUITE_MINEPDDL_TEST, SUITE_IPC_SATISFICING_ADL_TEST
 
 # Create custom report class with suitable info and error attributes.
 class BaseReport(AbsoluteReport):
@@ -55,25 +55,27 @@ else:
 
 if REMOTE:
     SUITES = [
-        ("cnot-synthesis", SUITE_CNOT_SYNTHESIS),
-        ("downward-benchmarks", SUITE_IPC_OPTIMAL_STRIPS),
-        ("downward-benchmarks", SUITE_IPC_OPTIMAL_ADL),
-        ("downward-benchmarks", SUITE_IPC_SATISFICING_STRIPS),
-        ("ipc2023-learning", SUITE_IPC_LEARNING),
-        ("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS),
+        #("cnot-synthesis", SUITE_CNOT_SYNTHESIS),
+        #("downward-benchmarks", SUITE_IPC_OPTIMAL_STRIPS),
+        #("downward-benchmarks", SUITE_IPC_OPTIMAL_ADL),
+        ("downward-benchmarks", SUITE_IPC_SATISFICING_STRIPS_TEST),
+        ("downward-benchmarks", SUITE_IPC_SATISFICING_ADL_TEST),
+        #("ipc2023-learning", SUITE_IPC_LEARNING),
+        #("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS),
         ("htg-domains/flat", SUITE_HTG),
-        ("pushworld", SUITE_PUSHWORLD),
-        ("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
-        ("mine-pddl", SUITE_MINEPDDL),
+        #("pushworld", SUITE_PUSHWORLD),
+        #("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
+        #("mine-pddl", SUITE_MINEPDDL),
     ]
     TIME_LIMIT = 5 * 60
 else:
     SUITES = [
         # ("downward-benchmarks", ["gripper:prob01.pddl"]), 
         #("cnot-synthesis", SUITE_CNOT_SYNTHESIS_TEST),
-        ("downward-benchmarks", SUITE_IPC_OPTIMAL_STRIPS_TEST),
-        ("downward-benchmarks", SUITE_IPC_OPTIMAL_ADL_TEST),
-        #("downward-benchmarks", SUITE_IPC_SATISFICING_STRIPS_TEST),
+        #("downward-benchmarks", SUITE_IPC_OPTIMAL_STRIPS_TEST),
+        #("downward-benchmarks", SUITE_IPC_OPTIMAL_ADL_TEST),
+        ("downward-benchmarks", SUITE_IPC_SATISFICING_STRIPS_TEST),
+        ("downward-benchmarks", SUITE_IPC_SATISFICING_ADL_TEST),
         #("ipc2023-learning", SUITE_IPC_LEARNING_TEST),
         #("autoscale-benchmarks-main/21.11-optimal-strips", SUITE_AUTOSCALE_OPTIMAL_STRIPS_TEST),
         #("htg-domains/flat", SUITE_HTG_TEST),
