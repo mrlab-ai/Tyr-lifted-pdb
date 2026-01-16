@@ -61,47 +61,35 @@ namespace fd = tyr::formalism::datalog;
 namespace tyr::datalog
 {
 
-static auto create_nullary_ground_head_in_delta(View<Index<fd::Atom<f::FluentTag>>, fd::Repository> head, fd::GrounderContext<fd::Repository>& context)
-{
-    context.binding.clear();
+static void create_nullary_binding(IndexList<f::Object>& binding) { binding.clear(); }
 
-    return ground(head, context);
-}
-
-static auto create_unary_ground_head_in_delta(delta_kpkc::Vertex v,
-                                              const StaticConsistencyGraph& consistency_graph,
-                                              View<Index<fd::Atom<f::FluentTag>>, fd::Repository> head,
-                                              fd::GrounderContext<fd::Repository>& context)
+static void create_unary_binding(delta_kpkc::Vertex v, const StaticConsistencyGraph& consistency_graph, IndexList<f::Object>& binding)
 {
-    context.binding.clear();
+    binding.clear();
 
     const auto& vertex = consistency_graph.get_vertex(v.index);
     assert(uint_t(vertex.get_parameter_index()) == 0);
-    context.binding.push_back(vertex.get_object_index());
-
-    return ground(head, context);
+    binding.push_back(vertex.get_object_index());
 }
 
-static auto create_general_ground_head_in_delta(const std::vector<delta_kpkc::Vertex>& clique,
-                                                const StaticConsistencyGraph& consistency_graph,
-                                                View<Index<fd::Atom<f::FluentTag>>, fd::Repository> head,
-                                                fd::GrounderContext<fd::Repository>& context)
+static void
+create_general_binding(const std::vector<delta_kpkc::Vertex>& clique, const StaticConsistencyGraph& consistency_graph, IndexList<f::Object>& binding)
 {
-    context.binding.resize(clique.size());
+    binding.resize(clique.size());
     for (const auto v : clique)
     {
         const auto& vertex = consistency_graph.get_vertex(v.index);
         assert(uint_t(vertex.get_parameter_index()) < clique.size());
-        context.binding[uint_t(vertex.get_parameter_index())] = vertex.get_object_index();
+        binding[uint_t(vertex.get_parameter_index())] = vertex.get_object_index();
     }
-
-    return ground(head, context);
 }
 
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
-    const auto head_index = create_nullary_ground_head_in_delta(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
+    create_nullary_binding(rctx.ground_context_delta.binding);
+
+    const auto head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
 
     // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
     if (is_applicable(rctx.cws_rule.get_nullary_condition(), rctx.fact_sets)
@@ -155,52 +143,59 @@ void generate_unary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
     for (const auto& vertex : rctx.ws_rule.kpkc.get_delta_graph().vertices_range())
     {
-        const auto head_index =
-            create_unary_ground_head_in_delta(vertex, rctx.cws_rule.static_consistency_graph, rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta)
-                .first;
+        create_unary_binding(vertex, rctx.cws_rule.static_consistency_graph, rctx.ground_context_delta.binding);
 
-        assert(ensure_novel_binding(rctx.ground_context_delta.binding, rctx.ws_rule_delta.seen_bindings_dbg));
-
-        auto applicability_check =
-            rctx.ws_rule_delta.applicability_check_pool.get_or_allocate(rctx.cws_rule.get_nullary_condition(),
-                                                                        rctx.cws_rule.get_unary_conflicting_overapproximation_condition(),
-                                                                        rctx.fact_sets,
-                                                                        rctx.ground_context_iteration);
-
-        if (!applicability_check->is_statically_applicable())
-            continue;
-
-        // IMPORTANT: A binding can fail the nullary part (e.g., arm-empty) even though the clique already exists.
-        // Later, nullary may become true without any new kPKC edges/vertices, so delta-kPKC will NOT re-enumerate this binding.
-        // Therefore we must store it as pending (keyed by binding + head_index or equivalent) and recheck in the next fact envelope.
-        if (applicability_check->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
         {
-            assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
-
-            rctx.ws_rule.heads.insert(head_index);
-
-            rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
-                                          rctx.cws_rule.rule,
-                                          rctx.cws_rule.witness_condition,
-                                          head_index,
-                                          rctx.ctx.ctx.aps.or_annot,
-                                          rctx.and_annot,
-                                          rctx.delta_head_to_witness,
-                                          rctx.ground_context_iteration,
-                                          rctx.ground_context_delta,
-                                          rctx.ground_context_persistent);
+            // TODO: ground head in ground_context_iteration, then skip if cost cannot improve.
         }
-        else
-        {
-            auto pending_rule = PendingRule { fd::ground(rctx.ground_context_delta.binding, rctx.ground_context_delta).first, head_index };
 
-            rctx.ws_rule_delta.pending_rules.emplace(pending_rule, std::move(applicability_check));
+        {
+            // Ground head in ground_context_delta
+
+            assert(ensure_novel_binding(rctx.ground_context_delta.binding, rctx.ws_rule_delta.seen_bindings_dbg));
+
+            auto applicability_check =
+                rctx.ws_rule_delta.applicability_check_pool.get_or_allocate(rctx.cws_rule.get_nullary_condition(),
+                                                                            rctx.cws_rule.get_unary_conflicting_overapproximation_condition(),
+                                                                            rctx.fact_sets,
+                                                                            rctx.ground_context_iteration);
+
+            if (!applicability_check->is_statically_applicable())
+                continue;
+
+            // IMPORTANT: A binding can fail the nullary part (e.g., arm-empty) even though the clique already exists.
+            // Later, nullary may become true without any new kPKC edges/vertices, so delta-kPKC will NOT re-enumerate this binding.
+            // Therefore we must store it as pending (keyed by binding) and recheck in the next fact envelope.
+            if (applicability_check->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
+            {
+                assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
+
+                const auto head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
+
+                rctx.ws_rule.heads.insert(head_index);
+
+                rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
+                                              rctx.cws_rule.rule,
+                                              rctx.cws_rule.witness_condition,
+                                              head_index,
+                                              rctx.ctx.ctx.aps.or_annot,
+                                              rctx.and_annot,
+                                              rctx.delta_head_to_witness,
+                                              rctx.ground_context_iteration,
+                                              rctx.ground_context_delta,
+                                              rctx.ground_context_persistent);
+            }
+            else
+            {
+                rctx.ws_rule_delta.pending_rules.emplace(fd::ground(rctx.ground_context_delta.binding, rctx.ground_context_delta).first,
+                                                         std::move(applicability_check));
+            }
         }
     }
 
     for (auto it = rctx.ws_rule_delta.pending_rules.begin(); it != rctx.ws_rule_delta.pending_rules.end();)
     {
-        rctx.ground_context_delta.binding = make_view(it->first.binding, rctx.ground_context_delta.destination).get_objects().get_data();
+        rctx.ground_context_delta.binding = make_view(it->first, rctx.ground_context_delta.destination).get_objects().get_data();
 
         if (it->second->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
         {
@@ -208,12 +203,14 @@ void generate_unary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
             // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
 
-            rctx.ws_rule.heads.insert(it->first.head);
+            const auto head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
+
+            rctx.ws_rule.heads.insert(head_index);
 
             rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                           rctx.cws_rule.rule,
                                           rctx.cws_rule.witness_condition,
-                                          it->first.head,
+                                          head_index,
                                           rctx.ctx.ctx.aps.or_annot,
                                           rctx.and_annot,
                                           rctx.delta_head_to_witness,
@@ -236,11 +233,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     rctx.ws_rule.kpkc.for_each_new_k_clique(
         [&](auto&& clique)
         {
-            const auto head_index = create_general_ground_head_in_delta(clique,
-                                                                        rctx.cws_rule.static_consistency_graph,
-                                                                        rctx.cws_rule.get_rule().get_head(),
-                                                                        rctx.ground_context_delta)
-                                        .first;
+            create_general_binding(clique, rctx.cws_rule.static_consistency_graph, rctx.ground_context_delta.binding);
 
             assert(ensure_novel_binding(rctx.ground_context_delta.binding, rctx.ws_rule_delta.seen_bindings_dbg));
 
@@ -255,12 +248,14 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
             // IMPORTANT: A binding can fail the nullary part (e.g., arm-empty) even though the clique already exists.
             // Later, nullary may become true without any new kPKC edges/vertices, so delta-kPKC will NOT re-enumerate this binding.
-            // Therefore we must store it as pending (keyed by binding + head_index or equivalent) and recheck in the next fact envelope.
+            // Therefore we must store it as pending (keyed by binding) and recheck in the next fact envelope.
             if (applicability_check->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
             {
                 assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
 
                 // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
+
+                const auto head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
 
                 rctx.ws_rule.heads.insert(head_index);
 
@@ -277,15 +272,14 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
             }
             else
             {
-                auto pending_rule = PendingRule { fd::ground(rctx.ground_context_delta.binding, rctx.ground_context_delta).first, head_index };
-
-                rctx.ws_rule_delta.pending_rules.emplace(pending_rule, std::move(applicability_check));
+                rctx.ws_rule_delta.pending_rules.emplace(fd::ground(rctx.ground_context_delta.binding, rctx.ground_context_delta).first,
+                                                         std::move(applicability_check));
             }
         });
 
     for (auto it = rctx.ws_rule_delta.pending_rules.begin(); it != rctx.ws_rule_delta.pending_rules.end();)
     {
-        rctx.ground_context_delta.binding = make_view(it->first.binding, rctx.ground_context_delta.destination).get_objects().get_data();
+        rctx.ground_context_delta.binding = make_view(it->first, rctx.ground_context_delta.destination).get_objects().get_data();
 
         if (it->second->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
         {
@@ -293,12 +287,14 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
             // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
 
-            rctx.ws_rule.heads.insert(it->first.head);
+            const auto head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
+
+            rctx.ws_rule.heads.insert(head_index);
 
             rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                           rctx.cws_rule.rule,
                                           rctx.cws_rule.witness_condition,
-                                          it->first.head,
+                                          head_index,
                                           rctx.ctx.ctx.aps.or_annot,
                                           rctx.and_annot,
                                           rctx.delta_head_to_witness,

@@ -153,14 +153,6 @@ public:
     }
 };
 
-struct PendingRule
-{
-    Index<formalism::Binding> binding;
-    Index<formalism::datalog::GroundAtom<formalism::FluentTag>> head;
-
-    auto identifying_members() const noexcept { return binding; }
-};
-
 struct RuleDeltaWorkspace
 {
     /// Merge thread into staging area
@@ -173,7 +165,7 @@ struct RuleDeltaWorkspace
 
     /// Pool applicability checks since we dont know how many are needed.
     UniqueObjectPool<ApplicabilityCheck> applicability_check_pool;
-    UnorderedMap<PendingRule, UniqueObjectPoolPtr<ApplicabilityCheck>> pending_rules;
+    UnorderedMap<Index<formalism::Binding>, UniqueObjectPoolPtr<ApplicabilityCheck>> pending_rules;
 
     RuleDeltaWorkspace();
 

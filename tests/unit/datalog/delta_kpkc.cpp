@@ -178,7 +178,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta3)
     auto cliques = enumerate_cliques(dkpkc);
 
     EXPECT_EQ(cliques.size(), 2);
-    EXPECT_EQ(cliques, (std::vector<std::vector<d::delta_kpkc::Vertex>> { V({ 0, 2, 5 }), V({ 0, 3, 5 }) }));
+    EXPECT_EQ(cliques, (std::vector<std::vector<d::delta_kpkc::Vertex>> { V({ 0, 5, 2 }), V({ 0, 5, 3 }) }));
 }
 
 TEST(TyrTests, TyrDatalogDeltaKPKCStandard4)
@@ -342,7 +342,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta4)
     auto cliques = enumerate_cliques(dkpkc);
 
     EXPECT_EQ(cliques.size(), 1);
-    EXPECT_EQ(cliques, (std::vector<std::vector<d::delta_kpkc::Vertex>> { V({ 0, 2, 4, 6 }) }));
+    EXPECT_EQ(cliques, (std::vector<std::vector<d::delta_kpkc::Vertex>> { V({ 0, 6, 2, 4 }) }));
 }
 
 }

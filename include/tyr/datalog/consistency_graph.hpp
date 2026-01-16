@@ -114,7 +114,8 @@ private:
                   const details::Vertices& vertices);
 
 public:
-    StaticConsistencyGraph(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
+    StaticConsistencyGraph(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
+                           View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition,
                            View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition,
                            View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition,
                            const analysis::DomainListList& parameter_domains,
@@ -184,10 +185,12 @@ public:
     size_t get_num_vertices() const noexcept;
     size_t get_num_edges() const noexcept;
 
+    View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> get_rule() const noexcept;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> get_condition() const noexcept;
     const std::vector<std::vector<uint_t>>& get_partitions() const noexcept;
 
 private:
+    View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> m_rule;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_condition;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_unary_overapproximation_condition;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_binary_overapproximation_condition;

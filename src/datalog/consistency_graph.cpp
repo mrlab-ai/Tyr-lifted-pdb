@@ -578,13 +578,15 @@ StaticConsistencyGraph::compute_edges(View<Index<fd::ConjunctiveCondition>, fd::
     return { std::move(sources), std::move(target_offsets), std::move(targets) };
 }
 
-StaticConsistencyGraph::StaticConsistencyGraph(View<Index<fd::ConjunctiveCondition>, fd::Repository> condition,
+StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
+                                               View<Index<fd::ConjunctiveCondition>, fd::Repository> condition,
                                                View<Index<fd::ConjunctiveCondition>, fd::Repository> unary_overapproximation_condition,
                                                View<Index<fd::ConjunctiveCondition>, fd::Repository> binary_overapproximation_condition,
                                                const analysis::DomainListList& parameter_domains,
                                                uint_t begin_parameter_index,
                                                uint_t end_parameter_index,
                                                const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets) :
+    m_rule(rule),
     m_condition(condition),
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition)
@@ -606,6 +608,8 @@ const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const no
 size_t StaticConsistencyGraph::get_num_vertices() const noexcept { return m_vertices.size(); }
 
 size_t StaticConsistencyGraph::get_num_edges() const noexcept { return m_targets.size(); }
+
+View<Index<fd::Rule>, fd::Repository> StaticConsistencyGraph::get_rule() const noexcept { return m_rule; }
 
 View<Index<fd::ConjunctiveCondition>, fd::Repository> StaticConsistencyGraph::get_condition() const noexcept { return m_condition; }
 

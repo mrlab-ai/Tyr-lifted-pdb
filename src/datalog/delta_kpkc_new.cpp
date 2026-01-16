@@ -15,11 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/datalog/delta_kpkc.hpp"
+#include "tyr/datalog/delta_kpkc_new.hpp"
 
 #include "tyr/datalog/consistency_graph.hpp"
 
-namespace tyr::datalog::delta_kpkc
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
+
+namespace tyr::datalog::delta_kpkc2
 {
 
 ConstGraph allocate_const_graph(const StaticConsistencyGraph& static_graph)
@@ -35,16 +38,62 @@ ConstGraph allocate_const_graph(const StaticConsistencyGraph& static_graph)
     graph.num_vertices = num_vertices;
 
     // Initialize partitions
-    graph.partitions.resize(partitions.size());
+    graph.partitions.resize(k);
     graph.vertex_to_partition.resize(num_vertices);
-    for (size_t i = 0; i < partitions.size(); ++i)
+    for (size_t p = 0; p < k; ++p)
     {
-        for (const auto& v : partitions[i])
+        for (const auto& v : partitions[p])
         {
-            graph.partitions[i].push_back(Vertex(v));
-            graph.vertex_to_partition[v] = i;
+            graph.partitions[p].push_back(Vertex(v));
+            graph.vertex_to_partition[v] = p;
         }
     }
+
+    // Initialize vertex sets
+    graph.head.partition_bits.resize(k, false);
+    graph.head.vertex_bits.resize(num_vertices, false);
+    graph.non_head.partition_bits.resize(k, true);  // reset those in head
+    graph.non_head.vertex_bits.resize(num_vertices, false);
+    graph.full.partition_bits.resize(k, true);          // include all
+    graph.full.vertex_bits.resize(num_vertices, true);  // include all
+
+    for (const auto term : static_graph.get_rule().get_head().get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
+                {
+                    graph.head.partition_bits.set(uint_t(arg));
+                    graph.non_head.partition_bits.reset(uint_t(arg));
+                }
+                else if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, fd::Repository>>) {}
+                else
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+    }
+
+    for (size_t p = 0; p < k; ++p)
+    {
+        for (const auto& v : partitions[p])
+        {
+            if (graph.head.partition_bits.test(p))
+                graph.head.vertex_bits.set(v);
+
+            if (graph.non_head.partition_bits.test(p))
+                graph.non_head.vertex_bits.set(v);
+        }
+    }
+
+    graph.head.partition_count = graph.head.partition_bits.count();
+    graph.head.vertex_count = graph.head.vertex_bits.count();
+    graph.non_head.partition_count = graph.non_head.partition_bits.count();
+    graph.non_head.vertex_count = graph.non_head.vertex_bits.count();
+    graph.full.partition_count = graph.full.partition_bits.count();
+    graph.full.vertex_count = graph.full.vertex_bits.count();
 
     return graph;
 }

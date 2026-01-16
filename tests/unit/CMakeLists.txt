@@ -22,6 +22,7 @@ add_gtest(analysis_listeners                             "analysis/listeners.cpp
 add_gtest(buffer_indexed_hash_set                        "buffer/indexed_hash_set.cpp")
 
 add_gtest(datalog_delta_kpkc                             "datalog/delta_kpkc.cpp")
+add_gtest(datalog_delta_kpkc_new                         "datalog/delta_kpkc_new.cpp")
 
 add_gtest(formalism_builder                              "formalism/builder.cpp")
 add_gtest(formalism_repository                           "formalism/repository.cpp")

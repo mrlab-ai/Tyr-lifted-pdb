@@ -67,7 +67,7 @@ if REMOTE:
         #("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
         #("mine-pddl", SUITE_MINEPDDL),
     ]
-    TIME_LIMIT = 5 * 60
+    WALL_TIME_LIMIT = 5 * 60
 else:
     SUITES = [
         # ("downward-benchmarks", ["gripper:prob01.pddl"]), 
@@ -83,7 +83,7 @@ else:
         #("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC_TEST),
         #("mine-pddl", SUITE_MINEPDDL_TEST),
     ]
-    TIME_LIMIT = 5
+    WALL_TIME_LIMIT = 1
 
 ATTRIBUTES = [
     "run_dir",
@@ -182,8 +182,9 @@ for prefix, SUITE in SUITES:
                     "plan.out",
                     str(NUM_THREADS)
                 ],
-                TIME_LIMIT,
-                MEMORY_LIMIT,
+                time_limit=None,
+                wall_time_limit=WALL_TIME_LIMIT,
+                memory_limit=MEMORY_LIMIT,
             )
             # AbsoluteReport needs the following properties:
             # 'domain', 'problem', 'algorithm', 'coverage'.
@@ -192,7 +193,7 @@ for prefix, SUITE in SUITES:
             run.set_property("algorithm", f"gbfs-lazy-ff-{NUM_THREADS}")
             # BaseReport needs the following properties:
             # 'time_limit', 'memory_limit'.
-            run.set_property("time_limit", TIME_LIMIT)
+            run.set_property("wall_time_limit", WALL_TIME_LIMIT)
             run.set_property("memory_limit", MEMORY_LIMIT)
             # Every run has to have a unique id in the form of a list.
             # The algorithm name is only really needed when there are
