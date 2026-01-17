@@ -45,6 +45,17 @@ static auto enumerate_cliques(d::delta_kpkc::DeltaKPKC& kpkc)
     return result;
 }
 
+inline boost::dynamic_bitset<> B(size_t n, std::initializer_list<size_t> bits)
+{
+    boost::dynamic_bitset<> bs(n);
+    for (auto b : bits)
+    {
+        assert(b < n);
+        bs.set(b);
+    }
+    return bs;
+}
+
 TEST(TyrTests, TyrDatalogDeltaKPKCStandard3)
 {
     const auto nv = uint_t(6);
@@ -53,7 +64,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCStandard3)
     auto const_graph = d::delta_kpkc::ConstGraph {};
     const_graph.num_vertices = nv;
     const_graph.k = k;
-    const_graph.partitions = std::vector<std::vector<d::delta_kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }) };
+    const_graph.partition_masks = std::vector<boost::dynamic_bitset<>> { B(nv, { 0, 1 }), B(nv, { 2, 3 }), B(nv, { 4, 5 }) };
     const_graph.vertex_to_partition = std::vector<uint_t> { 0, 0, 1, 1, 2, 2 };
 
     auto delta_graph = d::delta_kpkc::Graph {};
@@ -92,16 +103,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCStandard3)
     full_graph.adjacency_matrix[3].set(4);
     full_graph.adjacency_matrix[4].set(3);
 
-    auto workspace = d::delta_kpkc::Workspace {};
-    workspace.compatible_vertices.resize(k);
-    for (uint_t i = 0; i < k; ++i)
-    {
-        workspace.compatible_vertices[i].resize(k);
-        for (uint_t j = 0; j < k; ++j)
-            workspace.compatible_vertices[i][j].resize(const_graph.partitions[j].size());
-    }
-    workspace.partition_bits.resize(k);
-    workspace.partial_solution.resize(k);
+    auto workspace = d::delta_kpkc::Workspace(k, nv);
 
     auto dkpkc = d::delta_kpkc::DeltaKPKC(std::move(const_graph), std::move(delta_graph), std::move(full_graph), std::move(workspace));
 
@@ -119,7 +121,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta3)
     auto const_graph = d::delta_kpkc::ConstGraph {};
     const_graph.num_vertices = nv;
     const_graph.k = k;
-    const_graph.partitions = std::vector<std::vector<d::delta_kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }) };
+    const_graph.partition_masks = std::vector<boost::dynamic_bitset<>> { B(nv, { 0, 1 }), B(nv, { 2, 3 }), B(nv, { 4, 5 }) };
     const_graph.vertex_to_partition = std::vector<uint_t> { 0, 0, 1, 1, 2, 2 };
 
     auto delta_graph = d::delta_kpkc::Graph {};
@@ -162,16 +164,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta3)
     full_graph.adjacency_matrix[3].set(5);
     full_graph.adjacency_matrix[5].set(3);
 
-    auto workspace = d::delta_kpkc::Workspace {};
-    workspace.compatible_vertices.resize(k);
-    for (uint_t i = 0; i < k; ++i)
-    {
-        workspace.compatible_vertices[i].resize(k);
-        for (uint_t j = 0; j < k; ++j)
-            workspace.compatible_vertices[i][j].resize(const_graph.partitions[j].size());
-    }
-    workspace.partition_bits.resize(k);
-    workspace.partial_solution.resize(k);
+    auto workspace = d::delta_kpkc::Workspace(k, nv);
 
     auto dkpkc = d::delta_kpkc::DeltaKPKC(std::move(const_graph), std::move(delta_graph), std::move(full_graph), std::move(workspace));
 
@@ -189,7 +182,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCStandard4)
     auto const_graph = d::delta_kpkc::ConstGraph {};
     const_graph.num_vertices = nv;
     const_graph.k = k;
-    const_graph.partitions = std::vector<std::vector<d::delta_kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }), V({ 6, 7 }) };
+    const_graph.partition_masks = std::vector<boost::dynamic_bitset<>> { B(nv, { 0, 1 }), B(nv, { 2, 3 }), B(nv, { 4, 5 }), B(nv, { 6, 7 }) };
     const_graph.vertex_to_partition = std::vector<uint_t> { 0, 0, 1, 1, 2, 2, 3, 3 };
 
     auto delta_graph = d::delta_kpkc::Graph {};
@@ -246,16 +239,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCStandard4)
     full_graph.adjacency_matrix[4].set(7);
     full_graph.adjacency_matrix[7].set(4);
 
-    auto workspace = d::delta_kpkc::Workspace {};
-    workspace.compatible_vertices.resize(k);
-    for (uint_t i = 0; i < k; ++i)
-    {
-        workspace.compatible_vertices[i].resize(k);
-        for (uint_t j = 0; j < k; ++j)
-            workspace.compatible_vertices[i][j].resize(const_graph.partitions[j].size());
-    }
-    workspace.partition_bits.resize(k);
-    workspace.partial_solution.resize(k);
+    auto workspace = d::delta_kpkc::Workspace(k, nv);
 
     auto dkpkc = d::delta_kpkc::DeltaKPKC(std::move(const_graph), std::move(delta_graph), std::move(full_graph), std::move(workspace));
 
@@ -273,7 +257,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta4)
     auto const_graph = d::delta_kpkc::ConstGraph {};
     const_graph.num_vertices = nv;
     const_graph.k = k;
-    const_graph.partitions = std::vector<std::vector<d::delta_kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }), V({ 6, 7 }) };
+    const_graph.partition_masks = std::vector<boost::dynamic_bitset<>> { B(nv, { 0, 1 }), B(nv, { 2, 3 }), B(nv, { 4, 5 }), B(nv, { 6, 7 }) };
     const_graph.vertex_to_partition = std::vector<uint_t> { 0, 0, 1, 1, 2, 2, 3, 3 };
 
     auto delta_graph = d::delta_kpkc::Graph {};
@@ -326,16 +310,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta4)
     full_graph.adjacency_matrix[4].set(6);
     full_graph.adjacency_matrix[6].set(4);
 
-    auto workspace = d::delta_kpkc::Workspace {};
-    workspace.compatible_vertices.resize(k);
-    for (uint_t i = 0; i < k; ++i)
-    {
-        workspace.compatible_vertices[i].resize(k);
-        for (uint_t j = 0; j < k; ++j)
-            workspace.compatible_vertices[i][j].resize(const_graph.partitions[j].size());
-    }
-    workspace.partition_bits.resize(k);
-    workspace.partial_solution.resize(k);
+    auto workspace = d::delta_kpkc::Workspace(k, nv);
 
     auto dkpkc = d::delta_kpkc::DeltaKPKC(std::move(const_graph), std::move(delta_graph), std::move(full_graph), std::move(workspace));
 

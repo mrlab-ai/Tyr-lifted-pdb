@@ -22,6 +22,15 @@
 namespace tyr::datalog::delta_kpkc
 {
 
+Workspace::Workspace(size_t k, size_t nv) :
+    compatible_vertices(k, std::vector<boost::dynamic_bitset<>>(k, boost::dynamic_bitset<>(nv, false))),
+    forbidden_vertices(nv, boost::dynamic_bitset<>(nv, false)),
+    partition_bits(k, false),
+    partial_solution()
+{
+    partial_solution.reserve(k);
+}
+
 ConstGraph allocate_const_graph(const StaticConsistencyGraph& static_graph)
 {
     auto graph = ConstGraph();
@@ -35,14 +44,16 @@ ConstGraph allocate_const_graph(const StaticConsistencyGraph& static_graph)
     graph.num_vertices = num_vertices;
 
     // Initialize partitions
-    graph.partitions.resize(partitions.size());
+    graph.partition_masks.resize(partitions.size());
     graph.vertex_to_partition.resize(num_vertices);
     for (size_t i = 0; i < partitions.size(); ++i)
     {
+        auto& partition_mask = graph.partition_masks[i];
+        partition_mask.resize(num_vertices);
         for (const auto& v : partitions[i])
         {
-            graph.partitions[i].push_back(Vertex(v));
             graph.vertex_to_partition[v] = i;
+            partition_mask.set(v);
         }
     }
 
@@ -68,10 +79,12 @@ Graph allocate_empty_graph(const StaticConsistencyGraph& static_graph)
 
 Workspace allocate_empty_workspace(const StaticConsistencyGraph& static_graph)
 {
-    auto workspace = Workspace();
-
     const auto k = static_graph.get_condition().get_arity();
+    const auto nv = static_graph.get_num_vertices();
+
     const auto& partitions = static_graph.get_partitions();
+
+    auto workspace = Workspace(k, nv);
 
     // Allocate compatible vertices
     workspace.compatible_vertices.resize(k);

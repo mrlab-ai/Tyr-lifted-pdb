@@ -54,8 +54,8 @@ struct ConstGraph
     /// Meta
     size_t num_vertices;
     size_t k;
-    /// Vertex partitioning
-    std::vector<std::vector<Vertex>> partitions;  ///< Dimensions K x V
+    /// Vertex partitioning with continuous vertex indices [[0,1,2],[3,4],[5,6]]
+    std::vector<boost::dynamic_bitset<>> partition_masks;  ///< Dimensions K x V
     std::vector<uint_t> vertex_to_partition;
 };
 
@@ -186,9 +186,12 @@ struct Graph
 struct Workspace
 {
     std::vector<std::vector<boost::dynamic_bitset<>>> compatible_vertices;  ///< Dimensions K x K x V
+    std::vector<boost::dynamic_bitset<>> forbidden_vertices;                /// Dimensions V x V
     boost::dynamic_bitset<> partition_bits;                                 ///< Dimensions K
     std::vector<Vertex> partial_solution;                                   ///< Dimensions K
     uint_t anchor_edge_rank;
+
+    Workspace(size_t k, size_t nv);
 };
 
 class DeltaKPKC
@@ -368,13 +371,28 @@ private:
         auto& cv_0 = m_workspace.compatible_vertices[0];
         for (uint_t p = 0; p < m_const_graph.k; ++p)
         {
-            auto& cv_0_p = cv_0[p];
-            cv_0_p.reset();
+            cv_0[p] = m_const_graph.partition_masks[p];
+            cv_0[p] &= m_full_graph.vertices;
+        }
+    }
 
-            const auto& part = m_const_graph.partitions[p];
-            for (uint_t bit = 0; bit < part.size(); ++bit)
-                if (m_full_graph.vertices.test(part[bit].index))
-                    cv_0_p.set(bit);
+    void initialize_forbidden_vertices(uint_t rank)
+    {
+        for (auto& mask : m_workspace.forbidden_vertices)
+            mask.reset();
+
+        for (const auto& other : delta_edges_range())
+        {
+            const auto other_rank = edge_rank(other);
+
+            if (other_rank == rank)
+                continue;
+
+            if (other_rank < rank)
+            {
+                m_workspace.forbidden_vertices[other.src.index].set(other.dst.index);
+                m_workspace.forbidden_vertices[other.dst.index].set(other.src.index);
+            }
         }
     }
 
@@ -388,6 +406,8 @@ private:
         m_workspace.partial_solution.push_back(edge.src);
         m_workspace.partial_solution.push_back(edge.dst);
         m_workspace.anchor_edge_rank = edge_rank(edge);
+
+        initialize_forbidden_vertices(m_workspace.anchor_edge_rank);
 
         m_workspace.partition_bits.reset();
         m_workspace.partition_bits.set(pi);
@@ -403,10 +423,16 @@ private:
             if (p == pi || p == pj)
                 continue;
 
-            const auto& part = m_const_graph.partitions[p];
-            for (uint_t bit = 0; bit < part.size(); ++bit)
-                if (is_vertex_compatible_with_anchor(edge, Vertex { part[bit] }))
-                    cv_0_p.set(bit);
+            // 1. All active vertices in this partition
+            cv_0_p = m_const_graph.partition_masks[p];
+            // 2. Must be connected to BOTH ends of the anchor in the full graph
+            cv_0_p &= m_full_graph.adjacency_matrix[edge.src.index];
+            cv_0_p &= m_full_graph.adjacency_matrix[edge.dst.index];
+            // 3. Symmetry Breaking: Prune if edge to src/dst is in Delta AND has lower rank
+            // Note: Since forbidden_vertices[i] already filters for (rank < anchor),
+            // you are effectively doing: next &= ~(is_in_delta && rank_is_lower)
+            cv_0_p -= m_workspace.forbidden_vertices[edge.src.index];
+            cv_0_p -= m_workspace.forbidden_vertices[edge.dst.index];
         }
     }
 
@@ -434,16 +460,6 @@ private:
         return best_partition;
     }
 
-    void copy_current_compatible_vertices_to_next_depth(size_t depth)
-    {
-        const uint_t k = m_const_graph.k;
-        auto& cv_d = m_workspace.compatible_vertices[depth];
-        auto& next = m_workspace.compatible_vertices[depth + 1];
-
-        for (uint_t p = 0; p < k; ++p)
-            next[p] = cv_d[p];
-    }
-
     /// @brief Restrict candidates in each remaining partition to those with an edge connecting to the last chosen vertex `src`.
     /// @tparam Delta
     /// @param src
@@ -452,47 +468,36 @@ private:
     void update_compatible_adjacent_vertices_at_next_depth(Vertex src, size_t depth)
     {
         const uint_t k = m_const_graph.k;
-        auto& cv_d_next = m_workspace.compatible_vertices[depth + 1];
+
+        const auto& cv_curr = m_workspace.compatible_vertices[depth];
+        auto& cv_next = m_workspace.compatible_vertices[depth + 1];
         const auto& partition_bits = m_workspace.partition_bits;
 
-        // Offset trick assumes that vertices in lower partition have lower indices.
-        uint_t offset = 0;
-        for (uint_t partition = 0; partition < k; ++partition)
+        // Get the adjacency row for the new vertex once
+        const auto& full_adj = m_full_graph.adjacency_matrix[src.index];
+        const auto& forbidden_mask = m_workspace.forbidden_vertices[src.index];
+
+        for (uint_t p = 0; p < k; ++p)
         {
-            auto& cv_d_next_p = cv_d_next[partition];
-            auto partition_size = cv_d_next_p.size();
-            if (!partition_bits.test(partition))
+            // Skip partitions already represented in the partial solution
+            if (partition_bits.test(p))
+                continue;
+
+            auto& cv_next_p = cv_next[p];
+
+            // FUSED OPERATION:
+            // 1. Assignment (=) performs the copy.
+            // 2. The bitwise logic (&) performs the pruning.
+            // This happens in one single movement of data into the CPU registers.
+            cv_next[p] = cv_curr[p] & full_adj;
+
+            // 2. Delta-Rank Pruning (The "Lowest Rank" Rule)
+            if constexpr (Delta)
             {
-                for (uint_t bit = 0; bit < partition_size; ++bit)
-                {
-                    const auto dst = Vertex(bit + offset);
-                    {
-                        // Restriction
-                        const auto edge = Edge(src, dst);
-
-                        cv_d_next_p[bit] &= m_full_graph.contains(edge);
-                    }
-                    {
-                        // Delta-rank pruning
-                        if constexpr (Delta)
-                        {
-                            if (cv_d_next_p.test(bit))
-                            {
-                                for (uint_t i = 0; i < m_workspace.partial_solution.size(); ++i)
-                                {
-                                    const auto edge = Edge { m_workspace.partial_solution[i], dst };
-                                    assert(m_workspace.partial_solution[i] != dst);
-                                    assert(m_full_graph.contains(edge));
-
-                                    if (m_delta_graph.contains(edge) && edge_rank(edge) < m_workspace.anchor_edge_rank)
-                                        cv_d_next_p.reset(bit);
-                                }
-                            }
-                        }
-                    }
-                }
+                // Subtract vertices that form a delta-edge with 'src'
+                // having a rank lower than the anchor.
+                cv_next_p -= forbidden_mask;
             }
-            offset += partition_size;
         }
     }
 
@@ -525,11 +530,9 @@ private:
         auto& partial_solution = m_workspace.partial_solution;
 
         // Iterate through compatible vertices in the best partition
-        for (auto bit = cv_d_p.find_first(); bit != boost::dynamic_bitset<>::npos; bit = cv_d_p.find_next(bit))
+        for (auto v = cv_d_p.find_first(); v != boost::dynamic_bitset<>::npos; v = cv_d_p.find_next(v))
         {
-            cv_d_p.reset(bit);
-
-            const auto vertex = m_const_graph.partitions[p][bit];
+            const auto vertex = Vertex(v);
 
             partial_solution.push_back(vertex);
 
@@ -539,8 +542,6 @@ private:
             }
             else
             {
-                copy_current_compatible_vertices_to_next_depth(depth);
-
                 update_compatible_adjacent_vertices_at_next_depth<Delta>(vertex, depth);
 
                 partition_bits.set(p);
