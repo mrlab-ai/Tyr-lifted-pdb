@@ -25,6 +25,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     analysis/stratification.cpp
     analysis/task_domains.cpp
 
+    datalog/transformations/eliminate_dangling_existentials.cpp
     datalog/workspaces/d2p.cpp
     datalog/workspaces/facts.cpp
     datalog/workspaces/program.cpp

@@ -33,6 +33,12 @@ template<Context C>
 void collect_parameters(View<Data<Term>, C> element, UnorderedSet<ParameterIndex>& result);
 
 template<FactKind T, Context C>
+void collect_parameters(View<Index<Atom<T>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<FactKind T, Context C>
+void collect_parameters(View<Index<Literal<T>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<FactKind T, Context C>
 void collect_parameters(View<Index<FunctionTerm<T>>, C> element, UnorderedSet<ParameterIndex>& result);
 
 template<Context C>
@@ -80,6 +86,19 @@ void collect_parameters(View<Data<Term>, C> element, UnorderedSet<ParameterIndex
 }
 
 template<FactKind T, Context C>
+void collect_parameters(View<Index<Atom<T>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    for (const auto term : element.get_terms())
+        collect_parameters(term, result);
+}
+
+template<FactKind T, Context C>
+void collect_parameters(View<Index<Literal<T>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    collect_parameters(element.get_atom(), result);
+}
+
+template<FactKind T, Context C>
 void collect_parameters(View<Index<FunctionTerm<T>>, C> element, UnorderedSet<ParameterIndex>& result)
 {
     for (const auto term : element.get_terms())
@@ -89,7 +108,7 @@ void collect_parameters(View<Index<FunctionTerm<T>>, C> element, UnorderedSet<Pa
 template<Context C>
 void collect_parameters(View<Data<FunctionExpression>, C> element, UnorderedSet<ParameterIndex>& result)
 {
-    visit([&](auto&& arg) { return collect_parameters(arg, result); }, element.get_variant());
+    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }
 
 template<ArithmeticOpKind O, Context C>
@@ -115,20 +134,36 @@ void collect_parameters(View<Index<MultiOperator<O, Data<FunctionExpression>>>, 
 template<Context C>
 void collect_parameters(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result)
 {
-    visit([&](auto&& arg) { return collect_parameters(arg, result); }, element.get_variant());
+    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
 }
 
 template<Context C>
 void collect_parameters(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result)
 {
-    visit([&](auto&& arg) { return collect_parameters(arg, result); }, element.get_variant());
+    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
+}
+
+template<FactKind T, Context C>
+auto collect_parameters(View<Index<Atom<T>>, C> element)
+{
+    auto result = UnorderedSet<ParameterIndex> {};
+    collect_parameters(element, result);
+    return result;
+}
+
+template<FactKind T, Context C>
+auto collect_parameters(View<Index<Literal<T>>, C> element)
+{
+    auto result = UnorderedSet<ParameterIndex> {};
+    collect_parameters(element, result);
+    return result;
 }
 
 template<Context C>
 auto collect_parameters(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element)
 {
     auto result = UnorderedSet<ParameterIndex> {};
-    visit([&](auto&& arg) { return collect_parameters(arg, result); }, element.get_variant());
+    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
     return result;
 }
 

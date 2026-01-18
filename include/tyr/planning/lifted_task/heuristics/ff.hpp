@@ -20,6 +20,7 @@
 
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/applicability.hpp"
@@ -107,6 +108,9 @@ private:
             const auto action = it->second;
 
             grounder_context.binding = make_view(witness.binding, *this->m_workspace.rule_deltas[i].repository).get_data().objects;
+
+            std::cout << make_view(action, grounder_context.destination) << std::endl;
+            // std::cout << make_view(witness.binding, *this->m_workspace.rule_deltas[i].repository) << std::endl;
 
             const auto ground_action_index = formalism::planning::ground(make_view(action, grounder_context.destination),
                                                                          grounder_context,

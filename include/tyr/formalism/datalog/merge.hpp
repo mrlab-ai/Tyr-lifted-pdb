@@ -296,7 +296,7 @@ auto merge_d2d(View<Index<GroundFunctionTerm<T>>, C_SRC> element, MergeContext<C
     auto& fterm = *fterm_ptr;
     fterm.clear();
 
-    fterm.function = element.get_function().get_index();
+    fterm.index.group = element.get_function().get_index();
     fterm.objects = element.get_data().objects;
 
     canonicalize(fterm);
