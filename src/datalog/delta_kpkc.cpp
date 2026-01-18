@@ -22,15 +22,59 @@
 namespace tyr::datalog::delta_kpkc
 {
 
-ConstGraph::ConstGraph(size_t nv_, size_t k_, std::vector<std::vector<Vertex>> partitions_, std::vector<uint_t> vertex_to_partition_) :
+static bool verify_partitions(size_t nv, size_t k, const std::vector<std::vector<Vertex>>& partitions)
+{
+    if (partitions.size() != k)
+        return false;
+
+    auto expected = uint_t(0);
+
+    for (uint_t pi = 0; pi < k; ++pi)
+    {
+        for (auto vertex : partitions[pi])
+        {
+            const auto v = vertex.index;
+
+            // Must be in bounds
+            if (v >= nv)
+                return false;
+
+            // Enforce *global* contiguity/order across partitions:
+            // [[0,1,2],[3,4],...] => concatenation equals 0..nv-1
+            if (v != expected)
+                return false;
+
+            ++expected;
+        }
+    }
+
+    // Must cover exactly all vertices 0..nv-1 (no missing, no extras)
+    return expected == nv;
+}
+
+static bool verify_vertex_to_partition(size_t nv, size_t k, const std::vector<uint_t>& vertex_to_partition)
+{
+    if (vertex_to_partition.size() != nv)
+        return false;
+
+    for (uint_t v = 0; v < nv; ++v)
+        if (vertex_to_partition[v] >= k)
+            return false;
+
+    return true;
+}
+
+GraphLayout::GraphLayout(size_t nv_, size_t k_, std::vector<std::vector<Vertex>> partitions_, std::vector<uint_t> vertex_to_partition_) :
     nv(nv_),
     k(k_),
     partitions(std::move(partitions_)),
     vertex_to_partition(std::move(vertex_to_partition_))
 {
+    assert(verify_partitions(nv, k, partitions));
+    assert(verify_vertex_to_partition(nv, k, vertex_to_partition));
 }
 
-Workspace::Workspace(const ConstGraph& graph) :
+Workspace::Workspace(const GraphLayout& graph) :
     compatible_vertices(graph.k, std::vector<boost::dynamic_bitset<>>(graph.k)),
     partition_bits(graph.k, false),
     partial_solution()
@@ -42,7 +86,7 @@ Workspace::Workspace(const ConstGraph& graph) :
     partial_solution.reserve(graph.k);
 }
 
-ConstGraph allocate_const_graph(const StaticConsistencyGraph& static_graph)
+GraphLayout allocate_const_graph(const StaticConsistencyGraph& static_graph)
 {
     // Fetch data
     const auto nv = static_graph.get_num_vertices();
@@ -60,10 +104,10 @@ ConstGraph allocate_const_graph(const StaticConsistencyGraph& static_graph)
         }
     }
 
-    return ConstGraph(nv, k, std::move(partitions), std::move(vertex_to_partition));
+    return GraphLayout(nv, k, std::move(partitions), std::move(vertex_to_partition));
 }
 
-Graph allocate_empty_graph(const ConstGraph& cg)
+Graph allocate_empty_graph(const GraphLayout& cg)
 {
     auto graph = Graph();
 
@@ -82,16 +126,14 @@ DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
     m_const_graph(allocate_const_graph(static_graph)),
     m_delta_graph(allocate_empty_graph(m_const_graph)),
     m_full_graph(allocate_empty_graph(m_const_graph)),
-    m_workspace(m_const_graph),
     m_iteration(0)
 {
 }
 
-DeltaKPKC::DeltaKPKC(ConstGraph const_graph, Graph delta_graph, Graph full_graph, Workspace workspace) :
+DeltaKPKC::DeltaKPKC(GraphLayout const_graph, Graph delta_graph, Graph full_graph) :
     m_const_graph(std::move(const_graph)),
     m_delta_graph(std::move(delta_graph)),
     m_full_graph(std::move(full_graph)),
-    m_workspace(std::move(workspace)),
     m_iteration(0)
 {
 }
@@ -139,13 +181,6 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
         second_row.set(first_index);
     }
 
-    // Initialize compatible vertices: Set bits for depth = 0 because kpkc copies depth i into depth i + 1 before recursive call.
-    for (uint_t p = 0; p < m_const_graph.k; ++p)
-        m_workspace.compatible_vertices[0][p].set();
-
-    // Initialize partition bits: Reset the partition bits
-    m_workspace.partition_bits.reset();
-
     /// 3. Set delta graph vertices to those that were added
     m_delta_graph.vertices ^= m_full_graph.vertices;  // OLD ⊕ NEW
     m_delta_graph.vertices &= m_full_graph.vertices;  // (OLD ⊕ NEW) ∧ NEW = NEW ∧ ~OLD
@@ -168,4 +203,115 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
     // for (auto& bitset : m_delta_graph.adjacency_matrix)
     //     std::cout << bitset << std::endl;
 }
+
+void DeltaKPKC::reset()
+{
+    m_delta_graph.reset();
+    m_full_graph.reset();
+    m_iteration = 0;
+}
+
+void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
+{
+    workspace.partial_solution.clear();
+    workspace.partition_bits.reset();
+    workspace.anchor_edge_rank = std::numeric_limits<uint_t>::max();  // unused
+
+    auto& cv_0 = workspace.compatible_vertices[0];
+
+    for (uint_t p = 0; p < m_const_graph.k; ++p)
+    {
+        auto& cv_0_p = cv_0[p];
+        cv_0_p.reset();
+
+        const auto& partition = m_const_graph.partitions[p];
+        for (uint_t bit = 0; bit < partition.size(); ++bit)
+            if (m_full_graph.vertices.test(partition[bit].index))
+                cv_0_p.set(bit);
+    }
+}
+
+void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
+{
+    const uint_t pi = m_const_graph.vertex_to_partition[edge.src.index];
+    const uint_t pj = m_const_graph.vertex_to_partition[edge.dst.index];
+    assert(pi != pj);
+
+    workspace.partial_solution.clear();
+    workspace.partial_solution.push_back(edge.src);
+    workspace.partial_solution.push_back(edge.dst);
+    workspace.anchor_edge_rank = edge.rank(m_const_graph.nv);
+    workspace.partition_bits.reset();
+    workspace.partition_bits.set(pi);
+    workspace.partition_bits.set(pj);
+
+    auto is_legal = [&](const Edge& edge)
+    {
+        if (!m_full_graph.contains(edge))
+            return false;
+        if (!m_delta_graph.contains(edge))
+            return true;  // Not a delta edge -> always legal if in full
+        return edge.rank(m_const_graph.nv) > workspace.anchor_edge_rank;
+    };
+
+    auto& cv_0 = workspace.compatible_vertices[0];
+
+    for (uint_t p = 0; p < m_const_graph.k; ++p)
+    {
+        auto& cv_0_p = cv_0[p];
+        cv_0_p.reset();
+
+        if (p == pi || p == pj)
+            continue;
+
+        const auto& partition = m_const_graph.partitions[p];
+
+        for (uint_t bit = 0; bit < partition.size(); ++bit)
+        {
+            const auto vertex = partition[bit];
+
+            if (is_legal(Edge(edge.src, vertex)) && is_legal(Edge(edge.dst, vertex)))
+                cv_0_p.set(bit);
+        }
+    }
+}
+
+uint_t DeltaKPKC::choose_best_partition(size_t depth, const Workspace& workspace) const
+{
+    const uint_t k = m_const_graph.k;
+    const auto& cv_d = workspace.compatible_vertices[depth];
+    const auto& partition_bits = workspace.partition_bits;
+
+    uint_t best_partition = std::numeric_limits<uint_t>::max();
+    uint_t best_set_bits = std::numeric_limits<uint_t>::max();
+
+    for (uint_t p = 0; p < k; ++p)
+    {
+        if (partition_bits.test(p))
+            continue;
+
+        auto num_set_bits = cv_d[p].count();
+        if (num_set_bits < best_set_bits)
+        {
+            best_set_bits = num_set_bits;
+            best_partition = p;
+        }
+    }
+    return best_partition;
+}
+
+uint_t DeltaKPKC::num_possible_additions_at_next_depth(size_t depth, const Workspace& workspace) const
+{
+    const uint_t k = m_const_graph.k;
+    const auto& cv_d_next = workspace.compatible_vertices[depth + 1];
+    const auto& partition_bits = workspace.partition_bits;
+
+    uint_t possible_additions = 0;
+    for (uint_t partition = 0; partition < k; ++partition)
+        if (!partition_bits.test(partition) && cv_d_next[partition].any())
+            ++possible_additions;
+
+    return possible_additions;
+}
+
 }

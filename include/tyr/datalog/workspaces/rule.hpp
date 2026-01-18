@@ -32,6 +32,7 @@ namespace tyr::datalog
 struct RuleIterationWorkspace
 {
     delta_kpkc::DeltaKPKC kpkc;
+    delta_kpkc::Workspace kpkc_workspace;
 
     /// Merge stage into rule execution context
     std::shared_ptr<formalism::datalog::Repository> repository;
@@ -69,8 +70,7 @@ struct ConstRuleWorkspace
     Index<formalism::datalog::GroundConjunctiveCondition> nullary_condition;
     Index<formalism::datalog::ConjunctiveCondition> unary_overapproximation_condition;
     Index<formalism::datalog::ConjunctiveCondition> binary_overapproximation_condition;
-    Index<formalism::datalog::ConjunctiveCondition> unary_conflicting_overapproximation_condition;
-    Index<formalism::datalog::ConjunctiveCondition> binary_conflicting_overapproximation_condition;
+    Index<formalism::datalog::ConjunctiveCondition> conflicting_overapproximation_condition;
 
     StaticConsistencyGraph static_consistency_graph;
 
@@ -79,8 +79,7 @@ struct ConstRuleWorkspace
     auto get_nullary_condition() const noexcept { return make_view(nullary_condition, repository); }
     auto get_unary_overapproximation_condition() const noexcept { return make_view(unary_overapproximation_condition, repository); }
     auto get_binary_overapproximation_condition() const noexcept { return make_view(binary_overapproximation_condition, repository); }
-    auto get_unary_conflicting_overapproximation_condition() const noexcept { return make_view(unary_conflicting_overapproximation_condition, repository); }
-    auto get_binary_conflicting_overapproximation_condition() const noexcept { return make_view(binary_conflicting_overapproximation_condition, repository); }
+    auto get_conflicting_overapproximation_condition() const noexcept { return make_view(conflicting_overapproximation_condition, repository); }
 
     ConstRuleWorkspace(Index<formalism::datalog::Rule> rule,
                        formalism::datalog::Repository& repository,

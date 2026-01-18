@@ -37,6 +37,7 @@ namespace tyr::datalog
 
 RuleIterationWorkspace::RuleIterationWorkspace(const formalism::datalog::Repository& parent, const StaticConsistencyGraph& static_consistency_graph) :
     kpkc(static_consistency_graph),
+    kpkc_workspace(kpkc.get_graph_layout()),
     repository(std::make_shared<fd::Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
     overlay_repository(parent, *repository),
     binding(),
@@ -98,8 +99,8 @@ ConstRuleWorkspace::ConstRuleWorkspace(Index<formalism::datalog::Rule> rule,
     nullary_condition(create_ground_nullary_condition(get_rule().get_body(), repository).first),
     unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), repository).first),
     binary_overapproximation_condition(create_overapproximation_conjunctive_condition(2, get_rule().get_body(), repository).first),
-    unary_conflicting_overapproximation_condition(create_overapproximation_conflicting_conjunctive_condition(1, get_rule().get_body(), repository).first),
-    binary_conflicting_overapproximation_condition(create_overapproximation_conflicting_conjunctive_condition(2, get_rule().get_body(), repository).first),
+    conflicting_overapproximation_condition(
+        create_overapproximation_conflicting_conjunctive_condition(get_rule().get_arity() == 1 ? 1 : 2, get_rule().get_body(), repository).first),
     static_consistency_graph(get_rule(),
                              get_rule().get_body(),
                              get_unary_overapproximation_condition(),
