@@ -230,16 +230,16 @@ public:
     auto full_edges_range() const noexcept { return m_full_graph.edges_range(); }
 
     template<typename Callback>
-    void for_each_new_unary_head(Callback&& callback, Workspace& workspace) const;
+    void for_each_new_unary_clique(Callback&& callback, Workspace& workspace) const;
 
     template<typename Callback>
-    void for_each_unary_head(Callback&& callback, Workspace& workspace) const;
+    void for_each_unary_clique(Callback&& callback, Workspace& workspace) const;
 
     template<typename Callback>
-    void for_each_new_binary_head(Callback&& callback, Workspace& workspace) const;
+    void for_each_new_binary_clique(Callback&& callback, Workspace& workspace) const;
 
     template<typename Callback>
-    void for_each_binary_head(Callback&& callback, Workspace& workspace) const;
+    void for_each_binary_clique(Callback&& callback, Workspace& workspace) const;
 
     template<typename Callback>
     void for_each_k_clique(Callback&& callback, Workspace& workspace) const;
@@ -308,7 +308,7 @@ private:
  */
 
 template<typename Callback>
-void DeltaKPKC::for_each_new_unary_head(Callback&& callback, Workspace& workspace) const
+void DeltaKPKC::for_each_new_unary_clique(Callback&& callback, Workspace& workspace) const
 {
     assert(m_const_graph.k == 1);
 
@@ -322,7 +322,7 @@ void DeltaKPKC::for_each_new_unary_head(Callback&& callback, Workspace& workspac
 }
 
 template<typename Callback>
-void DeltaKPKC::for_each_unary_head(Callback&& callback, Workspace& workspace) const
+void DeltaKPKC::for_each_unary_clique(Callback&& callback, Workspace& workspace) const
 {
     assert(m_const_graph.k == 1);
 
@@ -336,7 +336,7 @@ void DeltaKPKC::for_each_unary_head(Callback&& callback, Workspace& workspace) c
 }
 
 template<typename Callback>
-void DeltaKPKC::for_each_new_binary_head(Callback&& callback, Workspace& workspace) const
+void DeltaKPKC::for_each_new_binary_clique(Callback&& callback, Workspace& workspace) const
 {
     assert(m_const_graph.k == 2);
 
@@ -351,7 +351,7 @@ void DeltaKPKC::for_each_new_binary_head(Callback&& callback, Workspace& workspa
 }
 
 template<typename Callback>
-void DeltaKPKC::for_each_binary_head(Callback&& callback, Workspace& workspace) const
+void DeltaKPKC::for_each_binary_clique(Callback&& callback, Workspace& workspace) const
 {
     assert(m_const_graph.k == 2);
 
@@ -378,11 +378,11 @@ void DeltaKPKC::for_each_k_clique(Callback&& callback, Workspace& workspace) con
     }
     else if (k == 1)
     {
-        for_each_unary_head(callback, workspace);
+        for_each_unary_clique(callback, workspace);
     }
     else if (k == 2)
     {
-        for_each_binary_head(callback, workspace);
+        for_each_binary_clique(callback, workspace);
     }
     else
     {
@@ -409,11 +409,11 @@ void DeltaKPKC::for_each_new_k_clique(Callback&& callback, Workspace& workspace)
         }
         else if (k == 1)
         {
-            for_each_new_unary_head(callback, workspace);
+            for_each_new_unary_clique(callback, workspace);
         }
         else if (k == 2)
         {
-            for_each_new_binary_head(callback, workspace);
+            for_each_new_binary_clique(callback, workspace);
         }
         else
         {
