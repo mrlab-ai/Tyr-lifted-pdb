@@ -19,10 +19,10 @@
 
 #include "tyr/datalog/consistency_graph.hpp"
 
-namespace tyr::datalog::delta_kpkc
+namespace tyr::datalog::kpkc
 {
 
-static bool verify_partitions(size_t nv, size_t k, const std::vector<std::vector<Vertex>>& partitions)
+[[maybe_unused]] static bool verify_partitions(size_t nv, size_t k, const std::vector<std::vector<Vertex>>& partitions)
 {
     if (partitions.size() != k)
         return false;
@@ -52,7 +52,7 @@ static bool verify_partitions(size_t nv, size_t k, const std::vector<std::vector
     return expected == nv;
 }
 
-static bool verify_vertex_to_partition(size_t nv, size_t k, const std::vector<uint_t>& vertex_to_partition)
+[[maybe_unused]] static bool verify_vertex_to_partition(size_t nv, size_t k, const std::vector<uint_t>& vertex_to_partition)
 {
     if (vertex_to_partition.size() != nv)
         return false;

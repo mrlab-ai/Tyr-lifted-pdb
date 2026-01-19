@@ -63,8 +63,7 @@ namespace tyr::datalog
 
 static void create_nullary_binding(IndexList<f::Object>& binding) { binding.clear(); }
 
-static void
-create_general_binding(const std::vector<delta_kpkc::Vertex>& clique, const StaticConsistencyGraph& consistency_graph, IndexList<f::Object>& binding)
+static void create_general_binding(const std::vector<kpkc::Vertex>& clique, const StaticConsistencyGraph& consistency_graph, IndexList<f::Object>& binding)
 {
     binding.resize(clique.size());
     for (const auto v : clique)
@@ -90,6 +89,7 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
         rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                       rctx.cws_rule.rule,
+                                      rctx.cws_rule.nullary_witness_condition,
                                       rctx.cws_rule.witness_condition,
                                       head_index,
                                       rctx.ctx.ctx.aps.or_annot,
@@ -134,6 +134,9 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
     // std::cout << std::endl << std::endl << rctx.cws_rule.get_rule() << std::endl;
 
+    auto generated = uint_t(0);
+    auto rules = std::vector<View<Index<fd::GroundRule>, f::OverlayRepository<fd::Repository>>> {};
+
     rctx.ws_rule.kpkc.for_each_new_k_clique(
         [&](auto&& clique)
         {
@@ -160,6 +163,8 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
             if (!applicability_check->is_statically_applicable())
                 return;
 
+            ++generated;
+
             // IMPORTANT: A binding can fail the nullary part (e.g., arm-empty) even though the clique already exists.
             // Later, nullary may become true without any new kPKC edges/vertices, so delta-kPKC will NOT re-enumerate this binding.
             // Therefore we must store it as pending (keyed by binding) and recheck in the next fact envelope.
@@ -171,6 +176,8 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 const auto head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
 
+                rules.push_back(make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iteration).first, rctx.ground_context_iteration.destination));
+
                 // std::cout << make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iteration).first, rctx.ground_context_iteration.destination)
                 //           << std::endl;
 
@@ -178,6 +185,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
+                                              rctx.cws_rule.nullary_witness_condition,
                                               rctx.cws_rule.witness_condition,
                                               head_index,
                                               rctx.ctx.ctx.aps.or_annot,
@@ -194,6 +202,26 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
             }
         },
         rctx.ws_rule.kpkc_workspace);
+
+    if (generated > 100)
+    {
+        // std::cout << "Generated: " << generated << std::endl;
+        // std::cout << "Rule:" << std::endl;
+        // std::cout << rctx.cws_rule.get_rule() << std::endl;
+        // std::cout << "Nullary witness condition:" << std::endl;
+        // std::cout << rctx.cws_rule.get_nullary_witness_condition() << std::endl;
+        // std::cout << "Witness condition:" << std::endl;
+        // std::cout << rctx.cws_rule.get_witness_condition() << std::endl;
+        // std::cout << "Nullary condition:" << std::endl;
+        // std::cout << rctx.cws_rule.get_nullary_condition() << std::endl;
+        // std::cout << "Overapproximation condition:" << std::endl;
+        // std::cout << rctx.cws_rule.get_conflicting_overapproximation_condition() << std::endl;
+        // std::cout << std::endl;
+        //  for (const auto& r : rules)
+        //{
+        //      std::cout << r << std::endl;
+        //  }
+    }
 
     // std::cout << "Num pending rules before: " << rctx.ws_rule_delta.pending_rules.size() << std::endl;
 
@@ -216,6 +244,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
+                                              rctx.cws_rule.nullary_witness_condition,
                                               rctx.cws_rule.witness_condition,
                                               head_index,
                                               rctx.ctx.ctx.aps.or_annot,

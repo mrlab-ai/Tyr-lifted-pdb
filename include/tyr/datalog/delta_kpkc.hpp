@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_DATALOG_KPKC_HPP_
-#define TYR_DATALOG_KPKC_HPP_
+#ifndef TYR_DATALOG_DELTA_KPKC_HPP_
+#define TYR_DATALOG_DELTA_KPKC_HPP_
 
 #include "tyr/common/formatter.hpp"
 #include "tyr/datalog/declarations.hpp"
@@ -26,7 +26,7 @@
 #include <iostream>
 #include <vector>
 
-namespace tyr::datalog::delta_kpkc
+namespace tyr::datalog::kpkc
 {
 struct Vertex
 {

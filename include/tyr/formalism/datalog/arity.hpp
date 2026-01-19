@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_DATALOG_ARITY_HPP_
 #define TYR_FORMALISM_DATALOG_ARITY_HPP_
 
+#include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
 namespace tyr::formalism::datalog
@@ -248,19 +249,35 @@ size_t max_fterm_arity(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> 
 }
 
 /**
- * effective_arity
+ * kpkc_arity
  */
 
 template<FactKind T, Context C>
-size_t effective_arity(View<Index<Literal<T>>, C> element)
+size_t kpkc_arity(View<Index<Literal<T>>, C> element)
 {
     return element.get_atom().get_predicate().get_arity();
 }
 
 template<Context C>
-size_t effective_arity(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element)
+size_t kpkc_arity(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element)
 {
     return std::max(max_fterm_arity(element), collect_parameters(element).size());
+}
+
+/**
+ * parameter_arity
+ */
+
+template<FactKind T, Context C>
+size_t parameter_arity(View<Index<Literal<T>>, C> element)
+{
+    return collect_parameters(element).size();
+}
+
+template<Context C>
+size_t parameter_arity(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element)
+{
+    return collect_parameters(element).size();
 }
 
 }

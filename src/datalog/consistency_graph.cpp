@@ -330,11 +330,11 @@ bool Vertex::consistent_literals(View<IndexList<fd::Literal<T>>, fd::Repository>
         const auto atom = literal.get_atom();
         const auto predicate = atom.get_predicate();
 
-        assert(effective_arity(literal) >= 1);  ///< We test nullary literals separately
+        assert(kpkc_arity(literal) > 0);  ///< We test nullary literals separately
 
         const auto negated = !literal.get_polarity();
 
-        assert(!negated || effective_arity(literal) == 1);  ///< Can only handly unary negated literals due to overapproximation
+        assert(!negated || kpkc_arity(literal) == 1);  ///< Can only handly unary negated literals due to overapproximation
 
         const auto& predicate_assignment_set = predicate_assignment_sets.get_set(predicate.get_index());
         const auto terms = atom.get_terms();
@@ -363,7 +363,7 @@ bool Vertex::consistent_numeric_constraints(View<DataList<fd::BooleanOperator<Da
 {
     for (const auto numeric_constraint : numeric_constraints)
     {
-        assert(effective_arity(numeric_constraint) >= 1);  ///< We test nullary constraints separately.
+        assert(kpkc_arity(numeric_constraint) > 0);  ///< We test nullary constraints separately.
 
         if (!is_satisfiable(numeric_constraint, *this, assignment_sets))
             return false;
@@ -415,11 +415,11 @@ bool Edge::consistent_literals(View<IndexList<fd::Literal<T>>, fd::Repository> l
         const auto atom = literal.get_atom();
         const auto predicate = atom.get_predicate();
 
-        assert(effective_arity(literal) >= 2);  ///< We test nullary and unary literals separately.
+        assert(kpkc_arity(literal) > 1);  ///< We test nullary and unary literals separately.
 
         const auto negated = !literal.get_polarity();
 
-        assert(!negated || effective_arity(literal) == 2);  ///< Can only handly binary negated literals due to overapproximation
+        assert(!negated || kpkc_arity(literal) == 2);  ///< Can only handly binary negated literals due to overapproximation
 
         const auto& predicate_assignment_set = predicate_assignment_sets.get_set(predicate.get_index());
         const auto terms = atom.get_terms();
@@ -450,7 +450,7 @@ bool Edge::consistent_numeric_constraints(View<DataList<fd::BooleanOperator<Data
 {
     for (const auto numeric_constraint : numeric_constraints)
     {
-        assert(effective_arity(numeric_constraint) >= 2);  ///< We test nullary and unary constraints separately.
+        assert(kpkc_arity(numeric_constraint) > 1);  ///< We test nullary and unary constraints separately.
 
         if (!is_satisfiable(numeric_constraint, *this, assignment_sets))
             return false;
@@ -813,15 +813,15 @@ std::pair<Index<fd::GroundConjunctiveCondition>, bool> create_ground_nullary_con
     auto grounder_context = fd::GrounderContext { builder, context, binding_empty };
 
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if (effective_arity(literal) == 0)
+        if (kpkc_arity(literal) == 0)
             conj_cond.static_literals.push_back(ground(literal, grounder_context).first);
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if (effective_arity(literal) == 0)
+        if (kpkc_arity(literal) == 0)
             conj_cond.fluent_literals.push_back(ground(literal, grounder_context).first);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (effective_arity(numeric_constraint) == 0)
+        if (kpkc_arity(numeric_constraint) == 0)
             conj_cond.numeric_constraints.push_back(ground(numeric_constraint, grounder_context));
 
     canonicalize(conj_cond);
@@ -840,15 +840,15 @@ create_overapproximation_conjunctive_condition(size_t k, View<Index<fd::Conjunct
         conj_cond.variables.push_back(variable.get_index());
 
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if ((!literal.get_polarity() && effective_arity(literal) == k) || (literal.get_polarity() && effective_arity(literal) >= k))
+        if ((!literal.get_polarity() && kpkc_arity(literal) == k) || (literal.get_polarity() && kpkc_arity(literal) >= k))
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if ((!literal.get_polarity() && effective_arity(literal) == k) || (literal.get_polarity() && effective_arity(literal) >= k))
+        if ((!literal.get_polarity() && kpkc_arity(literal) == k) || (literal.get_polarity() && kpkc_arity(literal) >= k))
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (effective_arity(numeric_constraint) >= k)
+        if (kpkc_arity(numeric_constraint) >= k)
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
@@ -867,15 +867,15 @@ create_overapproximation_conflicting_conjunctive_condition(size_t k, View<Index<
         conj_cond.variables.push_back(variable.get_index());
 
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if (effective_arity(literal) > k)
+        if (kpkc_arity(literal) > k)
             conj_cond.static_literals.push_back(literal.get_index());
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if (effective_arity(literal) > k)
+        if (kpkc_arity(literal) > k)
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (effective_arity(numeric_constraint) > k)
+        if (kpkc_arity(numeric_constraint) > k)
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
 
     canonicalize(conj_cond);
