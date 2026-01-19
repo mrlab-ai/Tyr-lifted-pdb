@@ -69,7 +69,13 @@ struct ProgramExecutionContext
 
         // Reset the kpkc
         for (auto& rule : ws.rules)
+        {
+            rule.static_consistency_graph.reset();
             rule.kpkc.reset();
+        }
+
+        // Reset cost buckets.
+        ws.cost_buckets.clear();
     }
 
     auto get_stratum_execution_contexts()

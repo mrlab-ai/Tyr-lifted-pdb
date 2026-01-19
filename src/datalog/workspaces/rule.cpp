@@ -63,7 +63,6 @@ void RuleIterationWorkspace::clear() noexcept
 {
     repository->clear();
     heads.clear();
-    static_consistency_graph.reset();
 }
 
 void RuleIterationWorkspace::initialize(const AssignmentSets& assignment_sets) { kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets); }

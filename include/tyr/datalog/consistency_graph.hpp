@@ -135,6 +135,7 @@ public:
 
         const StaticConsistencyGraph& get_graph() const noexcept;
 
+        void seek_next_active_including_current() noexcept;
         void advance() noexcept;
 
     public:
@@ -173,8 +174,9 @@ public:
                | std::views::filter(
                    [this, &assignment_sets](auto&& vertex)
                    {
-                       return vertex.consistent_literals(m_unary_overapproximation_condition.template get_literals<formalism::FluentTag>(),
-                                                         assignment_sets.fluent_sets.predicate)
+                       return m_active_sources.test(vertex.get_index())
+                              && vertex.consistent_literals(m_unary_overapproximation_condition.template get_literals<formalism::FluentTag>(),
+                                                            assignment_sets.fluent_sets.predicate)
                               && vertex.consistent_numeric_constraints(m_unary_overapproximation_condition.get_numeric_constraints(), assignment_sets);
                    });
     }

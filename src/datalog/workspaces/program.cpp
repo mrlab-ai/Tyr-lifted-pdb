@@ -51,8 +51,6 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
     }
 }
 
-void ProgramWorkspace::clear() noexcept { cost_buckets.clear(); }
-
 ConstProgramWorkspace::ConstProgramWorkspace(ProgramContext& context) :
     facts(context.get_program().get_predicates<formalism::StaticTag>(),
           context.get_program().get_functions<formalism::StaticTag>(),

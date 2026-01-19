@@ -158,9 +158,15 @@ void DeltaKPKC::set_next_assignment_sets(StaticConsistencyGraph& static_graph, c
 
     /// 2. Initialize the full graph
 
+    // std::cout << "set_next_assignment_sets" << std::endl;
+
     // Compute consistent vertices to speed up consistent edges computation
     for (const auto& vertex : static_graph.consistent_vertices(assignment_sets))
     {
+        // std::cout << "deactivate: " << vertex << std::endl;
+
+        // Enforce delta update
+        assert(!m_full_graph.vertices.test(vertex.get_index()));
         m_full_graph.vertices.set(vertex.get_index());
         static_graph.deactivate(vertex);
     }
@@ -168,12 +174,17 @@ void DeltaKPKC::set_next_assignment_sets(StaticConsistencyGraph& static_graph, c
     // Initialize adjacency matrix: Add consistent undirected edges to adj matrix.
     for (const auto& edge : static_graph.consistent_edges(assignment_sets, m_full_graph.vertices))
     {
+        // std::cout << "deactivate: " << edge << std::endl;
+
         const auto first_index = edge.get_src().get_index();
         const auto second_index = edge.get_dst().get_index();
         // Enforce invariant of static consistency graph
         assert(first_index != second_index);
         auto& first_row = m_full_graph.adjacency_matrix[first_index];
         auto& second_row = m_full_graph.adjacency_matrix[second_index];
+        // Enforce delta update
+        assert(!first_row.test(second_index));
+        assert(!second_row.test(first_index));
         first_row.set(second_index);
         second_row.set(first_index);
         static_graph.deactivate(edge);

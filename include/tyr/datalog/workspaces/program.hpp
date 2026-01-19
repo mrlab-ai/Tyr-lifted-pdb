@@ -142,8 +142,6 @@ struct ProgramWorkspace
     ProgramStatistics statistics;
 
     explicit ProgramWorkspace(ProgramContext& context, const ConstProgramWorkspace& cws);
-
-    void clear() noexcept;
 };
 
 struct ConstProgramWorkspace

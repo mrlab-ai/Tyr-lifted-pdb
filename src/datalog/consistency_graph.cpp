@@ -629,19 +629,26 @@ const StaticConsistencyGraph& StaticConsistencyGraph::EdgeIterator::get_graph() 
     return *m_graph;
 }
 
+void StaticConsistencyGraph::EdgeIterator::seek_next_active_including_current() noexcept
+{
+    while (m_index < get_graph().get_num_edges() && !get_graph().get_active_targets().test(m_index))
+    {
+        ++m_index;
+
+        if (++m_targets_pos >= get_graph().m_target_offsets[m_sources_pos])
+            ++m_sources_pos;
+    }
+}
+
 void StaticConsistencyGraph::EdgeIterator::advance() noexcept
 {
     // Force advance
     ++m_index;
+
     if (++m_targets_pos >= get_graph().m_target_offsets[m_sources_pos])
         ++m_sources_pos;
-    // Continue advance until next active edge or end
-    while (m_index < get_graph().get_num_edges() && !get_graph().get_active_targets().test(m_index))
-    {
-        ++m_index;
-        if (++m_targets_pos >= get_graph().m_target_offsets[m_sources_pos])
-            ++m_sources_pos;
-    }
+
+    seek_next_active_including_current();
 }
 
 StaticConsistencyGraph::EdgeIterator::EdgeIterator() noexcept : m_graph(nullptr), m_sources_pos(0), m_targets_pos(0) {}
@@ -652,6 +659,8 @@ StaticConsistencyGraph::EdgeIterator::EdgeIterator(const StaticConsistencyGraph&
     m_sources_pos(begin ? 0 : graph.m_sources.size()),
     m_targets_pos(begin ? 0 : graph.m_targets.size())
 {
+    if (begin && get_graph().get_num_edges() > 0)
+        seek_next_active_including_current();
 }
 
 StaticConsistencyGraph::EdgeIterator::value_type StaticConsistencyGraph::EdgeIterator::operator*() const noexcept
