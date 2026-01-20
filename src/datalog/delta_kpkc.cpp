@@ -107,6 +107,11 @@ GraphLayout allocate_const_graph(const StaticConsistencyGraph& static_graph)
     return GraphLayout(nv, k, std::move(partitions), std::move(vertex_to_partition));
 }
 
+GraphActivityMasks allocate_activity_mask(const StaticConsistencyGraph& static_graph)
+{
+    return GraphActivityMasks { boost::dynamic_bitset<>(static_graph.get_num_vertices(), true), boost::dynamic_bitset<>(static_graph.get_num_edges(), true) };
+}
+
 Graph allocate_empty_graph(const GraphLayout& cg)
 {
     auto graph = Graph();
@@ -126,6 +131,8 @@ DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
     m_const_graph(allocate_const_graph(static_graph)),
     m_delta_graph(allocate_empty_graph(m_const_graph)),
     m_full_graph(allocate_empty_graph(m_const_graph)),
+    m_read_masks(allocate_activity_mask(static_graph)),
+    m_write_masks(allocate_activity_mask(static_graph)),
     m_iteration(0)
 {
 }
@@ -153,53 +160,58 @@ void DeltaKPKC::set_next_assignment_sets(StaticConsistencyGraph& static_graph, c
     // for (auto& bitset : m_full_graph.adjacency_matrix)
     //     std::cout << bitset << std::endl;
 
-    /// 1. Copy old full into delta.
-    m_delta_graph = m_full_graph;
+    // Backup old graph
+    std::swap(m_delta_graph, m_full_graph);
 
     /// 2. Initialize the full graph
 
+    m_full_graph.reset();
+
     // std::cout << "set_next_assignment_sets" << std::endl;
 
-    // Compute consistent vertices to speed up consistent edges computation
-    for (const auto& vertex : static_graph.consistent_vertices(assignment_sets))
-    {
-        // std::cout << "deactivate: " << vertex << std::endl;
+    m_read_masks.vertices = m_write_masks.vertices;
+    m_read_masks.edges = m_write_masks.edges;
 
-        // Enforce delta update
-        assert(!m_full_graph.vertices.test(vertex.get_index()));
-        m_full_graph.vertices.set(vertex.get_index());
-        static_graph.deactivate(vertex);
-    }
+    // Compute consistent vertices to speed up consistent edges computation
+    static_graph.consistent_vertices(assignment_sets,
+                                     m_read_masks.vertices,
+                                     [&](auto&& vertex)
+                                     {
+                                         // std::cout << "deactivate: " << vertex << std::endl;
+                                         // Enforce delta update
+                                         assert(!m_delta_graph.vertices.test(vertex.get_index()));
+                                         m_full_graph.vertices.set(vertex.get_index());
+                                         m_write_masks.vertices.reset(vertex.get_index());
+                                     });
+
+    std::swap(m_delta_graph.vertices, m_full_graph.vertices);
+    m_full_graph.vertices |= m_delta_graph.vertices;
 
     // Initialize adjacency matrix: Add consistent undirected edges to adj matrix.
-    for (const auto& edge : static_graph.consistent_edges(assignment_sets, m_full_graph.vertices))
-    {
-        // std::cout << "deactivate: " << edge << std::endl;
+    static_graph.consistent_edges(assignment_sets,
+                                  m_read_masks.edges,
+                                  m_full_graph.vertices,
+                                  [&](auto&& edge)
+                                  {
+                                      // std::cout << "deactivate: " << edge << std::endl;
 
-        const auto first_index = edge.get_src().get_index();
-        const auto second_index = edge.get_dst().get_index();
-        // Enforce invariant of static consistency graph
-        assert(first_index != second_index);
-        auto& first_row = m_full_graph.adjacency_matrix[first_index];
-        auto& second_row = m_full_graph.adjacency_matrix[second_index];
-        // Enforce delta update
-        assert(!first_row.test(second_index));
-        assert(!second_row.test(first_index));
-        first_row.set(second_index);
-        second_row.set(first_index);
-        static_graph.deactivate(edge);
-    }
+                                      const auto first_index = edge.get_src().get_index();
+                                      const auto second_index = edge.get_dst().get_index();
+                                      // Enforce invariant of static consistency graph
+                                      assert(first_index != second_index);
+                                      auto& first_row = m_full_graph.adjacency_matrix[first_index];
+                                      auto& second_row = m_full_graph.adjacency_matrix[second_index];
+                                      // Enforce delta update
+                                      assert(!m_delta_graph.adjacency_matrix[first_index].test(second_index));
+                                      assert(!m_delta_graph.adjacency_matrix[second_index].test(first_index));
+                                      first_row.set(second_index);
+                                      second_row.set(first_index);
+                                      m_write_masks.edges.reset(edge.get_index());
+                                  });
 
-    /// 3. Set delta graph vertices to those that were added
-    m_delta_graph.vertices ^= m_full_graph.vertices;  // OLD ⊕ NEW
-    m_delta_graph.vertices &= m_full_graph.vertices;  // (OLD ⊕ NEW) ∧ NEW = NEW ∧ ~OLD
-
-    /// 4. Set delta graph edges to those that were added
+    std::swap(m_delta_graph.adjacency_matrix, m_full_graph.adjacency_matrix);
     for (uint v = 0; v < m_const_graph.nv; ++v)
-    {
-        m_delta_graph.adjacency_matrix[v] ^= m_full_graph.adjacency_matrix[v];  // OLD ⊕ NEW
-        m_delta_graph.adjacency_matrix[v] &= m_full_graph.adjacency_matrix[v];  // (OLD ⊕ NEW) ∧ NEW = NEW ∧ ~OLD
-    }
+        m_full_graph.adjacency_matrix[v] |= m_delta_graph.adjacency_matrix[v];
 
     // std::cout << "m_full_graph.vertices after:" << std::endl;
     // std::cout << m_full_graph.vertices << std::endl;
@@ -217,6 +229,8 @@ void DeltaKPKC::reset()
 {
     m_delta_graph.reset();
     m_full_graph.reset();
+    m_read_masks.reset();
+    m_write_masks.reset();
     m_iteration = 0;
 }
 

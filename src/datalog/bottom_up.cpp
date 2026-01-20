@@ -89,7 +89,6 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
         rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                       rctx.cws_rule.rule,
-                                      rctx.cws_rule.nullary_witness_condition,
                                       rctx.cws_rule.witness_condition,
                                       head_index,
                                       rctx.ctx.ctx.aps.or_annot,
@@ -185,7 +184,6 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
-                                              rctx.cws_rule.nullary_witness_condition,
                                               rctx.cws_rule.witness_condition,
                                               head_index,
                                               rctx.ctx.ctx.aps.or_annot,
@@ -208,8 +206,6 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
         // std::cout << "Generated: " << generated << std::endl;
         // std::cout << "Rule:" << std::endl;
         // std::cout << rctx.cws_rule.get_rule() << std::endl;
-        // std::cout << "Nullary witness condition:" << std::endl;
-        // std::cout << rctx.cws_rule.get_nullary_witness_condition() << std::endl;
         // std::cout << "Witness condition:" << std::endl;
         // std::cout << rctx.cws_rule.get_witness_condition() << std::endl;
         // std::cout << "Nullary condition:" << std::endl;
@@ -244,7 +240,6 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
-                                              rctx.cws_rule.nullary_witness_condition,
                                               rctx.cws_rule.witness_condition,
                                               head_index,
                                               rctx.ctx.ctx.aps.or_annot,

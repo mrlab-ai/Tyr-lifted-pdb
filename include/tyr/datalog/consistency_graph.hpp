@@ -135,7 +135,6 @@ public:
 
         const StaticConsistencyGraph& get_graph() const noexcept;
 
-        void seek_next_active_including_current() noexcept;
         void advance() noexcept;
 
     public:
@@ -159,39 +158,38 @@ public:
 
     auto get_edges() const noexcept { return std::ranges::subrange(EdgeIterator(*this, true), EdgeIterator(*this, false)); }
 
-    void reset() noexcept
+    template<typename Callback>
+    void consistent_vertices(const AssignmentSets& assignment_sets, const boost::dynamic_bitset<>& active_vertices, Callback&& callback) const
     {
-        m_active_sources.set();
-        m_active_targets.set();
+        for (const auto& vertex : get_vertices())
+        {
+            if (active_vertices.test(vertex.get_index())
+                && vertex.consistent_literals(m_unary_overapproximation_condition.template get_literals<formalism::FluentTag>(),
+                                              assignment_sets.fluent_sets.predicate)
+                && vertex.consistent_numeric_constraints(m_unary_overapproximation_condition.get_numeric_constraints(), assignment_sets))
+            {
+                callback(vertex);
+            }
+        }
     }
 
-    void deactivate(const details::Vertex& vertex) { m_active_sources.reset(vertex.get_index()); }
-    void deactivate(const details::Edge& edge) { m_active_targets.reset(edge.get_index()); }
-
-    auto consistent_vertices(const AssignmentSets& assignment_sets) const
+    template<typename Callback>
+    void consistent_edges(const AssignmentSets& assignment_sets,
+                          const boost::dynamic_bitset<>& active_edges,
+                          const boost::dynamic_bitset<>& consistent_vertices,
+                          Callback&& callback) const
     {
-        return get_vertices()
-               | std::views::filter(
-                   [this, &assignment_sets](auto&& vertex)
-                   {
-                       return m_active_sources.test(vertex.get_index())
-                              && vertex.consistent_literals(m_unary_overapproximation_condition.template get_literals<formalism::FluentTag>(),
-                                                            assignment_sets.fluent_sets.predicate)
-                              && vertex.consistent_numeric_constraints(m_unary_overapproximation_condition.get_numeric_constraints(), assignment_sets);
-                   });
-    }
-
-    auto consistent_edges(const AssignmentSets& assignment_sets, const boost::dynamic_bitset<>& consistent_vertices) const
-    {
-        return get_edges()
-               | std::views::filter(
-                   [this, &consistent_vertices, &assignment_sets](auto&& edge)
-                   {
-                       return consistent_vertices.test(edge.get_src().get_index()) && consistent_vertices.test(edge.get_dst().get_index())
-                              && edge.consistent_literals(m_binary_overapproximation_condition.template get_literals<formalism::FluentTag>(),
-                                                          assignment_sets.fluent_sets.predicate)
-                              && edge.consistent_numeric_constraints(m_binary_overapproximation_condition.get_numeric_constraints(), assignment_sets);
-                   });
+        for (const auto& edge : get_edges())
+        {
+            if (consistent_vertices.test(edge.get_src().get_index()) && consistent_vertices.test(edge.get_dst().get_index())
+                && active_edges.test(edge.get_index())
+                && edge.consistent_literals(m_binary_overapproximation_condition.template get_literals<formalism::FluentTag>(),
+                                            assignment_sets.fluent_sets.predicate)
+                && edge.consistent_numeric_constraints(m_binary_overapproximation_condition.get_numeric_constraints(), assignment_sets))
+            {
+                callback(edge);
+            }
+        }
     }
 
     const details::Vertex& get_vertex(uint_t index) const noexcept;
@@ -219,8 +217,6 @@ private:
     std::vector<uint_t> m_sources;  ///< sources with non-zero out-degree
     std::vector<uint_t> m_target_offsets;
     std::vector<uint_t> m_targets;
-    boost::dynamic_bitset<> m_active_sources;
-    boost::dynamic_bitset<> m_active_targets;
 
     std::vector<std::vector<uint_t>> m_partitions;
 };

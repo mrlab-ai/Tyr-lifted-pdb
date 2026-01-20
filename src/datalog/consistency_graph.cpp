@@ -603,8 +603,6 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
     m_sources = std::move(sources_);
     m_target_offsets = std::move(target_offsets_);
     m_targets = std::move(targets_);
-    m_active_sources.resize(m_vertices.size(), true);  ///< all active
-    m_active_targets.resize(m_targets.size(), true);   ///< all active
 }
 
 const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const noexcept { return m_vertices[index]; }
@@ -619,25 +617,10 @@ View<Index<fd::ConjunctiveCondition>, fd::Repository> StaticConsistencyGraph::ge
 
 const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_partitions() const noexcept { return m_partitions; }
 
-const boost::dynamic_bitset<>& StaticConsistencyGraph::get_active_sources() const noexcept { return m_active_sources; }
-
-const boost::dynamic_bitset<>& StaticConsistencyGraph::get_active_targets() const noexcept { return m_active_targets; }
-
 const StaticConsistencyGraph& StaticConsistencyGraph::EdgeIterator::get_graph() const noexcept
 {
     assert(m_graph);
     return *m_graph;
-}
-
-void StaticConsistencyGraph::EdgeIterator::seek_next_active_including_current() noexcept
-{
-    while (m_index < get_graph().get_num_edges() && !get_graph().get_active_targets().test(m_index))
-    {
-        ++m_index;
-
-        if (++m_targets_pos >= get_graph().m_target_offsets[m_sources_pos])
-            ++m_sources_pos;
-    }
 }
 
 void StaticConsistencyGraph::EdgeIterator::advance() noexcept
@@ -647,8 +630,6 @@ void StaticConsistencyGraph::EdgeIterator::advance() noexcept
 
     if (++m_targets_pos >= get_graph().m_target_offsets[m_sources_pos])
         ++m_sources_pos;
-
-    seek_next_active_including_current();
 }
 
 StaticConsistencyGraph::EdgeIterator::EdgeIterator() noexcept : m_graph(nullptr), m_sources_pos(0), m_targets_pos(0) {}
@@ -659,8 +640,6 @@ StaticConsistencyGraph::EdgeIterator::EdgeIterator(const StaticConsistencyGraph&
     m_sources_pos(begin ? 0 : graph.m_sources.size()),
     m_targets_pos(begin ? 0 : graph.m_targets.size())
 {
-    if (begin && get_graph().get_num_edges() > 0)
-        seek_next_active_including_current();
 }
 
 StaticConsistencyGraph::EdgeIterator::value_type StaticConsistencyGraph::EdgeIterator::operator*() const noexcept

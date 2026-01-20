@@ -22,21 +22,28 @@ ATTRIBUTES = [
 
     Attribute("coverage", min_wins=False),
     # GBFS Lazy
-    "plan_cost",
-    "plan_length",
+    "cost",
+    "length",
+    "unsolvable",
+
+    # VAL
+    "invalid",
 
     # Search
-    "search_time_ms",
-    "expansions",
-    "generated",
+    "search_time",
+    "num_expanded",
+    "num_generated",
 
     # Total
-    "total_time_ms",
-    "peak_memory_usage_bytes",
+    "total_time",
+    "memory",
 
     # Datalog
     Attribute("axiom_par_frac", function=geometric_mean, min_wins=False),
+    "axiom_num_exec",
     "axiom_par_ms",
+    "axiom_total_ms",
+    "axiom_avg_us",
     "axiom_rule_samples",
     Attribute("axiom_rule_tot_skew", function=geometric_mean, min_wins=False),
     "axiom_rule_tot_max_ms",
@@ -46,11 +53,12 @@ ATTRIBUTES = [
     "axiom_rule_avg_max_ns",
     "axiom_rule_avg_med_ns",
     "axiom_rule_avg_min_ns",
-    "axiom_seq_out_ms",
-    "axiom_total_ms",
 
     Attribute("ff_par_frac", function=geometric_mean, min_wins=False),
+    "ff_num_exec",
     "ff_par_ms",
+    "ff_total_ms",
+    "ff_avg_us",
     "ff_rule_samples",
     Attribute("ff_rule_tot_skew", function=geometric_mean, min_wins=False),
     "ff_rule_tot_max_ms",
@@ -60,11 +68,12 @@ ATTRIBUTES = [
     "ff_rule_avg_max_ns",
     "ff_rule_avg_med_ns",
     "ff_rule_avg_min_ns",
-    "ff_seq_out_ms",
-    "ff_total_ms",
 
     Attribute("succgen_par_frac", function=geometric_mean, min_wins=False),
+    "succgen_num_exec",
     "succgen_par_ms",
+    "succgen_total_ms",
+    "succgen_avg_us",
     "succgen_rule_samples",
     Attribute("succgen_rule_tot_skew", function=geometric_mean, min_wins=False),
     "succgen_rule_tot_max_ms",
@@ -74,11 +83,9 @@ ATTRIBUTES = [
     "succgen_rule_avg_max_ns",
     "succgen_rule_avg_med_ns",
     "succgen_rule_avg_min_ns",
-    "succgen_seq_out_ms",
-    "succgen_total_ms",
 ]
 
-exp = Experiment("gbfs_combine_2_3")
+exp = Experiment("gbfs_combine_1_2")
 
 def rename_algorithm(properties):
     """Rename algorithm dynamically during fetching."""
@@ -96,8 +103,8 @@ def rename_algorithm(properties):
         properties["id"][0] = "old-gbfs-lazy-ff-8"
     return properties
 
-exp.add_fetcher("../projection-delta-kpkc-strong-pending-2026-1-8-gbfs_lazy-profiling-classical-eval", filter=rename_algorithm)
-exp.add_fetcher("../projection-delta-kpkc-strong-pending-no-merge-2026-1-8-gbfs_lazy-profiling-classical-eval")
+exp.add_fetcher("1-2026-1-8-gbfs_lazy-profiling-classical-combined-eval", filter=rename_algorithm)
+exp.add_fetcher("2-2026-1-8-gbfs_lazy-profiling-classical-combined-eval")
 
 exp.add_report(BaseReport(attributes=ATTRIBUTES, filter_algorithm=[
     "old-gbfs-lazy-ff-1", 

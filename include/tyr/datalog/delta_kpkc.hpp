@@ -71,6 +71,18 @@ struct GraphLayout
     GraphLayout(size_t nv, size_t k, std::vector<std::vector<Vertex>> partitions, std::vector<uint_t> vertex_to_partition);
 };
 
+struct GraphActivityMasks
+{
+    boost::dynamic_bitset<> vertices;
+    boost::dynamic_bitset<> edges;
+
+    void reset() noexcept
+    {
+        vertices.set();
+        edges.set();
+    }
+};
+
 struct Graph
 {
     /// Vertices
@@ -300,6 +312,8 @@ private:
     GraphLayout m_const_graph;
     Graph m_delta_graph;
     Graph m_full_graph;
+    GraphActivityMasks m_read_masks;
+    GraphActivityMasks m_write_masks;
     size_t m_iteration;
 };
 

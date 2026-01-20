@@ -83,23 +83,6 @@ void RulePersistentWorkspace::clear() noexcept { repository->clear(); }
  * ConstRuleWorkspace
  */
 
-static auto create_ground_nullary_witness_condition(View<Index<fd::ConjunctiveCondition>, fd::Repository> element, fd::Repository& context)
-{
-    auto builder = fd::Builder {};
-    auto binding = IndexList<f::Object> {};
-    auto grounder_context = fd::GrounderContext { builder, context, binding };
-    auto conj_cond_ptr = builder.get_builder<fd::GroundConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
-
-    for (const auto& literal : element.get_literals<f::FluentTag>())
-        if (parameter_arity(literal) == 0 && literal.get_polarity())
-            conj_cond.fluent_literals.push_back(fd::ground(literal, grounder_context).first);
-
-    canonicalize(conj_cond);
-    return context.get_or_create(conj_cond, builder.get_buffer());
-}
-
 static auto create_witness_condition(View<Index<fd::ConjunctiveCondition>, fd::Repository> element, fd::Repository& context)
 {
     auto builder = fd::Builder {};
@@ -109,7 +92,7 @@ static auto create_witness_condition(View<Index<fd::ConjunctiveCondition>, fd::R
 
     conj_cond.variables = element.get_variables().get_data();
     for (const auto& literal : element.get_literals<f::FluentTag>())
-        if (parameter_arity(literal) > 0 && literal.get_polarity())
+        if (literal.get_polarity())
             conj_cond.fluent_literals.push_back(literal.get_index());
 
     canonicalize(conj_cond);
@@ -119,7 +102,6 @@ static auto create_witness_condition(View<Index<fd::ConjunctiveCondition>, fd::R
 ConstRuleWorkspace::ConstRuleWorkspace(Index<formalism::datalog::Rule> rule, formalism::datalog::Repository& repository) :
     rule(rule),
     repository(repository),
-    nullary_witness_condition(create_ground_nullary_witness_condition(get_rule().get_body(), repository).first),
     witness_condition(create_witness_condition(get_rule().get_body(), repository).first),
     nullary_condition(create_ground_nullary_condition(get_rule().get_body(), repository).first),
     unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), repository).first),
