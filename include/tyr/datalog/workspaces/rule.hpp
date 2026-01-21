@@ -66,6 +66,7 @@ struct ConstRuleWorkspace
     Index<formalism::datalog::Rule> rule;
     const formalism::datalog::Repository& repository;
 
+    Index<formalism::datalog::GroundConjunctiveCondition> nullary_witness_condition;
     Index<formalism::datalog::ConjunctiveCondition> witness_condition;
     Index<formalism::datalog::GroundConjunctiveCondition> nullary_condition;
     Index<formalism::datalog::ConjunctiveCondition> unary_overapproximation_condition;
@@ -75,6 +76,7 @@ struct ConstRuleWorkspace
     StaticConsistencyGraph static_consistency_graph;
 
     auto get_rule() const noexcept { return make_view(rule, repository); }
+    auto get_nullary_witness_condition() const noexcept { return make_view(nullary_witness_condition, repository); }
     auto get_witness_condition() const noexcept { return make_view(witness_condition, repository); }
     auto get_nullary_condition() const noexcept { return make_view(nullary_condition, repository); }
     auto get_unary_overapproximation_condition() const noexcept { return make_view(unary_overapproximation_condition, repository); }

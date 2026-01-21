@@ -90,6 +90,7 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
         rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                       rctx.cws_rule.rule,
+                                      rctx.cws_rule.nullary_witness_condition,
                                       rctx.cws_rule.witness_condition,
                                       program_head_index,
                                       delta_head_index,
@@ -182,6 +183,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
+                                              rctx.cws_rule.nullary_witness_condition,
                                               rctx.cws_rule.witness_condition,
                                               program_head_index,
                                               delta_head_index,
@@ -226,15 +228,19 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
         {
             rctx.ground_context_delta.binding = make_view(it->first, rctx.ground_context_delta.destination).get_objects().get_data();
 
-            if (it->second->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
+            // Fast path
+            assert(rctx.ground_context_delta.binding == rctx.ground_context_iteration.binding);
+            const auto program_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_iteration).first;
+
+            if (rctx.ctx.ctx.ws.facts.fact_sets.predicate.contains(program_head_index))  ///< optimal cost proven
+            {
+                it = rctx.ws_rule_delta.pending_rules.erase(it);
+            }
+            else if (it->second->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
             {
                 assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
 
                 // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
-
-                const auto program_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_iteration).first;
-                if (rctx.ctx.ctx.ws.facts.fact_sets.predicate.contains(program_head_index))
-                    continue;  ///< optimal cost proven
 
                 const auto delta_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
 
@@ -242,6 +248,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
+                                              rctx.cws_rule.nullary_witness_condition,
                                               rctx.cws_rule.witness_condition,
                                               program_head_index,
                                               delta_head_index,

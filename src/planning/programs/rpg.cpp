@@ -19,7 +19,6 @@
 
 #include "common.hpp"
 #include "tyr/common/unordered_set.hpp"
-#include "tyr/datalog/transformations/eliminate_dangling_existentials.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
@@ -265,7 +264,6 @@ static auto create_applicability_rule(View<Index<formalism::planning::Action>, f
     const auto new_conj_cond = make_view(context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first, context.destination);
 
     rule.variables = new_conj_cond.get_variables().get_data();
-    rule.num_fixed_prefix_variables = action.get_arity();
     rule.body = new_conj_cond.get_index();
     rule.head = create_applicability_atom(action, parameters, context).first;
     rule.cost = uint_t(1);
@@ -349,7 +347,6 @@ create_cond_effect_rule(View<Index<formalism::planning::Action>, formalism::Over
     const auto new_conj_cond = make_view(context.destination.get_or_create(conj_cond, context.builder.get_buffer()).first, context.destination);
 
     rule.variables = new_conj_cond.get_variables().get_data();
-    rule.num_fixed_prefix_variables = 0;
     rule.body = new_conj_cond.get_index();
     rule.head = merge(effect, mapping, context).first;
     rule.cost = uint_t(0);
@@ -477,46 +474,6 @@ static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayReposit
     canonicalize(program);
     return destination.get_or_create(program, builder.get_buffer()).first;
 }
-
-/*
-static Index<fd::Program> create_program(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                         fd::Repository& destination,
-                                         RPGProgram::AppPredicateToActionsMapping& predicate_to_actions)
-{
-    auto builder = fd::Builder();
-    auto repository = fd::Repository();
-    auto context = fp::MergeDatalogContext<fd::Repository>(builder, repository);
-    auto program_ptr = builder.get_builder<fd::Program>();
-    auto& program = *program_ptr;
-    program.clear();
-
-    for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
-        program.static_predicates.push_back(fp::merge_p2d(predicate, context).first);
-
-    for (const auto predicate : task.get_domain().get_predicates<f::FluentTag>())
-        program.fluent_predicates.push_back(fp::merge_p2d(predicate, context).first);
-
-    // We can ignore auxiliary function total-cost because it never occurs in a condition
-
-    for (const auto object : task.get_domain().get_constants())
-        program.objects.push_back(fp::merge_p2d(object, context).first);
-    for (const auto object : task.get_objects())
-        program.objects.push_back(fp::merge_p2d(object, context).first);
-
-    for (const auto atom : task.get_atoms<f::StaticTag>())
-        program.static_atoms.push_back(fp::merge_p2d(atom, context).first);
-
-    for (const auto atom : task.get_atoms<f::FluentTag>())
-        program.fluent_atoms.push_back(fp::merge_p2d(atom, context).first);
-
-    for (const auto action : task.get_domain().get_actions())
-        translate_action_to_delete_free_rules(action, program, context, predicate_to_actions);
-
-    canonicalize(program);
-    const auto rpg_program = repository.get_or_create(program, builder.get_buffer()).first;
-
-    return d::eliminate_dangling_existentials(make_view(rpg_program, repository), destination);
-}*/
 
 static auto create_program_context(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
                                    RPGProgram::AppPredicateToActionsMapping& predicate_to_actions)

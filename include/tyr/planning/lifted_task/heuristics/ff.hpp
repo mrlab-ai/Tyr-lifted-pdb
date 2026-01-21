@@ -120,14 +120,18 @@ private:
             m_relaxed_plan.insert(ground_action_index);
 
             const auto ground_action = make_view(ground_action_index, grounder_context.destination);
-
             if (is_applicable(ground_action, state_context, m_effect_families))
-            {
                 m_preferred_actions.insert(ground_action_index);
-            }
         }
 
         // Divide case: recursively call for preconditions.
+        for (const auto literal :
+             make_view(witness.nullary_witness_condition, this->m_workspace.rule_persistents[i].overlay_repository).get_literals<formalism::FluentTag>())
+        {
+            assert(literal.get_polarity());
+            extract_relaxed_plan_and_preferred_actions(literal.get_atom().get_index(), state_context, grounder_context);
+        }
+
         for (const auto literal :
              make_view(witness.witness_condition, this->m_workspace.rule_persistents[i].overlay_repository).get_literals<formalism::FluentTag>())
         {
