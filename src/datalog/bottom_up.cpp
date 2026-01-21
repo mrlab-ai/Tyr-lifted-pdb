@@ -90,7 +90,6 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
         rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                       rctx.cws_rule.rule,
-                                      rctx.cws_rule.nullary_witness_condition,
                                       rctx.cws_rule.witness_condition,
                                       program_head_index,
                                       delta_head_index,
@@ -183,7 +182,6 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
-                                              rctx.cws_rule.nullary_witness_condition,
                                               rctx.cws_rule.witness_condition,
                                               program_head_index,
                                               delta_head_index,
@@ -248,7 +246,6 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
-                                              rctx.cws_rule.nullary_witness_condition,
                                               rctx.cws_rule.witness_condition,
                                               program_head_index,
                                               delta_head_index,

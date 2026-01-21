@@ -54,7 +54,6 @@ struct Witness
 {
     Index<formalism::datalog::Rule> rule;
     Index<formalism::Binding> binding;
-    Index<formalism::datalog::GroundConjunctiveCondition> nullary_witness_condition;
     Index<formalism::datalog::GroundConjunctiveCondition> witness_condition;
 
     auto identifying_members() const noexcept { return std::tie(rule, binding); }
@@ -122,7 +121,6 @@ concept AndAnnotationPolicyConcept =
     requires(const T& p,
              uint_t current_cost,
              Index<formalism::datalog::Rule> rule,
-             Index<formalism::datalog::GroundConjunctiveCondition> nullary_witness_condition,
              Index<formalism::datalog::ConjunctiveCondition> witness_condition,
              Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
              Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
@@ -135,7 +133,6 @@ concept AndAnnotationPolicyConcept =
         {
             p.update_annotation(current_cost,
                                 rule,
-                                nullary_witness_condition,
                                 witness_condition,
                                 program_head,
                                 delta_head,
@@ -172,7 +169,6 @@ public:
 
     void update_annotation(uint_t current_cost,
                            Index<formalism::datalog::Rule> rule,
-                           Index<formalism::datalog::GroundConjunctiveCondition> nullary_witness_condition,
                            Index<formalism::datalog::ConjunctiveCondition> witness_condition,
                            Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
                            Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
@@ -273,7 +269,6 @@ public:
 
     void update_annotation(uint_t current_cost,
                            Index<formalism::datalog::Rule> rule,
-                           Index<formalism::datalog::GroundConjunctiveCondition> nullary_witness_condition,
                            Index<formalism::datalog::ConjunctiveCondition> witness_condition,
                            Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
                            Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
@@ -294,7 +289,7 @@ public:
             return;  ///< No local or global improvement
 
         const auto [witness_cost, witness] =
-            try_ground_better_witness(best_cost, rule, nullary_witness_condition, witness_condition, program_head, delta_context, persistent_context, or_annot);
+            try_ground_better_witness(best_cost, rule, witness_condition, program_head, delta_context, persistent_context, or_annot);
         if (!witness)
             return;  ///< No local or global improvement
 
@@ -324,7 +319,6 @@ private:
     static std::pair<uint_t, std::optional<Witness>>
     try_ground_better_witness(uint_t best_cost,
                               Index<formalism::datalog::Rule> rule,
-                              Index<formalism::datalog::GroundConjunctiveCondition> nullary_witness_condition,
                               Index<formalism::datalog::ConjunctiveCondition> witness_condition,
                               Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
                               formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
@@ -340,20 +334,6 @@ private:
         auto ground_conj_cond_ptr = persistent_context.builder.get_builder<formalism::datalog::GroundConjunctiveCondition>();
         auto& ground_conj_cond = *ground_conj_cond_ptr;
         ground_conj_cond.clear();
-
-        /// Cheaply accumulate cost of nullary pre-ground atoms.
-        for (const auto literal : make_view(nullary_witness_condition, persistent_context.destination).get_literals<formalism::FluentTag>())
-        {
-            assert(literal.get_polarity());
-
-            const auto ground_atom_cost = fetch_atom_cost(literal.get_atom().get_index(), or_annot);
-            assert(ground_atom_cost != std::numeric_limits<uint_t>::max());
-
-            body_cost = agg(body_cost, ground_atom_cost);
-
-            if (best_cost <= body_cost + rule_cost)
-                return std::make_pair(std::numeric_limits<uint_t>::max(), std::nullopt);  ///< No local or global improvement
-        }
 
         for (const auto literal : make_view(witness_condition, persistent_context.destination).get_literals<formalism::FluentTag>())
         {
@@ -378,7 +358,7 @@ private:
         const auto new_ground_conj_cond = persistent_context.destination.get_or_create(ground_conj_cond, persistent_context.builder.get_buffer()).first;
 
         const auto delta_binding = formalism::datalog::ground(delta_context.binding, delta_context).first;
-        const auto witness = Witness { rule, delta_binding, nullary_witness_condition, new_ground_conj_cond };
+        const auto witness = Witness { rule, delta_binding, new_ground_conj_cond };
 
         return std::make_pair(witness_cost, std::move(witness));
     }
