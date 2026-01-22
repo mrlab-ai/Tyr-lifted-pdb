@@ -34,6 +34,7 @@ ATTRIBUTES = [
     "search_time",
     "num_expanded",
     "num_generated",
+    "time_per_expanded",
 
     # Total
     "total_time",

@@ -19,6 +19,10 @@ def add_total_time(content, props):
     if "total_time_ms" in props:
         props["total_time"] = props["total_time_ms"] / 1000
 
+def add_time_per_expanded(context, props):
+    if "total_time" in props:
+        props["time_per_expanded"] = props["total_time"] / props["num_expanded"]
+
 def add_memory(content, props):
     if "peak_memory_usage_bytes" in props:
         props["memory"] = props["peak_memory_usage_bytes"] / 1000000
@@ -245,6 +249,7 @@ class GBFSLazyParser(Parser):
         self.add_function(process_unsolvable)
         self.add_function(add_search_time)
         self.add_function(add_total_time)
+        self.add_function(add_time_per_expanded)
         self.add_function(add_memory)
         self.add_function(add_coverage)
         self.add_function(parse_datalog_summaries)

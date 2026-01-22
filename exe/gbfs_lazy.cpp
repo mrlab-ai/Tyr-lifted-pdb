@@ -56,7 +56,9 @@ int main(int argc, char** argv)
         oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, program.get<std::size_t>("--num-worker-threads"));
         auto verbosity = program.get<size_t>("--verbosity");
 
-        auto parser = planning::Parser(domain_filepath);
+        auto parser_options = loki::ParserOptions();
+        // parser_options.strict = true;
+        auto parser = planning::Parser(domain_filepath, parser_options);
         auto domain = parser.get_domain();
 
         auto lifted_task = parser.parse_task(problem_filepath);
