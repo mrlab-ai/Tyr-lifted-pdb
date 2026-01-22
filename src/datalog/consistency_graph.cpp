@@ -511,6 +511,7 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
     const auto obj_p = src_is_p ? m_src.get_object_index() : m_dst.get_object_index();
     const auto obj_q = src_is_p ? m_dst.get_object_index() : m_src.get_object_index();
 
+    // TODO: this only considers literal that contain p and q
     for (const auto lit_id : indexed_literals.parameter_pairs_to_literal_infos[p][q])
     {
         const auto& info = indexed_literals.literal_infos[lit_id];
@@ -625,6 +626,10 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
             }
         }
     }
+
+    for (const auto lit_id : indexed_literals.parameter_to_literal_infos[p]) {}
+
+    for (const auto lit_id : indexed_literals.parameter_to_literal_infos[q]) {}
 
     return true;
 }
