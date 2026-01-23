@@ -37,25 +37,8 @@ class StaticConsistencyGraph;
 
 namespace details
 {
-template<formalism::FactKind T>
-struct LiteralInfo
+struct InfoMappings
 {
-    Index<formalism::Predicate<T>> predicate;
-    bool polarity;
-    size_t kpkc_arity;
-    std::vector<std::pair<uint_t, Index<formalism::Object>>> constant_positions;
-    std::vector<std::vector<uint_t>> parameter_to_positions;
-};
-
-struct ConstraintInfo
-{
-};
-
-template<formalism::FactKind T>
-struct TaggedIndexedLiterals
-{
-    std::vector<LiteralInfo<T>> literal_infos;
-
     // For building vertex assignments (p/o)
     std::vector<std::vector<uint_t>> parameter_to_literal_infos;
 
@@ -67,6 +50,30 @@ struct TaggedIndexedLiterals
     std::vector<uint_t> literal_infos_with_constants;
     // For global edge assignments (c,c') for constants c,c'
     std::vector<uint_t> literal_infos_with_constant_pairs;
+};
+
+struct PositionMappings
+{
+    std::vector<std::pair<uint_t, Index<formalism::Object>>> constant_positions;
+    std::vector<std::vector<uint_t>> parameter_to_positions;
+};
+
+template<formalism::FactKind T>
+struct LiteralInfo
+{
+    Index<formalism::Predicate<T>> predicate;
+    bool polarity;
+    size_t kpkc_arity;
+
+    PositionMappings mappings;
+};
+
+template<formalism::FactKind T>
+struct TaggedIndexedLiterals
+{
+    std::vector<LiteralInfo<T>> literal_infos;
+
+    InfoMappings mappings;
 };
 
 struct IndexedLiterals
@@ -84,6 +91,34 @@ struct IndexedLiterals
         else
             static_assert(dependent_false<T>::value, "Missing case");
     }
+};
+
+template<formalism::FactKind T>
+struct FunctionTermInfo
+{
+    Index<formalism::datalog::FunctionTerm<T>> fterm;
+    size_t kpkc_arity;
+
+    PositionMappings mappings;
+};
+
+template<formalism::FactKind T>
+struct TaggedFunctionTermInfo
+{
+    UnorderedMap<Index<formalism::datalog::FunctionTerm<T>>, FunctionTermInfo<T>> fterm_infos;
+
+    InfoMappings mappings;
+};
+
+struct ConstraintInfo
+{
+    TaggedFunctionTermInfo<formalism::StaticTag> static_infos;
+    TaggedFunctionTermInfo<formalism::FluentTag> fluent_infos;
+};
+
+struct IndexedConstraints
+{
+    std::vector<ConstraintInfo> infos;
 };
 
 /**

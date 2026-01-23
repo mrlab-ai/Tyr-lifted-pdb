@@ -34,6 +34,10 @@ extern std::ostream& print(std::ostream& os, const datalog::details::Vertex& el)
 
 extern std::ostream& print(std::ostream& os, const datalog::details::Edge& el);
 
+extern std::ostream& print(std::ostream& os, const datalog::details::InfoMappings& el);
+
+extern std::ostream& print(std::ostream& os, const datalog::details::PositionMappings& el);
+
 template<formalism::FactKind T>
 std::ostream& print(std::ostream& os, const datalog::details::LiteralInfo<T>& el);
 
@@ -58,8 +62,12 @@ extern std::ostream& operator<<(std::ostream& os, const Vertex& el);
 
 extern std::ostream& operator<<(std::ostream& os, const Edge& el);
 
+extern std::ostream& operator<<(std::ostream& os, const InfoMappings& el);
+
+extern std::ostream& operator<<(std::ostream& os, const PositionMappings& el);
+
 template<formalism::FactKind T>
-std::ostream& operator<<(std::ostream& os, const datalog::details::LiteralInfo<T>& el);
+std::ostream& operator<<(std::ostream& os, const LiteralInfo<T>& el);
 
 template<formalism::FactKind T>
 std::ostream& operator<<(std::ostream& os, const TaggedIndexedLiterals<T>& el);

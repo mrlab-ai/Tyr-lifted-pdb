@@ -60,6 +60,46 @@ std::ostream& print(std::ostream& os, const datalog::details::Edge& el)
     return os;
 }
 
+std::ostream& print(std::ostream& os, const datalog::details::InfoMappings& el)
+{
+    os << "InfoMappings(\n";
+
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "parameter to literal infos = " << el.parameter_to_literal_infos << "\n";
+
+        os << print_indent << "parameter pairs to literal infos = " << el.parameter_pairs_to_literal_infos << "\n";
+
+        os << print_indent << "parameter to literal infos with constants = " << el.parameter_to_literal_infos_with_constants << "\n";
+
+        os << print_indent << "literal infos with constants = " << el.literal_infos_with_constants << "\n";
+
+        os << print_indent << "literal infos with constant pairs = " << el.literal_infos_with_constant_pairs << "\n";
+    }
+
+    os << ")";
+
+    return os;
+}
+
+std::ostream& print(std::ostream& os, const datalog::details::PositionMappings& el)
+{
+    os << "PositionMappings(\n";
+
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "constant positions = " << el.constant_positions << "\n";
+
+        os << print_indent << "parameter to positions = " << el.parameter_to_positions << "\n";
+    }
+
+    os << ")";
+
+    return os;
+}
+
 template<formalism::FactKind T>
 std::ostream& print(std::ostream& os, const datalog::details::LiteralInfo<T>& el)
 {
@@ -72,9 +112,7 @@ std::ostream& print(std::ostream& os, const datalog::details::LiteralInfo<T>& el
 
         os << print_indent << "polarity = " << el.polarity << "\n";
 
-        os << print_indent << "constant positions = " << el.constant_positions << "\n";
-
-        os << print_indent << "parameter to positions = " << el.parameter_to_positions << "\n";
+        os << print_indent << "mappings = " << el.mappings << "\n";
     }
 
     os << ")";
@@ -92,15 +130,7 @@ std::ostream& print(std::ostream& os, const datalog::details::TaggedIndexedLiter
 
         os << print_indent << "literal infos = " << el.literal_infos << "\n";
 
-        os << print_indent << "parameter to literal infos = " << el.parameter_to_literal_infos << "\n";
-
-        os << print_indent << "parameter pairs to literal infos = " << el.parameter_pairs_to_literal_infos << "\n";
-
-        os << print_indent << "parameter to literal infos with constants = " << el.parameter_to_literal_infos_with_constants << "\n";
-
-        os << print_indent << "literal infos with constants = " << el.literal_infos_with_constants << "\n";
-
-        os << print_indent << "literal infos with constant pairs = " << el.literal_infos_with_constant_pairs << "\n";
+        os << print_indent << "mappings = " << el.mappings << "\n";
     }
 
     os << ")";
@@ -218,6 +248,10 @@ namespace datalog
 {
 namespace details
 {
+std::ostream& operator<<(std::ostream& os, const InfoMappings& el) { return print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const PositionMappings& el) { return print(os, el); }
+
 std::ostream& operator<<(std::ostream& os, const Vertex& el) { return print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const Edge& el) { return print(os, el); }

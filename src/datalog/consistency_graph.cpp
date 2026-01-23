@@ -363,7 +363,7 @@ bool Vertex::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literal
 {
     // std::cout << "Vertex: " << *this << std::endl;
 
-    for (const auto lit_id : indexed_literals.parameter_to_literal_infos[uint_t(m_parameter_index)])
+    for (const auto lit_id : indexed_literals.mappings.parameter_to_literal_infos[uint_t(m_parameter_index)])
     {
         const auto& info = indexed_literals.literal_infos[lit_id];
         const auto predicate = info.predicate;
@@ -373,7 +373,7 @@ bool Vertex::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literal
 
         const auto& pred_set = predicate_assignment_sets.get_set(predicate);
 
-        for (const auto position : info.parameter_to_positions[uint_t(m_parameter_index)])
+        for (const auto position : info.mappings.parameter_to_positions[uint_t(m_parameter_index)])
         {
             auto assignment = VertexAssignment(f::ParameterIndex(position), m_object_index);
             assert(assignment.is_valid());
@@ -499,7 +499,7 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
     // std::cout << "Edge: " << p << " " << q << std::endl;
 
     /// positions where p/q occur in that literal
-    for (const auto lit_id : indexed_literals.parameter_pairs_to_literal_infos[p][q])
+    for (const auto lit_id : indexed_literals.mappings.parameter_pairs_to_literal_infos[p][q])
     {
         const auto& info = indexed_literals.literal_infos[lit_id];
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
@@ -507,9 +507,9 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
-        for (auto pos_p : info.parameter_to_positions[p])
+        for (auto pos_p : info.mappings.parameter_to_positions[p])
         {
-            for (auto pos_q : info.parameter_to_positions[q])
+            for (auto pos_q : info.mappings.parameter_to_positions[q])
             {
                 assert(pos_p != pos_q);
 
@@ -537,7 +537,7 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
     }
 
     /// constant c with position pos_c < pos_p or pos_c > pos_p
-    for (const auto lit_id : indexed_literals.parameter_to_literal_infos_with_constants[p])
+    for (const auto lit_id : indexed_literals.mappings.parameter_to_literal_infos_with_constants[p])
     {
         const auto& info = indexed_literals.literal_infos[lit_id];
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
@@ -545,9 +545,9 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
-        for (auto pos_p : info.parameter_to_positions[p])
+        for (auto pos_p : info.mappings.parameter_to_positions[p])
         {
-            for (const auto& [pos_c, obj_c] : info.constant_positions)
+            for (const auto& [pos_c, obj_c] : info.mappings.constant_positions)
             {
                 assert(pos_p != pos_c);
 
@@ -574,7 +574,7 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
     }
 
     /// constant c with position pos_c < pos_q or pos_c > pos_q
-    for (const auto lit_id : indexed_literals.parameter_to_literal_infos_with_constants[q])
+    for (const auto lit_id : indexed_literals.mappings.parameter_to_literal_infos_with_constants[q])
     {
         const auto& info = indexed_literals.literal_infos[lit_id];
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
@@ -582,9 +582,9 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
-        for (auto pos_q : info.parameter_to_positions[q])
+        for (auto pos_q : info.mappings.parameter_to_positions[q])
         {
-            for (const auto& [pos_c, obj_c] : info.constant_positions)
+            for (const auto& [pos_c, obj_c] : info.mappings.constant_positions)
             {
                 assert(pos_q != pos_c);
 
@@ -768,7 +768,7 @@ template<formalism::FactKind T>
 bool StaticConsistencyGraph::constant_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
                                                           const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
 {
-    for (const auto& lit_id : indexed_literals.literal_infos_with_constants)
+    for (const auto& lit_id : indexed_literals.mappings.literal_infos_with_constants)
     {
         const auto& info = indexed_literals.literal_infos[lit_id];
         const auto predicate = info.predicate;
@@ -777,7 +777,7 @@ bool StaticConsistencyGraph::constant_consistent_literals(const details::TaggedI
 
         assert(polarity || info.kpkc_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
 
-        for (const auto& [position, object] : info.constant_positions)
+        for (const auto& [position, object] : info.mappings.constant_positions)
         {
             auto assignment = VertexAssignment(f::ParameterIndex(position), object);
             assert(assignment.is_valid());
@@ -804,7 +804,7 @@ bool StaticConsistencyGraph::constant_pair_consistent_literals(const details::Ta
                                                                const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
 {
     /// constants c,c' with positions pos_c < pos_c'
-    for (const auto& lit_id : indexed_literals.literal_infos_with_constant_pairs)
+    for (const auto& lit_id : indexed_literals.mappings.literal_infos_with_constant_pairs)
     {
         const auto& info = indexed_literals.literal_infos[lit_id];
         const auto predicate = info.predicate;
@@ -813,13 +813,13 @@ bool StaticConsistencyGraph::constant_pair_consistent_literals(const details::Ta
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
-        for (uint_t i = 0; i < info.constant_positions.size(); ++i)
+        for (uint_t i = 0; i < info.mappings.constant_positions.size(); ++i)
         {
-            const auto& [first_pos, first_obj] = info.constant_positions[i];
+            const auto& [first_pos, first_obj] = info.mappings.constant_positions[i];
 
-            for (uint_t j = i + 1; j < info.constant_positions.size(); ++j)
+            for (uint_t j = i + 1; j < info.mappings.constant_positions.size(); ++j)
             {
-                const auto& [second_pos, second_obj] = info.constant_positions[j];
+                const auto& [second_pos, second_obj] = info.mappings.constant_positions[j];
                 assert(first_pos < second_pos);
 
                 auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
@@ -847,11 +847,11 @@ auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Reposit
 {
     auto result = details::TaggedIndexedLiterals<T> {};
 
-    result.parameter_to_literal_infos = std::vector<std::vector<uint_t>>(arity);
-    result.parameter_pairs_to_literal_infos = std::vector<std::vector<std::vector<uint_t>>>(arity, std::vector<std::vector<uint_t>>(arity));
-    result.parameter_to_literal_infos_with_constants = std::vector<std::vector<uint_t>>(arity);
-    result.literal_infos_with_constants = std::vector<uint_t> {};
-    result.literal_infos_with_constant_pairs = std::vector<uint_t> {};
+    result.mappings.parameter_to_literal_infos = std::vector<std::vector<uint_t>>(arity);
+    result.mappings.parameter_pairs_to_literal_infos = std::vector<std::vector<std::vector<uint_t>>>(arity, std::vector<std::vector<uint_t>>(arity));
+    result.mappings.parameter_to_literal_infos_with_constants = std::vector<std::vector<uint_t>>(arity);
+    result.mappings.literal_infos_with_constants = std::vector<uint_t> {};
+    result.mappings.literal_infos_with_constant_pairs = std::vector<uint_t> {};
 
     for (const auto literal : literals)
     {
@@ -859,8 +859,8 @@ auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Reposit
         literal_info.predicate = literal.get_atom().get_predicate().get_index();
         literal_info.polarity = literal.get_polarity();
         literal_info.kpkc_arity = kpkc_arity(literal);
-        literal_info.constant_positions = std::vector<std::pair<uint_t, Index<formalism::Object>>> {};
-        literal_info.parameter_to_positions = std::vector<std::vector<uint_t>>(arity);
+        literal_info.mappings.constant_positions = std::vector<std::pair<uint_t, Index<formalism::Object>>> {};
+        literal_info.mappings.parameter_to_positions = std::vector<std::vector<uint_t>>(arity);
 
         const auto terms = literal.get_atom().get_terms();
 
@@ -878,12 +878,12 @@ auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Reposit
 
                     if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
                     {
-                        literal_info.parameter_to_positions[uint_t(arg)].push_back(position);
+                        literal_info.mappings.parameter_to_positions[uint_t(arg)].push_back(position);
                         ++num_parameters;
                     }
                     else if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, fd::Repository>>)
                     {
-                        literal_info.constant_positions.emplace_back(position, arg.get_index());
+                        literal_info.mappings.constant_positions.emplace_back(position, arg.get_index());
                         ++num_constants;
                     }
                     else
@@ -897,29 +897,29 @@ auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Reposit
 
         for (const auto param1 : parameters)
         {
-            result.parameter_to_literal_infos[uint_t(param1)].push_back(index);
+            result.mappings.parameter_to_literal_infos[uint_t(param1)].push_back(index);
 
             for (const auto param2 : parameters)
             {
                 if (param1 >= param2)
                     continue;
 
-                result.parameter_pairs_to_literal_infos[uint_t(param1)][uint_t(param2)].push_back(index);
+                result.mappings.parameter_pairs_to_literal_infos[uint_t(param1)][uint_t(param2)].push_back(index);
             }
         }
 
         if (num_constants > 0)
         {
-            result.literal_infos_with_constants.push_back(index);
+            result.mappings.literal_infos_with_constants.push_back(index);
             if (num_constants > 1)
-                result.literal_infos_with_constant_pairs.push_back(index);
+                result.mappings.literal_infos_with_constant_pairs.push_back(index);
 
             if (num_parameters > 0)
             {
                 for (uint_t param = 0; param < arity; ++param)
                 {
-                    if (!literal_info.parameter_to_positions[param].empty())
-                        result.parameter_to_literal_infos_with_constants[param].push_back(index);
+                    if (!literal_info.mappings.parameter_to_positions[param].empty())
+                        result.mappings.parameter_to_literal_infos_with_constants[param].push_back(index);
                 }
             }
         }
