@@ -97,7 +97,7 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                                       rctx.and_annot,
                                       rctx.delta_head_to_witness,
                                       rctx.ground_context_delta,
-                                      rctx.ground_context_persistent);
+                                      rctx.ctx.ctx.ws.repository);
     }
 }
 
@@ -192,7 +192,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                                               rctx.and_annot,
                                               rctx.delta_head_to_witness,
                                               rctx.ground_context_delta,
-                                              rctx.ground_context_persistent);
+                                              rctx.ctx.ctx.ws.repository);
             }
             else
             {
@@ -256,7 +256,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                                               rctx.and_annot,
                                               rctx.delta_head_to_witness,
                                               rctx.ground_context_delta,
-                                              rctx.ground_context_persistent);
+                                              rctx.ctx.ctx.ws.repository);
 
                 it = rctx.ws_rule_delta.pending_rules.erase(it);
             }

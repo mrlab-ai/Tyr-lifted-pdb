@@ -126,7 +126,6 @@ struct ProgramWorkspace
 
     std::vector<RuleIterationWorkspace> rules;
     std::vector<RuleDeltaWorkspace> rule_deltas;
-    std::vector<RulePersistentWorkspace> rule_persistents;
 
     D2PWorkspace d2p;
 

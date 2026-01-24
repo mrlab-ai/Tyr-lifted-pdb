@@ -29,6 +29,58 @@
 
 namespace tyr::datalog
 {
+/*
+struct RuleWorkspace
+{
+    struct Common
+    {
+        kpkc::DeltaKPKC kpkc;
+    };
+
+    struct WorkerIteration
+    {
+        kpkc::Workspace kpkc_workspace;
+
+        /// Merge stage into rule execution context
+        std::shared_ptr<formalism::datalog::Repository> repository;
+        formalism::OverlayRepository<formalism::datalog::Repository> overlay_repository;
+
+        /// Bindings kept from iteration in stage
+        IndexList<formalism::Object> binding;
+        UnorderedSet<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> heads;
+
+        RuleStatistics statistics;
+    };
+
+    struct WorkerSolve
+    {
+        /// Program repository to ground witnesses for which ground entities must already exist and we can simply call find.
+        formalism::datalog::RepositoryPtr program_repository;
+
+        /// Merge thread into staging area
+        formalism::datalog::RepositoryPtr stage_repository;
+
+        /// Memory for grounding
+        IndexList<formalism::Object> binding;
+
+        /// Debugging
+        UnorderedSet<IndexList<formalism::Object>> seen_bindings_dbg;
+
+        /// Pool applicability checks since we dont know how many are needed.
+        UniqueObjectPool<ApplicabilityCheck> applicability_check_pool;
+        UnorderedMap<Index<formalism::Binding>, UniqueObjectPoolPtr<ApplicabilityCheck>> pending_rules;
+    };
+
+    struct Worker
+    {
+        WorkerIteration iteration;
+        WorkerSolve solve;
+    };
+
+    Common common;
+    Worker worker;
+};*/
+
 struct RuleIterationWorkspace
 {
     kpkc::DeltaKPKC kpkc;
@@ -49,16 +101,6 @@ struct RuleIterationWorkspace
     void clear() noexcept;
 
     void initialize(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
-};
-
-struct RulePersistentWorkspace
-{
-    formalism::datalog::RepositoryPtr repository;
-    formalism::OverlayRepository<formalism::datalog::Repository> overlay_repository;
-
-    explicit RulePersistentWorkspace(const formalism::datalog::Repository& parent);
-
-    void clear() noexcept;
 };
 
 struct ConstRuleWorkspace

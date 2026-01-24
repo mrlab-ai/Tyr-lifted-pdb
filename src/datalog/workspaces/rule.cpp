@@ -60,18 +60,6 @@ void RuleIterationWorkspace::initialize(const StaticConsistencyGraph& static_con
 }
 
 /**
- * RulePersistentWorkspace
- */
-
-RulePersistentWorkspace::RulePersistentWorkspace(const formalism::datalog::Repository& parent) :
-    repository(std::make_shared<formalism::datalog::Repository>()),
-    overlay_repository(parent, *repository)
-{
-}
-
-void RulePersistentWorkspace::clear() noexcept { repository->clear(); }
-
-/**
  * ConstRuleWorkspace
  */
 

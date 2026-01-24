@@ -46,8 +46,6 @@ struct ProgramExecutionContext
         // Clear cross strata data structures.
         for (auto& rule_delta : ws.rule_deltas)
             rule_delta.clear();
-        for (auto& rule_persistent : ws.rule_persistents)
-            rule_persistent.clear();
         aps.clear();
         tp.clear();
 

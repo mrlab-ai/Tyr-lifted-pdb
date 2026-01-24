@@ -35,7 +35,6 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
           context.get_program().get_fterm_values<formalism::FluentTag>()),
     rules(),
     rule_deltas(context.get_program().get_rules().size()),
-    rule_persistents(),
     d2p(),
     worker(),
     planning_builder(),
@@ -45,10 +44,7 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
     statistics()
 {
     for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
-    {
         rules.emplace_back(context.get_repository(), cws.rules[i]);
-        rule_persistents.emplace_back(context.get_repository());
-    }
 }
 
 ConstProgramWorkspace::ConstProgramWorkspace(ProgramContext& context) :

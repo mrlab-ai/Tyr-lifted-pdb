@@ -44,15 +44,13 @@ struct RuleExecutionContext
         ws_rule(ctx.ctx.ws.rules[uint_t(rule)]),
         cws_rule(ctx.ctx.cws.rules[uint_t(rule)]),
         ws_rule_delta(ctx.ctx.ws.rule_deltas[uint_t(rule)]),
-        ws_rule_persistent(ctx.ctx.ws.rule_persistents[uint_t(rule)]),
         ws_worker(ctx.ctx.ws.worker.local()),
         and_ap(ctx.ctx.aps.and_aps[uint_t(rule)]),
         and_annot(ctx.ctx.aps.and_annots[uint_t(rule)]),
         delta_head_to_witness(ctx.ctx.aps.delta_head_to_witness[uint_t(rule)]),
         fact_sets(FactSets(ctx.ctx.cws.facts.fact_sets, ctx.ctx.ws.facts.fact_sets)),
         ground_context_delta(formalism::datalog::GrounderContext { ws_worker.builder, *ws_rule_delta.repository, ws_rule_delta.binding }),
-        ground_context_iteration(formalism::datalog::GrounderContext { ws_worker.builder, ws_rule.overlay_repository, ws_rule_delta.binding }),
-        ground_context_persistent(formalism::datalog::GrounderContext { ws_worker.builder, ws_rule_persistent.overlay_repository, ws_rule_delta.binding })
+        ground_context_iteration(formalism::datalog::GrounderContext { ws_worker.builder, ws_rule.overlay_repository, ws_rule_delta.binding })
     {
         ws_worker.clear();
         ws_rule.clear();
@@ -67,7 +65,6 @@ struct RuleExecutionContext
     RuleIterationWorkspace& ws_rule;
     const ConstRuleWorkspace& cws_rule;
     RuleDeltaWorkspace& ws_rule_delta;
-    RulePersistentWorkspace& ws_rule_persistent;
     WorkerWorkspace& ws_worker;
 
     /// Annotations
@@ -79,7 +76,6 @@ struct RuleExecutionContext
     FactSets fact_sets;
     formalism::datalog::GrounderContext<formalism::datalog::Repository> ground_context_delta;
     formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>> ground_context_iteration;
-    formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>> ground_context_persistent;
 };
 }
 
