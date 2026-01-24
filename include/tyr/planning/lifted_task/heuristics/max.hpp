@@ -34,10 +34,10 @@ public:
     MaxHeuristic(std::shared_ptr<LiftedTask> task) :
         RPGBase<MaxHeuristic<LiftedTask>>(std::move(task)),
         m_aps(datalog::OrAnnotationPolicy(),
-              std::vector<datalog::AndAnnotationPolicy<datalog::MaxAggregation>>(this->m_workspace.rule_deltas.size()),
+              std::vector<datalog::AndAnnotationPolicy<datalog::MaxAggregation>>(this->m_workspace.rules_solve.size()),
               datalog::OrAnnotationsList(this->m_task->get_rpg_program().get_program_context().get_program().get_predicates<formalism::FluentTag>().size()),
-              std::vector<datalog::AndAnnotationsMap>(this->m_workspace.rule_deltas.size()),
-              std::vector<datalog::HeadToWitness>(this->m_workspace.rule_deltas.size())),
+              std::vector<datalog::AndAnnotationsMap>(this->m_workspace.rules_solve.size()),
+              std::vector<datalog::HeadToWitness>(this->m_workspace.rules_solve.size())),
         m_tp(datalog::TerminationPolicy<datalog::MaxAggregation>(
             this->m_task->get_rpg_program().get_program_context().get_program().get_predicates<formalism::FluentTag>().size()))
     {

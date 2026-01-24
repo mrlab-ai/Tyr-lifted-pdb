@@ -221,21 +221,6 @@ static auto create_applicability_atom(View<Index<formalism::planning::Action>, f
     return context.destination.get_or_create(atom, context.builder.get_buffer());
 }
 
-static auto create_applicability_literal(View<Index<formalism::planning::Action>, formalism::OverlayRepository<formalism::planning::Repository>> action,
-                                         const UnorderedSet<f::ParameterIndex>& parameters,
-                                         formalism::planning::MergeDatalogContext<formalism::datalog::Repository>& context)
-{
-    auto literal_ptr = context.builder.get_builder<formalism::datalog::Literal<formalism::FluentTag>>();
-    auto& literal = *literal_ptr;
-    literal.clear();
-
-    literal.polarity = true;
-    literal.atom = create_applicability_atom(action, parameters, context).first;
-
-    canonicalize(literal);
-    return context.destination.get_or_create(literal, context.builder.get_buffer());
-}
-
 static auto create_applicability_rule(View<Index<formalism::planning::Action>, formalism::OverlayRepository<formalism::planning::Repository>> action,
                                       const UnorderedSet<f::ParameterIndex>& parameters,
                                       formalism::planning::MergeDatalogContext<formalism::datalog::Repository>& context)

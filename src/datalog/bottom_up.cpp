@@ -36,7 +36,6 @@
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
-#include "tyr/datalog/workspaces/rule_delta.hpp"
 #include "tyr/datalog/workspaces/worker.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"  // for View
 #include "tyr/formalism/datalog/declarations.hpp"                // for Context
@@ -77,16 +76,16 @@ static void create_general_binding(const std::vector<kpkc::Vertex>& clique, cons
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
-    create_nullary_binding(rctx.ground_context_delta.binding);
+    create_nullary_binding(rctx.ground_context_solve.binding);
 
     // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
     if (is_applicable(rctx.cws_rule.get_nullary_condition(), rctx.fact_sets)
-        && is_valid_binding(rctx.cws_rule.get_rule().get_body(), rctx.fact_sets, rctx.ground_context_iteration))
+        && is_valid_binding(rctx.cws_rule.get_rule().get_body(), rctx.fact_sets, rctx.ground_context_iter))
     {
-        const auto program_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_iteration).first;
-        const auto delta_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
+        const auto program_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_iter).first;
+        const auto delta_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_solve).first;
 
-        rctx.ws_rule.heads.insert(delta_head_index);
+        rctx.ws_rule_iter.heads.insert(delta_head_index);
 
         rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                       rctx.cws_rule.rule,
@@ -96,7 +95,7 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                                       rctx.ctx.ctx.aps.or_annot,
                                       rctx.and_annot,
                                       rctx.delta_head_to_witness,
-                                      rctx.ground_context_delta,
+                                      rctx.ground_context_solve,
                                       rctx.ctx.ctx.ws.repository);
     }
 }
@@ -140,25 +139,25 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     // auto generated = uint_t(0);
     //  auto rules = std::vector<View<Index<fd::GroundRule>, f::OverlayRepository<fd::Repository>>> {};
 
-    rctx.ws_rule.kpkc.for_each_new_k_clique(
+    rctx.ws_rule_iter.kpkc.for_each_new_k_clique(
         [&](auto&& clique)
         {
-            const auto stopwatch = StopwatchScope(rctx.ws_rule.statistics.gen_time);
+            const auto stopwatch = StopwatchScope(rctx.ws_rule_iter.statistics.gen_time);
 
-            create_general_binding(clique, rctx.cws_rule.static_consistency_graph, rctx.ground_context_delta.binding);
+            create_general_binding(clique, rctx.cws_rule.static_consistency_graph, rctx.ground_context_solve.binding);
 
-            assert(ensure_novel_binding(rctx.ground_context_delta.binding, rctx.ws_rule_delta.seen_bindings_dbg));
+            assert(ensure_novel_binding(rctx.ground_context_solve.binding, rctx.ws_rule_solve.seen_bindings_dbg));
 
-            const auto program_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_iteration).first;
+            const auto program_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_iter).first;
             if (rctx.ctx.ctx.ws.facts.fact_sets.predicate.contains(program_head_index))
                 return;  ///< optimal cost proven
 
-            ++rctx.ws_rule.statistics.num_bindings;
+            ++rctx.ws_rule_iter.statistics.num_bindings;
 
-            auto applicability_check = rctx.ws_rule_delta.applicability_check_pool.get_or_allocate(rctx.cws_rule.get_nullary_condition(),
+            auto applicability_check = rctx.ws_rule_solve.applicability_check_pool.get_or_allocate(rctx.cws_rule.get_nullary_condition(),
                                                                                                    rctx.cws_rule.get_conflicting_overapproximation_condition(),
                                                                                                    rctx.fact_sets,
-                                                                                                   rctx.ground_context_iteration);
+                                                                                                   rctx.ground_context_iter);
 
             if (!applicability_check->is_statically_applicable())
                 return;
@@ -168,20 +167,20 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
             // IMPORTANT: A binding can fail the nullary part (e.g., arm-empty) even though the clique already exists.
             // Later, nullary may become true without any new kPKC edges/vertices, so delta-kPKC will NOT re-enumerate this binding.
             // Therefore we must store it as pending (keyed by binding) and recheck in the next fact envelope.
-            if (applicability_check->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
+            if (applicability_check->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iter))
             {
-                assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
+                assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iter, rctx.fact_sets));
 
-                // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
+                // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_solve.binding << std::endl;
 
-                const auto delta_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
+                const auto delta_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_solve).first;
 
-                // rules.push_back(make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iteration).first, rctx.ground_context_iteration.destination));
+                // rules.push_back(make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iter).first, rctx.ground_context_iter.destination));
 
-                // std::cout << make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iteration).first, rctx.ground_context_iteration.destination)
+                // std::cout << make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iter).first, rctx.ground_context_iter.destination)
                 //           << std::endl;
 
-                rctx.ws_rule.heads.insert(delta_head_index);
+                rctx.ws_rule_iter.heads.insert(delta_head_index);
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
@@ -191,16 +190,16 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                                               rctx.ctx.ctx.aps.or_annot,
                                               rctx.and_annot,
                                               rctx.delta_head_to_witness,
-                                              rctx.ground_context_delta,
+                                              rctx.ground_context_solve,
                                               rctx.ctx.ctx.ws.repository);
             }
             else
             {
-                rctx.ws_rule_delta.pending_rules.emplace(fd::ground(rctx.ground_context_delta.binding, rctx.ground_context_delta).first,
+                rctx.ws_rule_solve.pending_rules.emplace(fd::ground(rctx.ground_context_solve.binding, rctx.ground_context_solve).first,
                                                          std::move(applicability_check));
             }
         },
-        rctx.ws_rule.kpkc_workspace);
+        rctx.ws_rule_iter.kpkc_workspace);
 
     // if (generated > 100)
     //{
@@ -220,32 +219,32 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     //    }
     //}
 
-    // std::cout << "Num pending rules before: " << rctx.ws_rule_delta.pending_rules.size() << std::endl;
+    // std::cout << "Num pending rules before: " << rctx.ws_rule_solve.pending_rules.size() << std::endl;
 
     {
-        const auto stopwatch = StopwatchScope(rctx.ws_rule.statistics.pending_time);
+        const auto stopwatch = StopwatchScope(rctx.ws_rule_iter.statistics.pending_time);
 
-        for (auto it = rctx.ws_rule_delta.pending_rules.begin(); it != rctx.ws_rule_delta.pending_rules.end();)
+        for (auto it = rctx.ws_rule_solve.pending_rules.begin(); it != rctx.ws_rule_solve.pending_rules.end();)
         {
-            rctx.ground_context_delta.binding = make_view(it->first, rctx.ground_context_delta.destination).get_objects().get_data();
+            rctx.ground_context_solve.binding = make_view(it->first, rctx.ground_context_solve.destination).get_objects().get_data();
 
             // Fast path
-            assert(rctx.ground_context_delta.binding == rctx.ground_context_iteration.binding);
-            const auto program_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_iteration).first;
+            assert(rctx.ground_context_solve.binding == rctx.ground_context_iter.binding);
+            const auto program_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_iter).first;
 
             if (rctx.ctx.ctx.ws.facts.fact_sets.predicate.contains(program_head_index))  ///< optimal cost proven
             {
-                it = rctx.ws_rule_delta.pending_rules.erase(it);
+                it = rctx.ws_rule_solve.pending_rules.erase(it);
             }
-            else if (it->second->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iteration))
+            else if (it->second->is_dynamically_applicable(rctx.fact_sets, rctx.ground_context_iter))
             {
-                assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iteration, rctx.fact_sets));
+                assert(ensure_applicability(rctx.cws_rule.get_rule(), rctx.ground_context_iter, rctx.fact_sets));
 
-                // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_delta.binding << std::endl;
+                // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_solve.binding << std::endl;
 
-                const auto delta_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_delta).first;
+                const auto delta_head_index = fd::ground(rctx.cws_rule.get_rule().get_head(), rctx.ground_context_solve).first;
 
-                rctx.ws_rule.heads.insert(delta_head_index);
+                rctx.ws_rule_iter.heads.insert(delta_head_index);
 
                 rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                               rctx.cws_rule.rule,
@@ -255,10 +254,10 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
                                               rctx.ctx.ctx.aps.or_annot,
                                               rctx.and_annot,
                                               rctx.delta_head_to_witness,
-                                              rctx.ground_context_delta,
+                                              rctx.ground_context_solve,
                                               rctx.ctx.ctx.ws.repository);
 
-                it = rctx.ws_rule_delta.pending_rules.erase(it);
+                it = rctx.ws_rule_solve.pending_rules.erase(it);
             }
             else
             {
@@ -266,7 +265,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
             }
         }
 
-        // std::cout << "Num pending rules after: " << rctx.ws_rule_delta.pending_rules.size() << std::endl;
+        // std::cout << "Num pending rules after: " << rctx.ws_rule_solve.pending_rules.size() << std::endl;
     }
 }
 
@@ -314,8 +313,8 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                                            {
                                                const auto i = uint_t(rule_index);
 
-                                               const auto rule_stopwatch = StopwatchScope(ctx.ctx.ws.rules[i].statistics.parallel_time);
-                                               ++ctx.ctx.ws.rules[i].statistics.num_executions;
+                                               const auto rule_stopwatch = StopwatchScope(ctx.ctx.ws.rules_iter[i].statistics.parallel_time);
+                                               ++ctx.ctx.ws.rules_iter[i].statistics.num_executions;
 
                                                // std::cout << make_view(rule_index, ctx.ctx.ws.repository) << std::endl;
 
@@ -343,10 +342,10 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 
                 auto merge_context = fd::MergeContext { ctx.ctx.ws.datalog_builder, ctx.ctx.ws.repository };
 
-                for (const auto delta_head : ctx.ctx.ws.rules[i].heads)
+                for (const auto delta_head : ctx.ctx.ws.rules_iter[i].heads)
                 {
                     // Merge head from delta into the program
-                    const auto program_head = fd::merge_d2d(make_view(delta_head, *ctx.ctx.ws.rule_deltas[i].repository), merge_context).first;
+                    const auto program_head = fd::merge_d2d(make_view(delta_head, *ctx.ctx.ws.rules_solve[i].repository), merge_context).first;
 
                     // Update annotation
                     const auto cost_update = ctx.ctx.aps.or_ap.update_annotation(program_head,

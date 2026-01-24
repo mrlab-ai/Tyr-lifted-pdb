@@ -32,7 +32,6 @@
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
-#include "tyr/datalog/workspaces/rule_delta.hpp"
 #include "tyr/datalog/workspaces/worker.hpp"
 
 #endif

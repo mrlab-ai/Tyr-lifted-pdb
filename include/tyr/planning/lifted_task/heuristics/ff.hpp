@@ -40,10 +40,10 @@ public:
     FFHeuristic(std::shared_ptr<LiftedTask> task) :
         RPGBase<FFHeuristic<LiftedTask>>(std::move(task)),
         m_aps(datalog::OrAnnotationPolicy(),
-              std::vector<datalog::AndAnnotationPolicy<datalog::SumAggregation>>(this->m_workspace.rule_deltas.size()),
+              std::vector<datalog::AndAnnotationPolicy<datalog::SumAggregation>>(this->m_workspace.rules_solve.size()),
               datalog::OrAnnotationsList(this->m_task->get_rpg_program().get_program_context().get_program().get_predicates<formalism::FluentTag>().size()),
-              std::vector<datalog::AndAnnotationsMap>(this->m_workspace.rule_deltas.size()),
-              std::vector<datalog::HeadToWitness>(this->m_workspace.rule_deltas.size())),
+              std::vector<datalog::AndAnnotationsMap>(this->m_workspace.rules_solve.size()),
+              std::vector<datalog::HeadToWitness>(this->m_workspace.rules_solve.size())),
         m_tp(datalog::TerminationPolicy<datalog::SumAggregation>(
             this->m_task->get_rpg_program().get_program_context().get_program().get_predicates<formalism::FluentTag>().size())),
         m_markings(this->m_task->get_rpg_program().get_program_context().get_program().get_predicates<formalism::FluentTag>().size()),
@@ -107,7 +107,7 @@ private:
         {
             const auto action = it->second;
 
-            grounder_context.binding = make_view(witness.binding, *this->m_workspace.rule_deltas[i].repository).get_data().objects;
+            grounder_context.binding = make_view(witness.binding, *this->m_workspace.rules_solve[i].repository).get_data().objects;
 
             const auto ground_action_index = formalism::planning::ground(make_view(action, grounder_context.destination),
                                                                          grounder_context,
@@ -125,7 +125,7 @@ private:
         }
 
         // Divide case: recursively call for preconditions.
-        for (const auto literal : make_view(witness.witness_condition, *this->m_workspace.rule_deltas[i].repository).get_literals<formalism::FluentTag>())
+        for (const auto literal : make_view(witness.witness_condition, *this->m_workspace.rules_solve[i].repository).get_literals<formalism::FluentTag>())
         {
             extract_relaxed_plan_and_preferred_actions(literal.get_atom().get_index(), state_context, grounder_context);
         }

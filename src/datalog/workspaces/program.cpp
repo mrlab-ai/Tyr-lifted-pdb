@@ -33,8 +33,8 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
           context.get_program().get_objects().size(),
           context.get_program().get_atoms<formalism::FluentTag>(),
           context.get_program().get_fterm_values<formalism::FluentTag>()),
-    rules(),
-    rule_deltas(context.get_program().get_rules().size()),
+    rules_iter(),
+    rules_solve(context.get_program().get_rules().size()),
     d2p(),
     worker(),
     planning_builder(),
@@ -44,7 +44,7 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
     statistics()
 {
     for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
-        rules.emplace_back(context.get_repository(), cws.rules[i]);
+        rules_iter.emplace_back(context.get_repository(), cws.rules[i]);
 }
 
 ConstProgramWorkspace::ConstProgramWorkspace(ProgramContext& context) :

@@ -24,7 +24,6 @@
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
-#include "tyr/datalog/workspaces/rule_delta.hpp"
 #include "tyr/datalog/workspaces/worker.hpp"
 #include "tyr/formalism/datalog/rule_index.hpp"
 
@@ -41,20 +40,20 @@ struct RuleExecutionContext
     RuleExecutionContext(Index<formalism::datalog::Rule> rule, StratumExecutionContext<OrAP, AndAP, TP>& ctx) :
         rule(rule),
         ctx(ctx),
-        ws_rule(ctx.ctx.ws.rules[uint_t(rule)]),
+        ws_rule_iter(ctx.ctx.ws.rules_iter[uint_t(rule)]),
         cws_rule(ctx.ctx.cws.rules[uint_t(rule)]),
-        ws_rule_delta(ctx.ctx.ws.rule_deltas[uint_t(rule)]),
+        ws_rule_solve(ctx.ctx.ws.rules_solve[uint_t(rule)]),
         ws_worker(ctx.ctx.ws.worker.local()),
         and_ap(ctx.ctx.aps.and_aps[uint_t(rule)]),
         and_annot(ctx.ctx.aps.and_annots[uint_t(rule)]),
         delta_head_to_witness(ctx.ctx.aps.delta_head_to_witness[uint_t(rule)]),
         fact_sets(FactSets(ctx.ctx.cws.facts.fact_sets, ctx.ctx.ws.facts.fact_sets)),
-        ground_context_delta(formalism::datalog::GrounderContext { ws_worker.builder, *ws_rule_delta.repository, ws_rule_delta.binding }),
-        ground_context_iteration(formalism::datalog::GrounderContext { ws_worker.builder, ws_rule.overlay_repository, ws_rule_delta.binding })
+        ground_context_solve(formalism::datalog::GrounderContext { ws_worker.builder, *ws_rule_solve.repository, ws_rule_solve.binding }),
+        ground_context_iter(formalism::datalog::GrounderContext { ws_worker.builder, ws_rule_iter.overlay_repository, ws_rule_solve.binding })
     {
         ws_worker.clear();
-        ws_rule.clear();
-        ws_rule.initialize(cws_rule.static_consistency_graph, AssignmentSets { ctx.ctx.cws.facts.assignment_sets, ctx.ctx.ws.facts.assignment_sets });
+        ws_rule_iter.clear();
+        ws_rule_iter.initialize(cws_rule.static_consistency_graph, AssignmentSets { ctx.ctx.cws.facts.assignment_sets, ctx.ctx.ws.facts.assignment_sets });
     }
 
     /// Inputs
@@ -62,9 +61,9 @@ struct RuleExecutionContext
     StratumExecutionContext<OrAP, AndAP, TP>& ctx;
 
     /// Workspaces
-    RuleIterationWorkspace& ws_rule;
+    RuleIterationWorkspace& ws_rule_iter;
     const ConstRuleWorkspace& cws_rule;
-    RuleDeltaWorkspace& ws_rule_delta;
+    RuleSolveWorkspace& ws_rule_solve;
     WorkerWorkspace& ws_worker;
 
     /// Annotations
@@ -74,8 +73,8 @@ struct RuleExecutionContext
 
     // Derivatives
     FactSets fact_sets;
-    formalism::datalog::GrounderContext<formalism::datalog::Repository> ground_context_delta;
-    formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>> ground_context_iteration;
+    formalism::datalog::GrounderContext<formalism::datalog::Repository> ground_context_solve;
+    formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>> ground_context_iter;
 };
 }
 

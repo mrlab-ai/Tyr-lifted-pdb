@@ -282,10 +282,10 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
     const auto const_workspace = d::ConstProgramWorkspace(ground_program.get_program_context());
     auto workspace = d::ProgramWorkspace(ground_program.get_program_context(), const_workspace);
     auto aps = d::AnnotationPolicies(d::NoOrAnnotationPolicy(),
-                                     std::vector<d::NoAndAnnotationPolicy>(workspace.rule_deltas.size()),
+                                     std::vector<d::NoAndAnnotationPolicy>(workspace.rules_solve.size()),
                                      d::OrAnnotationsList(),
-                                     std::vector<d::AndAnnotationsMap>(workspace.rule_deltas.size()),
-                                     std::vector<d::HeadToWitness>(workspace.rule_deltas.size()));
+                                     std::vector<d::AndAnnotationsMap>(workspace.rules_solve.size()),
+                                     std::vector<d::HeadToWitness>(workspace.rules_solve.size()));
     auto tp = d::NoTerminationPolicy();
 
     auto ctx = d::ProgramExecutionContext(workspace, const_workspace, aps, tp);

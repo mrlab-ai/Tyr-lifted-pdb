@@ -25,7 +25,6 @@
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
-#include "tyr/datalog/workspaces/rule_delta.hpp"
 
 #include <ranges>
 
@@ -44,8 +43,8 @@ struct ProgramExecutionContext
         tp(tp)
     {
         // Clear cross strata data structures.
-        for (auto& rule_delta : ws.rule_deltas)
-            rule_delta.clear();
+        for (auto& rule_solve : ws.rules_solve)
+            rule_solve.clear();
         aps.clear();
         tp.clear();
 
@@ -66,8 +65,8 @@ struct ProgramExecutionContext
         ws.facts.assignment_sets.insert(ws.facts.fact_sets);
 
         // Reset the kpkc
-        for (auto& rule : ws.rules)
-            rule.kpkc.reset();
+        for (auto& rule_iter : ws.rules_iter)
+            rule_iter.kpkc.reset();
 
         // Reset cost buckets.
         ws.cost_buckets.clear();

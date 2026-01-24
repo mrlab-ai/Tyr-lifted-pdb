@@ -26,7 +26,6 @@
 #include "tyr/datalog/workspaces/d2p.hpp"
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
-#include "tyr/datalog/workspaces/rule_delta.hpp"
 #include "tyr/datalog/workspaces/worker.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/planning/builder.hpp"
@@ -124,8 +123,8 @@ struct ProgramWorkspace
     formalism::datalog::Repository& repository;
     FactsWorkspace facts;
 
-    std::vector<RuleIterationWorkspace> rules;
-    std::vector<RuleDeltaWorkspace> rule_deltas;
+    std::vector<RuleIterationWorkspace> rules_iter;
+    std::vector<RuleSolveWorkspace> rules_solve;
 
     D2PWorkspace d2p;
 

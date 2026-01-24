@@ -60,6 +60,26 @@ void RuleIterationWorkspace::initialize(const StaticConsistencyGraph& static_con
 }
 
 /**
+ * RuleSolveWorkspace
+ */
+
+RuleSolveWorkspace::RuleSolveWorkspace() :
+    repository(std::make_shared<fd::Repository>()),
+    binding(),
+    seen_bindings_dbg(),
+    applicability_check_pool(),
+    pending_rules()
+{
+}
+
+void RuleSolveWorkspace::clear() noexcept
+{
+    repository->clear();
+    seen_bindings_dbg.clear();
+    pending_rules.clear();
+}
+
+/**
  * ConstRuleWorkspace
  */
 
