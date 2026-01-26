@@ -61,7 +61,7 @@ bool Vertex::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literal
 {
     // std::cout << "Vertex: " << *this << std::endl;
 
-    for (const auto lit_id : indexed_literals.mappings.parameter_to_infos[uint_t(m_parameter_index)])
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos[uint_t(m_parameter_index)])
     {
         const auto& info = indexed_literals.infos[lit_id];
         const auto predicate = info.predicate;
@@ -71,7 +71,7 @@ bool Vertex::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literal
 
         const auto& pred_set = predicate_assignment_sets.get_set(predicate);
 
-        for (const auto position : info.mappings.parameter_to_positions[uint_t(m_parameter_index)])
+        for (const auto position : info.position_mappings.parameter_to_positions[uint_t(m_parameter_index)])
         {
             auto assignment = VertexAssignment(f::ParameterIndex(position), m_object_index);
             assert(assignment.is_valid());
@@ -155,7 +155,7 @@ consistent_interval(const FunctionTermInfo<T>& info, const Vertex& vertex, const
 
     if (info.num_parameters >= 1)
     {
-        for (const auto position : info.mappings.parameter_to_positions[uint_t(vertex.get_parameter_index())])
+        for (const auto position : info.position_mappings.parameter_to_positions[uint_t(vertex.get_parameter_index())])
         {
             auto assignment = VertexAssignment(f::ParameterIndex(position), vertex.get_object_index());
             assert(assignment.is_valid());
@@ -170,7 +170,7 @@ consistent_interval(const FunctionTermInfo<T>& info, const Vertex& vertex, const
 
     if (info.num_constants >= 1)
     {
-        for (const auto& [position, object] : info.mappings.constant_positions)
+        for (const auto& [position, object] : info.position_mappings.constant_positions)
         {
             auto assignment = VertexAssignment(f::ParameterIndex(position), object);
             assert(assignment.is_valid());
@@ -220,9 +220,9 @@ consistent_interval(const FunctionTermInfo<T>& info, const Edge& edge, const Fun
     /// positions where p/q occur in that literal
     if (info.num_parameters >= 2)
     {
-        for (auto pos_p : info.mappings.parameter_to_positions[p])
+        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
         {
-            for (auto pos_q : info.mappings.parameter_to_positions[q])
+            for (auto pos_q : info.position_mappings.parameter_to_positions[q])
             {
                 assert(pos_p != pos_q);
 
@@ -252,9 +252,9 @@ consistent_interval(const FunctionTermInfo<T>& info, const Edge& edge, const Fun
     /// constant c with position pos_c < pos_p or pos_c > pos_p
     if (info.num_parameters >= 1 && info.num_constants >= 1)
     {
-        for (auto pos_p : info.mappings.parameter_to_positions[p])
+        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
         {
-            for (const auto& [pos_c, obj_c] : info.mappings.constant_positions)
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
             {
                 assert(pos_p != pos_c);
 
@@ -284,9 +284,9 @@ consistent_interval(const FunctionTermInfo<T>& info, const Edge& edge, const Fun
     /// constant c with position pos_c < pos_q or pos_c > pos_q
     if (info.num_parameters >= 1 && info.num_constants >= 1)
     {
-        for (auto pos_q : info.mappings.parameter_to_positions[q])
+        for (auto pos_q : info.position_mappings.parameter_to_positions[q])
         {
-            for (const auto& [pos_c, obj_c] : info.mappings.constant_positions)
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
             {
                 assert(pos_q != pos_c);
 
@@ -316,13 +316,13 @@ consistent_interval(const FunctionTermInfo<T>& info, const Edge& edge, const Fun
     /// constants c,c' with position pos_c < pos_c'
     if (info.num_constants >= 2)
     {
-        for (uint_t i = 0; i < info.mappings.constant_positions.size(); ++i)
+        for (uint_t i = 0; i < info.position_mappings.constant_positions.size(); ++i)
         {
-            const auto& [first_pos, first_obj] = info.mappings.constant_positions[i];
+            const auto& [first_pos, first_obj] = info.position_mappings.constant_positions[i];
 
-            for (uint_t j = i + 1; j < info.mappings.constant_positions.size(); ++j)
+            for (uint_t j = i + 1; j < info.position_mappings.constant_positions.size(); ++j)
             {
-                const auto& [second_pos, second_obj] = info.mappings.constant_positions[j];
+                const auto& [second_pos, second_obj] = info.position_mappings.constant_positions[j];
                 assert(first_pos < second_pos);
 
                 auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
@@ -482,7 +482,7 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
     // std::cout << "Edge: " << p << " " << q << std::endl;
 
     /// positions where p/q occur in that literal
-    for (const auto lit_id : indexed_literals.mappings.parameter_pairs_to_infos[p][q])
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_pairs_to_infos[p][q])
     {
         const auto& info = indexed_literals.infos[lit_id];
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
@@ -490,9 +490,9 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
-        for (auto pos_p : info.mappings.parameter_to_positions[p])
+        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
         {
-            for (auto pos_q : info.mappings.parameter_to_positions[q])
+            for (auto pos_q : info.position_mappings.parameter_to_positions[q])
             {
                 assert(pos_p != pos_q);
 
@@ -520,7 +520,7 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
     }
 
     /// constant c with position pos_c < pos_p or pos_c > pos_p
-    for (const auto lit_id : indexed_literals.mappings.parameter_to_infos_with_constants[p])
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[p])
     {
         const auto& info = indexed_literals.infos[lit_id];
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
@@ -528,9 +528,9 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
-        for (auto pos_p : info.mappings.parameter_to_positions[p])
+        for (auto pos_p : info.position_mappings.parameter_to_positions[p])
         {
-            for (const auto& [pos_c, obj_c] : info.mappings.constant_positions)
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
             {
                 assert(pos_p != pos_c);
 
@@ -557,7 +557,7 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
     }
 
     /// constant c with position pos_c < pos_q or pos_c > pos_q
-    for (const auto lit_id : indexed_literals.mappings.parameter_to_infos_with_constants[q])
+    for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[q])
     {
         const auto& info = indexed_literals.infos[lit_id];
         const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
@@ -565,9 +565,9 @@ bool Edge::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literals,
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
-        for (auto pos_q : info.mappings.parameter_to_positions[q])
+        for (auto pos_q : info.position_mappings.parameter_to_positions[q])
         {
-            for (const auto& [pos_c, obj_c] : info.mappings.constant_positions)
+            for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
             {
                 assert(pos_q != pos_c);
 
@@ -632,16 +632,18 @@ const Vertex& Edge::get_dst() const noexcept { return m_dst; }
  * StaticConsistencyGraph
  */
 
-std::pair<details::Vertices, std::vector<std::vector<uint_t>>>
+std::tuple<details::Vertices, std::vector<std::vector<uint_t>>, std::vector<std::vector<uint_t>>>
 StaticConsistencyGraph::compute_vertices(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
                                          const analysis::DomainListList& parameter_domains,
+                                         size_t num_objects,
                                          uint_t begin_parameter_index,
                                          uint_t end_parameter_index,
                                          const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets)
 {
     auto vertices = details::Vertices {};
 
-    auto partitions = std::vector<std::vector<uint_t>> {};
+    auto vertex_partitions = std::vector<std::vector<uint_t>> {};
+    auto object_to_vertex_partitions = std::vector<std::vector<uint_t>> {};
 
     if (constant_consistent_literals(indexed_literals, static_assignment_sets.predicate))
     {
@@ -649,7 +651,8 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedIndexedLiterals<f:
         {
             auto& parameter_domain = parameter_domains[parameter_index];
 
-            auto partition = std::vector<uint_t> {};
+            auto vertex_partition = std::vector<uint_t> {};
+            auto object_to_vertex_partition = std::vector<uint_t>(num_objects, std::numeric_limits<uint_t>::max());
 
             for (const auto object_index : parameter_domain)
             {
@@ -662,20 +665,22 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedIndexedLiterals<f:
                 if (vertex.consistent_literals(indexed_literals, static_assignment_sets.predicate))
                 {
                     vertices.push_back(std::move(vertex));
-                    partition.push_back(vertex.get_index());
+                    vertex_partition.push_back(vertex.get_index());
+                    object_to_vertex_partition[uint_t(object_index)] = vertex.get_index();
                 }
             }
 
-            partitions.push_back(partition);
+            vertex_partitions.push_back(std::move(vertex_partition));
+            object_to_vertex_partitions.push_back(std::move(object_to_vertex_partition));
         }
     }
     else
     {
         // We need the partitions for the remaining code to work. Ideally we prune such actions
-        partitions.resize(end_parameter_index - begin_parameter_index);
+        vertex_partitions.resize(end_parameter_index - begin_parameter_index);
     }
 
-    return { std::move(vertices), std::move(partitions) };
+    return { std::move(vertices), std::move(vertex_partitions), std::move(object_to_vertex_partitions) };
 }
 
 std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
@@ -729,7 +734,7 @@ template<formalism::FactKind T>
 bool StaticConsistencyGraph::constant_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
                                                           const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
 {
-    for (const auto& lit_id : indexed_literals.mappings.infos_with_constants)
+    for (const auto& lit_id : indexed_literals.info_mappings.infos_with_constants)
     {
         const auto& info = indexed_literals.infos[lit_id];
         const auto predicate = info.predicate;
@@ -738,7 +743,7 @@ bool StaticConsistencyGraph::constant_consistent_literals(const details::TaggedI
 
         assert(polarity || info.kpkc_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
 
-        for (const auto& [position, object] : info.mappings.constant_positions)
+        for (const auto& [position, object] : info.position_mappings.constant_positions)
         {
             auto assignment = VertexAssignment(f::ParameterIndex(position), object);
             assert(assignment.is_valid());
@@ -765,7 +770,7 @@ bool StaticConsistencyGraph::constant_pair_consistent_literals(const details::Ta
                                                                const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
 {
     /// constants c,c' with positions pos_c < pos_c'
-    for (const auto& lit_id : indexed_literals.mappings.infos_with_constant_pairs)
+    for (const auto& lit_id : indexed_literals.info_mappings.infos_with_constant_pairs)
     {
         const auto& info = indexed_literals.infos[lit_id];
         const auto predicate = info.predicate;
@@ -774,13 +779,13 @@ bool StaticConsistencyGraph::constant_pair_consistent_literals(const details::Ta
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
 
-        for (uint_t i = 0; i < info.mappings.constant_positions.size(); ++i)
+        for (uint_t i = 0; i < info.position_mappings.constant_positions.size(); ++i)
         {
-            const auto& [first_pos, first_obj] = info.mappings.constant_positions[i];
+            const auto& [first_pos, first_obj] = info.position_mappings.constant_positions[i];
 
-            for (uint_t j = i + 1; j < info.mappings.constant_positions.size(); ++j)
+            for (uint_t j = i + 1; j < info.position_mappings.constant_positions.size(); ++j)
             {
-                const auto& [second_pos, second_obj] = info.mappings.constant_positions[j];
+                const auto& [second_pos, second_obj] = info.position_mappings.constant_positions[j];
                 assert(first_pos < second_pos);
 
                 auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
@@ -804,15 +809,15 @@ template bool StaticConsistencyGraph::constant_pair_consistent_literals(const de
                                                                         const PredicateAssignmentSets<f::FluentTag>& predicate_assignment_sets) const noexcept;
 
 template<f::FactKind T>
-auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Repository> literals, size_t arity)
+static auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Repository> literals, size_t arity)
 {
     auto result = details::TaggedIndexedLiterals<T> {};
 
-    result.mappings.parameter_to_infos = std::vector<std::vector<uint_t>>(arity);
-    result.mappings.parameter_pairs_to_infos = std::vector<std::vector<std::vector<uint_t>>>(arity, std::vector<std::vector<uint_t>>(arity));
-    result.mappings.parameter_to_infos_with_constants = std::vector<std::vector<uint_t>>(arity);
-    result.mappings.infos_with_constants = std::vector<uint_t> {};
-    result.mappings.infos_with_constant_pairs = std::vector<uint_t> {};
+    result.info_mappings.parameter_to_infos = std::vector<std::vector<uint_t>>(arity);
+    result.info_mappings.parameter_pairs_to_infos = std::vector<std::vector<std::vector<uint_t>>>(arity, std::vector<std::vector<uint_t>>(arity));
+    result.info_mappings.parameter_to_infos_with_constants = std::vector<std::vector<uint_t>>(arity);
+    result.info_mappings.infos_with_constants = std::vector<uint_t> {};
+    result.info_mappings.infos_with_constant_pairs = std::vector<uint_t> {};
 
     for (const auto literal : literals)
     {
@@ -822,8 +827,8 @@ auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Reposit
         info.kpkc_arity = kpkc_arity(literal);
         info.num_parameters = uint_t(0);
         info.num_constants = uint_t(0);
-        info.mappings.constant_positions = std::vector<std::pair<uint_t, Index<formalism::Object>>> {};
-        info.mappings.parameter_to_positions = std::vector<std::vector<uint_t>>(arity);
+        info.position_mappings.constant_positions = std::vector<std::pair<uint_t, Index<formalism::Object>>> {};
+        info.position_mappings.parameter_to_positions = std::vector<std::vector<uint_t>>(arity);
 
         const auto terms = literal.get_atom().get_terms();
 
@@ -838,12 +843,12 @@ auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Reposit
 
                     if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
                     {
-                        info.mappings.parameter_to_positions[uint_t(arg)].push_back(position);
+                        info.position_mappings.parameter_to_positions[uint_t(arg)].push_back(position);
                         ++info.num_parameters;
                     }
                     else if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, fd::Repository>>)
                     {
-                        info.mappings.constant_positions.emplace_back(position, arg.get_index());
+                        info.position_mappings.constant_positions.emplace_back(position, arg.get_index());
                         ++info.num_constants;
                     }
                     else
@@ -857,29 +862,29 @@ auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Reposit
 
         for (const auto param1 : parameters)
         {
-            result.mappings.parameter_to_infos[uint_t(param1)].push_back(index);
+            result.info_mappings.parameter_to_infos[uint_t(param1)].push_back(index);
 
             for (const auto param2 : parameters)
             {
                 if (param1 >= param2)
                     continue;
 
-                result.mappings.parameter_pairs_to_infos[uint_t(param1)][uint_t(param2)].push_back(index);
+                result.info_mappings.parameter_pairs_to_infos[uint_t(param1)][uint_t(param2)].push_back(index);
             }
         }
 
         if (info.num_constants > 0)
         {
-            result.mappings.infos_with_constants.push_back(index);
+            result.info_mappings.infos_with_constants.push_back(index);
             if (info.num_constants > 1)
-                result.mappings.infos_with_constant_pairs.push_back(index);
+                result.info_mappings.infos_with_constant_pairs.push_back(index);
 
             if (info.num_parameters > 0)
             {
                 for (uint_t param = 0; param < arity; ++param)
                 {
-                    if (!info.mappings.parameter_to_positions[param].empty())
-                        result.mappings.parameter_to_infos_with_constants[param].push_back(index);
+                    if (!info.position_mappings.parameter_to_positions[param].empty())
+                        result.info_mappings.parameter_to_infos_with_constants[param].push_back(index);
                 }
             }
         }
@@ -891,15 +896,15 @@ auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Reposit
 }
 
 template<f::FactKind T>
-auto compute_tagged_indexed_fterms(View<IndexList<fd::FunctionTerm<T>>, fd::Repository> fterms, size_t arity)
+static auto compute_tagged_indexed_fterms(View<IndexList<fd::FunctionTerm<T>>, fd::Repository> fterms, size_t arity)
 {
     auto result = details::TaggedIndexedFunctionTerms<T> {};
 
-    result.mappings.parameter_to_infos = std::vector<std::vector<uint_t>>(arity);
-    result.mappings.parameter_pairs_to_infos = std::vector<std::vector<std::vector<uint_t>>>(arity, std::vector<std::vector<uint_t>>(arity));
-    result.mappings.parameter_to_infos_with_constants = std::vector<std::vector<uint_t>>(arity);
-    result.mappings.infos_with_constants = std::vector<uint_t> {};
-    result.mappings.infos_with_constant_pairs = std::vector<uint_t> {};
+    result.info_mappings.parameter_to_infos = std::vector<std::vector<uint_t>>(arity);
+    result.info_mappings.parameter_pairs_to_infos = std::vector<std::vector<std::vector<uint_t>>>(arity, std::vector<std::vector<uint_t>>(arity));
+    result.info_mappings.parameter_to_infos_with_constants = std::vector<std::vector<uint_t>>(arity);
+    result.info_mappings.infos_with_constants = std::vector<uint_t> {};
+    result.info_mappings.infos_with_constant_pairs = std::vector<uint_t> {};
 
     for (const auto fterm : fterms)
     {
@@ -908,8 +913,8 @@ auto compute_tagged_indexed_fterms(View<IndexList<fd::FunctionTerm<T>>, fd::Repo
         info.kpkc_arity = kpkc_arity(fterm);
         info.num_parameters = uint_t(0);
         info.num_constants = uint_t(0);
-        info.mappings.constant_positions = std::vector<std::pair<uint_t, Index<formalism::Object>>> {};
-        info.mappings.parameter_to_positions = std::vector<std::vector<uint_t>>(arity);
+        info.position_mappings.constant_positions = std::vector<std::pair<uint_t, Index<formalism::Object>>> {};
+        info.position_mappings.parameter_to_positions = std::vector<std::vector<uint_t>>(arity);
 
         const auto terms = fterm.get_terms();
 
@@ -924,12 +929,12 @@ auto compute_tagged_indexed_fterms(View<IndexList<fd::FunctionTerm<T>>, fd::Repo
 
                     if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
                     {
-                        info.mappings.parameter_to_positions[uint_t(arg)].push_back(position);
+                        info.position_mappings.parameter_to_positions[uint_t(arg)].push_back(position);
                         ++info.num_parameters;
                     }
                     else if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, fd::Repository>>)
                     {
-                        info.mappings.constant_positions.emplace_back(position, arg.get_index());
+                        info.position_mappings.constant_positions.emplace_back(position, arg.get_index());
                         ++info.num_constants;
                     }
                     else
@@ -943,29 +948,29 @@ auto compute_tagged_indexed_fterms(View<IndexList<fd::FunctionTerm<T>>, fd::Repo
 
         for (const auto param1 : parameters)
         {
-            result.mappings.parameter_to_infos[uint_t(param1)].push_back(index);
+            result.info_mappings.parameter_to_infos[uint_t(param1)].push_back(index);
 
             for (const auto param2 : parameters)
             {
                 if (param1 >= param2)
                     continue;
 
-                result.mappings.parameter_pairs_to_infos[uint_t(param1)][uint_t(param2)].push_back(index);
+                result.info_mappings.parameter_pairs_to_infos[uint_t(param1)][uint_t(param2)].push_back(index);
             }
         }
 
         if (info.num_constants > 0)
         {
-            result.mappings.infos_with_constants.push_back(index);
+            result.info_mappings.infos_with_constants.push_back(index);
             if (info.num_constants > 1)
-                result.mappings.infos_with_constant_pairs.push_back(index);
+                result.info_mappings.infos_with_constant_pairs.push_back(index);
 
             if (info.num_parameters > 0)
             {
                 for (uint_t param = 0; param < arity; ++param)
                 {
-                    if (!info.mappings.parameter_to_positions[param].empty())
-                        result.mappings.parameter_to_infos_with_constants[param].push_back(index);
+                    if (!info.position_mappings.parameter_to_positions[param].empty())
+                        result.info_mappings.parameter_to_infos_with_constants[param].push_back(index);
                 }
             }
         }
@@ -976,7 +981,7 @@ auto compute_tagged_indexed_fterms(View<IndexList<fd::FunctionTerm<T>>, fd::Repo
     return result;
 }
 
-auto compute_constraint_info(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, fd::Repository> element, size_t arity)
+static auto compute_constraint_info(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, fd::Repository> element, size_t arity)
 {
     auto result = details::ConstraintInfo {};
 
@@ -991,7 +996,7 @@ auto compute_constraint_info(View<Data<fd::BooleanOperator<Data<fd::FunctionExpr
     return result;
 }
 
-auto compute_indexed_constraints(View<Index<fd::ConjunctiveCondition>, fd::Repository> element)
+static auto compute_indexed_constraints(View<Index<fd::ConjunctiveCondition>, fd::Repository> element)
 {
     auto result = details::IndexedConstraints {};
     result.infos = std::vector<details::ConstraintInfo> {};
@@ -1006,11 +1011,50 @@ auto compute_indexed_literals(View<Index<fd::ConjunctiveCondition>, fd::Reposito
                                       compute_tagged_indexed_literals(element.get_literals<f::FluentTag>(), element.get_arity()) };
 }
 
+static auto compute_indexed_anchors(View<Index<fd::ConjunctiveCondition>, fd::Repository> element, size_t num_fluent_predicates)
+{
+    auto result = details::IndexedAnchors {};
+    result.predicate_to_infos = std::vector<std::vector<details::LiteralAnchorInfo>>(num_fluent_predicates);
+
+    for (const auto literal : element.get_literals<f::FluentTag>())
+    {
+        auto info = details::LiteralAnchorInfo {};
+        info.parameter_mappings.position_to_parameter =
+            std::vector<uint_t>(literal.get_atom().get_predicate().get_arity(), details::ParameterMappings::NoParam);
+
+        const auto terms = literal.get_atom().get_terms();
+
+        for (uint_t position = 0; position < terms.size(); ++position)
+        {
+            const auto term = terms[position];
+
+            visit(
+                [&](auto&& arg)
+                {
+                    using Alternative = std::decay_t<decltype(arg)>;
+
+                    if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
+                        info.parameter_mappings.position_to_parameter[position] = uint_t(arg);
+                    else if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, fd::Repository>>) {}
+                    else
+                        static_assert(dependent_false<Alternative>::value, "Missing case");
+                },
+                term.get_variant());
+        }
+
+        result.predicate_to_infos[uint_t(literal.get_atom().get_predicate().get_index())].push_back(std::move(info));
+    }
+
+    return result;
+}
+
 StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
                                                View<Index<fd::ConjunctiveCondition>, fd::Repository> condition,
                                                View<Index<fd::ConjunctiveCondition>, fd::Repository> unary_overapproximation_condition,
                                                View<Index<fd::ConjunctiveCondition>, fd::Repository> binary_overapproximation_condition,
                                                const analysis::DomainListList& parameter_domains,
+                                               size_t num_objects,
+                                               size_t num_fluent_predicates,
                                                uint_t begin_parameter_index,
                                                uint_t end_parameter_index,
                                                const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets) :
@@ -1021,15 +1065,18 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
     m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
-    m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition))
+    m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition)),
+    m_predicate_to_anchors(compute_indexed_anchors(condition, num_fluent_predicates))
 {
-    auto [vertices_, partitions_] = compute_vertices(m_unary_overapproximation_indexed_literals.static_indexed,
-                                                     parameter_domains,
-                                                     begin_parameter_index,
-                                                     end_parameter_index,
-                                                     static_assignment_sets);
+    auto [vertices_, vertex_partitions_, object_to_vertex_partitions_] = compute_vertices(m_unary_overapproximation_indexed_literals.static_indexed,
+                                                                                          parameter_domains,
+                                                                                          num_objects,
+                                                                                          begin_parameter_index,
+                                                                                          end_parameter_index,
+                                                                                          static_assignment_sets);
     m_vertices = std::move(vertices_);
-    m_partitions = std::move(partitions_);
+    m_vertex_partitions = std::move(vertex_partitions_);
+    m_object_to_vertex_partitions = std::move(object_to_vertex_partitions_);
 
     auto [sources_, target_offsets_, targets_] = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices);
 
@@ -1051,7 +1098,12 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
     // std::cout << m_binary_overapproximation_indexed_literals << std::endl;
 }
 
-const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const noexcept { return m_vertices[index]; }
+const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices.at(index); }
+
+const details::Vertex& StaticConsistencyGraph::get_vertex(formalism::ParameterIndex parameter, Index<formalism::Object> object) const
+{
+    return get_vertex(m_object_to_vertex_partitions[uint_t(parameter)][uint_t(object)]);
+}
 
 size_t StaticConsistencyGraph::get_num_vertices() const noexcept { return m_vertices.size(); }
 
@@ -1061,7 +1113,9 @@ View<Index<fd::Rule>, fd::Repository> StaticConsistencyGraph::get_rule() const n
 
 View<Index<fd::ConjunctiveCondition>, fd::Repository> StaticConsistencyGraph::get_condition() const noexcept { return m_condition; }
 
-const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_partitions() const noexcept { return m_partitions; }
+const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_vertex_partitions() const noexcept { return m_vertex_partitions; }
+
+const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_object_to_vertex_partitions() const noexcept { return m_object_to_vertex_partitions; }
 
 /**
  * EdgeIterator

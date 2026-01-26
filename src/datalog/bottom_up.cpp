@@ -264,9 +264,17 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 
     ctx.ctx.ws.cost_buckets.clear();
 
+    // TODO: make this nicer
+    for (uint_t i = 0; i < ctx.ctx.ws.facts.delta_fact_sets.predicate.get_sets().size(); ++i)
+        ctx.ctx.ws.facts.delta_fact_sets.predicate.insert(ctx.ctx.ws.facts.fact_sets.predicate.get_sets()[i].get_facts());
+
     while (true)
     {
-        // std::cout << "Cost: " << ctx.ctx.ws.cost_buckets.current_cost() << std::endl;
+        std::cout << "Cost: " << ctx.ctx.ws.cost_buckets.current_cost() << std::endl;
+
+        std::cout << "Delta fact sets: " << std::endl;
+        for (const auto& set : ctx.ctx.ws.facts.delta_fact_sets.predicate.get_sets())
+            std::cout << set.get_facts() << std::endl;
 
         // Check whether min cost for goal was proven.
         if (ctx.ctx.tp.check())
@@ -339,6 +347,8 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
             if (!ctx.ctx.ws.cost_buckets.advance_to_next_nonempty())
                 return;  // Terminate if no-nonempty bucket was found.
 
+            ctx.ctx.ws.facts.delta_fact_sets.reset();
+
             // Insert next bucket heads into fact and assignment sets + trigger scheduler.
             for (const auto head_index : ctx.ctx.ws.cost_buckets.get_current_bucket())
             {
@@ -355,6 +365,7 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                     // Update fact sets
                     ctx.ctx.ws.facts.fact_sets.predicate.insert(head);
                     ctx.ctx.ws.facts.assignment_sets.predicate.insert(head);
+                    ctx.ctx.ws.facts.delta_fact_sets.predicate.insert(head);
 
                     // std::cout << "Discovered: " << head << std::endl;
                 }

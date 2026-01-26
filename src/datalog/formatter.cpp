@@ -100,6 +100,21 @@ std::ostream& print(std::ostream& os, const datalog::details::PositionMappings& 
     return os;
 }
 
+std::ostream& print(std::ostream& os, const datalog::details::ParameterMappings& el)
+{
+    os << "ParameterMappings(\n";
+
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "position to parameter = " << el.position_to_parameter << "\n";
+    }
+
+    os << ")";
+
+    return os;
+}
+
 template<formalism::FactKind T>
 std::ostream& print(std::ostream& os, const datalog::details::LiteralInfo<T>& el)
 {
@@ -112,7 +127,7 @@ std::ostream& print(std::ostream& os, const datalog::details::LiteralInfo<T>& el
 
         os << print_indent << "polarity = " << el.polarity << "\n";
 
-        os << print_indent << "mappings = " << el.mappings << "\n";
+        os << print_indent << "position mappings = " << el.position_mappings << "\n";
     }
 
     os << ")";
@@ -130,7 +145,7 @@ std::ostream& print(std::ostream& os, const datalog::details::TaggedIndexedLiter
 
         os << print_indent << "literal infos = " << el.infos << "\n";
 
-        os << print_indent << "mappings = " << el.mappings << "\n";
+        os << print_indent << "info mappings = " << el.info_mappings << "\n";
     }
 
     os << ")";
@@ -251,6 +266,8 @@ namespace details
 std::ostream& operator<<(std::ostream& os, const InfoMappings& el) { return print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const PositionMappings& el) { return print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const ParameterMappings& el) { return print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const Vertex& el) { return print(os, el); }
 

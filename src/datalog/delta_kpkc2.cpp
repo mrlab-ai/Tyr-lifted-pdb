@@ -90,14 +90,14 @@ GraphLayout allocate_const_graph(const StaticConsistencyGraph& static_graph)
 {
     // Fetch data
     const auto nv = static_graph.get_num_vertices();
-    const auto k = static_graph.get_partitions().size();
+    const auto k = static_graph.get_vertex_partitions().size();
 
     // Initialize partitions
     auto partitions = std::vector<std::vector<Vertex>>(k);
     auto vertex_to_partition = std::vector<uint_t>(nv);
     for (size_t p = 0; p < k; ++p)
     {
-        for (const auto& v : static_graph.get_partitions()[p])
+        for (const auto& v : static_graph.get_vertex_partitions()[p])
         {
             partitions[p].push_back(Vertex(v));
             vertex_to_partition[v] = p;

@@ -93,6 +93,8 @@ static auto create_witness_condition(View<Index<fd::ConjunctiveCondition>, fd::R
 ConstRuleWorkspace::ConstRuleWorkspace(Index<formalism::datalog::Rule> rule,
                                        formalism::datalog::Repository& repository,
                                        const analysis::DomainListList& parameter_domains,
+                                       size_t num_objects,
+                                       size_t num_fluent_predicates,
                                        const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets) :
     rule(rule),
     repository(repository),
@@ -107,6 +109,8 @@ ConstRuleWorkspace::ConstRuleWorkspace(Index<formalism::datalog::Rule> rule,
                              get_unary_overapproximation_condition(),
                              get_binary_overapproximation_condition(),
                              parameter_domains,
+                             num_objects,
+                             num_fluent_predicates,
                              0,
                              get_rule().get_arity(),
                              static_assignment_sets)

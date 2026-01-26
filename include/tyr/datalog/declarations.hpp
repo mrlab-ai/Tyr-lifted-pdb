@@ -72,6 +72,7 @@ class Edge;
 
 struct InfoMappings;
 struct PositionMappings;
+struct ParameterMappings;
 template<formalism::FactKind T>
 struct LiteralInfo;
 template<formalism::FactKind T>

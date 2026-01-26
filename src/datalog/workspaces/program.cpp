@@ -62,6 +62,8 @@ ConstProgramWorkspace::ConstProgramWorkspace(ProgramContext& context) :
         rules.emplace_back(context.get_program().get_rules()[i].get_index(),
                            context.get_repository(),
                            context.get_domains().rule_domains[i],
+                           context.get_program().get_objects().size(),
+                           context.get_program().get_predicates<formalism::FluentTag>().size(),
                            facts.assignment_sets);
 }
 

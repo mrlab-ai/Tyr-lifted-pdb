@@ -67,7 +67,7 @@ struct LiteralInfo
     size_t num_parameters;
     size_t num_constants;
 
-    PositionMappings mappings;
+    PositionMappings position_mappings;
 };
 
 template<formalism::FactKind T>
@@ -75,7 +75,7 @@ struct TaggedIndexedLiterals
 {
     std::vector<LiteralInfo<T>> infos;
 
-    InfoMappings mappings;
+    InfoMappings info_mappings;
 };
 
 struct IndexedLiterals
@@ -103,7 +103,7 @@ struct FunctionTermInfo
     size_t num_parameters;
     size_t num_constants;
 
-    PositionMappings mappings;
+    PositionMappings position_mappings;
 };
 
 template<formalism::FactKind T>
@@ -111,7 +111,7 @@ struct TaggedIndexedFunctionTerms
 {
     UnorderedMap<Index<formalism::datalog::FunctionTerm<T>>, FunctionTermInfo<T>> infos;
 
-    InfoMappings mappings;
+    InfoMappings info_mappings;
 };
 
 struct ConstraintInfo
@@ -136,6 +136,23 @@ struct ConstraintInfo
 struct IndexedConstraints
 {
     std::vector<ConstraintInfo> infos;
+};
+
+struct ParameterMappings
+{
+    static constexpr uint_t NoParam = std::numeric_limits<uint_t>::max();
+
+    std::vector<uint_t> position_to_parameter;
+};
+
+struct LiteralAnchorInfo
+{
+    ParameterMappings parameter_mappings;
+};
+
+struct IndexedAnchors
+{
+    std::vector<std::vector<LiteralAnchorInfo>> predicate_to_infos;
 };
 
 /**
@@ -217,9 +234,10 @@ class StaticConsistencyGraph
 {
 private:
     /// @brief Helper to initialize vertices.
-    std::pair<details::Vertices, std::vector<std::vector<uint_t>>>
+    std::tuple<details::Vertices, std::vector<std::vector<uint_t>>, std::vector<std::vector<uint_t>>>
     compute_vertices(const details::TaggedIndexedLiterals<formalism::StaticTag>& indexed_literals,
                      const analysis::DomainListList& parameter_domains,
+                     size_t num_objects,
                      uint_t begin_parameter_index,
                      uint_t end_parameter_index,
                      const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
@@ -244,6 +262,8 @@ public:
                            View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition,
                            View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition,
                            const analysis::DomainListList& parameter_domains,
+                           size_t num_objects,
+                           size_t num_fluent_predicates,
                            uint_t begin_parameter_index,
                            uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
@@ -357,14 +377,16 @@ public:
         }
     }
 
-    const details::Vertex& get_vertex(uint_t index) const noexcept;
+    const details::Vertex& get_vertex(uint_t index) const;
+    const details::Vertex& get_vertex(formalism::ParameterIndex parameter, Index<formalism::Object> object) const;
 
     size_t get_num_vertices() const noexcept;
     size_t get_num_edges() const noexcept;
 
     View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> get_rule() const noexcept;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> get_condition() const noexcept;
-    const std::vector<std::vector<uint_t>>& get_partitions() const noexcept;
+    const std::vector<std::vector<uint_t>>& get_vertex_partitions() const noexcept;
+    const std::vector<std::vector<uint_t>>& get_object_to_vertex_partitions() const noexcept;
 
 private:
     View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> m_rule;
@@ -379,13 +401,16 @@ private:
     std::vector<uint_t> m_sources;  ///< sources with non-zero out-degree
     std::vector<uint_t> m_target_offsets;
     std::vector<uint_t> m_targets;
-    std::vector<std::vector<uint_t>> m_partitions;
+    std::vector<std::vector<uint_t>> m_vertex_partitions;
+    std::vector<std::vector<uint_t>> m_object_to_vertex_partitions;
 
     details::IndexedLiterals m_unary_overapproximation_indexed_literals;
     details::IndexedLiterals m_binary_overapproximation_indexed_literals;
 
     details::IndexedConstraints m_unary_overapproximation_indexed_constraints;
     details::IndexedConstraints m_binary_overapproximation_indexed_constraints;
+
+    details::IndexedAnchors m_predicate_to_anchors;
 };
 
 extern std::pair<Index<formalism::datalog::GroundConjunctiveCondition>, bool>

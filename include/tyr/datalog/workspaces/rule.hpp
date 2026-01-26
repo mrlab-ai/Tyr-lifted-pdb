@@ -276,6 +276,8 @@ struct ConstRuleWorkspace
     ConstRuleWorkspace(Index<formalism::datalog::Rule> rule,
                        formalism::datalog::Repository& repository,
                        const analysis::DomainListList& parameter_domains,
+                       size_t num_objects,
+                       size_t num_fluent_predicates,
                        const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 };
 }
