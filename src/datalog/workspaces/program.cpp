@@ -33,11 +33,8 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
           context.get_program().get_objects().size(),
           context.get_program().get_atoms<formalism::FluentTag>(),
           context.get_program().get_fterm_values<formalism::FluentTag>()),
-    rules(context.get_program().get_rules().size()),
-    rules_iter(),
-    rules_solve(context.get_program().get_rules().size()),
+    rules(),
     d2p(),
-    worker(),
     planning_builder(),
     datalog_builder(),
     schedulers(create_schedulers(context.get_strata(), context.get_listeners(), context.get_repository())),
@@ -45,7 +42,7 @@ ProgramWorkspace::ProgramWorkspace(ProgramContext& context, const ConstProgramWo
     statistics()
 {
     for (uint_t i = 0; i < context.get_program().get_rules().size(); ++i)
-        rules_iter.emplace_back(context.get_repository(), cws.rules[i]);
+        rules.emplace_back(std::make_unique<RuleWorkspace>(context.get_repository(), cws.rules[i]));
 }
 
 ConstProgramWorkspace::ConstProgramWorkspace(ProgramContext& context) :

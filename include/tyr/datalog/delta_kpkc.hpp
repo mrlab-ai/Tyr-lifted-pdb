@@ -223,6 +223,16 @@ struct Workspace
     explicit Workspace(const GraphLayout& graph);
 };
 
+template<typename Context>
+struct KCliqueContext
+{
+    Context& context;
+    Workspace& ws;
+};
+
+template<typename T, typename Context>
+concept KCliqueCallback = std::invocable<T&, const std::vector<Vertex>&, KCliqueContext<Context>&>;
+
 class DeltaKPKC
 {
 public:
@@ -245,6 +255,22 @@ public:
     auto full_vertices_range() const noexcept { return m_full_graph.vertices_range(); }
     auto full_edges_range() const noexcept { return m_full_graph.edges_range(); }
 
+    /**
+     * Parallel API
+     **/
+
+    template<typename Callback, typename Context>
+        requires KCliqueCallback<Callback, Context>
+    void for_each_k_clique(Callback&& callback, std::vector<KCliqueContext<Context>>& context) const;
+
+    template<typename Callback, typename Context>
+        requires KCliqueCallback<Callback, Context>
+    void for_each_new_k_clique(Callback&& callback, std::vector<KCliqueContext<Context>>& context) const;
+
+    /**
+     * Sequential API
+     */
+
     template<typename Callback>
     void for_each_k_clique(Callback&& callback, Workspace& workspace) const;
 
@@ -260,6 +286,30 @@ public:
     const Graph& get_full_graph() const noexcept { return m_full_graph; }
 
 private:
+    /**
+     * Parallel API
+     **/
+
+    template<typename Callback, typename Context>
+        requires KCliqueCallback<Callback, Context>
+    void for_each_new_unary_clique(Callback&& callback, std::vector<KCliqueContext<Context>>& context) const;
+
+    template<typename Callback, typename Context>
+        requires KCliqueCallback<Callback, Context>
+    void for_each_unary_clique(Callback&& callback, std::vector<KCliqueContext<Context>>& context) const;
+
+    template<typename Callback, typename Context>
+        requires KCliqueCallback<Callback, Context>
+    void for_each_new_binary_clique(Callback&& callback, std::vector<KCliqueContext<Context>>& context) const;
+
+    template<typename Callback, typename Context>
+        requires KCliqueCallback<Callback, Context>
+    void for_each_binary_clique(Callback&& callback, std::vector<KCliqueContext<Context>>& context) const;
+
+    /**
+     * Sequential API
+     */
+
     template<typename Callback>
     void for_each_new_unary_clique(Callback&& callback, Workspace& workspace) const;
 
@@ -381,6 +431,18 @@ void DeltaKPKC::for_each_binary_clique(Callback&& callback, Workspace& workspace
 
         callback(workspace.partial_solution);
     }
+}
+
+template<typename Callback, typename Context>
+    requires KCliqueCallback<Callback, Context>
+void DeltaKPKC::for_each_k_clique(Callback&& callback, std::vector<KCliqueContext<Context>>& context) const
+{
+}
+
+template<typename Callback, typename Context>
+    requires KCliqueCallback<Callback, Context>
+void DeltaKPKC::for_each_new_k_clique(Callback&& callback, std::vector<KCliqueContext<Context>>& context) const
+{
 }
 
 template<typename Callback>

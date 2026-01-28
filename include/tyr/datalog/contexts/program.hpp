@@ -42,9 +42,16 @@ struct ProgramExecutionContext
         aps(aps),
         tp(tp)
     {
-        // Clear cross strata data structures.
-        for (auto& rule_solve : ws.rules_solve)
-            rule_solve.clear();
+        // Clear rule workspaces
+        for (auto& rule : ws.rules)
+        {
+            rule->common.kpkc.reset();
+            for (auto& worker : rule->worker)
+            {
+                worker.iteration.clear();
+                worker.solve.clear();
+            }
+        }
         aps.clear();
         tp.clear();
 
@@ -63,13 +70,6 @@ struct ProgramExecutionContext
 
         // Initialize assignment sets
         ws.facts.assignment_sets.insert(ws.facts.fact_sets);
-
-        // Reset the kpkc
-        for (auto& rule_iter : ws.rules_iter)
-        {
-            rule_iter.kpkc.reset();
-            rule_iter.kpkc2.reset();
-        }
 
         // Reset cost buckets.
         ws.cost_buckets.clear();

@@ -25,7 +25,6 @@
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/consistency_graph.hpp"
 #include "tyr/datalog/delta_kpkc.hpp"
-#include "tyr/datalog/delta_kpkc2.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 #include "tyr/formalism/binding_index.hpp"
@@ -37,6 +36,7 @@
 #include "tyr/formalism/overlay_repository.hpp"
 
 #include <chrono>
+#include <oneapi/tbb/enumerable_thread_specific.h>
 #include <vector>
 
 namespace tyr::datalog
@@ -160,105 +160,77 @@ public:
     }
 };
 
-/*
 struct RuleWorkspace
 {
     struct Common
     {
+        explicit Common(const formalism::datalog::Repository& program_repository, const StaticConsistencyGraph& static_consistency_graph);
+
+        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
+
+        /// Program repository to ground witnesses for which ground entities must already exist and we can simply call find.
+        const formalism::datalog::Repository& program_repository;
+
         kpkc::DeltaKPKC kpkc;
     };
 
-    struct WorkerIteration
+    struct Iteration
     {
+        explicit Iteration(const Common& common);
+
+        void clear() noexcept;
+
+        /// Workspace for clique enumeration
         kpkc::Workspace kpkc_workspace;
 
         /// Merge stage into rule execution context
-        std::shared_ptr<formalism::datalog::Repository> repository;
-        formalism::OverlayRepository<formalism::datalog::Repository> overlay_repository;
+        formalism::datalog::Repository repository;
+        formalism::OverlayRepository<formalism::datalog::Repository> program_overlay_repository;
 
         /// Bindings kept from iteration in stage
-        IndexList<formalism::Object> binding;
         UnorderedSet<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> heads;
 
-        RuleStatistics statistics;
+        // Annotations
+        AndAnnotationsMap witness_to_cost;
+        HeadToWitness head_to_witness;
     };
 
-    struct WorkerSolve
+    struct Solve
     {
-        /// Program repository to ground witnesses for which ground entities must already exist and we can simply call find.
-        formalism::datalog::RepositoryPtr program_repository;
+        Solve();
 
-        /// Merge thread into staging area
-        formalism::datalog::RepositoryPtr stage_repository;
+        void clear() noexcept;
 
-        /// Memory for grounding
-        IndexList<formalism::Object> binding;
-
-        /// Debugging
-        UnorderedSet<IndexList<formalism::Object>> seen_bindings_dbg;
+        /// Persistent memory
+        formalism::datalog::Repository stage_repository;
 
         /// Pool applicability checks since we dont know how many are needed.
         UniqueObjectPool<ApplicabilityCheck> applicability_check_pool;
         UnorderedMap<Index<formalism::Binding>, UniqueObjectPoolPtr<ApplicabilityCheck>> pending_rules;
+
+        /// Statistics
+        RuleStatistics statistics;
     };
 
     struct Worker
     {
-        WorkerIteration iteration;
-        WorkerSolve solve;
+        explicit Worker(const Common& common);
+
+        formalism::datalog::Builder builder;
+        IndexList<formalism::Object> binding;
+
+        Iteration iteration;
+        Solve solve;
     };
 
+    RuleWorkspace(const formalism::datalog::Repository& program_repository, const ConstRuleWorkspace& cws);
+    RuleWorkspace(const RuleWorkspace& other) = delete;
+    RuleWorkspace& operator=(const RuleWorkspace& other) = delete;
+    RuleWorkspace(RuleWorkspace&& other) = delete;
+    RuleWorkspace& operator=(RuleWorkspace&& other) = delete;
+
     Common common;
-    Worker worker;
-};*/
-
-struct RuleIterationWorkspace
-{
-    kpkc::DeltaKPKC kpkc;
-    kpkc::Workspace kpkc_workspace;
-
-    kpkc2::DeltaKPKC kpkc2;
-    kpkc2::Workspace kpkc2_workspace;
-    kpkc2::AnchorsSet kpkc2_anchors_set;
-    std::vector<uint_t> kpkc2_anchors_order;
-    std::vector<kpkc2::Vertex> kpkc2_vertices;
-    std::vector<details::Vertex> static_vertices;
-
-    /// Unique heads constructed in this iteration
-    std::shared_ptr<formalism::datalog::Repository> repository;
-    formalism::OverlayRepository<formalism::datalog::Repository> overlay_repository;
-    UnorderedSet<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>> heads;
-
-    RuleIterationWorkspace(const formalism::datalog::Repository& parent, const ConstRuleWorkspace& cws);
-
-    void clear() noexcept;
-
-    void initialize(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
-};
-
-struct RuleSolveWorkspace
-{
-    /// Merge thread into staging area
-    formalism::datalog::RepositoryPtr repository;
-
-    /// In debug mode, we accumulate all bindings to verify the correctness of delta-kpkc
-    UnorderedSet<IndexList<formalism::Object>> seen_bindings_dbg;
-
-    /// Pool applicability checks since we dont know how many are needed.
-    UniqueObjectPool<ApplicabilityCheck> applicability_check_pool;
-    UnorderedMap<Index<formalism::Binding>, UniqueObjectPoolPtr<ApplicabilityCheck>> pending_rules;
-
-    RuleSolveWorkspace();
-
-    void clear() noexcept;
-};
-
-struct RuleWorkspace
-{
-    /// Accumulated statistics
-    RuleStatistics statistics;
-
-    RuleWorkspace() = default;
+    oneapi::tbb::enumerable_thread_specific<Worker> worker;
 };
 
 struct ConstRuleWorkspace

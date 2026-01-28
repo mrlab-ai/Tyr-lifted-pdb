@@ -107,7 +107,7 @@ private:
         {
             const auto action = it->second;
 
-            grounder_context.binding = make_view(witness.binding, *this->m_workspace.rules_solve[i].repository).get_data().objects;
+            grounder_context.binding = make_view(witness.binding, this->m_workspace.rules[i].solve.stage_repository).get_data().objects;
 
             const auto ground_action_index = formalism::planning::ground(make_view(action, grounder_context.destination),
                                                                          grounder_context,
@@ -125,7 +125,7 @@ private:
         }
 
         // Divide case: recursively call for preconditions.
-        for (const auto literal : make_view(witness.witness_condition, *this->m_workspace.rules_solve[i].repository).get_literals<formalism::FluentTag>())
+        for (const auto literal : make_view(witness.witness_condition, this->m_workspace.rules[i].solve.stage_repository).get_literals<formalism::FluentTag>())
         {
             extract_relaxed_plan_and_preferred_actions(literal.get_atom().get_index(), state_context, grounder_context);
         }

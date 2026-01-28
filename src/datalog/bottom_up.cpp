@@ -36,7 +36,6 @@
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
-#include "tyr/datalog/workspaces/worker.hpp"
 #include "tyr/formalism/datalog/conjunctive_condition_view.hpp"  // for View
 #include "tyr/formalism/datalog/declarations.hpp"                // for Context
 #include "tyr/formalism/datalog/formatter.hpp"                   // for opera...
@@ -264,17 +263,9 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 
     ctx.ctx.ws.cost_buckets.clear();
 
-    // TODO: make this nicer
-    for (uint_t i = 0; i < ctx.ctx.ws.facts.delta_fact_sets.predicate.get_sets().size(); ++i)
-        ctx.ctx.ws.facts.delta_fact_sets.predicate.insert(ctx.ctx.ws.facts.fact_sets.predicate.get_sets()[i].get_facts());
-
     while (true)
     {
-        std::cout << "Cost: " << ctx.ctx.ws.cost_buckets.current_cost() << std::endl;
-
-        std::cout << "Delta fact sets: " << std::endl;
-        for (const auto& set : ctx.ctx.ws.facts.delta_fact_sets.predicate.get_sets())
-            std::cout << set.get_facts() << std::endl;
+        // std::cout << "Cost: " << ctx.ctx.ws.cost_buckets.current_cost() << std::endl;
 
         // Check whether min cost for goal was proven.
         if (ctx.ctx.tp.check())
@@ -310,63 +301,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                                                generate(rctx);
 
                                                // std::cout << std::endl << std::endl;
-
-                                               auto& anchors_set = rctx.ws_rule_iter.kpkc2_anchors_set;
-                                               anchors_set.clear();
-
-                                               const auto& static_consistency_graph = rctx.cws_rule.static_consistency_graph;
-                                               for (uint_t predicate = 0; predicate < ctx.ctx.ws.facts.delta_fact_sets.predicate.get_sets().size(); ++predicate)
-                                               {
-                                                   const auto& set = ctx.ctx.ws.facts.delta_fact_sets.predicate.get_sets()[predicate];
-
-                                                   for (const auto& info : static_consistency_graph.get_predicate_to_anchors().predicate_to_infos[predicate])
-                                                   {
-                                                       for (const auto fact : set.get_facts())
-                                                       {
-                                                           auto& vertices = rctx.ws_rule_iter.kpkc2_vertices;
-                                                           auto& static_vertices = rctx.ws_rule_iter.static_vertices;
-                                                           vertices.clear();
-                                                           static_vertices.clear();
-
-                                                           for (uint_t position = 0; position < fact.get_objects().size(); ++position)
-                                                           {
-                                                               const auto object = fact.get_objects()[position];
-                                                               const auto& vertex = static_consistency_graph.get_vertex(
-                                                                   f::ParameterIndex(info.parameter_mappings.position_to_parameter[position]),
-                                                                   object.get_index());
-                                                               vertices.emplace_back(vertex.get_index());
-                                                               static_vertices.emplace_back(vertex);
-                                                           }
-                                                           // print(std::cout, static_vertices);
-                                                           // std::cout << std::endl;
-
-                                                           std::sort(vertices.begin(), vertices.end());
-                                                           vertices.erase(std::unique(vertices.begin(), vertices.end()), vertices.end());
-                                                           anchors_set.insert(vertices);
-                                                       }
-                                                   }
-                                               }
-
-                                               anchors_set.sort(rctx.ws_rule_iter.kpkc2_anchors_order);
-
-                                               for (const auto i : rctx.ws_rule_iter.kpkc2_anchors_order)
-                                               {
-                                                   // std::cout << "Anchor: ";
-                                                   // print(std::cout, anchors_set[i].vertices);
-                                                   // std::cout << std::endl;
-
-                                                   rctx.ws_rule_iter.kpkc2.for_each_k_clique(
-                                                       [&](auto&& clique)
-                                                       {
-                                                           // std::cout << "Clique: ";
-                                                           // print(std::cout, clique);
-                                                           // std::cout << std::endl;
-                                                       },
-                                                       rctx.ws_rule_iter.kpkc2_workspace,
-                                                       anchors_set[i]);
-                                               }
-
-                                               // std::cout << static_consistency_graph << std::endl;
                                            });
         }
 
@@ -406,8 +340,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
             if (!ctx.ctx.ws.cost_buckets.advance_to_next_nonempty())
                 return;  // Terminate if no-nonempty bucket was found.
 
-            ctx.ctx.ws.facts.delta_fact_sets.reset();
-
             // Insert next bucket heads into fact and assignment sets + trigger scheduler.
             for (const auto head_index : ctx.ctx.ws.cost_buckets.get_current_bucket())
             {
@@ -424,7 +356,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                     // Update fact sets
                     ctx.ctx.ws.facts.fact_sets.predicate.insert(head);
                     ctx.ctx.ws.facts.assignment_sets.predicate.insert(head);
-                    ctx.ctx.ws.facts.delta_fact_sets.predicate.insert(head);
 
                     // std::cout << "Discovered: " << head << std::endl;
                 }

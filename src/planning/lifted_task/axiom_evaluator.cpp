@@ -92,10 +92,10 @@ AxiomEvaluator<LiftedTask>::AxiomEvaluator(std::shared_ptr<LiftedTask> task) :
     m_task(std::move(task)),
     m_workspace(m_task->get_axiom_program().get_program_context(), m_task->get_axiom_program().get_const_program_workspace()),
     m_aps(d::NoOrAnnotationPolicy(),
-          std::vector<d::NoAndAnnotationPolicy>(m_workspace.rules_solve.size()),
+          std::vector<d::NoAndAnnotationPolicy>(m_workspace.rules.size()),
           d::OrAnnotationsList(),
-          std::vector<d::AndAnnotationsMap>(m_workspace.rules_solve.size()),
-          std::vector<d::HeadToWitness>(m_workspace.rules_solve.size())),
+          std::vector<d::AndAnnotationsMap>(m_workspace.rules.size()),
+          std::vector<d::HeadToWitness>(m_workspace.rules.size())),
     m_tp(d::NoTerminationPolicy())
 {
 }

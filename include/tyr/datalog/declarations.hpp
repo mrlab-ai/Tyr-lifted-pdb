@@ -54,10 +54,8 @@ struct ConstFactsWorkspace;
 struct P2DWorkspace;
 struct ProgramWorkspace;
 struct ConstProgramWorkspace;
-struct RuleSolveWorkspace;
-struct RuleIterationWorkspace;
+struct RuleWorkspace;
 struct ConstRuleWorkspace;
-struct WorkerWorkspace;
 
 class RuleSchedulerStratum;
 
@@ -90,10 +88,6 @@ struct Workspace;
 struct Vertex;
 }
 
-namespace kpkc2
-{
-struct Vertex;
-}
 }
 
 #endif

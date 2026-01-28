@@ -33,48 +33,50 @@ namespace fd = tyr::formalism::datalog;
 
 namespace tyr::datalog
 {
-/**
- * RuleIterationWorkspace
- */
 
-RuleIterationWorkspace::RuleIterationWorkspace(const formalism::datalog::Repository& parent, const ConstRuleWorkspace& cws) :
-    kpkc(cws.static_consistency_graph),
-    kpkc_workspace(kpkc.get_graph_layout()),
-    kpkc2(cws.static_consistency_graph),
-    kpkc2_workspace(kpkc2.get_graph_layout()),
-    kpkc2_anchors_set(),
-    kpkc2_anchors_order(),
-    kpkc2_vertices(),
-    static_vertices(),
-    repository(std::make_shared<fd::Repository>()),  // we have to use pointer, since the RuleExecutionContext is moved into a vector
-    overlay_repository(parent, *repository),
-    heads()
+RuleWorkspace::Common::Common(const formalism::datalog::Repository& program_repository, const StaticConsistencyGraph& static_consistency_graph) :
+    program_repository(program_repository),
+    kpkc(static_consistency_graph)
 {
 }
 
-void RuleIterationWorkspace::clear() noexcept
-{
-    repository->clear();
-    heads.clear();
-}
-
-void RuleIterationWorkspace::initialize(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets)
+void RuleWorkspace::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets)
 {
     kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
-    kpkc2.set_next_assignment_sets(static_consistency_graph, assignment_sets);
 }
 
-/**
- * RuleSolveWorkspace
- */
-
-RuleSolveWorkspace::RuleSolveWorkspace() : repository(std::make_shared<fd::Repository>()), seen_bindings_dbg(), applicability_check_pool(), pending_rules() {}
-
-void RuleSolveWorkspace::clear() noexcept
+RuleWorkspace::Iteration::Iteration(const Common& common) :
+    kpkc_workspace(common.kpkc.get_graph_layout()),
+    repository(),
+    program_overlay_repository(common.program_repository, repository),
+    heads(),
+    witness_to_cost(),
+    head_to_witness()
 {
-    repository->clear();
-    seen_bindings_dbg.clear();
+}
+
+void RuleWorkspace::Iteration::clear() noexcept
+{
+    repository.clear();
+    heads.clear();
+    witness_to_cost.clear();
+    head_to_witness.clear();
+}
+
+RuleWorkspace::Solve::Solve() : stage_repository(), applicability_check_pool(), pending_rules(), statistics() {}
+
+void RuleWorkspace::Solve::clear() noexcept
+{
+    stage_repository.clear();
     pending_rules.clear();
+}
+
+RuleWorkspace::Worker::Worker(const Common& common) : builder(), binding(), iteration(common), solve() {}
+
+RuleWorkspace::RuleWorkspace(const formalism::datalog::Repository& program_repository, const ConstRuleWorkspace& cws) :
+    common(program_repository, cws.static_consistency_graph),
+    worker([&] { return Worker(common); })
+{
 }
 
 /**

@@ -52,8 +52,6 @@ extern std::ostream& print(std::ostream& os, const datalog::StaticConsistencyGra
 
 extern std::ostream& print(std::ostream& os, const datalog::kpkc::Vertex& el);
 
-extern std::ostream& print(std::ostream& os, const datalog::kpkc2::Vertex& el);
-
 extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& el);
 
 extern std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el);
@@ -90,11 +88,6 @@ extern std::ostream& operator<<(std::ostream& os, const EdgeAssignment& el);
 extern std::ostream& operator<<(std::ostream& os, const StaticConsistencyGraph& el);
 
 namespace kpkc
-{
-extern std::ostream& operator<<(std::ostream& os, const Vertex& el);
-}
-
-namespace kpkc2
 {
 extern std::ostream& operator<<(std::ostream& os, const Vertex& el);
 }

@@ -34,8 +34,6 @@ struct FactsWorkspace
 
     PredicateFactSets<formalism::FluentTag> goal_fact_sets;
 
-    TaggedFactSets<formalism::FluentTag> delta_fact_sets;
-
     FactsWorkspace() = default;
     explicit FactsWorkspace(View<IndexList<formalism::Predicate<formalism::FluentTag>>, formalism::datalog::Repository> predicates,
                             View<IndexList<formalism::Function<formalism::FluentTag>>, formalism::datalog::Repository> functions,
