@@ -39,7 +39,7 @@ template<OrAnnotationPolicyConcept OrAP = NoOrAnnotationPolicy,
          TerminationPolicyConcept TP = NoTerminationPolicy>
 struct RuleWorkerExecutionContext
 {
-    explicit RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP>& ctx, RuleWorkspace::Worker& ws_worker) : ctx(ctx), ws_worker(ws_worker) {}
+    explicit RuleWorkerExecutionContext(const RuleExecutionContext<OrAP, AndAP, TP>& ctx, RuleWorkspace::Worker& ws_worker) : ctx(ctx), ws_worker(ws_worker) {}
 
     auto get_ground_context_solve() const noexcept
     {
@@ -55,7 +55,7 @@ struct RuleWorkerExecutionContext
     }
 
     /// Inputs
-    RuleExecutionContext<OrAP, AndAP, TP>& ctx;
+    const RuleExecutionContext<OrAP, AndAP, TP>& ctx;
 
     /// Workspaces
     RuleWorkspace::Worker& ws_worker;
@@ -88,16 +88,16 @@ struct RuleExecutionContext
 
     /// Inputs
     Index<formalism::datalog::Rule> rule;
-    StratumExecutionContext<OrAP, AndAP, TP>& ctx;
+    const StratumExecutionContext<OrAP, AndAP, TP>& ctx;
 
     /// Workspaces
     RuleWorkspace& ws_rule;
     const ConstRuleWorkspace& cws_rule;
 
     /// Annotations
-    AndAP& and_ap;
-    AndAnnotationsMap& and_annot;
-    HeadToWitness& delta_head_to_witness;
+    const AndAP& and_ap;
+    const AndAnnotationsMap& and_annot;
+    const HeadToWitness& delta_head_to_witness;
 };
 }
 

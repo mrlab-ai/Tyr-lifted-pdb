@@ -325,6 +325,7 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                                                process_pending(rctx);
 
                                                {
+                                                   // We can now obtain multiple execution contexts :)
                                                    auto wrctx = rctx.get_rule_worker_execution_context();
 
                                                    const auto rule_stopwatch = StopwatchScope(wrctx.ws_worker.solve.statistics.parallel_time);
