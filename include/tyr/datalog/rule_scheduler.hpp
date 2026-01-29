@@ -50,7 +50,8 @@ public:
     void on_finish_iteration();
 
     const formalism::datalog::Repository& get_context() const noexcept { return m_context; }
-    const UnorderedSet<Index<formalism::datalog::Rule>> get_active_rules() const noexcept { return m_active_rules; }
+    const IndexList<formalism::datalog::Rule>& get_rules() const noexcept { return m_rules; }
+    const UnorderedSet<Index<formalism::datalog::Rule>>& get_active_rules() const noexcept { return m_active_rules; }
 
 private:
     const analysis::RuleStratum& m_rules;

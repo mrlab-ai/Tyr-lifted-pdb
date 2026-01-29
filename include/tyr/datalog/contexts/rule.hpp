@@ -39,10 +39,7 @@ template<OrAnnotationPolicyConcept OrAP = NoOrAnnotationPolicy,
          TerminationPolicyConcept TP = NoTerminationPolicy>
 struct RuleWorkerExecutionContext
 {
-    explicit RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP>& ctx) : ctx(ctx), ws_worker(ctx.ws_rule.worker.local())
-    {
-        ws_worker.iteration.clear();
-    }
+    explicit RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP>& ctx, RuleWorkspace::Worker& ws_worker) : ctx(ctx), ws_worker(ws_worker) {}
 
     auto get_ground_context_solve() const noexcept
     {
@@ -85,7 +82,7 @@ struct RuleExecutionContext
                                             AssignmentSets { ctx.ctx.cws.facts.assignment_sets, ctx.ctx.ws.facts.assignment_sets });
     }
 
-    auto get_rule_worker_execution_context() { return RuleWorkerExecutionContext<OrAP, AndAP, TP>(*this); }
+    auto get_rule_worker_execution_context() { return RuleWorkerExecutionContext<OrAP, AndAP, TP>(*this, ws_rule.worker.local()); }
 
     auto get_fact_sets() const noexcept { return FactSets(ctx.ctx.cws.facts.fact_sets, ctx.ctx.ws.facts.fact_sets); }
 

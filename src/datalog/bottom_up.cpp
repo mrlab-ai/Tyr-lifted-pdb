@@ -87,15 +87,15 @@ void generate_nullary_case(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx)
         && is_valid_binding(wrctx.ctx.cws_rule.get_rule().get_body(), fact_sets, ground_context_program))
     {
         const auto program_head_index = fd::ground(wrctx.ctx.cws_rule.get_rule().get_head(), ground_context_iter).first;
-        const auto delta_head_index = fd::ground(wrctx.ctx.cws_rule.get_rule().get_head(), ground_context_solve).first;
+        const auto worker_head_index = fd::ground(wrctx.ctx.cws_rule.get_rule().get_head(), ground_context_solve).first;
 
-        wrctx.ws_worker.iteration.heads.insert(delta_head_index);
+        wrctx.ws_worker.iteration.heads.insert(worker_head_index);
 
         wrctx.ctx.and_ap.update_annotation(wrctx.ctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                            wrctx.ctx.cws_rule.get_rule(),
                                            wrctx.ctx.cws_rule.get_witness_condition(),
                                            program_head_index,
-                                           delta_head_index,
+                                           worker_head_index,
                                            wrctx.ctx.ctx.ctx.aps.or_annot,
                                            wrctx.ws_worker.iteration.witness_to_cost,
                                            wrctx.ws_worker.iteration.head_to_witness,
@@ -178,18 +178,18 @@ void generate_general_case(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx)
 
                 // std::cout << rctx.cws_rule.rule << " " << rctx.ground_context_solve.binding << std::endl;
 
-                const auto delta_head_index = fd::ground(wrctx.ctx.cws_rule.get_rule().get_head(), ground_context_solve).first;
+                const auto worker_head_index = fd::ground(wrctx.ctx.cws_rule.get_rule().get_head(), ground_context_solve).first;
 
                 // std::cout << make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iter).first, rctx.ground_context_iter.destination)
                 //           << std::endl;
 
-                wrctx.ws_worker.iteration.heads.insert(delta_head_index);
+                wrctx.ws_worker.iteration.heads.insert(worker_head_index);
 
                 wrctx.ctx.and_ap.update_annotation(wrctx.ctx.ctx.ctx.ws.cost_buckets.current_cost(),
                                                    wrctx.ctx.cws_rule.get_rule(),
                                                    wrctx.ctx.cws_rule.get_witness_condition(),
                                                    program_head_index,
-                                                   delta_head_index,
+                                                   worker_head_index,
                                                    wrctx.ctx.ctx.ctx.aps.or_annot,
                                                    wrctx.ws_worker.iteration.witness_to_cost,
                                                    wrctx.ws_worker.iteration.head_to_witness,
@@ -203,49 +203,6 @@ void generate_general_case(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx)
             }
         },
         wrctx.ws_worker.iteration.kpkc_workspace);
-
-    {
-        // TODO: move pending check out of this loop
-        const auto stopwatch = StopwatchScope(wrctx.ws_worker.solve.statistics.pending_time);
-
-        for (auto it = wrctx.ws_worker.solve.pending_rules.begin(); it != wrctx.ws_worker.solve.pending_rules.end();)
-        {
-            ground_context_solve.binding = make_view(it->first, ground_context_solve.destination).get_objects().get_data();
-
-            assert(ground_context_solve.binding == ground_context_iter.binding);
-            const auto program_head_index = fd::ground(wrctx.ctx.cws_rule.get_rule().get_head(), ground_context_iter).first;
-
-            if (fact_sets.fluent_sets.predicate.contains(program_head_index))  ///< optimal cost proven
-            {
-                it = wrctx.ws_worker.solve.pending_rules.erase(it);
-            }
-            else if (it->second->is_dynamically_applicable(fact_sets, ground_context_program))
-            {
-                assert(ensure_applicability(wrctx.ctx.cws_rule.get_rule(), ground_context_iter, fact_sets));
-
-                const auto delta_head_index = fd::ground(wrctx.ctx.cws_rule.get_rule().get_head(), ground_context_solve).first;
-
-                wrctx.ws_worker.iteration.heads.insert(delta_head_index);
-
-                wrctx.ctx.and_ap.update_annotation(wrctx.ctx.ctx.ctx.ws.cost_buckets.current_cost(),
-                                                   wrctx.ctx.cws_rule.get_rule(),
-                                                   wrctx.ctx.cws_rule.get_witness_condition(),
-                                                   program_head_index,
-                                                   delta_head_index,
-                                                   wrctx.ctx.ctx.ctx.aps.or_annot,
-                                                   wrctx.ws_worker.iteration.witness_to_cost,
-                                                   wrctx.ws_worker.iteration.head_to_witness,
-                                                   ground_context_solve,
-                                                   wrctx.ctx.ws_rule.common.program_repository);
-
-                it = wrctx.ws_worker.solve.pending_rules.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
-        }
-    }
 }
 
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
@@ -260,114 +217,186 @@ void generate(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx)
 }
 
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
+void process_pending(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
+{
+    const auto rule = rctx.cws_rule.get_rule();
+    auto fact_sets = rctx.get_fact_sets();
+    auto& aps = rctx.ctx.ctx.aps;
+
+    for (auto& worker : rctx.ws_rule.worker)
+    {
+        auto wrctx = RuleWorkerExecutionContext(rctx, worker);
+
+        auto ground_context_iter = wrctx.get_ground_context_iter();
+        auto ground_context_solve = wrctx.get_ground_context_solve();
+        auto ground_context_program = wrctx.get_ground_context_program();
+
+        const auto stopwatch = StopwatchScope(worker.solve.statistics.pending_time);
+
+        std::cout << "worker.solve.pending_rules: " << worker.solve.pending_rules.size() << std::endl;
+
+        for (auto it = worker.solve.pending_rules.begin(); it != worker.solve.pending_rules.end();)
+        {
+            ground_context_solve.binding = make_view(it->first, ground_context_solve.destination).get_objects().get_data();
+
+            assert(ground_context_solve.binding == ground_context_iter.binding);
+            const auto program_head_index = fd::ground(rule.get_head(), ground_context_iter).first;
+
+            if (fact_sets.fluent_sets.predicate.contains(program_head_index))  ///< optimal cost proven
+            {
+                it = worker.solve.pending_rules.erase(it);
+            }
+            else if (it->second->is_dynamically_applicable(fact_sets, ground_context_program))
+            {
+                assert(ensure_applicability(rule, ground_context_iter, fact_sets));
+
+                const auto worker_head_index = fd::ground(rule.get_head(), ground_context_solve).first;
+
+                worker.iteration.heads.insert(worker_head_index);
+
+                rctx.and_ap.update_annotation(rctx.ctx.ctx.ws.cost_buckets.current_cost(),
+                                              rule,
+                                              rctx.cws_rule.get_witness_condition(),
+                                              program_head_index,
+                                              worker_head_index,
+                                              aps.or_annot,
+                                              worker.iteration.witness_to_cost,
+                                              worker.iteration.head_to_witness,
+                                              ground_context_solve,
+                                              rctx.ws_rule.common.program_repository);
+
+                it = worker.solve.pending_rules.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+}
+
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 {
-    ctx.scheduler.activate_all();
+    auto& scheduler = ctx.scheduler;
+    auto& facts = ctx.ctx.ws.facts;
+    auto& cost_buckets = ctx.ctx.ws.cost_buckets;
+    auto& ws = ctx.ctx.ws;
+    auto& tp = ctx.ctx.tp;
+    auto& aps = ctx.ctx.aps;
 
-    ctx.ctx.ws.cost_buckets.clear();
+    scheduler.activate_all();
+
+    cost_buckets.clear();
 
     while (true)
     {
-        std::cout << "Cost: " << ctx.ctx.ws.cost_buckets.current_cost() << std::endl;
+        std::cout << "Cost: " << cost_buckets.current_cost() << std::endl;
 
         // Check whether min cost for goal was proven.
-        if (ctx.ctx.tp.check())
+        if (tp.check())
         {
             return;
         }
 
+        scheduler.on_start_iteration();
+
+        const auto& rules = scheduler.get_rules();
+        const auto& active_rules = scheduler.get_active_rules();
+
+        std::cout << rules << std::endl;
+        std::cout << active_rules << std::endl;
+
         /**
-         * Parallel evaluation.
+         * Parallel process pending applicability checks and generate ground witnesses.
          */
 
-        const auto active_rules = ctx.scheduler.get_active_rules();
-        ctx.scheduler.on_start_iteration();
-
         {
-            const auto program_stopwatch = StopwatchScope(ctx.ctx.ws.statistics.parallel_time);
+            const auto program_stopwatch = StopwatchScope(ws.statistics.parallel_time);
 
             oneapi::tbb::parallel_for_each(active_rules.begin(),
                                            active_rules.end(),
                                            [&](auto&& rule_index)
                                            {
-                                               // std::cout << make_view(rule_index, ctx.ctx.ws.repository) << std::endl;
+                                               // std::cout << make_view(rule_index, ws.repository) << std::endl;
 
                                                auto rctx = ctx.get_rule_execution_context(rule_index);
-                                               auto wrctx = rctx.get_rule_worker_execution_context();
 
-                                               const auto rule_stopwatch = StopwatchScope(wrctx.ws_worker.solve.statistics.parallel_time);
-                                               ++wrctx.ws_worker.solve.statistics.num_executions;
+                                               process_pending(rctx);
 
-                                               generate(wrctx);
+                                               {
+                                                   auto wrctx = rctx.get_rule_worker_execution_context();
 
-                                               // std::cout << std::endl << std::endl;
+                                                   const auto rule_stopwatch = StopwatchScope(wrctx.ws_worker.solve.statistics.parallel_time);
+                                                   ++wrctx.ws_worker.solve.statistics.num_executions;
+
+                                                   generate(wrctx);
+                                               }
                                            });
         }
 
         /**
-         * Sequential merge.
+         * Sequential merge results from workers into program
          */
-
-        /// --- Sequentially combine results into a temporary staging repository to prevent modying the program's repository
 
         {
             // Clear current bucket to avoid duplicate handling
-            ctx.ctx.ws.cost_buckets.clear_current();
+            cost_buckets.clear_current();
 
             for (const auto rule_index : active_rules)
             {
                 const auto i = uint_t(rule_index);
+                auto merge_context = fd::MergeContext { ws.datalog_builder, ws.repository };
+                const auto& ws_rule = ws.rules[i];
 
-                auto merge_context = fd::MergeContext { ctx.ctx.ws.datalog_builder, ctx.ctx.ws.repository };
-
-                const auto& ws_rule = ctx.ctx.ws.rules[i];
-
-                for (const auto& worker : ws_rule->worker)
+                for (auto& worker : ws_rule->worker)
                 {
                     for (const auto worker_head : worker.iteration.heads)
                     {
                         // Merge head from delta into the program
                         const auto program_head = fd::merge_d2d(make_view(worker_head, worker.solve.stage_repository), merge_context).first;
 
-                        // Update annotation
-                        const auto cost_update = ctx.ctx.aps.or_ap.update_annotation(program_head,
-                                                                                     worker_head,
-                                                                                     ctx.ctx.aps.or_annot,
-                                                                                     worker.iteration.witness_to_cost,
-                                                                                     worker.iteration.head_to_witness,
-                                                                                     ctx.ctx.aps.program_head_to_witness);
+                        std::cout << make_view(program_head, ws.repository) << std::endl;
 
-                        ctx.ctx.ws.cost_buckets.update(cost_update, program_head);
+                        // Update annotation
+                        const auto cost_update = aps.or_ap.update_annotation(program_head,
+                                                                             worker_head,
+                                                                             aps.or_annot,
+                                                                             worker.iteration.witness_to_cost,
+                                                                             worker.iteration.head_to_witness,
+                                                                             aps.program_head_to_witness);
+
+                        cost_buckets.update(cost_update, program_head);
                     }
                 }
             }
 
-            if (!ctx.ctx.ws.cost_buckets.advance_to_next_nonempty())
+            if (!cost_buckets.advance_to_next_nonempty())
                 return;  // Terminate if no-nonempty bucket was found.
 
             // Insert next bucket heads into fact and assignment sets + trigger scheduler.
-            for (const auto head_index : ctx.ctx.ws.cost_buckets.get_current_bucket())
+            for (const auto head_index : cost_buckets.get_current_bucket())
             {
-                if (!ctx.ctx.ws.facts.fact_sets.predicate.contains(head_index))
+                if (!facts.fact_sets.predicate.contains(head_index))
                 {
-                    const auto head = make_view(head_index, ctx.ctx.ws.repository);
+                    const auto head = make_view(head_index, ws.repository);
 
                     // Notify scheduler
-                    ctx.scheduler.on_generate(head.get_predicate().get_index());
+                    scheduler.on_generate(head.get_predicate().get_index());
 
                     // Notify termination policy
-                    ctx.ctx.tp.achieve(head_index);
+                    tp.achieve(head_index);
 
                     // Update fact sets
-                    ctx.ctx.ws.facts.fact_sets.predicate.insert(head);
-                    ctx.ctx.ws.facts.assignment_sets.predicate.insert(head);
+                    facts.fact_sets.predicate.insert(head);
+                    facts.assignment_sets.predicate.insert(head);
 
                     // std::cout << "Discovered: " << head << std::endl;
                 }
             }
         }
 
-        ctx.scheduler.on_finish_iteration();
+        scheduler.on_finish_iteration();
     }
 }
 
