@@ -40,11 +40,14 @@ template<OrAnnotationPolicyConcept OrAP = NoOrAnnotationPolicy,
 class RuleWorkerExecutionContext
 {
 public:
-    struct In
+    class In
     {
-        const RuleExecutionContext<OrAP, AndAP, TP>& m_rctx;
-        const RuleWorkspace& m_ws_rule;
-        const ConstRuleWorkspace& m_cws_rule;
+    public:
+        explicit In(const RuleExecutionContext<OrAP, AndAP, TP>& rctx) : m_rctx(rctx), m_ws_rule(rctx.ws_rule), m_cws_rule(rctx.cws_rule) {}
+
+        /**
+         * Contexts
+         */
 
         const auto& pctx() noexcept { return m_rctx.ctx.ctx; }
         const auto& pctx() const noexcept { return m_rctx.ctx.ctx; }
@@ -52,36 +55,55 @@ public:
         const auto& sctx() const noexcept { return m_rctx.ctx; }
         const auto& rctx() noexcept { return m_rctx; }
         const auto& rctx() const noexcept { return m_rctx; }
+
+        /**
+         * Workspaces
+         */
+
         const auto& ws_rule() noexcept { return m_ws_rule; }
         const auto& ws_rule() const noexcept { return m_ws_rule; }
         const auto& cws_rule() noexcept { return m_cws_rule; }
         const auto& cws_rule() const noexcept { return m_cws_rule; }
+
+    private:
+        const RuleExecutionContext<OrAP, AndAP, TP>& m_rctx;
+        const RuleWorkspace& m_ws_rule;
+        const ConstRuleWorkspace& m_cws_rule;
     };
 
-    struct Out
+    class Out
     {
-        RuleWorkspace::Worker& m_ws_worker;
-
-        formalism::datalog::ConstGrounderContext<formalism::datalog::Repository> m_const_ground_context_program;
-        formalism::datalog::GrounderContext<formalism::datalog::Repository> m_ground_context_solve;
-        formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>> m_ground_context_iteration;
+    public:
+        Out(RuleExecutionContext<OrAP, AndAP, TP>& rctx, RuleWorkspace::Worker& ws_worker) :
+            m_ws_worker(ws_worker),
+            m_const_ground_context_program(ws_worker.builder, rctx.ws_rule.common.program_repository, ws_worker.binding),
+            m_ground_context_solve(ws_worker.builder, ws_worker.solve.stage_repository, ws_worker.binding),
+            m_ground_context_iteration(ws_worker.builder, ws_worker.iteration.program_overlay_repository, ws_worker.binding)
+        {
+        }
 
         auto& ws_worker() noexcept { return m_ws_worker; }
         auto& const_ground_context_program() noexcept { return m_const_ground_context_program; }
         auto& ground_context_solve() noexcept { return m_ground_context_solve; }
         auto& ground_context_iteration() noexcept { return m_ground_context_iteration; }
+
+    private:
+        /**
+         * Workspaces
+         */
+
+        RuleWorkspace::Worker& m_ws_worker;
+
+        /**
+         * Data
+         */
+
+        formalism::datalog::ConstGrounderContext<formalism::datalog::Repository> m_const_ground_context_program;
+        formalism::datalog::GrounderContext<formalism::datalog::Repository> m_ground_context_solve;
+        formalism::datalog::GrounderContext<formalism::OverlayRepository<formalism::datalog::Repository>> m_ground_context_iteration;
     };
 
-    RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP>& rctx, RuleWorkspace::Worker& ws_worker) :
-        m_in(In { .m_rctx = rctx, .m_ws_rule = rctx.ws_rule, .m_cws_rule = rctx.cws_rule }),
-        m_out(Out { .m_ws_worker = ws_worker,
-                    .m_const_ground_context_program =
-                        formalism::datalog::ConstGrounderContext { ws_worker.builder, rctx.ws_rule.common.program_repository, ws_worker.binding },
-                    .m_ground_context_solve = formalism::datalog::GrounderContext { ws_worker.builder, ws_worker.solve.stage_repository, ws_worker.binding },
-                    .m_ground_context_iteration =
-                        formalism::datalog::GrounderContext { ws_worker.builder, ws_worker.iteration.program_overlay_repository, ws_worker.binding } })
-    {
-    }
+    RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP>& rctx, RuleWorkspace::Worker& ws_worker) : m_in(rctx), m_out(rctx, ws_worker) {}
 
     /**
      * Getters
