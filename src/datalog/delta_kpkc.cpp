@@ -77,7 +77,9 @@ GraphLayout::GraphLayout(size_t nv_, size_t k_, std::vector<std::vector<Vertex>>
 Workspace::Workspace(const GraphLayout& graph) :
     compatible_vertices(graph.k, std::vector<boost::dynamic_bitset<>>(graph.k)),
     partition_bits(graph.k, false),
-    partial_solution()
+    partial_solution(),
+    contains_delta_edge(),
+    anchor_key(std::numeric_limits<uint_t>::max())
 {
     for (uint_t pi = 0; pi < graph.k; ++pi)
         for (uint_t pj = 0; pj < graph.k; ++pj)
@@ -207,6 +209,11 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                             first_row.set(second_index);
                                             second_row.set(first_index);
                                             m_write_masks.edges.reset(edge.get_index());
+
+                                            // Enforce vertices adjacent to delta edges as delta vertices.
+                                            // This wont affect the k = 1 case.
+                                            m_delta_graph.vertices.set(first_index);
+                                            m_delta_graph.vertices.set(second_index);
                                         });
 
     std::swap(m_delta_graph.adjacency_matrix, m_full_graph.adjacency_matrix);
@@ -238,7 +245,7 @@ void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
 {
     workspace.partial_solution.clear();
     workspace.partition_bits.reset();
-    workspace.anchor_edge_rank = std::numeric_limits<uint_t>::max();  // unused
+    workspace.anchor_key = std::numeric_limits<uint_t>::max();  // unused
 
     auto& cv_0 = workspace.compatible_vertices[0];
 
@@ -254,8 +261,52 @@ void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
     }
 }
 
+void DeltaKPKC::seed_from_anchor(const Vertex& vertex, Workspace& workspace) const
+{
+    assert(m_delta_graph.contains(vertex));
+
+    const uint_t pi = m_const_graph.vertex_to_partition[vertex.index];
+
+    workspace.partial_solution.clear();
+    workspace.partial_solution.push_back(vertex);
+    workspace.contains_delta_edge.push_back(false);
+    workspace.anchor_key = vertex.index;
+    workspace.partition_bits.reset();
+    workspace.partition_bits.set(pi);
+
+    const auto& full_row = m_full_graph.adjacency_matrix[vertex.index];
+    auto& cv_0 = workspace.compatible_vertices[0];
+
+    for (uint_t p = 0; p < m_const_graph.k; ++p)
+    {
+        auto& cv_0_p = cv_0[p];
+        cv_0_p.reset();
+
+        if (p == pi)
+            continue;
+
+        const auto& partition = m_const_graph.partitions[p];
+
+        for (uint_t bit = 0; bit < partition.size(); ++bit)
+        {
+            const auto c = partition[bit];
+
+            if (!full_row.test(c.index))
+                continue;
+
+            // ownership: anchor must be smallest delta vertex in clique
+            if (m_delta_graph.vertices.test(c.index) && c.index < workspace.anchor_key)
+                continue;
+
+            cv_0_p.set(bit);
+        }
+    }
+}
+
 void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 {
+    assert(m_delta_graph.contains(edge));
+
     const uint_t pi = m_const_graph.vertex_to_partition[edge.src.index];
     const uint_t pj = m_const_graph.vertex_to_partition[edge.dst.index];
     assert(pi != pj);
@@ -263,7 +314,7 @@ void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
     workspace.partial_solution.clear();
     workspace.partial_solution.push_back(edge.src);
     workspace.partial_solution.push_back(edge.dst);
-    workspace.anchor_edge_rank = edge.rank(m_const_graph.nv);
+    workspace.anchor_key = edge.rank(m_const_graph.nv);
     workspace.partition_bits.reset();
     workspace.partition_bits.set(pi);
     workspace.partition_bits.set(pj);
@@ -274,7 +325,7 @@ void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
             return false;
         if (!m_delta_graph.contains(edge))
             return true;  // Not a delta edge -> always legal if in full
-        return edge.rank(m_const_graph.nv) > workspace.anchor_edge_rank;
+        return edge.rank(m_const_graph.nv) > workspace.anchor_key;
     };
 
     auto& cv_0 = workspace.compatible_vertices[0];
@@ -291,9 +342,9 @@ void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 
         for (uint_t bit = 0; bit < partition.size(); ++bit)
         {
-            const auto vertex = partition[bit];
+            const auto candidate_vertex = partition[bit];
 
-            if (is_legal(Edge(edge.src, vertex)) && is_legal(Edge(edge.dst, vertex)))
+            if (is_legal(Edge(edge.src, candidate_vertex)) && is_legal(Edge(edge.dst, candidate_vertex)))
                 cv_0_p.set(bit);
         }
     }

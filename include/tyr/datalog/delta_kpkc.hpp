@@ -216,7 +216,8 @@ struct Workspace
     std::vector<std::vector<boost::dynamic_bitset<>>> compatible_vertices;  ///< Dimensions K x K x O(V)
     boost::dynamic_bitset<> partition_bits;                                 ///< Dimensions K
     std::vector<Vertex> partial_solution;                                   ///< Dimensions K
-    uint_t anchor_edge_rank;
+    std::vector<bool> contains_delta_edge;
+    uint_t anchor_key;
 
     /// @brief Allocate workspace memory layout for a given graph layout.
     /// @param graph
@@ -328,6 +329,14 @@ private:
     /// for each partition with the vertices that are active in the full graph.
     void seed_without_anchor(Workspace& workspace) const;
 
+    /// @brief Seed the P part of BronKerbosch based on an anchor vertex.
+    ///
+    /// Initialize compatible vertices at depth 0 with solution of size 1, i.e., the vertex anchor,
+    /// for each remaining partition with the vertices that are connected to vertices adjacent to the anchor
+    /// through edges that satisfy the delta constraint, i.e., such edges must have higher delta rank.
+    /// @param vertex is the anchor vertex.
+    void seed_from_anchor(const Vertex& vertex, Workspace& workspace) const;
+
     /// @brief Seed the P part of BronKerbosch based on an anchor edge.
     ///
     /// Initialize compatible vertices at depth 0 with solution of size 2, i.e., the vertices adjacent to the anchor,
@@ -343,10 +352,10 @@ private:
     uint_t choose_best_partition(size_t depth, const Workspace& workspace) const;
 
     /// @brief Update the P part of BronKerbosch given the last selected vertex `src` at depth `depth`.
-    /// @tparam Delta is a flag to enable monotonic delta constraint check.
+    /// @tparam AnchorType is the type of the anchor.
     /// @param src is the last selected vertex.
     /// @param depth is the recursion depth.
-    template<bool Delta>
+    template<typename AnchorType>
     void update_compatible_adjacent_vertices_at_next_depth(Vertex src, size_t depth, Workspace& workspace) const;
 
     /// @brief Early termination helper
@@ -356,10 +365,10 @@ private:
 
     /// @brief Complete the k-clique recursively.
     /// @tparam Callback is called upon finding a k-clique.
-    /// @tparam Delta is a flag to enable monotonic delta constraint check.
+    /// @tparam AnchorType is the type of the anchor.
     /// @param callback is the callback function.
     /// @param depth is the recursion depth.
-    template<bool Delta, class Callback>
+    template<typename AnchorType, class Callback>
     void complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace) const;
 
 private:
@@ -468,7 +477,7 @@ void DeltaKPKC::for_each_k_clique(Callback&& callback, Workspace& workspace) con
     {
         seed_without_anchor(workspace);
 
-        complete_from_seed<false>(callback, 0, workspace);
+        complete_from_seed<void>(callback, 0, workspace);
     }
 }
 
@@ -497,17 +506,26 @@ void DeltaKPKC::for_each_new_k_clique(Callback&& callback, Workspace& workspace)
         }
         else
         {
-            for (const auto& edge : delta_edges_range())
+            for (const auto& vertex : delta_vertices_range())
             {
-                seed_from_anchor(edge, workspace);
+                seed_from_anchor(vertex, workspace);
 
-                complete_from_seed<true>(callback, 0, workspace);
+                complete_from_seed<Vertex>(callback, 0, workspace);
             }
+
+            /*
+        for (const auto& edge : delta_edges_range())
+        {
+            seed_from_anchor(edge, workspace);
+
+            complete_from_seed<Edge>(callback, 0, workspace);
+        }
+            */
         }
     }
 }
 
-template<bool Delta>
+template<typename AnchorType>
 void DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, size_t depth, Workspace& workspace) const
 {
     const uint_t k = m_const_graph.k;
@@ -518,6 +536,7 @@ void DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
 
     const auto& full_row = m_full_graph.adjacency_matrix[src.index];
     const auto& delta_row = m_delta_graph.adjacency_matrix[src.index];
+    const auto& delta_vertices = m_delta_graph.vertices;
 
     uint_t offset = 0;
 
@@ -549,16 +568,23 @@ void DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
             }
 
             // Delta Graph Check
-            if constexpr (Delta)
-                if (cv_next_p.test(bit) && delta_row.test(dst) && (Edge(src, Vertex(dst)).rank(m_const_graph.nv) < workspace.anchor_edge_rank))
+            if constexpr (std::is_same_v<AnchorType, Edge>)
+            {
+                if (cv_next_p.test(bit) && delta_row.test(dst) && (Edge(src, Vertex(dst)).rank(m_const_graph.nv) < workspace.anchor_key))
                     cv_next_p.reset(bit);
+            }
+            else if constexpr (std::is_same_v<AnchorType, Vertex>)
+            {
+                if (cv_next_p.test(bit) && delta_vertices.test(dst) && dst < workspace.anchor_key)
+                    cv_next_p.reset(bit);
+            }
         }
 
         offset += partition_size;
     }
 }
 
-template<bool Delta, class Callback>
+template<typename AnchorType, class Callback>
 void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace) const
 {
     assert(depth < m_const_graph.k);
@@ -571,11 +597,27 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
     auto& cv_d_p = workspace.compatible_vertices[depth][p];
     auto& partition_bits = workspace.partition_bits;
     auto& partial_solution = workspace.partial_solution;
+    auto& contains_delta_edge = workspace.contains_delta_edge;
 
     // Iterate through compatible vertices in the best partition
     for (auto bit = cv_d_p.find_first(); bit != boost::dynamic_bitset<>::npos; bit = cv_d_p.find_next(bit))
     {
         const auto vertex = m_const_graph.partitions[p][bit];
+
+        if constexpr (std::is_same_v<AnchorType, Vertex>)
+        {
+            if (contains_delta_edge.back()
+                || std::any_of(partial_solution.begin(),
+                               partial_solution.end(),
+                               [&](auto&& arg) { return m_delta_graph.adjacency_matrix[vertex.index].test(arg.index); }))
+            {
+                contains_delta_edge.push_back(true);
+            }
+            else
+            {
+                contains_delta_edge.push_back(false);
+            }
+        }
 
         partial_solution.push_back(vertex);
 
@@ -584,21 +626,34 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
 
         if (partial_solution.size() == k)
         {
-            callback(partial_solution);
+            if constexpr (std::is_same_v<AnchorType, Vertex>)
+            {
+                if (contains_delta_edge.back())
+                    callback(partial_solution);
+            }
+            else
+            {
+                callback(partial_solution);
+            }
         }
         else
         {
-            update_compatible_adjacent_vertices_at_next_depth<Delta>(vertex, depth, workspace);
+            update_compatible_adjacent_vertices_at_next_depth<AnchorType>(vertex, depth, workspace);
 
             partition_bits.set(p);
 
             if ((partial_solution.size() + num_possible_additions_at_next_depth(depth, workspace)) == k)
-                complete_from_seed<Delta>(callback, depth + 1, workspace);
+                complete_from_seed<AnchorType>(callback, depth + 1, workspace);
 
             partition_bits.reset(p);
         }
 
         partial_solution.pop_back();
+
+        if constexpr (std::is_same_v<AnchorType, Vertex>)
+        {
+            contains_delta_edge.pop_back();
+        }
     }
 }
 }
