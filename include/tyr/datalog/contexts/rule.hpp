@@ -47,24 +47,10 @@ public:
             m_rctx(rctx),
             m_and_ap(ws_worker.solve.and_ap),
             m_ws_rule(rctx.ws_rule),
-            m_cws_rule(rctx.cws_rule)
+            m_cws_rule(rctx.cws_rule),
+            m_fact_sets(rctx.get_fact_sets())
         {
         }
-
-        /**
-         * Contexts
-         */
-
-        const auto& pctx() noexcept { return m_rctx.ctx.ctx; }
-        const auto& pctx() const noexcept { return m_rctx.ctx.ctx; }
-        const auto& sctx() noexcept { return m_rctx.ctx; }
-        const auto& sctx() const noexcept { return m_rctx.ctx; }
-        const auto& rctx() noexcept { return m_rctx; }
-        const auto& rctx() const noexcept { return m_rctx; }
-
-        /**
-         * Workspaces
-         */
 
         const auto& ws_rule() noexcept { return m_ws_rule; }
         const auto& ws_rule() const noexcept { return m_ws_rule; }
@@ -73,6 +59,14 @@ public:
 
         const auto& and_ap() noexcept { return m_and_ap; }
         const auto& and_ap() const noexcept { return m_and_ap; }
+        const auto& or_annot() noexcept { return m_rctx.ctx.ctx.ws.or_annot; }
+        const auto& or_annot() const noexcept { return m_rctx.ctx.ctx.ws.or_annot; }
+        const auto& cost_buckets() noexcept { return m_rctx.ctx.ctx.ws.cost_buckets; }
+        const auto& cost_buckets() const noexcept { return m_rctx.ctx.ctx.ws.cost_buckets; }
+        const auto& program_repository() noexcept { return m_rctx.ws_rule.common.program_repository; }
+        const auto& program_repository() const noexcept { return m_rctx.ws_rule.common.program_repository; }
+        const auto& fact_sets() noexcept { return m_fact_sets; }
+        const auto& fact_sets() const noexcept { return m_fact_sets; }
 
     private:
         const RuleExecutionContext<OrAP, AndAP, TP>& m_rctx;
@@ -80,6 +74,8 @@ public:
         const AndAP& m_and_ap;
         const RuleWorkspace<AndAP>& m_ws_rule;
         const ConstRuleWorkspace& m_cws_rule;
+
+        const FactSets m_fact_sets;
     };
 
     class Out
@@ -93,10 +89,20 @@ public:
         {
         }
 
-        auto& ws_worker() noexcept { return m_ws_worker; }
+        auto& kpkc_workspace() noexcept { return m_ws_worker.iteration.kpkc_workspace; }
+        auto& witness_to_cost() noexcept { return m_ws_worker.iteration.witness_to_cost; }
+        auto& head_to_witness() noexcept { return m_ws_worker.iteration.head_to_witness; }
+        auto& heads() noexcept { return m_ws_worker.iteration.heads; }
+
+        auto& statistics() noexcept { return m_ws_worker.solve.statistics; }
+        auto& applicability_check_pool() noexcept { return m_ws_worker.solve.applicability_check_pool; }
+        auto& seen_bindings_dbg() noexcept { return m_ws_worker.solve.seen_bindings_dbg; }
+        auto& pending_rules() noexcept { return m_ws_worker.solve.pending_rules; }
+
         auto& const_ground_context_program() noexcept { return m_const_ground_context_program; }
         auto& ground_context_solve() noexcept { return m_ground_context_solve; }
         auto& ground_context_iteration() noexcept { return m_ground_context_iteration; }
+        auto get_fact_sets() const noexcept { return; }
 
     private:
         /**
@@ -144,7 +150,8 @@ struct RuleExecutionContext
         rule(rule),
         ctx(ctx),
         ws_rule(*ctx.ctx.ws.rules[uint_t(rule)]),
-        cws_rule(ctx.ctx.cws.rules[uint_t(rule)])
+        cws_rule(ctx.ctx.cws.rules[uint_t(rule)]),
+        m_fact_sets(ctx.ctx.cws.facts.fact_sets, ctx.ctx.ws.facts.fact_sets)
     {
         for (auto& worker : ws_rule.worker)
             worker.iteration.clear();
@@ -155,7 +162,7 @@ struct RuleExecutionContext
 
     auto get_rule_worker_execution_context() { return RuleWorkerExecutionContext<OrAP, AndAP, TP>(*this, ws_rule.worker.local()); }
 
-    auto get_fact_sets() const noexcept { return FactSets(ctx.ctx.cws.facts.fact_sets, ctx.ctx.ws.facts.fact_sets); }
+    const auto& get_fact_sets() const noexcept { return m_fact_sets; }
 
     /// Inputs
     Index<formalism::datalog::Rule> rule;
@@ -164,6 +171,8 @@ struct RuleExecutionContext
     /// Workspaces
     RuleWorkspace<AndAP>& ws_rule;
     const ConstRuleWorkspace& cws_rule;
+
+    const FactSets m_fact_sets;
 };
 }
 

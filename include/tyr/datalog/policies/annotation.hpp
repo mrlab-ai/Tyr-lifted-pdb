@@ -118,28 +118,28 @@ concept OrAnnotationPolicyConcept = requires(const T& p,
 // rectangular "and"-node
 template<typename T>
 concept AndAnnotationPolicyConcept = requires(const T& p,
-                                              uint_t current_cost,
-                                              View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
-                                              View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> witness_condition,
                                               Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
                                               Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
+                                              uint_t current_cost,
+                                              const formalism::datalog::Repository& program_repository,
+                                              View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
+                                              View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> witness_condition,
                                               const OrAnnotationsList& or_annot,
                                               AndAnnotationsMap& and_annot,
                                               HeadToWitness& delta_head_to_witness,
-                                              formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
-                                              const formalism::datalog::Repository& program_repository) {
+                                              formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) {
     /// Ground the witness and annotate the cost of it from the given annotations.
     {
-        p.update_annotation(current_cost,
+        p.update_annotation(program_head,
+                            delta_head,
+                            current_cost,
+                            program_repository,
                             rule,
                             witness_condition,
-                            program_head,
-                            delta_head,
                             or_annot,
                             and_annot,
                             delta_head_to_witness,
-                            delta_context,
-                            program_repository)
+                            delta_context)
     } -> std::same_as<void>;
 };
 
@@ -166,16 +166,16 @@ class NoAndAnnotationPolicy
 public:
     static constexpr bool ShouldAnnotate = false;
 
-    void update_annotation(uint_t current_cost,
+    void update_annotation(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
+                           Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
+                           uint_t current_cost,
+                           const formalism::datalog::Repository& program_repository,
                            View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
                            View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> witness_condition,
-                           Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
-                           Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
                            const OrAnnotationsList& or_annot,
                            AndAnnotationsMap& and_annot,
                            HeadToWitness& head_to_witness,
-                           formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
-                           const formalism::datalog::Repository& program_repository) const noexcept
+                           formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) const noexcept
     {
     }
 };
@@ -266,16 +266,16 @@ public:
     static constexpr bool ShouldAnnotate = true;
     static constexpr AggregationFunction agg = AggregationFunction {};
 
-    void update_annotation(uint_t current_cost,
+    void update_annotation(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
+                           Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
+                           uint_t current_cost,
+                           const formalism::datalog::Repository& program_repository,
                            View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
                            View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> witness_condition,
-                           Index<formalism::datalog::GroundAtom<formalism::FluentTag>> program_head,
-                           Index<formalism::datalog::GroundAtom<formalism::FluentTag>> delta_head,
                            const OrAnnotationsList& or_annot,
                            AndAnnotationsMap& and_annot,
                            HeadToWitness& delta_head_to_witness,
-                           formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
-                           const formalism::datalog::Repository& program_repository) const
+                           formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) const
     {
         // Use min among global minimum in cost of last iteration and thread local minimum.
         const auto best_global_cost = fetch_atom_cost(program_head, or_annot);
