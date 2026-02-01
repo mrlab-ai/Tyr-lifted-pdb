@@ -202,16 +202,31 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     auto& kpkc_cliques = rctx.ws_rule.common.kpkc_cliques;
     auto& kpkc_workspace = rctx.ws_rule.common.kpkc_workspace;
 
-    const auto k = kpkc.get_graph_layout().k;
-    assert(k > 0);
-
     kpkc.for_each_new_k_clique(kpkc_cliques, kpkc_workspace);
 
-    auto wrctx = rctx.get_rule_worker_execution_context();
+    constexpr size_t PAR_THRESHOLD = 1024;
+    constexpr size_t GRAIN = 256;
 
-    for (size_t i = 0; i < kpkc_cliques.size(); ++i)
+    const int arena_conc = oneapi::tbb::this_task_arena::max_concurrency();
+
+    const bool do_parallel_inner = (kpkc_cliques.size() >= PAR_THRESHOLD) && (arena_conc >= 2);
+
+    if (do_parallel_inner)
     {
-        process_clique(wrctx, kpkc_cliques[i]);
+        oneapi::tbb::parallel_for(oneapi::tbb::blocked_range<size_t>(0, kpkc_cliques.size(), GRAIN),
+                                  [&](const oneapi::tbb::blocked_range<size_t>& r)
+                                  {
+                                      auto wrctx = rctx.get_rule_worker_execution_context();
+                                      for (size_t i = r.begin(); i != r.end(); ++i)
+                                          process_clique(wrctx, kpkc_cliques[i]);
+                                  });
+    }
+    else
+    {
+        auto wrctx = rctx.get_rule_worker_execution_context();
+
+        for (size_t i = 0; i < kpkc_cliques.size(); ++i)
+            process_clique(wrctx, kpkc_cliques[i]);
     }
 }
 

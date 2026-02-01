@@ -36,6 +36,7 @@ inline void set(size_t pos, bool value, boost::dynamic_bitset<>& bitset)
         bitset.resize(pos + 1, false);
     bitset[pos] = value;
 }
+
 }
 
 #endif

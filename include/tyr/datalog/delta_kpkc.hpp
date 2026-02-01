@@ -519,6 +519,13 @@ void DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
         // Restrict neighborhood
         auto partition_size = cv_next_p.size();
 
+        // TODO: with adj[v][p][bit] i could simplify the whole to just:
+        // cv_next_p &= adj[vertex.index][p];
+        // In the case of delta edge checks, I could provide an additional adj_forbidden with just the allowed edges from vertex, then do an additional
+        // cv_next_p -= adj_forbidden[vertex.index][p];
+        // In the case of delta vertex, I could do the same, i.e., only allow vertices > vertex
+        // cv_next_p -= vertex_forbidden[vertex.index]
+
         if (partition_bits.test(p))
         {
             offset += partition_size;
