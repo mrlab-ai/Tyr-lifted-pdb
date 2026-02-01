@@ -63,13 +63,14 @@ struct GraphLayout
     /// Vertex partitioning with continuous vertex indices [[0,1,2],[3,4],[5,6]]
     std::vector<std::vector<Vertex>> partitions;  ///< Dimensions K x V
     std::vector<uint_t> vertex_to_partition;
+    std::vector<uint_t> vertex_to_bit;
 
     /// @brief Constructor enforces invariants.
     /// @param nv
     /// @param k
     /// @param partitions
     /// @param vertex_to_partition
-    GraphLayout(size_t nv, size_t k, std::vector<std::vector<Vertex>> partitions, std::vector<uint_t> vertex_to_partition);
+    GraphLayout(size_t nv, size_t k, std::vector<std::vector<Vertex>> partitions, std::vector<uint_t> vertex_to_partition, std::vector<uint_t> vertex_to_bit);
 };
 
 struct GraphActivityMasks
@@ -91,11 +92,22 @@ struct Graph
     /// Edges
     std::vector<boost::dynamic_bitset<>> adjacency_matrix;  ///< Dimensions V x V
 
+    /// Vertices
+    std::vector<boost::dynamic_bitset<>> partition_vertices;
+    /// Edges
+    std::vector<std::vector<boost::dynamic_bitset<>>> partition_adjacency_matrix;
+
     void reset() noexcept
     {
         vertices.reset();
         for (auto& bitset : adjacency_matrix)
             bitset.reset();
+
+        for (auto& bitset : partition_vertices)
+            bitset.reset();
+        for (auto& vec : partition_adjacency_matrix)
+            for (auto& bitset : vec)
+                bitset.reset();
     }
 
     bool contains(Vertex vertex) const noexcept { return vertices.test(vertex.index); }
@@ -216,8 +228,9 @@ struct Workspace
     std::vector<std::vector<boost::dynamic_bitset<>>> compatible_vertices;  ///< Dimensions K x K x O(V)
     boost::dynamic_bitset<> partition_bits;                                 ///< Dimensions K
     std::vector<Vertex> partial_solution;                                   ///< Dimensions K
-    std::vector<bool> contains_delta_edge;
     uint_t anchor_key;
+    uint_t anchor_pi;
+    uint_t anchor_pj;
 
     /// @brief Allocate workspace memory layout for a given graph layout.
     /// @param graph
@@ -321,14 +334,6 @@ private:
     /// Initialize compatible vertices at depth 0 with empty solution
     /// for each partition with the vertices that are active in the full graph.
     void seed_without_anchor(Workspace& workspace) const;
-
-    /// @brief Seed the P part of BronKerbosch based on an anchor vertex.
-    ///
-    /// Initialize compatible vertices at depth 0 with solution of size 1, i.e., the vertex anchor,
-    /// for each remaining partition with the vertices that are connected to vertices adjacent to the anchor
-    /// through edges that satisfy the delta constraint, i.e., such edges must have higher delta rank.
-    /// @param vertex is the anchor vertex.
-    void seed_from_anchor(const Vertex& vertex, Workspace& workspace) const;
 
     /// @brief Seed the P part of BronKerbosch based on an anchor edge.
     ///
@@ -506,60 +511,28 @@ void DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
     auto& cv_next = workspace.compatible_vertices[depth + 1];
     const auto& partition_bits = workspace.partition_bits;
 
-    const auto& full_row = m_full_graph.adjacency_matrix[src.index];
-    const auto& delta_row = m_delta_graph.adjacency_matrix[src.index];
-    const auto& delta_vertices = m_delta_graph.vertices;
-
-    uint_t offset = 0;
+    const auto p_src = m_const_graph.vertex_to_partition[src.index];
+    assert(p_src != workspace.anchor_pi);
+    assert(p_src != workspace.anchor_pj);
 
     for (uint_t p = 0; p < k; ++p)
     {
         auto& cv_next_p = cv_next[p];
 
-        // Restrict neighborhood
-        auto partition_size = cv_next_p.size();
-
-        // TODO: with adj[v][p][bit] i could simplify the whole to just:
-        // cv_next_p &= adj[vertex.index][p];
-        // In the case of delta edge checks, I could provide an additional adj_forbidden with just the allowed edges from vertex, then do an additional
-        // cv_next_p -= adj_forbidden[vertex.index][p];
-        // In the case of delta vertex, I could do the same, i.e., only allow vertices > vertex
-        // cv_next_p -= vertex_forbidden[vertex.index]
-
         if (partition_bits.test(p))
-        {
-            offset += partition_size;
             continue;
-        }
 
         // Copy current into next
         cv_next_p = cv_curr[p];
+        // Restrict neighborhood
+        cv_next_p &= m_full_graph.partition_adjacency_matrix[src.index][p];
 
-        for (auto bit = cv_next_p.find_first(); bit != boost::dynamic_bitset<>::npos; bit = cv_next_p.find_next(bit))
+        if constexpr (std::is_same_v<AnchorType, Edge>)
         {
-            uint_t dst = bit + offset;
-
-            // Full Graph Check
-            if (!full_row.test(dst))
-            {
-                cv_next_p.reset(bit);
-                continue;
-            }
-
-            // Delta Graph Check
-            if constexpr (std::is_same_v<AnchorType, Edge>)
-            {
-                if (cv_next_p.test(bit) && delta_row.test(dst) && (Edge(src, Vertex(dst)).rank(m_const_graph.nv) < workspace.anchor_key))
-                    cv_next_p.reset(bit);
-            }
-            else if constexpr (std::is_same_v<AnchorType, Vertex>)
-            {
-                if (cv_next_p.test(bit) && delta_vertices.test(dst) && dst < workspace.anchor_key)
-                    cv_next_p.reset(bit);
-            }
+            // Remove illegal delta edges whose rank is less than anchor rank
+            if (p_src < workspace.anchor_pi || p < workspace.anchor_pi)
+                cv_next_p -= m_delta_graph.partition_adjacency_matrix[src.index][p];
         }
-
-        offset += partition_size;
     }
 }
 
@@ -576,27 +549,11 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
     auto& cv_d_p = workspace.compatible_vertices[depth][p];
     auto& partition_bits = workspace.partition_bits;
     auto& partial_solution = workspace.partial_solution;
-    auto& contains_delta_edge = workspace.contains_delta_edge;
 
     // Iterate through compatible vertices in the best partition
     for (auto bit = cv_d_p.find_first(); bit != boost::dynamic_bitset<>::npos; bit = cv_d_p.find_next(bit))
     {
         const auto vertex = m_const_graph.partitions[p][bit];
-
-        if constexpr (std::is_same_v<AnchorType, Vertex>)
-        {
-            if (contains_delta_edge.back()
-                || std::any_of(partial_solution.begin(),
-                               partial_solution.end(),
-                               [&](auto&& arg) { return m_delta_graph.adjacency_matrix[vertex.index].test(arg.index); }))
-            {
-                contains_delta_edge.push_back(true);
-            }
-            else
-            {
-                contains_delta_edge.push_back(false);
-            }
-        }
 
         partial_solution.push_back(vertex);
 
@@ -605,15 +562,7 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
 
         if (partial_solution.size() == k)
         {
-            if constexpr (std::is_same_v<AnchorType, Vertex>)
-            {
-                if (contains_delta_edge.back())
-                    callback(partial_solution);
-            }
-            else
-            {
-                callback(partial_solution);
-            }
+            callback(partial_solution);
         }
         else
         {
@@ -628,11 +577,6 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
         }
 
         partial_solution.pop_back();
-
-        if constexpr (std::is_same_v<AnchorType, Vertex>)
-        {
-            contains_delta_edge.pop_back();
-        }
     }
 }
 }

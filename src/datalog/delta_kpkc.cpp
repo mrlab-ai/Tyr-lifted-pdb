@@ -64,11 +64,16 @@ namespace tyr::datalog::kpkc
     return true;
 }
 
-GraphLayout::GraphLayout(size_t nv_, size_t k_, std::vector<std::vector<Vertex>> partitions_, std::vector<uint_t> vertex_to_partition_) :
+GraphLayout::GraphLayout(size_t nv_,
+                         size_t k_,
+                         std::vector<std::vector<Vertex>> partitions_,
+                         std::vector<uint_t> vertex_to_partition_,
+                         std::vector<uint_t> vertex_to_bit_) :
     nv(nv_),
     k(k_),
     partitions(std::move(partitions_)),
-    vertex_to_partition(std::move(vertex_to_partition_))
+    vertex_to_partition(std::move(vertex_to_partition_)),
+    vertex_to_bit(std::move(vertex_to_bit_))
 {
     assert(verify_partitions(nv, k, partitions));
     assert(verify_vertex_to_partition(nv, k, vertex_to_partition));
@@ -78,7 +83,6 @@ Workspace::Workspace(const GraphLayout& graph) :
     compatible_vertices(graph.k, std::vector<boost::dynamic_bitset<>>(graph.k)),
     partition_bits(graph.k, false),
     partial_solution(),
-    contains_delta_edge(),
     anchor_key(std::numeric_limits<uint_t>::max())
 {
     for (uint_t pi = 0; pi < graph.k; ++pi)
@@ -97,16 +101,18 @@ GraphLayout allocate_const_graph(const StaticConsistencyGraph& static_graph)
     // Initialize partitions
     auto partitions = std::vector<std::vector<Vertex>>(k);
     auto vertex_to_partition = std::vector<uint_t>(nv);
+    auto vertex_to_bit = std::vector<uint_t>(nv);
     for (size_t p = 0; p < k; ++p)
     {
         for (const auto& v : static_graph.get_vertex_partitions()[p])
         {
+            vertex_to_bit[v] = partitions[p].size();
             partitions[p].push_back(Vertex(v));
             vertex_to_partition[v] = p;
         }
     }
 
-    return GraphLayout(nv, k, std::move(partitions), std::move(vertex_to_partition));
+    return GraphLayout(nv, k, std::move(partitions), std::move(vertex_to_partition), std::move(vertex_to_bit));
 }
 
 GraphActivityMasks allocate_activity_mask(const StaticConsistencyGraph& static_graph)
@@ -121,10 +127,24 @@ Graph allocate_empty_graph(const GraphLayout& cg)
     // Allocate
     graph.vertices.resize(cg.nv, false);
 
+    graph.partition_vertices.resize(cg.k);
+    for (uint_t p = 0; p < cg.k; ++p)
+        graph.partition_vertices[p].resize(cg.partitions[p].size());
+
     // Allocate adjacency matrix (V x V)
     graph.adjacency_matrix.resize(cg.nv);
     for (uint_t i = 0; i < cg.nv; ++i)
         graph.adjacency_matrix[i].resize(cg.nv, false);
+
+    // Allocate partition adjacency matrix
+    graph.partition_adjacency_matrix.resize(cg.nv);
+    for (uint_t i = 0; i < cg.nv; ++i)
+    {
+        graph.partition_adjacency_matrix[i].resize(cg.k);
+
+        for (uint_t p = 0; p < cg.k; ++p)
+            graph.partition_adjacency_matrix[i][p].resize(cg.partitions[p].size());
+    }
 
     return graph;
 }
@@ -181,13 +201,26 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                            {
                                                // std::cout << "deactivate: " << vertex << std::endl;
                                                // Enforce delta update
-                                               assert(!m_delta_graph.vertices.test(vertex.get_index()));
-                                               m_full_graph.vertices.set(vertex.get_index());
-                                               m_write_masks.vertices.reset(vertex.get_index());
+                                               const auto index = vertex.get_index();
+                                               const auto partition = m_const_graph.vertex_to_partition[index];
+                                               const auto bit = m_const_graph.vertex_to_bit[index];
+
+                                               // Enforce delta update
+                                               assert(!m_delta_graph.vertices.test(index));
+
+                                               m_full_graph.vertices.set(index);
+
+                                               m_write_masks.vertices.reset(index);
+
+                                               m_full_graph.partition_vertices[partition].set(bit);
                                            });
 
     std::swap(m_delta_graph.vertices, m_full_graph.vertices);
     m_full_graph.vertices |= m_delta_graph.vertices;
+
+    std::swap(m_delta_graph.partition_vertices, m_full_graph.partition_vertices);
+    for (uint_t p = 0; p < m_const_graph.k; ++p)
+        m_full_graph.partition_vertices[p] |= m_delta_graph.partition_vertices[p];
 
     // Initialize adjacency matrix: Add consistent undirected edges to adj matrix.
     static_graph.delta_consistent_edges(assignment_sets,
@@ -201,24 +234,41 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                             const auto second_index = edge.get_dst().get_index();
                                             // Enforce invariant of static consistency graph
                                             assert(first_index != second_index);
-                                            auto& first_row = m_full_graph.adjacency_matrix[first_index];
-                                            auto& second_row = m_full_graph.adjacency_matrix[second_index];
                                             // Enforce delta update
                                             assert(!m_delta_graph.adjacency_matrix[first_index].test(second_index));
                                             assert(!m_delta_graph.adjacency_matrix[second_index].test(first_index));
+
+                                            auto& first_row = m_full_graph.adjacency_matrix[first_index];
+                                            auto& second_row = m_full_graph.adjacency_matrix[second_index];
                                             first_row.set(second_index);
                                             second_row.set(first_index);
+
                                             m_write_masks.edges.reset(edge.get_index());
+
+                                            const auto first_partition = m_const_graph.vertex_to_partition[first_index];
+                                            const auto second_partition = m_const_graph.vertex_to_partition[second_index];
+                                            const auto first_bit = m_const_graph.vertex_to_bit[first_index];
+                                            const auto second_bit = m_const_graph.vertex_to_bit[second_index];
+                                            m_full_graph.partition_adjacency_matrix[first_index][second_partition].set(second_bit);
+                                            m_full_graph.partition_adjacency_matrix[second_index][first_partition].set(first_bit);
 
                                             // Enforce vertices adjacent to delta edges as delta vertices.
                                             // This wont affect the k = 1 case.
                                             m_delta_graph.vertices.set(first_index);
                                             m_delta_graph.vertices.set(second_index);
+
+                                            m_delta_graph.partition_vertices[first_partition].set(first_bit);
+                                            m_delta_graph.partition_vertices[second_partition].set(second_bit);
                                         });
 
     std::swap(m_delta_graph.adjacency_matrix, m_full_graph.adjacency_matrix);
     for (uint v = 0; v < m_const_graph.nv; ++v)
         m_full_graph.adjacency_matrix[v] |= m_delta_graph.adjacency_matrix[v];
+
+    std::swap(m_delta_graph.partition_adjacency_matrix, m_full_graph.partition_adjacency_matrix);
+    for (uint_t v = 0; v < m_const_graph.nv; ++v)
+        for (uint_t p = 0; p < m_const_graph.k; ++p)
+            m_full_graph.partition_adjacency_matrix[v][p] |= m_delta_graph.partition_adjacency_matrix[v][p];
 
     // std::cout << "m_full_graph.vertices after:" << std::endl;
     // std::cout << m_full_graph.vertices << std::endl;
@@ -253,65 +303,13 @@ void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
     workspace.partial_solution.clear();
     workspace.partition_bits.reset();
     workspace.anchor_key = std::numeric_limits<uint_t>::max();  // unused
+    workspace.anchor_pi = std::numeric_limits<uint_t>::max();   // unused
+    workspace.anchor_pj = std::numeric_limits<uint_t>::max();   // unused
 
     auto& cv_0 = workspace.compatible_vertices[0];
 
     for (uint_t p = 0; p < m_const_graph.k; ++p)
-    {
-        auto& cv_0_p = cv_0[p];
-        cv_0_p.reset();
-
-        const auto& partition = m_const_graph.partitions[p];
-        for (uint_t bit = 0; bit < partition.size(); ++bit)
-            if (m_full_graph.vertices.test(partition[bit].index))
-                cv_0_p.set(bit);
-    }
-}
-
-void DeltaKPKC::seed_from_anchor(const Vertex& vertex, Workspace& workspace) const
-{
-    assert(m_delta_graph.contains(vertex));
-
-    workspace.partial_solution.clear();
-    workspace.partial_solution.push_back(vertex);
-
-    if (m_const_graph.k == 1)
-        return;
-
-    const uint_t pi = m_const_graph.vertex_to_partition[vertex.index];
-
-    workspace.contains_delta_edge.push_back(false);
-    workspace.anchor_key = vertex.index;
-    workspace.partition_bits.reset();
-    workspace.partition_bits.set(pi);
-
-    const auto& full_row = m_full_graph.adjacency_matrix[vertex.index];
-    auto& cv_0 = workspace.compatible_vertices[0];
-
-    for (uint_t p = 0; p < m_const_graph.k; ++p)
-    {
-        auto& cv_0_p = cv_0[p];
-        cv_0_p.reset();
-
-        if (p == pi)
-            continue;
-
-        const auto& partition = m_const_graph.partitions[p];
-
-        for (uint_t bit = 0; bit < partition.size(); ++bit)
-        {
-            const auto c = partition[bit];
-
-            if (!full_row.test(c.index))
-                continue;
-
-            // ownership: anchor must be smallest delta vertex in clique
-            if (m_delta_graph.vertices.test(c.index) && c.index < workspace.anchor_key)
-                continue;
-
-            cv_0_p.set(bit);
-        }
-    }
+        cv_0[p] = m_full_graph.partition_vertices[p];
 }
 
 void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
@@ -327,21 +325,14 @@ void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 
     const uint_t pi = m_const_graph.vertex_to_partition[edge.src.index];
     const uint_t pj = m_const_graph.vertex_to_partition[edge.dst.index];
-    assert(pi != pj);
+    assert(pi < pj);
 
     workspace.anchor_key = edge.rank(m_const_graph.nv);
+    workspace.anchor_pi = pi;
+    workspace.anchor_pj = pj;
     workspace.partition_bits.reset();
     workspace.partition_bits.set(pi);
     workspace.partition_bits.set(pj);
-
-    auto is_legal = [&](const Edge& edge)
-    {
-        if (!m_full_graph.contains(edge))
-            return false;
-        if (!m_delta_graph.contains(edge))
-            return true;  // Not a delta edge -> always legal if in full
-        return edge.rank(m_const_graph.nv) > workspace.anchor_key;
-    };
 
     auto& cv_0 = workspace.compatible_vertices[0];
 
@@ -353,15 +344,14 @@ void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
         if (p == pi || p == pj)
             continue;
 
-        const auto& partition = m_const_graph.partitions[p];
+        cv_0_p |= m_full_graph.partition_adjacency_matrix[edge.src.index][p];
+        cv_0_p &= m_full_graph.partition_adjacency_matrix[edge.dst.index][p];
 
-        for (uint_t bit = 0; bit < partition.size(); ++bit)
-        {
-            const auto candidate_vertex = partition[bit];
+        if (p < pj)
+            cv_0_p -= m_delta_graph.partition_adjacency_matrix[edge.src.index][p];
 
-            if (is_legal(Edge(edge.src, candidate_vertex)) && is_legal(Edge(edge.dst, candidate_vertex)))
-                cv_0_p.set(bit);
-        }
+        if (p < pi)
+            cv_0_p -= m_delta_graph.partition_adjacency_matrix[edge.dst.index][p];
     }
 }
 
@@ -402,5 +392,4 @@ uint_t DeltaKPKC::num_possible_additions_at_next_depth(size_t depth, const Works
 
     return possible_additions;
 }
-
 }
