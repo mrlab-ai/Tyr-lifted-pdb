@@ -14,6 +14,8 @@ endfunction()
 # Add each test source file as a separate test executable
 
 add_gtest(common_bit_packed_layout                       "common/bit_packed_layout.cpp")
+add_gtest(common_vector                                  "common/vector.cpp")
+add_gtest(common_dynamic_bitset                          "common/dynamic_bitset.cpp")
 
 add_gtest(analysis_domains                               "analysis/domains.cpp")
 add_gtest(analysis_stratification                        "analysis/stratification.cpp")

@@ -18,7 +18,9 @@
 #ifndef TYR_DATALOG_DELTA_KPKC_HPP_
 #define TYR_DATALOG_DELTA_KPKC_HPP_
 
+#include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/formatter.hpp"
+#include "tyr/common/vector.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/formatter.hpp"
 
@@ -65,12 +67,28 @@ struct GraphLayout
     std::vector<uint_t> vertex_to_partition;
     std::vector<uint_t> vertex_to_bit;
 
+    struct BitsetInfo
+    {
+        uint_t offset;
+        uint_t num_bits;
+        uint_t num_blocks;
+    };
+
+    std::vector<BitsetInfo> partition_info;
+    size_t num_blocks_for_partitions;
+
     /// @brief Constructor enforces invariants.
     /// @param nv
     /// @param k
     /// @param partitions
     /// @param vertex_to_partition
-    GraphLayout(size_t nv, size_t k, std::vector<std::vector<Vertex>> partitions, std::vector<uint_t> vertex_to_partition, std::vector<uint_t> vertex_to_bit);
+    GraphLayout(size_t nv,
+                size_t k,
+                std::vector<std::vector<Vertex>> partitions,
+                std::vector<uint_t> vertex_to_partition,
+                std::vector<uint_t> vertex_to_bit,
+                std::vector<BitsetInfo> partition_info,
+                size_t num_partition_info_blocks);
 };
 
 struct GraphActivityMasks
@@ -90,11 +108,19 @@ struct Graph
     /// Vertices
     boost::dynamic_bitset<> vertices;
     std::vector<boost::dynamic_bitset<>> partition_vertices;
+
+    std::vector<uint64_t> partition_vertices_span_data;
     /// Edges
     std::vector<std::vector<boost::dynamic_bitset<>>> partition_adjacency_matrix;
 
+    std::vector<uint64_t> partition_adjacency_matrix_span_data;
+    MDSpan<uint64_t, 2> partition_adjacency_matrix_span;
+
     void reset() noexcept
     {
+        partition_vertices_span_data.assign(partition_vertices_span_data.size(), 0);
+        partition_adjacency_matrix_span_data.assign(partition_adjacency_matrix_span_data.size(), 0);
+
         vertices.reset();
         for (auto& bitset : partition_vertices)
             bitset.reset();
@@ -158,6 +184,9 @@ struct Graph
 /// @brief `Workspace` is preallocated memory for a rule.
 struct Workspace
 {
+    std::vector<uint64_t> compatible_vertices_span_data;
+    MDSpan<uint64_t, 2> compatible_vertices_span;
+
     std::vector<std::vector<boost::dynamic_bitset<>>> compatible_vertices;  ///< Dimensions K x K x O(V)
     boost::dynamic_bitset<> partition_bits;                                 ///< Dimensions K
     std::vector<Vertex> partial_solution;                                   ///< Dimensions K

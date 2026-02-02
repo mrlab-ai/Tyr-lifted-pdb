@@ -68,18 +68,24 @@ GraphLayout::GraphLayout(size_t nv_,
                          size_t k_,
                          std::vector<std::vector<Vertex>> partitions_,
                          std::vector<uint_t> vertex_to_partition_,
-                         std::vector<uint_t> vertex_to_bit_) :
+                         std::vector<uint_t> vertex_to_bit_,
+                         std::vector<BitsetInfo> partition_info_,
+                         size_t num_blocks_for_partitions_) :
     nv(nv_),
     k(k_),
     partitions(std::move(partitions_)),
     vertex_to_partition(std::move(vertex_to_partition_)),
-    vertex_to_bit(std::move(vertex_to_bit_))
+    vertex_to_bit(std::move(vertex_to_bit_)),
+    partition_info(std::move(partition_info_)),
+    num_blocks_for_partitions(num_blocks_for_partitions_)
 {
     assert(verify_partitions(nv, k, partitions));
     assert(verify_vertex_to_partition(nv, k, vertex_to_partition));
 }
 
 Workspace::Workspace(const GraphLayout& graph) :
+    compatible_vertices_span_data(graph.k * graph.num_blocks_for_partitions, 0),
+    compatible_vertices_span(compatible_vertices_span_data.data(), std::array<size_t, 2> { graph.k, graph.num_blocks_for_partitions }),
     compatible_vertices(graph.k, std::vector<boost::dynamic_bitset<>>(graph.k)),
     partition_bits(graph.k, false),
     partial_solution(),
@@ -102,9 +108,20 @@ GraphLayout allocate_const_graph(const StaticConsistencyGraph& static_graph)
     auto partitions = std::vector<std::vector<Vertex>>(k);
     auto vertex_to_partition = std::vector<uint_t>(nv);
     auto vertex_to_bit = std::vector<uint_t>(nv);
+    auto partition_info = std::vector<GraphLayout::BitsetInfo>();
+
+    uint_t bitset_offset_blocks = uint_t(0);
+
     for (size_t p = 0; p < k; ++p)
     {
-        for (const auto& v : static_graph.get_vertex_partitions()[p])
+        const auto& partition = static_graph.get_vertex_partitions()[p];
+
+        const auto partition_size = static_cast<uint_t>(partition.size());
+        const auto partition_blocks = static_cast<uint_t>(BitsetSpan<uint64_t>::num_blocks(partition_size));
+        partition_info.push_back(GraphLayout::BitsetInfo { bitset_offset_blocks, partition_size, partition_blocks });
+        bitset_offset_blocks += partition_blocks;
+
+        for (const auto& v : partition)
         {
             vertex_to_bit[v] = partitions[p].size();
             partitions[p].push_back(Vertex(v));
@@ -112,7 +129,7 @@ GraphLayout allocate_const_graph(const StaticConsistencyGraph& static_graph)
         }
     }
 
-    return GraphLayout(nv, k, std::move(partitions), std::move(vertex_to_partition), std::move(vertex_to_bit));
+    return GraphLayout(nv, k, std::move(partitions), std::move(vertex_to_partition), std::move(vertex_to_bit), std::move(partition_info), bitset_offset_blocks);
 }
 
 GraphActivityMasks allocate_activity_mask(const StaticConsistencyGraph& static_graph)
@@ -123,6 +140,12 @@ GraphActivityMasks allocate_activity_mask(const StaticConsistencyGraph& static_g
 Graph allocate_empty_graph(const GraphLayout& cg)
 {
     auto graph = Graph();
+
+    graph.partition_vertices_span_data.resize(cg.num_blocks_for_partitions, 0);
+
+    graph.partition_adjacency_matrix_span_data.resize(cg.nv * cg.num_blocks_for_partitions, 0);
+    graph.partition_adjacency_matrix_span =
+        MDSpan<uint64_t, 2>(graph.partition_adjacency_matrix_span_data.data(), std::array<size_t, 2> { cg.nv, cg.num_blocks_for_partitions });
 
     // Allocate
     graph.vertices.resize(cg.nv, false);
@@ -195,6 +218,10 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                                m_write_masks.vertices.reset(index);
 
                                                m_full_graph.partition_vertices[partition].set(bit);
+
+                                               const auto& info = m_const_graph.partition_info[partition];
+                                               auto dst = BitsetSpan<uint64_t>(m_full_graph.partition_vertices_span_data.data() + info.offset, info.num_bits);
+                                               dst.set(bit);
                                            });
 
     std::swap(m_delta_graph.vertices, m_full_graph.vertices);
@@ -203,6 +230,15 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
     std::swap(m_delta_graph.partition_vertices, m_full_graph.partition_vertices);
     for (uint_t p = 0; p < m_const_graph.k; ++p)
         m_full_graph.partition_vertices[p] |= m_delta_graph.partition_vertices[p];
+
+    std::swap(m_delta_graph.partition_vertices_span_data, m_full_graph.partition_vertices_span_data);
+    for (uint_t p = 0; p < m_const_graph.k; ++p)
+    {
+        const auto& info = m_const_graph.partition_info[p];
+        auto src = BitsetSpan<const uint64_t>(m_delta_graph.partition_vertices_span_data.data() + info.offset, info.num_bits);
+        auto dst = BitsetSpan<uint64_t>(m_full_graph.partition_vertices_span_data.data() + info.offset, info.num_bits);
+        dst |= src;
+    }
 
     // Initialize adjacency matrix: Add consistent undirected edges to adj matrix.
     static_graph.delta_consistent_edges(assignment_sets,
@@ -228,6 +264,18 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                             m_full_graph.partition_adjacency_matrix[first_index][second_partition].set(second_bit);
                                             m_full_graph.partition_adjacency_matrix[second_index][first_partition].set(first_bit);
 
+                                            const auto& first_info = m_const_graph.partition_info[first_partition];
+                                            const auto& second_info = m_const_graph.partition_info[second_partition];
+
+                                            {
+                                                auto* first_data = m_full_graph.partition_adjacency_matrix_span(first_index).data();
+                                                auto* second_data = m_full_graph.partition_adjacency_matrix_span(second_index).data();
+                                                auto first_dst = BitsetSpan<uint64_t>(first_data + second_info.offset, second_info.num_bits);
+                                                auto second_dst = BitsetSpan<uint64_t>(second_data + first_info.offset, first_info.num_bits);
+                                                first_dst.set(second_bit);
+                                                second_dst.set(first_bit);
+                                            }
+
                                             // Enforce vertices adjacent to delta edges as delta vertices.
                                             // This wont affect the k = 1 case.
                                             m_delta_graph.vertices.set(first_index);
@@ -235,12 +283,36 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
 
                                             m_delta_graph.partition_vertices[first_partition].set(first_bit);
                                             m_delta_graph.partition_vertices[second_partition].set(second_bit);
+
+                                            {
+                                                auto* data = m_delta_graph.partition_vertices_span_data.data();
+                                                auto first_dst = BitsetSpan<uint64_t>(data + first_info.offset, first_info.num_bits);
+                                                auto second_dst = BitsetSpan<uint64_t>(data + second_info.offset, second_info.num_bits);
+                                                first_dst.set(first_bit);
+                                                second_dst.set(second_bit);
+                                            }
                                         });
 
     std::swap(m_delta_graph.partition_adjacency_matrix, m_full_graph.partition_adjacency_matrix);
     for (uint_t v = 0; v < m_const_graph.nv; ++v)
         for (uint_t p = 0; p < m_const_graph.k; ++p)
             m_full_graph.partition_adjacency_matrix[v][p] |= m_delta_graph.partition_adjacency_matrix[v][p];
+
+    std::swap(m_delta_graph.partition_adjacency_matrix_span_data, m_full_graph.partition_adjacency_matrix_span_data);
+    std::swap(m_delta_graph.partition_adjacency_matrix_span, m_full_graph.partition_adjacency_matrix_span);
+    for (uint_t v = 0; v < m_const_graph.nv; ++v)
+    {
+        const auto* src_row = m_delta_graph.partition_adjacency_matrix_span(v).data();
+        auto* dst_row = m_full_graph.partition_adjacency_matrix_span(v).data();
+
+        for (uint_t p = 0; p < m_const_graph.k; ++p)
+        {
+            const auto& info = m_const_graph.partition_info[p];
+            auto src = BitsetSpan<const uint64_t>(src_row + info.offset, info.num_bits);
+            auto dst = BitsetSpan<uint64_t>(dst_row + info.offset, info.num_bits);
+            dst |= src;
+        }
+    }
 }
 
 void DeltaKPKC::reset()
@@ -267,10 +339,24 @@ void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
     workspace.anchor_pi = std::numeric_limits<uint_t>::max();   // unused
     workspace.anchor_pj = std::numeric_limits<uint_t>::max();   // unused
 
-    auto& cv_0 = workspace.compatible_vertices[0];
+    {
+        auto& cv_0 = workspace.compatible_vertices[0];
 
-    for (uint_t p = 0; p < m_const_graph.k; ++p)
-        cv_0[p] = m_full_graph.partition_vertices[p];
+        for (uint_t p = 0; p < m_const_graph.k; ++p)
+            cv_0[p] = m_full_graph.partition_vertices[p];
+    }
+
+    {
+        auto* dst_row = workspace.compatible_vertices_span(0).data();
+        const auto* src_row = m_full_graph.partition_vertices_span_data.data();
+        for (uint_t p = 0; p < m_const_graph.k; ++p)
+        {
+            const auto& info = m_const_graph.partition_info[p];
+            auto dst = BitsetSpan<uint64_t>(dst_row + info.offset, info.num_bits);
+            auto src = BitsetSpan<const uint64_t>(src_row + info.offset, info.num_bits);
+            dst.copy_from(src);
+        }
+    }
 }
 
 void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const

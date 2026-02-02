@@ -190,24 +190,27 @@ void set(size_t pos, const T& value, std::vector<T>& vec, const T& default_value
 }
 
 /**
- * MultiDimensionalSpan (Row-major)
+ * MDSpan (Row-major)
  */
 
 template<typename T, size_t Rank>
-class MultiDimensionalSpan
+class MDSpan
 {
 private:
-    template<size_t N>
-    static constexpr std::array<size_t, N - 1> tail(const std::array<size_t, N>& a) noexcept
+    template<size_t K>
+    static constexpr std::array<size_t, Rank - K> tail_k(const std::array<size_t, Rank>& a) noexcept
     {
-        std::array<size_t, N - 1> out {};
-        for (size_t i = 1; i < N; ++i)
-            out[i - 1] = a[i];
+        std::array<size_t, Rank - K> out {};
+        for (size_t i = 0; i < Rank - K; ++i)
+            out[i] = a[i + K];
         return out;
     }
 
+    template<typename, size_t>
+    friend class MDSpan;
+
     // internal ctor used by slicing
-    MultiDimensionalSpan(T* data, const std::array<size_t, Rank>& shapes, const std::array<size_t, Rank>& strides) noexcept :
+    MDSpan(T* data, const std::array<size_t, Rank>& shapes, const std::array<size_t, Rank>& strides) noexcept :
         m_data(data),
         m_shapes(shapes),
         m_strides(strides)
@@ -215,8 +218,8 @@ private:
     }
 
 public:
-    MultiDimensionalSpan() : m_data(nullptr), m_shapes(), m_strides() {}
-    MultiDimensionalSpan(T* data, const std::array<size_t, Rank>& shapes) : m_data(data), m_shapes(shapes), m_strides()
+    MDSpan() : m_data(nullptr), m_shapes(), m_strides() {}
+    MDSpan(T* data, const std::array<size_t, Rank>& shapes) : m_data(data), m_shapes(shapes), m_strides()
     {
         // layout_right / row-major strides
         m_strides[Rank - 1] = 1;
@@ -229,14 +232,14 @@ public:
         requires(Rank > 1)
     {
         assert(pos < m_shapes[0]);
-        return MultiDimensionalSpan<T, Rank - 1>(m_data + pos * m_strides[0], tail(m_shapes), tail(m_strides));
+        return MDSpan<T, Rank - 1>(m_data + pos * m_strides[0], tail_k<1>(m_shapes), tail_k<1>(m_strides));
     }
 
     auto operator[](size_t pos) const noexcept
         requires(Rank > 1)
     {
         assert(pos < m_shapes[0]);
-        return MultiDimensionalSpan<T, Rank - 1>(m_data + pos * m_strides[0], tail(m_shapes), tail(m_strides));
+        return MDSpan<const T, Rank - 1>(m_data + pos * m_strides[0], tail_k<1>(m_shapes), tail_k<1>(m_strides));
     }
 
     // base case rank-1 indexing
@@ -275,11 +278,62 @@ public:
         return m_data[off];
     }
 
-    const std::array<size_t, Rank>& extent() const noexcept { return m_shapes; }
+    // Prefix indexing: returns a lower-rank span
+    template<typename... Idx>
+        requires(sizeof...(Idx) < Rank)
+    auto operator()(Idx... idx) noexcept
+    {
+        constexpr size_t K = sizeof...(Idx);
+        const size_t off = offset_prefix(idx...);
+        return MDSpan<T, Rank - K>(m_data + off, tail_k<K>(m_shapes), tail_k<K>(m_strides));
+    }
+
+    template<typename... Idx>
+        requires(sizeof...(Idx) < Rank)
+    auto operator()(Idx... idx) const noexcept
+    {
+        constexpr size_t K = sizeof...(Idx);
+        const size_t off = offset_prefix(idx...);
+        return MDSpan<const T, Rank - K>(m_data + off, tail_k<K>(m_shapes), tail_k<K>(m_strides));
+    }
+
+    const std::array<size_t, Rank>& shapes() const noexcept { return m_shapes; }
     const std::array<size_t, Rank>& stride() const noexcept { return m_strides; }
 
     T* data() noexcept { return m_data; }
     const T* data() const noexcept { return m_data; }
+
+    T* begin() noexcept { return m_data; }
+    const T* begin() const noexcept { return m_data; }
+
+    size_t size() const noexcept
+    {
+        size_t n = 1;
+        for (size_t i = 0; i < Rank; ++i)
+            n *= m_shapes[i];
+        return n;
+    }
+
+private:
+    template<typename... Idx>
+    size_t offset(Idx... idx) const noexcept
+    {
+        size_t off = 0;
+        size_t d = 0;
+        // optionally assert each idx < m_shapes[d]
+        ((off += size_t(idx) * m_strides[d++]), ...);
+        return off;
+    }
+
+    template<typename... Idx>
+    size_t offset_prefix(Idx... idx) const noexcept
+    {
+        size_t off = 0;
+        size_t d = 0;
+        // optionally assert each idx < m_shapes[d]
+        ((off += size_t(idx) * m_strides[d++]), ...);
+        return off;
+    }
 
 private:
     T* m_data;

@@ -5,6 +5,8 @@ from downward.reports.absolute import AbsoluteReport
 
 from lab.reports import Attribute, geometric_mean
 
+from suite import SUITE_IPC_SATISFICING_ADL, SUITE_IPC_SATISFICING_STRIPS
+
 # Create custom report class with suitable info and error attributes.
 class BaseReport(AbsoluteReport):
     INFO_ATTRIBUTES = ["time_limit", "memory_limit"]
@@ -81,6 +83,9 @@ EXCLUDED_DOMAINS = [
     "cavediving-14-adl",
 
 ]
+
+EXCLUDED_DOMAINS += SUITE_IPC_SATISFICING_ADL
+EXCLUDED_DOMAINS += SUITE_IPC_SATISFICING_STRIPS
 
 exp.add_fetcher("profiling/6-2026-1-8-gbfs_lazy-profiling-classical-combined-eval", filter=lambda run: run["domain"] not in EXCLUDED_DOMAINS)
 exp.add_fetcher("profiling/2026-1-9-lazy-gbfs-ff-pref-ff-profiling-eval", filter=lambda run: run["domain"] not in EXCLUDED_DOMAINS)
