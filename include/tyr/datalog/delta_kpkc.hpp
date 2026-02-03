@@ -107,13 +107,9 @@ struct Graph
 {
     std::reference_wrapper<const GraphLayout> cg;
 
-    /// Vertices
     boost::dynamic_bitset<> vertices;
-    std::vector<boost::dynamic_bitset<>> partition_vertices;
 
     std::vector<uint64_t> partition_vertices_span_data;
-    /// Edges
-    std::vector<std::vector<boost::dynamic_bitset<>>> partition_adjacency_matrix;
 
     std::vector<uint64_t> partition_adjacency_matrix_span_data;
     MDSpan<uint64_t, 2> partition_adjacency_matrix_span;
@@ -122,37 +118,19 @@ struct Graph
 
     void reset() noexcept
     {
+        vertices.reset();
         partition_vertices_span_data.assign(partition_vertices_span_data.size(), 0);
         partition_adjacency_matrix_span_data.assign(partition_adjacency_matrix_span_data.size(), 0);
-
-        vertices.reset();
-        for (auto& bitset : partition_vertices)
-            bitset.reset();
-        for (auto& vec : partition_adjacency_matrix)
-            for (auto& bitset : vec)
-                bitset.reset();
     }
 
     template<typename Callback>
     void for_each_vertex(Callback&& callback) const
     {
-        // auto offset = uint_t(0);
-        // for (uint_t p = 0; p < cg.get().k; ++p)
-        //{
-        //     const auto& partition = partition_vertices[p];
-        //
-        //    for (auto bit = partition.find_first(); bit != boost::dynamic_bitset<>::npos; bit = partition.find_next(bit))
-        //        callback(Vertex(offset + bit));
-        //
-        //    offset += partition.size();
-        //}
-
-        const auto* partition_row = partition_vertices_span_data.data();
         auto offset = uint_t(0);
         for (uint_t p = 0; p < cg.get().k; ++p)
         {
             const auto& info = cg.get().partition_info[p];
-            auto bits = BitsetSpan<const uint64_t>(partition_row + info.offset, info.num_bits);
+            auto bits = BitsetSpan<const uint64_t>(partition_vertices_span_data.data() + info.offset, info.num_bits);
 
             for (auto bit = bits.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = bits.find_next(bit))
                 callback(Vertex(offset + bit));
@@ -164,56 +142,25 @@ struct Graph
     template<typename Callback>
     void for_each_edge(Callback&& callback) const
     {
-        // auto src_offset = uint_t(0);
-        // for (uint_t src_p = 0; src_p < partition_vertices.size(); ++src_p)
-        //{
-        //     const auto& src_partition = partition_vertices[src_p];
-        //
-        //    for (auto src_bit = src_partition.find_first(); src_bit != boost::dynamic_bitset<>::npos; src_bit = src_partition.find_next(src_bit))
-        //    {
-        //        const auto src_index = src_offset + src_bit;
-        //        const auto src = Vertex(src_index);
-        //
-        //        const auto& row = partition_adjacency_matrix[src_index];
-        //        auto dst_offset = src_offset + src_partition.size();
-        //
-        //        for (uint_t dst_p = src_p + 1; dst_p < row.size(); ++dst_p)
-        //        {
-        //            const auto& dst_partition = row[dst_p];
-        //
-        //            for (auto dst_bit = dst_partition.find_first(); dst_bit != boost::dynamic_bitset<>::npos; dst_bit = dst_partition.find_next(dst_bit))
-        //            {
-        //                if (partition_vertices[dst_p].test(dst_bit))
-        //                    callback(Edge(src, Vertex(dst_offset + dst_bit)));
-        //            }
-        //
-        //            dst_offset += dst_partition.size();
-        //        }
-        //    }
-        //
-        //    src_offset += src_partition.size();
-        //}
-
-        const auto* partition_row = partition_vertices_span_data.data();
         auto src_offset = uint_t(0);
         for (uint_t src_p = 0; src_p < cg.get().k; ++src_p)
         {
             const auto& src_info = cg.get().partition_info[src_p];
-            auto src_bits = BitsetSpan<const uint64_t>(partition_row + src_info.offset, src_info.num_bits);
+            auto src_bits = BitsetSpan<const uint64_t>(partition_vertices_span_data.data() + src_info.offset, src_info.num_bits);
 
             for (auto src_bit = src_bits.find_first(); src_bit != BitsetSpan<const uint64_t>::npos; src_bit = src_bits.find_next(src_bit))
             {
                 const auto src_index = src_offset + src_bit;
                 const auto src = Vertex(src_index);
 
-                const auto* adj_row = partition_adjacency_matrix_span(src_index).data();
+                const auto adjacency_list = partition_adjacency_matrix_span(src_index);
                 auto dst_offset = src_offset + src_info.num_bits;
 
                 for (uint_t dst_p = src_p + 1; dst_p < cg.get().k; ++dst_p)
                 {
                     const auto& dst_info = cg.get().partition_info[dst_p];
-                    auto dst_bits = BitsetSpan<const uint64_t>(partition_row + dst_info.offset, dst_info.num_bits);
-                    auto adj_bits = BitsetSpan<const uint64_t>(adj_row + dst_info.offset, dst_info.num_bits);
+                    auto dst_bits = BitsetSpan<const uint64_t>(partition_vertices_span_data.data() + dst_info.offset, dst_info.num_bits);
+                    auto adj_bits = BitsetSpan<const uint64_t>(adjacency_list.data() + dst_info.offset, dst_info.num_bits);
 
                     for (auto dst_bit = adj_bits.find_first(); dst_bit != BitsetSpan<const uint64_t>::npos; dst_bit = adj_bits.find_next(dst_bit))
                     {
@@ -234,11 +181,10 @@ struct Graph
 struct Workspace
 {
     std::vector<uint64_t> compatible_vertices_span_data;
-    MDSpan<uint64_t, 2> compatible_vertices_span;
+    MDSpan<uint64_t, 2> compatible_vertices_span;  ///< Dimensions K x K x O(V)
 
-    std::vector<std::vector<boost::dynamic_bitset<>>> compatible_vertices;  ///< Dimensions K x K x O(V)
-    boost::dynamic_bitset<> partition_bits;                                 ///< Dimensions K
-    std::vector<Vertex> partial_solution;                                   ///< Dimensions K
+    boost::dynamic_bitset<> partition_bits;  ///< Dimensions K
+    std::vector<Vertex> partial_solution;    ///< Dimensions K
     uint_t anchor_key;
     uint_t anchor_pi;
     uint_t anchor_pj;
@@ -518,38 +464,16 @@ void DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
 {
     const uint_t k = m_const_graph.k;
 
-    auto& cv_curr = workspace.compatible_vertices[depth];
-    auto& cv_next = workspace.compatible_vertices[depth + 1];
     const auto& partition_bits = workspace.partition_bits;
 
     const auto p_src = m_const_graph.vertex_to_partition[src.index];
     assert(p_src != workspace.anchor_pi);
     assert(p_src != workspace.anchor_pj);
 
-    for (uint_t p = 0; p < k; ++p)
-    {
-        if (partition_bits.test(p))
-            continue;
-
-        auto& cv_next_p = cv_next[p];
-
-        // Copy current into next
-        cv_next_p = cv_curr[p];
-        // Restrict neighborhood
-        cv_next_p &= m_full_graph.partition_adjacency_matrix[src.index][p];
-
-        if constexpr (std::is_same_v<AnchorType, Edge>)
-        {
-            // Remove illegal delta edges whose rank is less than anchor rank
-            if (p_src < workspace.anchor_pi || p < workspace.anchor_pi)
-                cv_next_p -= m_delta_graph.partition_adjacency_matrix[src.index][p];
-        }
-    }
-
-    const auto* cur_row = workspace.compatible_vertices_span(depth).data();
-    auto* next_row = workspace.compatible_vertices_span(depth + 1).data();
-    const auto* src_full_row = m_full_graph.partition_adjacency_matrix_span(src.index).data();
-    const auto* src_delta_row = m_delta_graph.partition_adjacency_matrix_span(src.index).data();
+    const auto cv_curr = workspace.compatible_vertices_span(depth);
+    auto cv_next = workspace.compatible_vertices_span(depth + 1);
+    const auto full_adj_list = m_full_graph.partition_adjacency_matrix_span(src.index);
+    const auto delta_adj_list = m_delta_graph.partition_adjacency_matrix_span(src.index);
 
     for (uint_t p = 0; p < k; ++p)
     {
@@ -557,9 +481,9 @@ void DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
             continue;
 
         const auto& info = m_const_graph.partition_info[p];
-        auto src_cur = BitsetSpan<const uint64_t>(cur_row + info.offset, info.num_bits);
-        auto dst_next = BitsetSpan<uint64_t>(next_row + info.offset, info.num_bits);
-        auto src_full = BitsetSpan<const uint64_t>(src_full_row + info.offset, info.num_bits);
+        auto src_cur = BitsetSpan<const uint64_t>(cv_curr.data() + info.offset, info.num_bits);
+        auto dst_next = BitsetSpan<uint64_t>(cv_next.data() + info.offset, info.num_bits);
+        auto src_full = BitsetSpan<const uint64_t>(full_adj_list.data() + info.offset, info.num_bits);
 
         dst_next.copy_from(src_cur);
 
@@ -571,7 +495,7 @@ void DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
 
             if (p_src < workspace.anchor_pi || p < workspace.anchor_pi)
             {
-                auto src_delta = BitsetSpan<const uint64_t>(src_delta_row + info.offset, info.num_bits);
+                auto src_delta = BitsetSpan<const uint64_t>(delta_adj_list.data() + info.offset, info.num_bits);
 
                 dst_next -= src_delta;
             }
@@ -592,9 +516,8 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
 
     auto& partition_bits = workspace.partition_bits;
     auto& partial_solution = workspace.partial_solution;
-    const auto* cv_d_p_data = workspace.compatible_vertices_span(depth).data();
     const auto& info = m_const_graph.partition_info[p];
-    const auto cv_d_p = BitsetSpan<const uint64_t>(cv_d_p_data + info.offset, info.num_bits);
+    const auto cv_d_p = BitsetSpan<const uint64_t>(workspace.compatible_vertices_span(depth).data() + info.offset, info.num_bits);
 
     // Iterate through compatible vertices in the best partition
     for (auto bit = cv_d_p.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = cv_d_p.find_next(bit))
