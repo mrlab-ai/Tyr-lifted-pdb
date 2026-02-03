@@ -61,7 +61,7 @@ public:
     static constexpr size_t npos = std::numeric_limits<size_t>::max();
 
 public:
-    BitsetSpan(Block* data, size_t num_bits) : m_data(data), m_num_bits(num_bits) {}
+    BitsetSpan(Block* data, size_t num_bits) noexcept : m_data(data), m_num_bits(num_bits) {}
 
     void copy_from(const BitsetSpan<const U>& other) noexcept
     {
