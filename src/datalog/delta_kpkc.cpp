@@ -62,8 +62,8 @@ GraphLayout::GraphLayout(size_t nv_,
 }
 
 Workspace::Workspace(const GraphLayout& graph) :
-    compatible_vertices_span_data(graph.k * graph.info.num_blocks, 0),
-    compatible_vertices_span(compatible_vertices_span_data.data(), std::array<size_t, 2> { graph.k, graph.info.num_blocks }),
+    compatible_vertices_data(graph.k * graph.info.num_blocks, 0),
+    compatible_vertices_span(compatible_vertices_data.data(), std::array<size_t, 2> { graph.k, graph.info.num_blocks }),
     partition_bits(graph.k, false),
     partial_solution(),
     anchor_key(std::numeric_limits<uint_t>::max())
@@ -119,9 +119,9 @@ GraphActivityMasks allocate_activity_mask(const StaticConsistencyGraph& static_g
 Graph::Graph(const GraphLayout& cg) :
     cg(cg),
     vertices(cg.nv, false),
-    partition_vertices_span_data(cg.info.num_blocks, 0),
-    partition_adjacency_matrix_span_data(cg.nv * cg.info.num_blocks, 0),
-    partition_adjacency_matrix_span(partition_adjacency_matrix_span_data.data(), std::array<size_t, 2> { cg.nv, cg.info.num_blocks })
+    partition_vertices_data(cg.info.num_blocks, 0),
+    partition_adjacency_matrix_data(cg.nv * cg.info.num_blocks, 0),
+    partition_adjacency_matrix_span(partition_adjacency_matrix_data.data(), std::array<size_t, 2> { cg.nv, cg.info.num_blocks })
 {
 }
 
@@ -176,21 +176,23 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                                m_write_masks.vertices.reset(index);
 
                                                const auto& info = m_const_graph.info.infos[partition];
-                                               auto dst =
-                                                   BitsetSpan<uint64_t>(m_full_graph.partition_vertices_span_data.data() + info.block_offset, info.num_bits);
-                                               dst.set(bit);
+                                               auto& full_partition_row = m_full_graph.partition_vertices_data;
+                                               auto full_partition = BitsetSpan<uint64_t>(full_partition_row.data() + info.block_offset, info.num_bits);
+                                               full_partition.set(bit);
                                            });
 
     std::swap(m_delta_graph.vertices, m_full_graph.vertices);
     m_full_graph.vertices |= m_delta_graph.vertices;
 
-    std::swap(m_delta_graph.partition_vertices_span_data, m_full_graph.partition_vertices_span_data);
+    std::swap(m_delta_graph.partition_vertices_data, m_full_graph.partition_vertices_data);
     for (uint_t p = 0; p < m_const_graph.k; ++p)
     {
         const auto& info = m_const_graph.info.infos[p];
-        auto src = BitsetSpan<const uint64_t>(m_delta_graph.partition_vertices_span_data.data() + info.block_offset, info.num_bits);
-        auto dst = BitsetSpan<uint64_t>(m_full_graph.partition_vertices_span_data.data() + info.block_offset, info.num_bits);
-        dst |= src;
+        auto& delta_partition_row = m_delta_graph.partition_vertices_data;
+        auto delta_partition = BitsetSpan<const uint64_t>(delta_partition_row.data() + info.block_offset, info.num_bits);
+        auto& full_partition_row = m_full_graph.partition_vertices_data;
+        auto full_partition = BitsetSpan<uint64_t>(full_partition_row.data() + info.block_offset, info.num_bits);
+        full_partition |= delta_partition;
     }
 
     // Initialize adjacency matrix: Add consistent undirected edges to adj matrix.
@@ -217,14 +219,14 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
             const auto& second_info = m_const_graph.info.infos[second_partition];
 
             {
-                auto first_adj_list = m_full_graph.partition_adjacency_matrix_span(first_index);
-                auto second_adj_list = m_full_graph.partition_adjacency_matrix_span(second_index);
-                auto first_dst = BitsetSpan<uint64_t>(first_adj_list.data() + second_info.block_offset, second_info.num_bits);
-                auto second_dst = BitsetSpan<uint64_t>(second_adj_list.data() + first_info.block_offset, first_info.num_bits);
-                assert(!first_dst.test(second_bit));
-                assert(!second_dst.test(first_bit));
-                first_dst.set(second_bit);
-                second_dst.set(first_bit);
+                auto first_adj_list_row = m_full_graph.partition_adjacency_matrix_span(first_index);
+                auto second_adj_list_row = m_full_graph.partition_adjacency_matrix_span(second_index);
+                auto first_adj_list = BitsetSpan<uint64_t>(first_adj_list_row.data() + second_info.block_offset, second_info.num_bits);
+                auto second_adj_list = BitsetSpan<uint64_t>(second_adj_list_row.data() + first_info.block_offset, first_info.num_bits);
+                assert(!first_adj_list.test(second_bit));
+                assert(!second_adj_list.test(first_bit));
+                first_adj_list.set(second_bit);
+                second_adj_list.set(first_bit);
             }
 
             {
@@ -233,26 +235,28 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                 m_delta_graph.vertices.set(first_index);
                 m_delta_graph.vertices.set(second_index);
 
-                auto first_dst = BitsetSpan<uint64_t>(m_delta_graph.partition_vertices_span_data.data() + first_info.block_offset, first_info.num_bits);
-                auto second_dst = BitsetSpan<uint64_t>(m_delta_graph.partition_vertices_span_data.data() + second_info.block_offset, second_info.num_bits);
-                first_dst.set(first_bit);
-                second_dst.set(second_bit);
+                auto& first_partition_row = m_delta_graph.partition_vertices_data;
+                auto& second_partition_row = m_delta_graph.partition_vertices_data;
+                auto first_partition = BitsetSpan<uint64_t>(first_partition_row.data() + first_info.block_offset, first_info.num_bits);
+                auto second_partition = BitsetSpan<uint64_t>(second_partition_row.data() + second_info.block_offset, second_info.num_bits);
+                first_partition.set(first_bit);
+                second_partition.set(second_bit);
             }
         });
 
-    std::swap(m_delta_graph.partition_adjacency_matrix_span_data, m_full_graph.partition_adjacency_matrix_span_data);
+    std::swap(m_delta_graph.partition_adjacency_matrix_data, m_full_graph.partition_adjacency_matrix_data);
     std::swap(m_delta_graph.partition_adjacency_matrix_span, m_full_graph.partition_adjacency_matrix_span);
     for (uint_t v = 0; v < m_const_graph.nv; ++v)
     {
-        const auto* src_row = m_delta_graph.partition_adjacency_matrix_span(v).data();
-        auto* dst_row = m_full_graph.partition_adjacency_matrix_span(v).data();
+        const auto delta_v_adj_list_row = m_delta_graph.partition_adjacency_matrix_span(v);
+        auto full_v_adj_list_row = m_full_graph.partition_adjacency_matrix_span(v);
 
         for (uint_t p = 0; p < m_const_graph.k; ++p)
         {
             const auto& info = m_const_graph.info.infos[p];
-            auto src = BitsetSpan<const uint64_t>(src_row + info.block_offset, info.num_bits);
-            auto dst = BitsetSpan<uint64_t>(dst_row + info.block_offset, info.num_bits);
-            dst |= src;
+            auto delta_v_adj_list = BitsetSpan<const uint64_t>(delta_v_adj_list_row.data() + info.block_offset, info.num_bits);
+            auto full_v_adj_list = BitsetSpan<uint64_t>(full_v_adj_list_row.data() + info.block_offset, info.num_bits);
+            full_v_adj_list |= delta_v_adj_list;
         }
     }
 }
@@ -281,15 +285,31 @@ void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
     workspace.anchor_pi = std::numeric_limits<uint_t>::max();   // unused
     workspace.anchor_pj = std::numeric_limits<uint_t>::max();   // unused
 
-    auto cv_0 = workspace.compatible_vertices_span(0);
+    auto* cv_0_row = workspace.compatible_vertices_span(0).data();
+    const auto* partition_row = m_full_graph.partition_vertices_data.data();
 
+    const auto num_blocks = m_const_graph.info.num_blocks;
+
+    /**
+     * Vectorized loop
+     */
+
+    std::memcpy(cv_0_row, partition_row, num_blocks * sizeof(uint64_t));
+
+    /**
+     * Standard loop
+     */
+
+    /*
     for (uint_t p = 0; p < m_const_graph.k; ++p)
     {
         const auto& info = m_const_graph.info.infos[p];
-        auto dst = BitsetSpan<uint64_t>(cv_0.data() + info.block_offset, info.num_bits);
-        auto src = BitsetSpan<const uint64_t>(m_full_graph.partition_vertices_span_data.data() + info.block_offset, info.num_bits);
-        dst.copy_from(src);
+        auto cv_0 = BitsetSpan<uint64_t>(cv_0_row.data() + info.block_offset, info.num_bits);
+
+        auto partition = BitsetSpan<const uint64_t>(m_full_graph.partition_vertices_data.data() + info.block_offset, info.num_bits);
+        cv_0.copy_from(partition);
     }
+    */
 }
 
 void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
@@ -312,31 +332,67 @@ void DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
     workspace.partition_bits.set(pi);
     workspace.partition_bits.set(pj);
 
-    auto cv_0 = workspace.compatible_vertices_span(0);
-    const auto full_src_row = m_full_graph.partition_adjacency_matrix_span(edge.src.index);
-    const auto full_dst_row = m_full_graph.partition_adjacency_matrix_span(edge.dst.index);
-    const auto delta_src_row = m_delta_graph.partition_adjacency_matrix_span(edge.src.index);
-    const auto delta_dst_row = m_delta_graph.partition_adjacency_matrix_span(edge.dst.index);
+    auto* cv_0_row = workspace.compatible_vertices_span(0).data();
+    const auto* f_src = m_full_graph.partition_adjacency_matrix_span(edge.src.index).data();
+    const auto* f_dst = m_full_graph.partition_adjacency_matrix_span(edge.dst.index).data();
+    const auto* d_src = m_delta_graph.partition_adjacency_matrix_span(edge.src.index).data();
+    const auto* d_dst = m_delta_graph.partition_adjacency_matrix_span(edge.dst.index).data();
+
+    const auto pi_off = m_const_graph.info.infos[pi].block_offset;
+    const auto pj_off = m_const_graph.info.infos[pj].block_offset;
+    const uint_t min_off = std::min(pi_off, pj_off);
+    const auto num_blocks = m_const_graph.info.num_blocks;
+
+    /**
+     * Vectorized loop
+     */
+
+    // both deltas apply: i < pi_off and i < pj_off
+    uint_t i = 0;
+    for (; i < min_off; ++i)
+        cv_0_row[i] = (f_src[i] & f_dst[i]) & ~d_src[i] & ~d_dst[i];
+
+    // exactly one delta applies in [min_off, max_off)
+    if (pi_off < pj_off)
+    {
+        // i in [pi_off, pj_off): apply ~d_src only (since i < pj_off)
+        for (; i < pj_off; ++i)
+            cv_0_row[i] = (f_src[i] & f_dst[i]) & ~d_src[i];
+    }
+    else
+    {
+        // i in [pj_off, pi_off): apply ~d_dst only (since i < pi_off)
+        for (; i < pi_off; ++i)
+            cv_0_row[i] = (f_src[i] & f_dst[i]) & ~d_dst[i];
+    }
+
+    // no deltas apply: i >= pi_off and i >= pj_off
+    for (; i < num_blocks; ++i)
+        cv_0_row[i] = (f_src[i] & f_dst[i]);
+
+    /**
+     * Standard loop
+     */
+    /*
     for (uint_t p = 0; p < m_const_graph.k; ++p)
     {
         const auto& info = m_const_graph.info.infos[p];
-        auto dst = BitsetSpan<uint64_t>(cv_0.data() + info.block_offset, info.num_bits);
-        auto src_full_src = BitsetSpan<const uint64_t>(full_src_row.data() + info.block_offset, info.num_bits);
-        auto src_full_dst = BitsetSpan<const uint64_t>(full_dst_row.data() + info.block_offset, info.num_bits);
-        auto src_delta_src = BitsetSpan<const uint64_t>(delta_src_row.data() + info.block_offset, info.num_bits);
-        auto src_delta_dst = BitsetSpan<const uint64_t>(delta_dst_row.data() + info.block_offset, info.num_bits);
+        auto cv_0 = BitsetSpan<uint64_t>(cv_0_row.data() + info.block_offset, info.num_bits);
+        auto full_src_adj_list = BitsetSpan<const uint64_t>(full_src_adj_list_row.data() + info.block_offset, info.num_bits);
+        auto full_dst_adj_list = BitsetSpan<const uint64_t>(full_dst_adj_list_row.data() + info.block_offset, info.num_bits);
+        auto delta_src_adj_list = BitsetSpan<const uint64_t>(delta_src_adj_list_row.data() + info.block_offset, info.num_bits);
+        auto delta_dst_adj_list = BitsetSpan<const uint64_t>(delta_dst_adj_list_row.data() + info.block_offset, info.num_bits);
 
-        dst.reset();
-
-        dst |= src_full_src;
-        dst &= src_full_dst;
+        cv_0.copy_from(full_src_adj_list);
+        cv_0 &= full_dst_adj_list;
 
         if (p < pj)
-            dst -= src_delta_src;
+            cv_0 -= delta_src_adj_list;
 
         if (p < pi)
-            dst -= src_delta_dst;
+            cv_0 -= delta_dst_adj_list;
     }
+    */
 }
 
 uint_t DeltaKPKC::choose_best_partition(size_t depth, const Workspace& workspace) const
@@ -346,16 +402,16 @@ uint_t DeltaKPKC::choose_best_partition(size_t depth, const Workspace& workspace
 
     uint_t best_partition = std::numeric_limits<uint_t>::max();
     uint_t best_set_bits = std::numeric_limits<uint_t>::max();
-    const auto cv_curr = workspace.compatible_vertices_span(depth);
+    const auto cv_curr_row = workspace.compatible_vertices_span(depth);
     for (uint_t p = 0; p < k; ++p)
     {
         if (partition_bits.test(p))
             continue;
 
         const auto& info = m_const_graph.info.infos[p];
-        auto dst = BitsetSpan<const uint64_t>(cv_curr.data() + info.block_offset, info.num_bits);
+        auto cv_curr = BitsetSpan<const uint64_t>(cv_curr_row.data() + info.block_offset, info.num_bits);
 
-        const auto num_set_bits = dst.count();
+        const auto num_set_bits = cv_curr.count();
         if (num_set_bits < best_set_bits)
         {
             best_set_bits = num_set_bits;

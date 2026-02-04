@@ -115,9 +115,9 @@ struct Graph
 
     boost::dynamic_bitset<> vertices;
 
-    std::vector<uint64_t> partition_vertices_span_data;
+    std::vector<uint64_t> partition_vertices_data;
 
-    std::vector<uint64_t> partition_adjacency_matrix_span_data;
+    std::vector<uint64_t> partition_adjacency_matrix_data;
     MDSpan<uint64_t, 2> partition_adjacency_matrix_span;
 
     explicit Graph(const GraphLayout& cg);
@@ -125,8 +125,8 @@ struct Graph
     void reset() noexcept
     {
         vertices.reset();
-        partition_vertices_span_data.assign(partition_vertices_span_data.size(), 0);
-        partition_adjacency_matrix_span_data.assign(partition_adjacency_matrix_span_data.size(), 0);
+        partition_vertices_data.assign(partition_vertices_data.size(), 0);
+        partition_adjacency_matrix_data.assign(partition_adjacency_matrix_data.size(), 0);
     }
 
     template<typename Callback>
@@ -136,7 +136,7 @@ struct Graph
         for (uint_t p = 0; p < cg.get().k; ++p)
         {
             const auto& info = cg.get().info.infos[p];
-            auto bits = BitsetSpan<const uint64_t>(partition_vertices_span_data.data() + info.block_offset, info.num_bits);
+            auto bits = BitsetSpan<const uint64_t>(partition_vertices_data.data() + info.block_offset, info.num_bits);
 
             for (auto bit = bits.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = bits.find_next(bit))
                 callback(Vertex(offset + bit));
@@ -152,7 +152,7 @@ struct Graph
         for (uint_t src_p = 0; src_p < cg.get().k; ++src_p)
         {
             const auto& src_info = cg.get().info.infos[src_p];
-            auto src_bits = BitsetSpan<const uint64_t>(partition_vertices_span_data.data() + src_info.block_offset, src_info.num_bits);
+            auto src_bits = BitsetSpan<const uint64_t>(partition_vertices_data.data() + src_info.block_offset, src_info.num_bits);
 
             for (auto src_bit = src_bits.find_first(); src_bit != BitsetSpan<const uint64_t>::npos; src_bit = src_bits.find_next(src_bit))
             {
@@ -165,7 +165,7 @@ struct Graph
                 for (uint_t dst_p = src_p + 1; dst_p < cg.get().k; ++dst_p)
                 {
                     const auto& dst_info = cg.get().info.infos[dst_p];
-                    auto dst_bits = BitsetSpan<const uint64_t>(partition_vertices_span_data.data() + dst_info.block_offset, dst_info.num_bits);
+                    auto dst_bits = BitsetSpan<const uint64_t>(partition_vertices_data.data() + dst_info.block_offset, dst_info.num_bits);
                     auto adj_bits = BitsetSpan<const uint64_t>(adjacency_list.data() + dst_info.block_offset, dst_info.num_bits);
 
                     for (auto dst_bit = adj_bits.find_first(); dst_bit != BitsetSpan<const uint64_t>::npos; dst_bit = adj_bits.find_next(dst_bit))
@@ -186,7 +186,7 @@ struct Graph
 /// @brief `Workspace` is preallocated memory for a rule.
 struct Workspace
 {
-    std::vector<uint64_t> compatible_vertices_span_data;
+    std::vector<uint64_t> compatible_vertices_data;
     MDSpan<uint64_t, 2> compatible_vertices_span;  ///< Dimensions K x K x O(V)
 
     boost::dynamic_bitset<> partition_bits;  ///< Dimensions K
