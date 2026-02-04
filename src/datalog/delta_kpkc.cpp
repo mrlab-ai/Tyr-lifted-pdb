@@ -138,7 +138,7 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
 
     /// 2. Initialize the full graph
 
-    m_full_graph.reset();
+    m_full_graph.reset_vertices();
 
     m_read_masks.vertices = m_write_masks.vertices;
     m_read_masks.edges = m_write_masks.edges;
@@ -205,6 +205,28 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
             const auto& second_info = m_const_graph.info.infos[second_partition];
 
             {
+                // Enforce vertices adjacent to delta edges as delta vertices.
+                // This wont affect the k = 1 case.
+                if (!m_delta_graph.vertices.test(first_index))
+                {
+                    m_delta_graph.vertices.set(first_index);
+                    m_full_graph.reset_adjacency_row(first_index);
+                }
+                if (!m_delta_graph.vertices.test(second_index))
+                {
+                    m_delta_graph.vertices.set(second_index);
+                    m_full_graph.reset_adjacency_row(second_index);
+                }
+
+                auto& first_partition_row = m_delta_graph.partition_vertices_data;
+                auto& second_partition_row = m_delta_graph.partition_vertices_data;
+                auto first_partition = BitsetSpan<uint64_t>(first_partition_row.data() + first_info.block_offset, first_info.num_bits);
+                auto second_partition = BitsetSpan<uint64_t>(second_partition_row.data() + second_info.block_offset, second_info.num_bits);
+                first_partition.set(first_bit);
+                second_partition.set(second_bit);
+            }
+
+            {
                 auto first_adj_list_row = m_full_graph.partition_adjacency_matrix_span(first_index);
                 auto second_adj_list_row = m_full_graph.partition_adjacency_matrix_span(second_index);
                 auto first_adj_list = BitsetSpan<uint64_t>(first_adj_list_row.data() + second_info.block_offset, second_info.num_bits);
@@ -213,20 +235,6 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                 assert(!second_adj_list.test(first_bit));
                 first_adj_list.set(second_bit);
                 second_adj_list.set(first_bit);
-            }
-
-            {
-                // Enforce vertices adjacent to delta edges as delta vertices.
-                // This wont affect the k = 1 case.
-                m_delta_graph.vertices.set(first_index);
-                m_delta_graph.vertices.set(second_index);
-
-                auto& first_partition_row = m_delta_graph.partition_vertices_data;
-                auto& second_partition_row = m_delta_graph.partition_vertices_data;
-                auto first_partition = BitsetSpan<uint64_t>(first_partition_row.data() + first_info.block_offset, first_info.num_bits);
-                auto second_partition = BitsetSpan<uint64_t>(second_partition_row.data() + second_info.block_offset, second_info.num_bits);
-                first_partition.set(first_bit);
-                second_partition.set(second_bit);
             }
         });
 
@@ -319,14 +327,22 @@ bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
         auto cv_0 = BitsetSpan<uint64_t>(cv_0_row.data() + info.block_offset, info.num_bits);
         auto full_src_adj_list = BitsetSpan<const uint64_t>(full_src_adj_list_row.data() + info.block_offset, info.num_bits);
         auto full_dst_adj_list = BitsetSpan<const uint64_t>(full_dst_adj_list_row.data() + info.block_offset, info.num_bits);
-        auto delta_src_adj_list = BitsetSpan<const uint64_t>(delta_src_adj_list_row.data() + info.block_offset, info.num_bits);
-        auto delta_dst_adj_list = BitsetSpan<const uint64_t>(delta_dst_adj_list_row.data() + info.block_offset, info.num_bits);
 
         cv_0.copy_from(full_src_adj_list);
         cv_0 &= full_dst_adj_list;
 
+        if (!cv_0.any())
+            return false;  ///< triangle pruning
+
+        auto delta_src_adj_list = BitsetSpan<const uint64_t>(delta_src_adj_list_row.data() + info.block_offset, info.num_bits);
+
         if (p < pj)
             cv_0 -= delta_src_adj_list;
+
+        if (!cv_0.any())
+            return false;  ///< triangle pruning
+
+        auto delta_dst_adj_list = BitsetSpan<const uint64_t>(delta_dst_adj_list_row.data() + info.block_offset, info.num_bits);
 
         if (p < pi)
             cv_0 -= delta_dst_adj_list;

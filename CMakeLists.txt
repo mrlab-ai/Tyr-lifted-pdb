@@ -46,17 +46,19 @@ else()
     # TODO: Add -Wextra and fix all warnings
 
     message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
-    # if(COMPILER_ID MATCHES "GNU")
+
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        # When applying -fsanitize=address, also set it in dependencies (loki, abseil) via -DCMAKE_CXX_FLAGS="-fsanitize=address"
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto=auto")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -DNDEBUG -flto=auto")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG -fno-omit-frame-pointer -fno-lto -Wall")
+        set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g3 -ggdb -fconcepts-diagnostics-depth=3")
+
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto -ftime-trace")  #  -fcoroutines-ts seems outdated
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -DNDEBUG -flto")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG -fno-omit-frame-pointer -fno-lto -Wall")
+        set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g3 -ggdb -fconcepts-diagnostics-depth=3")
     endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -DNDEBUG")
-    set(CMAKE_CXX_FLAGS_PROFILING "-O3 -Wall -pg")
-    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -Wall -g3 -ggdb -fconcepts-diagnostics-depth=3")
 endif()
 
 message(STATUS "Build configuration: ${CMAKE_BUILD_TYPE}")

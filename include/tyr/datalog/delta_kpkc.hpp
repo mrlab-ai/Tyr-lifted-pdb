@@ -114,6 +114,18 @@ struct Graph
 
     explicit Graph(const GraphLayout& cg);
 
+    void reset_vertices() noexcept
+    {
+        vertices.reset();
+        partition_vertices_data.assign(partition_vertices_data.size(), 0);
+    }
+
+    void reset_adjacency_row(uint_t v) noexcept
+    {
+        auto adj_list_row = partition_adjacency_matrix_span(v);
+        std::fill(adj_list_row.data(), adj_list_row.data() + adj_list_row.size(), uint64_t { 0 });
+    }
+
     void reset() noexcept
     {
         vertices.reset();
@@ -131,7 +143,10 @@ struct Graph
             auto bits = BitsetSpan<const uint64_t>(partition_vertices_data.data() + info.block_offset, info.num_bits);
 
             for (auto bit = bits.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = bits.find_next(bit))
+            {
+                assert(vertices.test(offset + bit));
                 callback(Vertex(offset + bit));
+            }
 
             offset += info.num_bits;
         }
@@ -149,6 +164,7 @@ struct Graph
             for (auto src_bit = src_bits.find_first(); src_bit != BitsetSpan<const uint64_t>::npos; src_bit = src_bits.find_next(src_bit))
             {
                 const auto src_index = src_offset + src_bit;
+                assert(vertices.test(src_index));
                 const auto src = Vertex(src_index);
 
                 const auto adjacency_list = partition_adjacency_matrix_span(src_index);
@@ -163,7 +179,10 @@ struct Graph
                     for (auto dst_bit = adj_bits.find_first(); dst_bit != BitsetSpan<const uint64_t>::npos; dst_bit = adj_bits.find_next(dst_bit))
                     {
                         if (dst_bits.test(dst_bit))
+                        {
+                            assert(vertices.test(dst_offset + dst_bit));
                             callback(Edge(src, Vertex(dst_offset + dst_bit)));
+                        }
                     }
 
                     dst_offset += dst_info.num_bits;
@@ -478,8 +497,10 @@ bool DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
         auto src_full = BitsetSpan<const uint64_t>(full_adj_list.data() + info.block_offset, info.num_bits);
 
         dst_next.copy_from(src_cur);
-
         dst_next &= src_full;
+
+        if (!dst_next.any())
+            return false;
 
         if constexpr (std::is_same_v<AnchorType, Edge>)
         {
@@ -490,11 +511,11 @@ bool DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
                 auto src_delta = BitsetSpan<const uint64_t>(delta_adj_list.data() + info.block_offset, info.num_bits);
 
                 dst_next -= src_delta;
+
+                if (!dst_next.any())
+                    return false;
             }
         }
-
-        if (!dst_next.any())
-            return false;
     }
     return true;
 }
