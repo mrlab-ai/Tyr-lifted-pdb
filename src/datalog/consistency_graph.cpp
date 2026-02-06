@@ -662,51 +662,108 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedIndexedLiterals<f:
     return { std::move(vertices), std::move(vertex_partitions), std::move(object_to_vertex_partitions) };
 }
 
-std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>>
+/**
+ *
+ ConjunctiveCondition(
+    variables = [?r_0, ?l_0, ?p_0, ?x_0, ?y_0]
+    static literals = [(object V0), (rover V0), (object V1), (object V2), (waypoint V2), (object V3), (waypoint V3), (object V4), (waypoint V4), (lander V1),
+(at_lander V1 V4), (visible V3 V4)] fluent literals = [(available V0), (at V0 V3), (have_soil_analysis V0 V2), (channel_free V1)] numeric constraints = []
+)
+ConjunctiveCondition(
+    variables = [?r_0, ?l_0, ?p_0, ?x_0, ?y_0]
+    static literals = [(at_lander V1 V4), (visible V3 V4)]
+    fluent literals = [(at V0 V3), (have_soil_analysis V0 V2)]
+    numeric constraints = []
+)
+
+In the example above, there exist many pairs of variables are unrestricted by static literals, resulting in dense reguiosn
+
+ */
+std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>, details::PartitionedAdjacencyMatrix>
 StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
                                       const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
-                                      const details::Vertices& vertices)
+                                      const details::Vertices& vertices,
+                                      const std::vector<std::vector<uint_t>>& vertex_partitions)
 {
-    auto sources = std::vector<uint_t> {};
+    const auto k = vertex_partitions.size();
 
+    auto row_data = std::vector<uint_t> {};
+    auto row_offsets = std::vector<uint_t> {};
+
+    row_offsets.push_back(row_data.size());
+
+    auto sources = std::vector<uint_t> {};
     auto target_offsets = std::vector<uint_t> {};
     target_offsets.reserve(vertices.size() + 1);
     target_offsets.push_back(0);
-
     auto targets = std::vector<uint_t> {};
+
+    std::cout << m_unary_overapproximation_condition << std::endl;
+    std::cout << m_binary_overapproximation_condition << std::endl;
+
+    std::cout << "K: " << k << std::endl;
+    std::cout << "Num vertices: " << vertices.size() << std::endl;
 
     if (constant_pair_consistent_literals(indexed_literals, static_assignment_sets.predicate))
     {
-        for (uint_t first_vertex_index = 0; first_vertex_index < vertices.size(); ++first_vertex_index)
+        for (uint_t pi = 0; pi < k; ++pi)
         {
-            const auto targets_before = targets.size();
-            for (uint_t second_vertex_index = (first_vertex_index + 1); second_vertex_index < vertices.size(); ++second_vertex_index)
+            for (const auto first_vertex_index : vertex_partitions[pi])
             {
                 const auto& first_vertex = vertices.at(first_vertex_index);
-                const auto& second_vertex = vertices.at(second_vertex_index);
 
-                assert(first_vertex.get_index() == first_vertex_index);
-                assert(second_vertex.get_index() == second_vertex_index);
+                const auto targets_before = targets.size();
 
-                auto edge = details::Edge(std::numeric_limits<uint_t>::max(), first_vertex, second_vertex);
+                const uint_t start_p = pi + 1;
+                row_data.push_back(start_p);  // row header
 
-                // Part 1 of definition of substitution consistency graph (Stahlberg-ecai2023): exclude I^\neq
-                if (first_vertex.get_parameter_index() != second_vertex.get_parameter_index()
-                    && edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
+                for (uint_t pj = start_p; pj < k; ++pj)
                 {
-                    targets.push_back(second_vertex_index);
-                }
-            }
+                    const auto len_pos = row_data.size();
+                    row_data.push_back(0);  // Placeholder for the length of the row, which we will fill later
 
-            if (targets_before < targets.size())
-            {
-                sources.push_back(first_vertex_index);
-                target_offsets.push_back(targets.size());
+                    const auto start_pos = row_data.size();
+
+                    for (const auto second_vertex_index : vertex_partitions[pj])
+                    {
+                        const auto& second_vertex = vertices.at(second_vertex_index);
+
+                        assert(first_vertex.get_index() == first_vertex_index);
+                        assert(second_vertex.get_index() == second_vertex_index);
+
+                        auto edge = details::Edge(std::numeric_limits<uint_t>::max(), first_vertex, second_vertex);
+
+                        // Part 1 of definition of substitution consistency graph (Stahlberg-ecai2023): exclude I^\neq
+                        if (edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
+                        {
+                            targets.push_back(second_vertex_index);
+                            row_data.push_back(second_vertex_index);
+                        }
+                    }
+
+                    const auto end_pos = row_data.size();
+                    std::cout << "Num edges to partition: " << end_pos - start_pos << std::endl;
+                    row_data[len_pos] = end_pos - start_pos;  // Fill in the length of the row
+                }
+
+                row_offsets.push_back(row_data.size());
+
+                if (targets_before < targets.size())
+                {
+                    sources.push_back(first_vertex_index);
+                    target_offsets.push_back(targets.size());
+                }
             }
         }
     }
 
-    return { std::move(sources), std::move(target_offsets), std::move(targets) };
+    std::cout << "row_data.size(): " << row_data.size() << std::endl;
+    std::cout << "targets.size(): " << targets.size() << std::endl;
+
+    return { std::move(sources),
+             std::move(target_offsets),
+             std::move(targets),
+             details::PartitionedAdjacencyMatrix(std::move(row_data), std::move(row_offsets), k) };
 }
 
 template<formalism::FactKind T>
@@ -1057,11 +1114,13 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
     m_vertex_partitions = std::move(vertex_partitions_);
     m_object_to_vertex_partitions = std::move(object_to_vertex_partitions_);
 
-    auto [sources_, target_offsets_, targets_] = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices);
+    auto [sources_, target_offsets_, targets_, adj_matrix_] =
+        compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
 
     m_sources = std::move(sources_);
     m_target_offsets = std::move(target_offsets_);
     m_targets = std::move(targets_);
+    m_adj_matrix = std::move(adj_matrix_);
 
     // std::cout << "Num vertices: " << m_vertices.size() << " num edges: " << m_targets.size() << std::endl;
 
@@ -1097,6 +1156,8 @@ const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_vertex_parti
 const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_object_to_vertex_partitions() const noexcept { return m_object_to_vertex_partitions; }
 
 const details::IndexedAnchors& StaticConsistencyGraph::get_predicate_to_anchors() const noexcept { return m_predicate_to_anchors; }
+
+const details::PartitionedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_adj_matrix; }
 
 /**
  * EdgeIterator
