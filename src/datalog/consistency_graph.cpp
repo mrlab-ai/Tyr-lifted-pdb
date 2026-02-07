@@ -690,8 +690,6 @@ StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::St
     auto row_data = std::vector<uint_t> {};
     auto row_offsets = std::vector<uint_t> {};
 
-    row_offsets.push_back(row_data.size());
-
     auto sources = std::vector<uint_t> {};
     auto target_offsets = std::vector<uint_t> {};
     target_offsets.reserve(vertices.size() + 1);
@@ -704,76 +702,62 @@ StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::St
     std::cout << "K: " << k << std::endl;
     std::cout << "Num vertices: " << vertices.size() << std::endl;
 
-    uint_t num_edges = 0;
+    auto adj_matrix = kpkc::PartitionedAdjacencyMatrix(vertex_partitions);
 
     if (constant_pair_consistent_literals(indexed_literals, static_assignment_sets.predicate))
     {
         for (uint_t pi = 0; pi < k; ++pi)
         {
-            for (const auto first_vertex_index : vertex_partitions[pi])
+            for (const auto first_index : vertex_partitions[pi])
             {
-                const auto& first_vertex = vertices.at(first_vertex_index);
+                const auto& first_vertex = vertices.at(first_index);
 
                 const auto targets_before = targets.size();
 
                 const uint_t start_p = pi + 1;
-                row_data.push_back(start_p);  // row header
+
+                adj_matrix.start_row(first_index, start_p);
 
                 for (uint_t pj = start_p; pj < k; ++pj)
                 {
-                    const auto len_pos = row_data.size();
-                    row_data.push_back(0);  // Placeholder for the length of the row, which we will fill later
+                    adj_matrix.start_partition();
 
-                    const auto start_pos = row_data.size();
-
-                    for (const auto second_vertex_index : vertex_partitions[pj])
+                    for (const auto second_index : vertex_partitions[pj])
                     {
-                        const auto& second_vertex = vertices.at(second_vertex_index);
+                        const auto& second_vertex = vertices.at(second_index);
 
-                        assert(first_vertex.get_index() == first_vertex_index);
-                        assert(second_vertex.get_index() == second_vertex_index);
+                        assert(first_vertex.get_index() == first_index);
+                        assert(second_vertex.get_index() == second_index);
 
                         auto edge = details::Edge(std::numeric_limits<uint_t>::max(), first_vertex, second_vertex);
 
                         // Part 1 of definition of substitution consistency graph (Stahlberg-ecai2023): exclude I^\neq
                         if (edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
                         {
-                            targets.push_back(second_vertex_index);
-                            row_data.push_back(second_vertex_index);
-                            ++num_edges;
+                            targets.push_back(second_index);
+
+                            adj_matrix.add_target(second_index);
                         }
                     }
 
-                    const auto end_pos = row_data.size();
-
-                    if (end_pos - start_pos == vertex_partitions[pj].size())
-                    {
-                        // Use partition reference mechanism for dense regions
-                        row_data[len_pos] = kpkc::PartitionedAdjacencyMatrix::RowView::FULL;
-                        row_data.resize(len_pos + 1);
-                    }
-                    else
-                    {
-                        // Fill in the length of the row
-                        row_data[len_pos] = end_pos - start_pos;
-                    }
+                    adj_matrix.finish_partition(pj);
                 }
 
-                row_offsets.push_back(row_data.size());
+                adj_matrix.finish_row();
 
                 if (targets_before < targets.size())
                 {
-                    sources.push_back(first_vertex_index);
+                    sources.push_back(first_index);
                     target_offsets.push_back(targets.size());
                 }
             }
         }
     }
 
-    std::cout << "row_data.size(): " << row_data.size() << std::endl;
-    print(std::cout, row_data);
+    std::cout << "row_data.size(): " << adj_matrix.data().size() << std::endl;
+    print(std::cout, adj_matrix.data());
     std::cout << std::endl;
-    print(std::cout, row_offsets);
+    print(std::cout, adj_matrix.row_offsets());
     std::cout << std::endl;
     std::cout << "targets.size(): " << targets.size() << std::endl;
     print(std::cout, sources);
@@ -783,10 +767,7 @@ StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::St
     print(std::cout, targets);
     std::cout << std::endl;
 
-    return { std::move(sources),
-             std::move(target_offsets),
-             std::move(targets),
-             kpkc::PartitionedAdjacencyMatrix(vertex_partitions, std::move(row_data), std::move(row_offsets), num_edges, k) };
+    return { std::move(sources), std::move(target_offsets), std::move(targets), std::move(adj_matrix) };
 }
 
 template<formalism::FactKind T>
@@ -1112,6 +1093,68 @@ void StaticConsistencyGraph::initialize_graphs(const AssignmentSets& assignment_
                                                kpkc::Graph& full_graph,
                                                kpkc::GraphActivityMasks& masks)
 {
+    // 1. clear full and delta graph
+    // 2. build delta and full graph adj matrix based on consistent edges
+
+    delta_graph.adj_matrix.clear();
+    full_graph.adj_matrix.clear();
+
+    uint_t edge_index = 0;
+
+    if (constant_pair_consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate))
+    {
+        const auto constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+
+        m_adj_matrix.for_each_row(
+            [&](auto&& row)
+            {
+                const auto first_index = row.row();
+                const auto first_partition = row.p();
+                const auto& first_vertex = get_vertex(first_index);
+
+                delta_graph.adj_matrix.start_row(first_index, first_partition);
+                full_graph.adj_matrix.start_row(first_index, first_partition);
+
+                row.for_each_partition(
+                    [&](auto&& partition)
+                    {
+                        const auto second_partition = partition.p();
+
+                        delta_graph.adj_matrix.start_partition();
+                        full_graph.adj_matrix.start_partition();
+
+                        partition.for_each_target(
+                            [&](auto&& second_index)
+                            {
+                                if (masks.edges.test(edge_index))
+                                {
+                                    const auto edge = details::Edge(edge_index, first_vertex, get_vertex(second_index));
+
+                                    if (edge.consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed,
+                                                                 assignment_sets.fluent_sets.predicate)
+                                        && edge.consistent_numeric_constraints(constraints, m_binary_overapproximation_indexed_constraints, assignment_sets))
+                                    {
+                                        masks.edges.reset(edge_index);
+                                        delta_graph.adj_matrix.add_target(second_index);
+                                        full_graph.adj_matrix.add_target(second_index);
+                                    }
+                                }
+                                else
+                                {
+                                    full_graph.adj_matrix.add_target(second_index);
+                                }
+
+                                ++edge_index;
+                            });
+
+                        delta_graph.adj_matrix.finish_partition(second_partition);
+                        full_graph.adj_matrix.finish_partition(second_partition);
+                    });
+
+                delta_graph.adj_matrix.finish_row();
+                full_graph.adj_matrix.finish_row();
+            });
+    }
 }
 
 StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
