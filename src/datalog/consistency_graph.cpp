@@ -696,12 +696,6 @@ StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::St
     target_offsets.push_back(0);
     auto targets = std::vector<uint_t> {};
 
-    print(std::cout, vertex_partitions);
-    std::cout << std::endl;
-
-    std::cout << "K: " << k << std::endl;
-    std::cout << "Num vertices: " << vertices.size() << std::endl;
-
     auto adj_matrix = kpkc::PartitionedAdjacencyMatrix(vertex_partitions);
 
     if (constant_pair_consistent_literals(indexed_literals, static_assignment_sets.predicate))
@@ -753,19 +747,6 @@ StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::St
             }
         }
     }
-
-    std::cout << "row_data.size(): " << adj_matrix.data().size() << std::endl;
-    print(std::cout, adj_matrix.data());
-    std::cout << std::endl;
-    print(std::cout, adj_matrix.row_offsets());
-    std::cout << std::endl;
-    std::cout << "targets.size(): " << targets.size() << std::endl;
-    print(std::cout, sources);
-    std::cout << std::endl;
-    print(std::cout, target_offsets);
-    std::cout << std::endl;
-    print(std::cout, targets);
-    std::cout << std::endl;
 
     return { std::move(sources), std::move(target_offsets), std::move(targets), std::move(adj_matrix) };
 }
@@ -1086,75 +1067,6 @@ static auto compute_indexed_anchors(View<Index<fd::ConjunctiveCondition>, fd::Re
     }
 
     return result;
-}
-
-void StaticConsistencyGraph::initialize_graphs(const AssignmentSets& assignment_sets,
-                                               kpkc::Graph& delta_graph,
-                                               kpkc::Graph& full_graph,
-                                               kpkc::GraphActivityMasks& masks)
-{
-    // 1. clear full and delta graph
-    // 2. build delta and full graph adj matrix based on consistent edges
-
-    delta_graph.adj_matrix.clear();
-    full_graph.adj_matrix.clear();
-
-    uint_t edge_index = 0;
-
-    if (constant_pair_consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate))
-    {
-        const auto constraints = m_binary_overapproximation_condition.get_numeric_constraints();
-
-        m_adj_matrix.for_each_row(
-            [&](auto&& row)
-            {
-                const auto first_index = row.row();
-                const auto first_partition = row.p();
-                const auto& first_vertex = get_vertex(first_index);
-
-                delta_graph.adj_matrix.start_row(first_index, first_partition);
-                full_graph.adj_matrix.start_row(first_index, first_partition);
-
-                row.for_each_partition(
-                    [&](auto&& partition)
-                    {
-                        const auto second_partition = partition.p();
-
-                        delta_graph.adj_matrix.start_partition();
-                        full_graph.adj_matrix.start_partition();
-
-                        partition.for_each_target(
-                            [&](auto&& second_index)
-                            {
-                                if (masks.edges.test(edge_index))
-                                {
-                                    const auto edge = details::Edge(edge_index, first_vertex, get_vertex(second_index));
-
-                                    if (edge.consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed,
-                                                                 assignment_sets.fluent_sets.predicate)
-                                        && edge.consistent_numeric_constraints(constraints, m_binary_overapproximation_indexed_constraints, assignment_sets))
-                                    {
-                                        masks.edges.reset(edge_index);
-                                        delta_graph.adj_matrix.add_target(second_index);
-                                        full_graph.adj_matrix.add_target(second_index);
-                                    }
-                                }
-                                else
-                                {
-                                    full_graph.adj_matrix.add_target(second_index);
-                                }
-
-                                ++edge_index;
-                            });
-
-                        delta_graph.adj_matrix.finish_partition(second_partition);
-                        full_graph.adj_matrix.finish_partition(second_partition);
-                    });
-
-                delta_graph.adj_matrix.finish_row();
-                full_graph.adj_matrix.finish_row();
-            });
-    }
 }
 
 StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,

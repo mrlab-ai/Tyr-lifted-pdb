@@ -187,8 +187,8 @@ struct PartitionedAdjacencyMatrix
             if (start == end)
                 continue;
 
-            const uint_t p = m_data[start];
-            const uint_t v = m_data[start + 1];
+            const uint_t v = m_data[start];
+            const uint_t p = m_data[start + 1];
             const uint_t data_start = start + 2;
 
             assert(data_start <= end);  ///< start must be equal to end if there is no target
@@ -295,8 +295,6 @@ struct Graph
 
     std::vector<uint64_t> partition_adjacency_matrix_data;
     MDSpan<uint64_t, 2> partition_adjacency_matrix_span;
-
-    PartitionedAdjacencyMatrix adj_matrix;
 
     explicit Graph(const GraphLayout& cg);
 

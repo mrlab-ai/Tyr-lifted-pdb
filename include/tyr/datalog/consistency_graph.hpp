@@ -348,45 +348,47 @@ public:
                                 const boost::dynamic_bitset<>& consistent_vertices,
                                 Callback&& callback) const
     {
-        assert(m_target_offsets.size() == m_sources.size() + 1);
-        assert(m_target_offsets.back() == m_targets.size());
-        assert(m_targets.size() == active_edges.size());
         assert(consistent_vertices.size() == get_num_vertices());
 
         const auto constraints = m_binary_overapproximation_condition.get_numeric_constraints();
 
         if (constant_pair_consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate))
         {
-            for (uint_t src_pos = 0; src_pos < m_sources.size(); ++src_pos)
-            {
-                const auto src = m_sources[src_pos];
+            auto edge_index = uint_t { 0 };
 
-                if (!consistent_vertices.test(src))
-                    continue;
-
-                for (uint_t index = m_target_offsets[src_pos]; index < m_target_offsets[src_pos + 1]; ++index)
+            m_adj_matrix.for_each_row(
+                [&](auto&& row)
                 {
-                    if (!active_edges.test(index))
-                        continue;
+                    const auto first_index = row.v();
+                    const auto& first_vertex = get_vertex(first_index);
 
-                    const auto dst = m_targets[index];
+                    row.for_each_partition(
+                        [&](auto&& partition)
+                        {
+                            partition.for_each_target(
+                                [&](auto&& second_index)
+                                {
+                                    // TODO skip rows earlier by encoding size of row at the beginning of the row.
+                                    if (active_edges.test(edge_index) && consistent_vertices.test(first_index) && consistent_vertices.test(second_index))
+                                    {
+                                        const auto edge = details::Edge(edge_index, first_vertex, get_vertex(second_index));
 
-                    if (!consistent_vertices.test(dst))
-                        continue;
+                                        if (edge.consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed,
+                                                                     assignment_sets.fluent_sets.predicate)
+                                            && edge.consistent_numeric_constraints(constraints,
+                                                                                   m_binary_overapproximation_indexed_constraints,
+                                                                                   assignment_sets))
+                                        {
+                                            callback(edge);
+                                        }
+                                    }
 
-                    const auto edge = details::Edge(index, get_vertex(src), get_vertex(dst));
-
-                    if (edge.consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
-                        && edge.consistent_numeric_constraints(constraints, m_binary_overapproximation_indexed_constraints, assignment_sets))
-                    {
-                        callback(edge);
-                    }
-                }
-            }
+                                    ++edge_index;
+                                });
+                        });
+                });
         }
     }
-
-    void initialize_graphs(const AssignmentSets& assignment_sets, kpkc::Graph& delta_graph, kpkc::Graph& full_graph, kpkc::GraphActivityMasks& masks);
 
     const details::Vertex& get_vertex(uint_t index) const;
     const details::Vertex& get_vertex(formalism::ParameterIndex parameter, Index<formalism::Object> object) const;
