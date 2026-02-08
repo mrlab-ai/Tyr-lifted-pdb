@@ -43,7 +43,9 @@ ATTRIBUTES = [
     "memory",
 ]
 
-exp = Experiment("2026-1-8-gbfs_lazy-profiling-combined")
+# exp = Experiment("2026-1-8-gbfs_lazy-profiling-tyr-pl-combined")
+exp = Experiment("2026-1-8-gbfs_lazy-tyr-pl-combined")
+
 
 EXCLUDED_DOMAINS = [
     # Powerlifted: Actions with negated preconditions not supported yet
@@ -87,8 +89,12 @@ EXCLUDED_DOMAINS = [
 EXCLUDED_DOMAINS += SUITE_IPC_SATISFICING_ADL
 EXCLUDED_DOMAINS += SUITE_IPC_SATISFICING_STRIPS
 
-exp.add_fetcher("profiling/15-2026-1-8-gbfs_lazy-profiling-classical-combined-eval", filter=lambda run: run["domain"] not in EXCLUDED_DOMAINS)
-exp.add_fetcher("profiling/2026-1-9-lazy-gbfs-ff-pref-ff-profiling-eval", filter=lambda run: run["domain"] not in EXCLUDED_DOMAINS)
+# exp.add_fetcher("profiling/15-2026-1-8-gbfs_lazy-profiling-classical-combined-eval", filter=lambda run: run["domain"] not in EXCLUDED_DOMAINS)
+# exp.add_fetcher("profiling/2026-1-9-lazy-gbfs-ff-pref-ff-profiling-eval", filter=lambda run: run["domain"] not in EXCLUDED_DOMAINS)
+
+exp.add_fetcher("gbfs/2026-1-8-gbfs_lazy-combined-eval", filter=lambda run: run["domain"] not in EXCLUDED_DOMAINS)
+exp.add_fetcher("gbfs/2026-1-9-lazy-gbfs-ff-pref-ff-eval", filter=lambda run: run["domain"] not in EXCLUDED_DOMAINS)
+
 
 exp.add_report(BaseReport(attributes=ATTRIBUTES))
 
