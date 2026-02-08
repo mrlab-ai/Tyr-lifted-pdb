@@ -97,6 +97,10 @@ extern std::ostream& operator<<(std::ostream& os, const ProgramStatistics& el);
 extern std::ostream& operator<<(std::ostream& os, const RuleStatistics& el);
 
 extern std::ostream& operator<<(std::ostream& os, const AggregatedRuleStatistics& el);
+
+extern std::ostream& operator<<(std::ostream& os, const RuleWorkerStatistics& el);
+
+extern std::ostream& operator<<(std::ostream& os, const AggregatedRuleWorkerStatistics& el);
 }  // end namespace datalog
 }
 

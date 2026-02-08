@@ -191,7 +191,7 @@ std::ostream& print(std::ostream& os, const datalog::kpkc::Vertex& el)
     return os;
 }
 
-extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& el)
+std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& el)
 {
     const double parallel_ms = static_cast<double>(to_ms(el.parallel_time));
     const double total_ms = static_cast<double>(to_ms(el.total_time));
@@ -201,10 +201,10 @@ extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& e
 
     fmt::print(os,
                "[ProgramStatistics] Num executions: {}\n"
-               "[ProgramStatistics] T_par_region - wallclock time inside parallel region: {} ms\n"
+               "[ProgramStatistics] T_par - wallclock time inside parallel: {} ms\n"
                "[ProgramStatistics] T_total - wallclock time total: {} ms\n"
                "[ProgramStatistics] T_avg - average wallclock time total: {} us\n"
-               "[ProgramStatistics] T_par_region / T_total - Parallel fraction: {:.2f}",
+               "[ProgramStatistics] T_par / T_total - Parallel fraction: {:.2f}",
                el.num_executions,
                to_ms(el.parallel_time),
                to_ms(el.total_time),
@@ -214,24 +214,22 @@ extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& e
     return os;
 }
 
-extern std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el)
+std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el)
 {
     fmt::print(os,
                "[RuleStatistics] Num executions: {}\n"
                "[RuleStatistics] Num bindings: {}\n"
-               "[RuleStatistics] T_par_region - wallclock time inside parallel region: {} ms\n"
-               "[RuleStatistics] T_gen_region - wallclock time inside generate region: {} ms\n"
-               "[RuleStatistics] T_pen_region - wallclock time inside pending region: {} ms",
+               "[RuleStatistics] T_par - wallclock time inside parallel: {} ms\n"
+               "[RuleStatistics] T_toal - wallclock time total: {} ms\n",
                el.num_executions,
                el.num_bindings,
                to_ms(el.parallel_time),
-               to_ms(el.gen_time),
-               to_ms(el.pending_time));
+               to_ms(el.total_time));
 
     return os;
 }
 
-extern std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& el)
+std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& el)
 {
     const double tot_parallel_max_ms = static_cast<double>(to_ms(el.tot_parallel_time_max));
     const double tot_parallel_med_ms = static_cast<double>(to_ms(el.tot_parallel_time_median));
@@ -242,18 +240,34 @@ extern std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatis
     const double avg_skew = avg_parallel_max_ns > 0.0 && avg_parallel_med_ns > 0.0 ? avg_parallel_max_ns / avg_parallel_med_ns : 1.0;
 
     fmt::print(os,
+               "[AggregatedRuleStatistics] Number of executions: {}\n"
                "[AggregatedRuleStatistics] Number of bindings: {}\n"
                "[AggregatedRuleStatistics] Number of samples: {}\n"
-               "[AggregatedRuleStatistics] T_tot_min_par_region - minimum total wallclock time inside parallel region: {} ms\n"
-               "[AggregatedRuleStatistics] T_tot_max_par_region - maximum total wallclock time inside parallel region: {} ms\n"
-               "[AggregatedRuleStatistics] T_tot_med_par_region - median total wallclock time inside parallel region: {} ms\n"
-               "[AggregatedRuleStatistics] T_tot_max_par_region / T_tot_med_par_region - Total skew: {:.2f}\n"
-               "[AggregatedRuleStatistics] T_avg_min_par_region - minimum average wallclock time inside parallel region: {} ns\n"
-               "[AggregatedRuleStatistics] T_avg_max_par_region - maximum average wallclock time inside parallel region: {} ns\n"
-               "[AggregatedRuleStatistics] T_avg_med_par_region - median average wallclock time inside parallel region: {} ns\n"
-               "[AggregatedRuleStatistics] T_avg_max_par_region / T_avg_med_par_region - Average skew: {:.2f}",
+               "[AggregatedRuleStatistics] T_clique - total wallclock time inside generate clique: {} ms\n"
+               "[AggregatedRuleStatistics] T_initialize - total wallclock time inside initialization of delta kpkc: {} ms\n"
+               "[AggregatedRuleStatistics] T_clear_iteration - total wallclock time inside clear iteration: {} ms\n"
+               "[AggregatedRuleStatistics] T_process_clique - wallclock time to process pending: {} ms\n"
+               "[AggregatedRuleStatistics] T_process_pending - wallclock time to process cliques: {} ms\n"
+               "[AggregatedRuleStatistics] T_par - total wallclock time inside parallel: {} ms\n"
+               "[AggregatedRuleStatistics] T_total - total wallclock time: {} ms\n"
+               "[AggregatedRuleStatistics] T_tot_min_par - minimum total wallclock time inside parallel: {} ms\n"
+               "[AggregatedRuleStatistics] T_tot_max_par - maximum total wallclock time inside parallel: {} ms\n"
+               "[AggregatedRuleStatistics] T_tot_med_par - median total wallclock time inside parallel: {} ms\n"
+               "[AggregatedRuleStatistics] T_tot_max_par / T_tot_med_par - Total skew: {:.2f}\n"
+               "[AggregatedRuleStatistics] T_avg_min_par - minimum average wallclock time inside parallel: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_max_par - maximum average wallclock time inside parallel: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_med_par - median average wallclock time inside parallel: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_max_par / T_avg_med_par - Average skew: {:.2f}",
+               el.num_executions,
                el.num_bindings,
                el.sample_count,
+               to_ms(el.generate_clique_time),
+               to_ms(el.initialize_time),
+               to_ms(el.clear_iteration_time),
+               to_ms(el.process_clique_time),
+               to_ms(el.process_pending_time),
+               to_ms(el.parallel_time),
+               to_ms(el.total_time),
                to_ms(el.tot_parallel_time_min),
                to_ms(el.tot_parallel_time_max),
                to_ms(el.tot_parallel_time_median),
@@ -262,6 +276,36 @@ extern std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatis
                el.avg_parallel_time_max.count(),
                el.avg_parallel_time_median.count(),
                avg_skew);
+
+    return os;
+}
+
+std::ostream& print(std::ostream& os, const datalog::RuleWorkerStatistics& el)
+{
+    fmt::print(os,
+               "[RuleWorkerStatistics] Num executions: {}\n"
+               "[RuleWorkerStatistics] T_process_clique - wallclock time to process pending: {}\n"
+               "[RuleWorkerStatistics] T_process_pending - wallclock time to process cliques: {} ms\n"
+               "[RuleWorkerStatistics] T_total - wallclock time total: {} ms\n",
+               el.num_executions,
+               to_ms(el.process_clique_time),
+               to_ms(el.process_pending_time),
+               to_ms(el.total_time));
+
+    return os;
+}
+
+std::ostream& print(std::ostream& os, const datalog::AggregatedRuleWorkerStatistics& el)
+{
+    fmt::print(os,
+               "[AggregatedRuleWorkerStatistics] Num executions: {}\n"
+               "[AggregatedRuleWorkerStatistics] T_process_clique - wallclock time to process pending: {}\n"
+               "[AggregatedRuleWorkerStatistics] T_process_pending - wallclock time to process cliques: {} ms\n"
+               "[AggregatedRuleWorkerStatistics] T_total - wallclock time total: {} ms\n",
+               el.num_executions,
+               to_ms(el.process_clique_time),
+               to_ms(el.process_pending_time),
+               to_ms(el.total_time));
 
     return os;
 }
@@ -312,6 +356,10 @@ std::ostream& operator<<(std::ostream& os, const ProgramStatistics& el) { return
 std::ostream& operator<<(std::ostream& os, const RuleStatistics& el) { return print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const AggregatedRuleStatistics& el) { return print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const RuleWorkerStatistics& el) { return print(os, el); }
+
+std::ostream& operator<<(std::ostream& os, const AggregatedRuleWorkerStatistics& el) { return print(os, el); }
 
 }  // end namespace datalog
 }

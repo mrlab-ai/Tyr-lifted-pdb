@@ -226,7 +226,7 @@ struct RuleWorkspace
         UnorderedMap<Index<formalism::Binding>, UniqueObjectPoolPtr<ApplicabilityCheck>> pending_rules;
 
         /// Statistics
-        RuleStatistics statistics;
+        RuleWorkerStatistics statistics;
     };
 
     struct Worker

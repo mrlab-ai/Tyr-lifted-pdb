@@ -30,14 +30,35 @@ struct RuleStatistics
 {
     uint64_t num_executions = 0;
     uint64_t num_bindings = 0;
+    std::chrono::nanoseconds generate_clique_time { 0 };
+    std::chrono::nanoseconds initialize_time { 0 };
+    std::chrono::nanoseconds clear_iteration_time { 0 };
+    std::chrono::nanoseconds process_clique_time { 0 };
+    std::chrono::nanoseconds process_pending_time { 0 };
     std::chrono::nanoseconds parallel_time { 0 };
-    std::chrono::nanoseconds gen_time { 0 };
-    std::chrono::nanoseconds pending_time { 0 };
+    std::chrono::nanoseconds total_time { 0 };
+};
+
+struct RuleWorkerStatistics
+{
+    uint64_t num_executions = 0;
+    std::chrono::nanoseconds process_clique_time { 0 };
+    std::chrono::nanoseconds process_pending_time { 0 };
+    std::chrono::nanoseconds total_time { 0 };
 };
 
 struct AggregatedRuleStatistics
 {
+    uint64_t num_executions = 0;
     uint64_t num_bindings = 0;
+    std::chrono::nanoseconds generate_clique_time { 0 };
+    std::chrono::nanoseconds initialize_time { 0 };
+    std::chrono::nanoseconds clear_iteration_time { 0 };
+    std::chrono::nanoseconds process_clique_time { 0 };
+    std::chrono::nanoseconds process_pending_time { 0 };
+    std::chrono::nanoseconds parallel_time { 0 };
+    std::chrono::nanoseconds total_time { 0 };
+
     size_t sample_count { 0 };
     std::chrono::nanoseconds tot_parallel_time_min { 0 };
     std::chrono::nanoseconds tot_parallel_time_max { 0 };
@@ -45,6 +66,14 @@ struct AggregatedRuleStatistics
     std::chrono::nanoseconds avg_parallel_time_min { 0 };
     std::chrono::nanoseconds avg_parallel_time_max { 0 };
     std::chrono::nanoseconds avg_parallel_time_median { 0 };
+};
+
+struct AggregatedRuleWorkerStatistics
+{
+    uint64_t num_executions = 0;
+    std::chrono::nanoseconds process_clique_time { 0 };
+    std::chrono::nanoseconds process_pending_time { 0 };
+    std::chrono::nanoseconds total_time { 0 };
 };
 
 inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::vector<datalog::RuleStatistics>& rules)
@@ -60,9 +89,18 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
     {
         if (rs.num_executions == 0)
             continue;
+
         samples.push_back(rs.parallel_time);
         avg_samples.push_back(rs.parallel_time / rs.num_executions);
+        result.num_executions += rs.num_executions;
         result.num_bindings += rs.num_bindings;
+        result.generate_clique_time += rs.generate_clique_time;
+        result.parallel_time += rs.parallel_time;
+        result.total_time += rs.total_time;
+        result.initialize_time += rs.initialize_time;
+        result.clear_iteration_time += rs.clear_iteration_time;
+        result.process_clique_time += rs.process_clique_time;
+        result.process_pending_time += rs.process_pending_time;
     }
 
     result.sample_count = samples.size();
@@ -96,6 +134,24 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
             const auto b = avg_samples[n / 2].count();
             result.avg_parallel_time_median = std::chrono::nanoseconds { (a + b) / 2 };
         }
+    }
+
+    return result;
+}
+
+inline AggregatedRuleWorkerStatistics compute_aggregated_rule_statistics(const std::vector<datalog::RuleWorkerStatistics>& rules)
+{
+    AggregatedRuleWorkerStatistics result {};
+
+    for (const auto& rs : rules)
+    {
+        if (rs.num_executions == 0)
+            continue;
+
+        result.num_executions += rs.num_executions;
+        result.process_clique_time += rs.process_clique_time;
+        result.process_pending_time += rs.process_pending_time;
+        result.total_time += rs.total_time;
     }
 
     return result;

@@ -80,7 +80,7 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     const auto& in = wrctx.in();
     auto& out = wrctx.out();
 
-    const auto rule_stopwatch = StopwatchScope(out.statistics().parallel_time);
+    const auto rule_stopwatch = StopwatchScope(out.statistics().total_time);
     ++out.statistics().num_executions;
 
     create_nullary_binding(out.ground_context_solve().binding);
@@ -142,7 +142,7 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
     const auto& in = wrctx.in();
     auto& out = wrctx.out();
 
-    const auto stopwatch = StopwatchScope(out.statistics().gen_time);
+    const auto stopwatch = StopwatchScope(out.statistics().process_clique_time);
 
     create_general_binding(clique, in.cws_rule().static_consistency_graph, out.ground_context_solve().binding);
 
@@ -151,8 +151,6 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
     const auto program_head_index = fd::ground(in.cws_rule().get_rule().get_head(), out.ground_context_iteration()).first;
     if (in.fact_sets().fluent_sets.predicate.contains(program_head_index))
         return;  ///< optimal cost proven
-
-    ++out.statistics().num_bindings;
 
     auto applicability_check = out.applicability_check_pool().get_or_allocate(in.cws_rule().get_nullary_condition(),
                                                                               in.cws_rule().get_conflicting_overapproximation_condition(),
@@ -198,11 +196,17 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
-    const auto& kpkc = rctx.ws_rule.common.kpkc;
+    const auto& kpkc_algorithm = rctx.ws_rule.common.kpkc;
     auto& kpkc_cliques = rctx.ws_rule.common.kpkc_cliques;
     auto& kpkc_workspace = rctx.ws_rule.common.kpkc_workspace;
 
-    kpkc.for_each_new_k_clique(kpkc_cliques, kpkc_workspace);
+    {
+        const auto stopwatch = StopwatchScope(rctx.ws_rule.common.statistics.generate_clique_time);
+
+        kpkc_algorithm.for_each_new_k_clique(kpkc_cliques, kpkc_workspace);
+
+        rctx.ws_rule.common.statistics.num_bindings += kpkc_cliques.size();
+    }
 
     constexpr size_t PAR_THRESHOLD = 1024;
     constexpr size_t GRAIN = 256;
@@ -213,10 +217,16 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
     if (do_parallel_inner)
     {
+        const auto rule_stopwatch = StopwatchScope(rctx.ws_rule.common.statistics.parallel_time);
+
         oneapi::tbb::parallel_for(oneapi::tbb::blocked_range<size_t>(0, kpkc_cliques.size(), GRAIN),
                                   [&](const oneapi::tbb::blocked_range<size_t>& r)
                                   {
                                       auto wrctx = rctx.get_rule_worker_execution_context();
+                                      auto& out = wrctx.out();
+                                      const auto rule_stopwatch = StopwatchScope(out.statistics().total_time);
+                                      ++out.statistics().num_executions;
+
                                       for (size_t i = r.begin(); i != r.end(); ++i)
                                           process_clique(wrctx, kpkc_cliques[i]);
                                   });
@@ -224,6 +234,9 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     else
     {
         auto wrctx = rctx.get_rule_worker_execution_context();
+        auto& out = wrctx.out();
+        const auto rule_stopwatch = StopwatchScope(out.statistics().total_time);
+        ++out.statistics().num_executions;
 
         for (size_t i = 0; i < kpkc_cliques.size(); ++i)
             process_clique(wrctx, kpkc_cliques[i]);
@@ -251,7 +264,8 @@ void process_pending(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
         const auto& in = wrctx.in();
         auto& out = wrctx.out();
 
-        const auto stopwatch = StopwatchScope(out.statistics().pending_time);
+        const auto process_pending_time = StopwatchScope(out.statistics().process_pending_time);
+        const auto total_time = StopwatchScope(out.statistics().total_time);
 
         for (auto it = out.pending_rules().begin(); it != out.pending_rules().end();)
         {
@@ -334,16 +348,33 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                                                // std::cout << make_view(rule_index, ws.repository) << std::endl;
 
                                                auto rctx = ctx.get_rule_execution_context(rule_index);
-                                               rctx.clear_iteration();  ///< Clear iteration before process_pending/generate
 
-                                               const auto rule_stopwatch = StopwatchScope(rctx.ws_rule.common.statistics.parallel_time);
+                                               const auto total_time = StopwatchScope(rctx.ws_rule.common.statistics.total_time);
                                                ++rctx.ws_rule.common.statistics.num_executions;
 
-                                               rctx.initialize();  ///< Initialize before process_pending/generate
+                                               {
+                                                   const auto clear_iteration_time = StopwatchScope(rctx.ws_rule.common.statistics.clear_iteration_time);
 
-                                               process_pending(rctx);
+                                                   rctx.clear_iteration();  ///< Clear iteration before process_pending/generate
+                                               }
 
-                                               generate(rctx);
+                                               {
+                                                   const auto initialize_time = StopwatchScope(rctx.ws_rule.common.statistics.initialize_time);
+
+                                                   rctx.initialize();  ///< Initialize before process_pending/generate
+                                               }
+
+                                               {
+                                                   const auto process_pending_time = StopwatchScope(rctx.ws_rule.common.statistics.process_pending_time);
+
+                                                   process_pending(rctx);
+                                               }
+
+                                               {
+                                                   const auto generate_clique_time = StopwatchScope(rctx.ws_rule.common.statistics.generate_clique_time);
+
+                                                   generate(rctx);
+                                               }
                                            });
         }
 
@@ -402,8 +433,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                     // Update fact sets
                     facts.fact_sets.predicate.insert(head);
                     facts.assignment_sets.predicate.insert(head);
-
-                    // std::cout << "Discovered: " << head << std::endl;
                 }
             }
         }
@@ -415,8 +444,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP>& ctx)
 {
-    // std::cout << "solve_bottom_up" << std::endl;
-
     const auto program_stopwatch = StopwatchScope(ctx.ws.statistics.total_time);
     ++ctx.ws.statistics.num_executions;
 
