@@ -251,11 +251,10 @@ private:
                      const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
     /// @brief Helper to initialize edges.
-    std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>, kpkc::PartitionedAdjacencyMatrix>
-    compute_edges(const details::TaggedIndexedLiterals<formalism::StaticTag>& indexed_literals,
-                  const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
-                  const details::Vertices& vertices,
-                  const std::vector<std::vector<uint_t>>& vertex_partitions);
+    kpkc::PartitionedAdjacencyMatrix compute_edges(const details::TaggedIndexedLiterals<formalism::StaticTag>& indexed_literals,
+                                                   const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
+                                                   const details::Vertices& vertices,
+                                                   const std::vector<std::vector<uint_t>>& vertex_partitions);
 
     template<formalism::FactKind T>
     bool constant_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
@@ -277,37 +276,7 @@ public:
                            uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
-    class EdgeIterator
-    {
-    private:
-        const StaticConsistencyGraph* m_graph;
-        uint_t m_index;
-        size_t m_sources_pos;
-        size_t m_targets_pos;
-
-        const StaticConsistencyGraph& get_graph() const noexcept;
-
-        void advance() noexcept;
-
-    public:
-        using difference_type = std::ptrdiff_t;
-        using value_type = details::Edge;
-        using pointer = value_type*;
-        using reference = const value_type&;
-        using iterator_category = std::forward_iterator_tag;
-        using iterator_concept = std::forward_iterator_tag;
-
-        EdgeIterator() noexcept;
-        EdgeIterator(const StaticConsistencyGraph& graph, bool begin) noexcept;
-        value_type operator*() const noexcept;
-        EdgeIterator& operator++() noexcept;
-        EdgeIterator operator++(int) noexcept;
-        bool operator==(const EdgeIterator& other) const noexcept;
-        bool operator!=(const EdgeIterator& other) const noexcept;
-    };
-
     auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
-    auto get_edges() const noexcept { return std::ranges::subrange(EdgeIterator(*this, true), EdgeIterator(*this, false)); }
 
     /// @brief Efficient iteration over delta-consistent vertices.
     /// @tparam Callback
@@ -362,14 +331,19 @@ public:
                     const auto first_index = row.v();
                     const auto& first_vertex = get_vertex(first_index);
 
+                    if (!consistent_vertices.test(first_index))
+                    {
+                        edge_index += row.len();
+                        return;
+                    }
+
                     row.for_each_partition(
                         [&](auto&& partition)
                         {
                             partition.for_each_target(
                                 [&](auto&& second_index)
                                 {
-                                    // TODO skip rows earlier by encoding size of row at the beginning of the row.
-                                    if (active_edges.test(edge_index) && consistent_vertices.test(first_index) && consistent_vertices.test(second_index))
+                                    if (active_edges.test(edge_index) && consistent_vertices.test(second_index))
                                     {
                                         const auto edge = details::Edge(edge_index, first_vertex, get_vertex(second_index));
 
@@ -413,9 +387,6 @@ private:
     details::Vertices m_vertices;
 
     // Adjacency list of edges.
-    std::vector<uint_t> m_sources;  ///< sources with non-zero out-degree
-    std::vector<uint_t> m_target_offsets;
-    std::vector<uint_t> m_targets;
     std::vector<std::vector<uint_t>> m_vertex_partitions;
     std::vector<std::vector<uint_t>> m_object_to_vertex_partitions;
 

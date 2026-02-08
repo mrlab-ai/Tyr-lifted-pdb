@@ -173,14 +173,14 @@ std::ostream& print(std::ostream& os, const datalog::details::IndexedLiterals& e
 
 std::ostream& print(std::ostream& os, const datalog::StaticConsistencyGraph& el)
 {
-    fmt::print(
-        os,
-        "graph Tree {{\n\n{}\n\n{}\n}}",
-        fmt::join(el.get_vertices() | std::views::transform([&](auto&& arg) { return fmt::format("n{} [label=\"{}\"];", arg.get_index(), to_string(arg)); }),
-                  "\n"),
-        fmt::join(el.get_edges()
-                      | std::views::transform([&](auto&& arg) { return fmt::format("n{} -- n{};", arg.get_src().get_index(), arg.get_dst().get_index()); }),
-                  "\n"));
+    // fmt::print(
+    //     os,
+    //     "graph Tree {{\n\n{}\n\n{}\n}}",
+    //     fmt::join(el.get_vertices() | std::views::transform([&](auto&& arg) { return fmt::format("n{} [label=\"{}\"];", arg.get_index(), to_string(arg)); }),
+    //               "\n"),
+    //     fmt::join(el.get_edges()
+    //                   | std::views::transform([&](auto&& arg) { return fmt::format("n{} -- n{};", arg.get_src().get_index(), arg.get_dst().get_index()); }),
+    //               "\n"));
 
     return os;
 }

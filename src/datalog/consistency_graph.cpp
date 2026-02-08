@@ -679,22 +679,12 @@ ConjunctiveCondition(
 In the example above, there exist many pairs of variables are unrestricted by static literals, resulting in dense reguiosn
 
  */
-std::tuple<std::vector<uint_t>, std::vector<uint_t>, std::vector<uint_t>, kpkc::PartitionedAdjacencyMatrix>
-StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
-                                      const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
-                                      const details::Vertices& vertices,
-                                      const std::vector<std::vector<uint_t>>& vertex_partitions)
+kpkc::PartitionedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
+                                                                       const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
+                                                                       const details::Vertices& vertices,
+                                                                       const std::vector<std::vector<uint_t>>& vertex_partitions)
 {
     const auto k = vertex_partitions.size();
-
-    auto row_data = std::vector<uint_t> {};
-    auto row_offsets = std::vector<uint_t> {};
-
-    auto sources = std::vector<uint_t> {};
-    auto target_offsets = std::vector<uint_t> {};
-    target_offsets.reserve(vertices.size() + 1);
-    target_offsets.push_back(0);
-    auto targets = std::vector<uint_t> {};
 
     auto adj_matrix = kpkc::PartitionedAdjacencyMatrix(vertex_partitions);
 
@@ -705,8 +695,6 @@ StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::St
             for (const auto first_index : vertex_partitions[pi])
             {
                 const auto& first_vertex = vertices.at(first_index);
-
-                const auto targets_before = targets.size();
 
                 const uint_t start_p = pi + 1;
 
@@ -728,8 +716,6 @@ StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::St
                         // Part 1 of definition of substitution consistency graph (Stahlberg-ecai2023): exclude I^\neq
                         if (edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
                         {
-                            targets.push_back(second_index);
-
                             adj_matrix.add_target(second_index);
                         }
                     }
@@ -738,17 +724,11 @@ StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::St
                 }
 
                 adj_matrix.finish_row();
-
-                if (targets_before < targets.size())
-                {
-                    sources.push_back(first_index);
-                    target_offsets.push_back(targets.size());
-                }
             }
         }
     }
 
-    return { std::move(sources), std::move(target_offsets), std::move(targets), std::move(adj_matrix) };
+    return adj_matrix;
 }
 
 template<formalism::FactKind T>
@@ -1099,13 +1079,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
     m_vertex_partitions = std::move(vertex_partitions_);
     m_object_to_vertex_partitions = std::move(object_to_vertex_partitions_);
 
-    auto [sources_, target_offsets_, targets_, adj_matrix_] =
-        compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
-
-    m_sources = std::move(sources_);
-    m_target_offsets = std::move(target_offsets_);
-    m_targets = std::move(targets_);
-    m_adj_matrix = std::move(adj_matrix_);
+    m_adj_matrix = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
 
     // std::cout << "Num vertices: " << m_vertices.size() << " num edges: " << m_targets.size() << std::endl;
 
@@ -1130,7 +1104,7 @@ const details::Vertex& StaticConsistencyGraph::get_vertex(formalism::ParameterIn
 
 size_t StaticConsistencyGraph::get_num_vertices() const noexcept { return m_vertices.size(); }
 
-size_t StaticConsistencyGraph::get_num_edges() const noexcept { return m_targets.size(); }
+size_t StaticConsistencyGraph::get_num_edges() const noexcept { return m_adj_matrix.num_edges(); }
 
 View<Index<fd::Rule>, fd::Repository> StaticConsistencyGraph::get_rule() const noexcept { return m_rule; }
 
@@ -1143,62 +1117,6 @@ const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_object_to_ve
 const details::IndexedAnchors& StaticConsistencyGraph::get_predicate_to_anchors() const noexcept { return m_predicate_to_anchors; }
 
 const kpkc::PartitionedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_adj_matrix; }
-
-/**
- * EdgeIterator
- */
-
-const StaticConsistencyGraph& StaticConsistencyGraph::EdgeIterator::get_graph() const noexcept
-{
-    assert(m_graph);
-    return *m_graph;
-}
-
-void StaticConsistencyGraph::EdgeIterator::advance() noexcept
-{
-    ++m_index;
-
-    if (++m_targets_pos >= get_graph().m_target_offsets[m_sources_pos + 1])
-        ++m_sources_pos;
-}
-
-StaticConsistencyGraph::EdgeIterator::EdgeIterator() noexcept : m_graph(nullptr), m_index(0), m_sources_pos(0), m_targets_pos(0) {}
-
-StaticConsistencyGraph::EdgeIterator::EdgeIterator(const StaticConsistencyGraph& graph, bool begin) noexcept :
-    m_graph(&graph),
-    m_index(begin ? 0 : graph.get_num_edges()),
-    m_sources_pos(begin ? 0 : graph.m_sources.size()),
-    m_targets_pos(begin ? 0 : graph.m_targets.size())
-{
-}
-
-StaticConsistencyGraph::EdgeIterator::value_type StaticConsistencyGraph::EdgeIterator::operator*() const noexcept
-{
-    assert(m_index < get_graph().get_num_edges());
-    assert(m_sources_pos < get_graph().m_sources.size());
-    assert(m_targets_pos < get_graph().m_targets.size());
-    return details::Edge(m_index, get_graph().m_vertices[get_graph().m_sources[m_sources_pos]], get_graph().m_vertices[get_graph().m_targets[m_targets_pos]]);
-}
-
-StaticConsistencyGraph::EdgeIterator& StaticConsistencyGraph::EdgeIterator::operator++() noexcept
-{
-    advance();
-    return *this;
-}
-
-StaticConsistencyGraph::EdgeIterator StaticConsistencyGraph::EdgeIterator::operator++(int) noexcept
-{
-    EdgeIterator tmp = *this;
-    ++(*this);
-    return tmp;
-}
-
-bool StaticConsistencyGraph::EdgeIterator::operator==(const StaticConsistencyGraph::EdgeIterator& other) const noexcept
-{
-    return m_index == other.m_index && m_targets_pos == other.m_targets_pos && m_sources_pos == other.m_sources_pos;
-}
-
-bool StaticConsistencyGraph::EdgeIterator::operator!=(const StaticConsistencyGraph::EdgeIterator& other) const noexcept { return !(*this == other); }
 
 std::pair<Index<fd::GroundConjunctiveCondition>, bool> create_ground_nullary_condition(View<Index<fd::ConjunctiveCondition>, fd::Repository> condition,
                                                                                        fd::Repository& context)

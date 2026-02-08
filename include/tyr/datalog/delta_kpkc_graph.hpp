@@ -56,15 +56,18 @@ struct PartitionedAdjacencyMatrix
 
     void start_row(uint_t v, uint_t p) noexcept
     {
+        m_row_len_pos = m_data.size();
+        m_row_len = 0;
+        m_data.push_back(0);
         m_data.push_back(v);
         m_data.push_back(p);
     }
 
     void start_partition() noexcept
     {
-        m_len_pos = m_data.size();
+        m_partition_len_pos = m_data.size();
         m_data.push_back(0);
-        m_start_pos = m_data.size();
+        m_partition_data_start_pos = m_data.size();
     }
 
     void add_target(uint_t target) noexcept
@@ -75,22 +78,27 @@ struct PartitionedAdjacencyMatrix
 
     void finish_partition(uint_t p)
     {
-        m_end_pos = m_data.size();
+        m_partition_data_end_pos = m_data.size();
 
-        const auto num_targets = m_end_pos - m_start_pos;
+        const auto num_targets = m_partition_data_end_pos - m_partition_data_start_pos;
         if (num_targets == m_vertex_partitions[p].size())
         {
             // Use partition reference mechanism for dense regions
-            m_data[m_len_pos] = kpkc::PartitionedAdjacencyMatrix::RowView::FULL;
-            m_data.resize(m_len_pos + 1);
+            m_data[m_partition_len_pos] = kpkc::PartitionedAdjacencyMatrix::RowView::FULL;
+            m_data.resize(m_partition_len_pos + 1);
         }
         else
         {
-            m_data[m_len_pos] = num_targets;
+            m_data[m_partition_len_pos] = num_targets;
         }
+        m_row_len += num_targets;
     }
 
-    void finish_row() { m_row_offsets.push_back(m_data.size()); }
+    void finish_row()
+    {
+        m_data[m_row_len_pos] = m_row_len;
+        m_row_offsets.push_back(m_data.size());
+    }
 
     class PartitionView
     {
@@ -114,9 +122,10 @@ struct PartitionedAdjacencyMatrix
     struct RowView
     {
     public:
-        RowView(const PartitionedAdjacencyMatrix& matrix, uint_t row, uint_t v, uint_t p, std::span<const uint_t> data) noexcept :
+        RowView(const PartitionedAdjacencyMatrix& matrix, uint_t row, uint_t len, uint_t v, uint_t p, std::span<const uint_t> data) noexcept :
             m_matrix(matrix),
             m_row(row),
+            m_len(len),
             m_v(v),
             m_p(p),
             m_data(data)
@@ -157,12 +166,14 @@ struct PartitionedAdjacencyMatrix
         }
 
         uint_t row() const noexcept { return m_row; }
+        uint_t len() const noexcept { return m_len; }
         uint_t v() const noexcept { return m_v; }
         uint_t p() const noexcept { return m_p; }
 
     private:
         const PartitionedAdjacencyMatrix& m_matrix;
         uint_t m_row;
+        uint_t m_len;
         uint_t m_v;
         uint_t m_p;
         std::span<const uint_t> m_data;
@@ -187,13 +198,14 @@ struct PartitionedAdjacencyMatrix
             if (start == end)
                 continue;
 
-            const uint_t v = m_data[start];
-            const uint_t p = m_data[start + 1];
-            const uint_t data_start = start + 2;
+            const uint_t len = m_data[start];
+            const uint_t v = m_data[start + 1];
+            const uint_t p = m_data[start + 2];
+            const uint_t data_start = start + 3;
 
             assert(data_start <= end);  ///< start must be equal to end if there is no target
 
-            callback(RowView(*this, row, v, p, std::span<const uint_t>(m_data.data() + data_start, end - data_start)));
+            callback(RowView(*this, row, len, v, p, std::span<const uint_t>(m_data.data() + data_start, end - data_start)));
         }
     }
 
@@ -210,9 +222,11 @@ private:
     uint_t m_num_edges;
     uint_t m_k;
 
-    uint_t m_len_pos;
-    uint_t m_start_pos;
-    uint_t m_end_pos;
+    uint_t m_row_len_pos;
+    uint_t m_row_len;
+    uint_t m_partition_len_pos;
+    uint_t m_partition_data_start_pos;
+    uint_t m_partition_data_end_pos;
 };
 
 struct Vertex
