@@ -49,7 +49,7 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
 
     /// 2. Initialize the full graph
 
-    m_full_graph.reset_vertices();
+    m_full_graph.reset();
 
     // Compute consistent vertices to speed up consistent edges computation
     static_graph.delta_consistent_vertices(assignment_sets,
@@ -114,16 +114,8 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
             {
                 // Enforce vertices adjacent to delta edges as delta vertices.
                 // This wont affect the k = 1 case.
-                if (!m_delta_graph.vertices.test(first_index))
-                {
-                    m_delta_graph.vertices.set(first_index);
-                    m_full_graph.reset_adjacency_row(first_index);
-                }
-                if (!m_delta_graph.vertices.test(second_index))
-                {
-                    m_delta_graph.vertices.set(second_index);
-                    m_full_graph.reset_adjacency_row(second_index);
-                }
+                m_delta_graph.vertices.set(first_index);
+                m_delta_graph.vertices.set(second_index);
 
                 auto& first_partition_row = m_delta_graph.partition_vertices_data;
                 auto& second_partition_row = m_delta_graph.partition_vertices_data;

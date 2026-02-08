@@ -312,18 +312,6 @@ struct Graph
 
     explicit Graph(const GraphLayout& cg);
 
-    void reset_vertices() noexcept
-    {
-        vertices.reset();
-        partition_vertices_data.assign(partition_vertices_data.size(), 0);
-    }
-
-    void reset_adjacency_row(uint_t v) noexcept
-    {
-        auto adj_list_row = partition_adjacency_matrix_span(v);
-        std::fill(adj_list_row.data(), adj_list_row.data() + adj_list_row.size(), uint64_t { 0 });
-    }
-
     void reset() noexcept
     {
         vertices.reset();
