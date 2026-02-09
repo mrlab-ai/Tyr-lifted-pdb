@@ -219,11 +219,19 @@ std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el)
     fmt::print(os,
                "[RuleStatistics] Num executions: {}\n"
                "[RuleStatistics] Num bindings: {}\n"
-               "[RuleStatistics] T_par - wallclock time inside parallel: {} ms\n"
-               "[RuleStatistics] T_toal - wallclock time total: {} ms\n",
+               "[RuleStatistics] T_initialize_delta_kpkc - total wallclock time inside initialization of delta kpkc: {} ms\n"
+               "[RuleStatistics] T_process_generate - wallclock time to process generate: {} ms\n"
+               "[RuleStatistics] T_generate_clique - total wallclock time inside generate clique: {} ms\n"
+               "[RuleStatistics] T_process_pending - wallclock time to process pending: {} ms\n"
+               "[RuleStatistics] T_process_clique -  wallclock time inside process clique: {} ms\n"
+               "[RuleStatistics] T_total - wallclock time total: {} ms\n",
                el.num_executions,
                el.num_bindings,
-               to_ms(el.parallel_time),
+               to_ms(el.initialize_time),
+               to_ms(el.process_generate_time),
+               to_ms(el.generate_clique_time),
+               to_ms(el.process_pending_time),
+               to_ms(el.process_clique_time),
                to_ms(el.total_time));
 
     return os;
@@ -231,50 +239,48 @@ std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el)
 
 std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& el)
 {
-    const double tot_parallel_max_ms = static_cast<double>(to_ms(el.tot_parallel_time_max));
-    const double tot_parallel_med_ms = static_cast<double>(to_ms(el.tot_parallel_time_median));
-    const double tot_skew = tot_parallel_max_ms > 0.0 && tot_parallel_med_ms > 0.0 ? tot_parallel_max_ms / tot_parallel_med_ms : 1.0;
+    const double tot_max_ms = static_cast<double>(to_ms(el.tot_time_max));
+    const double tot_med_ms = static_cast<double>(to_ms(el.tot_time_median));
+    const double tot_skew = tot_max_ms > 0.0 && tot_med_ms > 0.0 ? tot_max_ms / tot_med_ms : 1.0;
 
-    const double avg_parallel_max_ns = static_cast<double>(el.avg_parallel_time_max.count());
-    const double avg_parallel_med_ns = static_cast<double>(el.avg_parallel_time_median.count());
-    const double avg_skew = avg_parallel_max_ns > 0.0 && avg_parallel_med_ns > 0.0 ? avg_parallel_max_ns / avg_parallel_med_ns : 1.0;
+    const double avg_max_ns = static_cast<double>(el.avg_time_max.count());
+    const double avg_med_ns = static_cast<double>(el.avg_time_median.count());
+    const double avg_skew = avg_max_ns > 0.0 && avg_med_ns > 0.0 ? avg_max_ns / avg_med_ns : 1.0;
 
     fmt::print(os,
                "[AggregatedRuleStatistics] Number of executions: {}\n"
                "[AggregatedRuleStatistics] Number of bindings: {}\n"
                "[AggregatedRuleStatistics] Number of samples: {}\n"
-               "[AggregatedRuleStatistics] T_clique - total wallclock time inside generate clique: {} ms\n"
-               "[AggregatedRuleStatistics] T_initialize - total wallclock time inside initialization of delta kpkc: {} ms\n"
-               "[AggregatedRuleStatistics] T_clear_iteration - total wallclock time inside clear iteration: {} ms\n"
+               "[AggregatedRuleStatistics] T_initialize_delta_kpkc - total wallclock time inside initialization of delta kpkc: {} ms\n"
                "[AggregatedRuleStatistics] T_process_generate - wallclock time to process generate: {} ms\n"
+               "[AggregatedRuleStatistics] T_generate_clique - total wallclock time inside generate clique: {} ms\n"
                "[AggregatedRuleStatistics] T_process_pending - wallclock time to process pending: {} ms\n"
-               "[AggregatedRuleStatistics] T_par - total wallclock time inside parallel: {} ms\n"
+               "[AggregatedRuleStatistics] T_process_clique -  wallclock time inside process clique: {} ms\n"
                "[AggregatedRuleStatistics] T_total - total wallclock time: {} ms\n"
-               "[AggregatedRuleStatistics] T_tot_min_par - minimum total wallclock time inside parallel: {} ms\n"
-               "[AggregatedRuleStatistics] T_tot_max_par - maximum total wallclock time inside parallel: {} ms\n"
-               "[AggregatedRuleStatistics] T_tot_med_par - median total wallclock time inside parallel: {} ms\n"
-               "[AggregatedRuleStatistics] T_tot_max_par / T_tot_med_par - Total skew: {:.2f}\n"
-               "[AggregatedRuleStatistics] T_avg_min_par - minimum average wallclock time inside parallel: {} ns\n"
-               "[AggregatedRuleStatistics] T_avg_max_par - maximum average wallclock time inside parallel: {} ns\n"
-               "[AggregatedRuleStatistics] T_avg_med_par - median average wallclock time inside parallel: {} ns\n"
-               "[AggregatedRuleStatistics] T_avg_max_par / T_avg_med_par - Average skew: {:.2f}",
+               "[AggregatedRuleStatistics] T_total_min - minimum total wallclock time inside parallel: {} ms\n"
+               "[AggregatedRuleStatistics] T_total_max - maximum total wallclock time inside parallel: {} ms\n"
+               "[AggregatedRuleStatistics] T_total_med - median total wallclock time inside parallel: {} ms\n"
+               "[AggregatedRuleStatistics] T_total_max / T_total_med_par - Total skew: {:.2f}\n"
+               "[AggregatedRuleStatistics] T_avg_min - minimum average wallclock time inside parallel: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_max - maximum average wallclock time inside parallel: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_med - median average wallclock time inside parallel: {} ns\n"
+               "[AggregatedRuleStatistics] T_avg_max / T_avg_med_par - Average skew: {:.2f}",
                el.num_executions,
                el.num_bindings,
                el.sample_count,
-               to_ms(el.generate_clique_time),
                to_ms(el.initialize_time),
-               to_ms(el.clear_iteration_time),
                to_ms(el.process_generate_time),
+               to_ms(el.generate_clique_time),
                to_ms(el.process_pending_time),
-               to_ms(el.parallel_time),
+               to_ms(el.process_clique_time),
                to_ms(el.total_time),
-               to_ms(el.tot_parallel_time_min),
-               to_ms(el.tot_parallel_time_max),
-               to_ms(el.tot_parallel_time_median),
+               to_ms(el.tot_time_min),
+               to_ms(el.tot_time_max),
+               to_ms(el.tot_time_median),
                tot_skew,
-               el.avg_parallel_time_min.count(),
-               el.avg_parallel_time_max.count(),
-               el.avg_parallel_time_median.count(),
+               el.avg_time_min.count(),
+               el.avg_time_max.count(),
+               el.avg_time_median.count(),
                avg_skew);
 
     return os;

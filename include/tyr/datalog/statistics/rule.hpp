@@ -32,10 +32,9 @@ struct RuleStatistics
     uint64_t num_bindings = 0;
     std::chrono::nanoseconds generate_clique_time { 0 };
     std::chrono::nanoseconds initialize_time { 0 };
-    std::chrono::nanoseconds clear_iteration_time { 0 };
     std::chrono::nanoseconds process_generate_time { 0 };
     std::chrono::nanoseconds process_pending_time { 0 };
-    std::chrono::nanoseconds parallel_time { 0 };
+    std::chrono::nanoseconds process_clique_time { 0 };
     std::chrono::nanoseconds total_time { 0 };
 };
 
@@ -53,19 +52,18 @@ struct AggregatedRuleStatistics
     uint64_t num_bindings = 0;
     std::chrono::nanoseconds generate_clique_time { 0 };
     std::chrono::nanoseconds initialize_time { 0 };
-    std::chrono::nanoseconds clear_iteration_time { 0 };
     std::chrono::nanoseconds process_generate_time { 0 };
     std::chrono::nanoseconds process_pending_time { 0 };
-    std::chrono::nanoseconds parallel_time { 0 };
+    std::chrono::nanoseconds process_clique_time { 0 };
     std::chrono::nanoseconds total_time { 0 };
 
     size_t sample_count { 0 };
-    std::chrono::nanoseconds tot_parallel_time_min { 0 };
-    std::chrono::nanoseconds tot_parallel_time_max { 0 };
-    std::chrono::nanoseconds tot_parallel_time_median { 0 };
-    std::chrono::nanoseconds avg_parallel_time_min { 0 };
-    std::chrono::nanoseconds avg_parallel_time_max { 0 };
-    std::chrono::nanoseconds avg_parallel_time_median { 0 };
+    std::chrono::nanoseconds tot_time_min { 0 };
+    std::chrono::nanoseconds tot_time_max { 0 };
+    std::chrono::nanoseconds tot_time_median { 0 };
+    std::chrono::nanoseconds avg_time_min { 0 };
+    std::chrono::nanoseconds avg_time_max { 0 };
+    std::chrono::nanoseconds avg_time_median { 0 };
 };
 
 struct AggregatedRuleWorkerStatistics
@@ -90,15 +88,14 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
         if (rs.num_executions == 0)
             continue;
 
-        samples.push_back(rs.parallel_time);
-        avg_samples.push_back(rs.parallel_time / rs.num_executions);
+        samples.push_back(rs.total_time);
+        avg_samples.push_back(rs.total_time / rs.num_executions);
         result.num_executions += rs.num_executions;
         result.num_bindings += rs.num_bindings;
         result.generate_clique_time += rs.generate_clique_time;
-        result.parallel_time += rs.parallel_time;
+        result.process_clique_time += rs.process_clique_time;
         result.total_time += rs.total_time;
         result.initialize_time += rs.initialize_time;
-        result.clear_iteration_time += rs.clear_iteration_time;
         result.process_generate_time += rs.process_generate_time;
         result.process_pending_time += rs.process_pending_time;
     }
@@ -110,29 +107,29 @@ inline AggregatedRuleStatistics compute_aggregated_rule_statistics(const std::ve
     std::sort(samples.begin(), samples.end(), [](auto a, auto b) { return a.count() < b.count(); });
     std::sort(avg_samples.begin(), avg_samples.end(), [](auto a, auto b) { return a.count() < b.count(); });
 
-    result.tot_parallel_time_min = samples.front();
-    result.tot_parallel_time_max = samples.back();
+    result.tot_time_min = samples.front();
+    result.tot_time_max = samples.back();
 
-    result.avg_parallel_time_min = avg_samples.front();
-    result.avg_parallel_time_max = avg_samples.back();
+    result.avg_time_min = avg_samples.front();
+    result.avg_time_max = avg_samples.back();
 
     const std::size_t n = samples.size();
     if (n % 2 == 1)
     {
-        result.tot_parallel_time_median = samples[n / 2];
-        result.avg_parallel_time_median = avg_samples[n / 2];
+        result.tot_time_median = samples[n / 2];
+        result.avg_time_median = avg_samples[n / 2];
     }
     else
     {
         {
             const auto a = samples[n / 2 - 1].count();
             const auto b = samples[n / 2].count();
-            result.tot_parallel_time_median = std::chrono::nanoseconds { (a + b) / 2 };
+            result.tot_time_median = std::chrono::nanoseconds { (a + b) / 2 };
         }
         {
             const auto a = avg_samples[n / 2 - 1].count();
             const auto b = avg_samples[n / 2].count();
-            result.avg_parallel_time_median = std::chrono::nanoseconds { (a + b) / 2 };
+            result.avg_time_median = std::chrono::nanoseconds { (a + b) / 2 };
         }
     }
 

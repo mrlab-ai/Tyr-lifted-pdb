@@ -215,31 +215,33 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 
     const bool do_parallel_inner = (kpkc_cliques.size() >= PAR_THRESHOLD) && (arena_conc >= 2);
 
-    if (do_parallel_inner)
     {
-        const auto rule_stopwatch = StopwatchScope(rctx.ws_rule.common.statistics.parallel_time);
+        const auto rule_stopwatch = StopwatchScope(rctx.ws_rule.common.statistics.process_clique_time);
 
-        oneapi::tbb::parallel_for(oneapi::tbb::blocked_range<size_t>(0, kpkc_cliques.size(), GRAIN),
-                                  [&](const oneapi::tbb::blocked_range<size_t>& r)
-                                  {
-                                      auto wrctx = rctx.get_rule_worker_execution_context();
-                                      auto& out = wrctx.out();
-                                      const auto rule_stopwatch = StopwatchScope(out.statistics().total_time);
-                                      ++out.statistics().num_executions;
+        if (do_parallel_inner)
+        {
+            oneapi::tbb::parallel_for(oneapi::tbb::blocked_range<size_t>(0, kpkc_cliques.size(), GRAIN),
+                                      [&](const oneapi::tbb::blocked_range<size_t>& r)
+                                      {
+                                          auto wrctx = rctx.get_rule_worker_execution_context();
+                                          auto& out = wrctx.out();
+                                          const auto rule_stopwatch = StopwatchScope(out.statistics().total_time);
+                                          ++out.statistics().num_executions;
 
-                                      for (size_t i = r.begin(); i != r.end(); ++i)
-                                          process_clique(wrctx, kpkc_cliques[i]);
-                                  });
-    }
-    else
-    {
-        auto wrctx = rctx.get_rule_worker_execution_context();
-        auto& out = wrctx.out();
-        const auto rule_stopwatch = StopwatchScope(out.statistics().total_time);
-        ++out.statistics().num_executions;
+                                          for (size_t i = r.begin(); i != r.end(); ++i)
+                                              process_clique(wrctx, kpkc_cliques[i]);
+                                      });
+        }
+        else
+        {
+            auto wrctx = rctx.get_rule_worker_execution_context();
+            auto& out = wrctx.out();
+            const auto rule_stopwatch = StopwatchScope(out.statistics().total_time);
+            ++out.statistics().num_executions;
 
-        for (size_t i = 0; i < kpkc_cliques.size(); ++i)
-            process_clique(wrctx, kpkc_cliques[i]);
+            for (size_t i = 0; i < kpkc_cliques.size(); ++i)
+                process_clique(wrctx, kpkc_cliques[i]);
+        }
     }
 }
 
@@ -352,11 +354,7 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                                                const auto total_time = StopwatchScope(rctx.ws_rule.common.statistics.total_time);
                                                ++rctx.ws_rule.common.statistics.num_executions;
 
-                                               {
-                                                   const auto clear_iteration_time = StopwatchScope(rctx.ws_rule.common.statistics.clear_iteration_time);
-
-                                                   rctx.clear_iteration();  ///< Clear iteration before process_pending/generate
-                                               }
+                                               rctx.clear_iteration();  ///< Clear iteration before process_pending/generate
 
                                                {
                                                    const auto initialize_time = StopwatchScope(rctx.ws_rule.common.statistics.initialize_time);

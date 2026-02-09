@@ -40,9 +40,11 @@ DeltaKPKC::DeltaKPKC(GraphLayout const_graph, Graph delta_graph, Graph full_grap
 {
 }
 
-void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSets& assignment_sets)
+std::pair<size_t, size_t> DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSets& assignment_sets)
 {
     ++m_iteration;
+
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 
     // Backup old graph
     std::swap(m_delta_graph, m_full_graph);
@@ -87,6 +89,8 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
         full_partition |= delta_partition;
     }
 
+    auto num_delta_edges = size_t { 0 };
+
     // Initialize adjacency matrix: Add consistent undirected edges to adj matrix.
     static_graph.delta_consistent_edges(
         assignment_sets,
@@ -94,6 +98,8 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
         m_full_graph.vertices,
         [&](auto&& edge)
         {
+            ++num_delta_edges;
+
             const auto first_index = edge.get_src().get_index();
             const auto second_index = edge.get_dst().get_index();
             // Enforce invariant of static consistency graph
@@ -153,6 +159,13 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
             full_v_adj_list |= delta_v_adj_list;
         }
     }
+
+    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+    std::cout << "Delta KPKC: " << static_graph.get_num_edges() << " edges, " << num_delta_edges << " delta edges" << std::endl;
+    std::cout << "Delta KPKC computation time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() << " ns" << std::endl;
+
+    return { static_graph.get_num_edges(), num_delta_edges };
 }
 
 void DeltaKPKC::reset()
