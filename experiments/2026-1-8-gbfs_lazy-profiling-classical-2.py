@@ -129,6 +129,9 @@ ATTRIBUTES = [
     "axiom_rule_avg_max_ms",
     "axiom_rule_avg_med_ms",
     "axiom_rule_avg_min_ms",
+    "axiom_num_adj_partitions",
+    "axiom_num_unique_adj_partitions",
+    Attribute("axiom_frac_adj_partitions", function=geometric_mean),
 
 
     Attribute("ff_par_frac", function=geometric_mean, min_wins=False),
@@ -151,6 +154,9 @@ ATTRIBUTES = [
     "ff_rule_avg_max_ms",
     "ff_rule_avg_med_ms",
     "ff_rule_avg_min_ms",
+    "ff_num_adj_partitions",
+    "ff_num_unique_adj_partitions",
+    Attribute("ff_frac_adj_partitions", function=geometric_mean),
 
 
     Attribute("succgen_par_frac", function=geometric_mean, min_wins=False),
@@ -173,6 +179,9 @@ ATTRIBUTES = [
     "succgen_rule_avg_max_ms",
     "succgen_rule_avg_med_ms",
     "succgen_rule_avg_min_ms",
+    "succgen_num_adj_partitions",
+    "succgen_num_unique_adj_partitions",
+    Attribute("succgen_frac_adj_partitions", function=geometric_mean),
 ]
 
 MEMORY_LIMIT = 5000

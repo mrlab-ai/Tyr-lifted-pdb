@@ -257,6 +257,10 @@ std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& e
     const double avg_med_ns = static_cast<double>(el.avg_time_median.count());
     const double avg_skew = avg_max_ns > 0.0 && avg_med_ns > 0.0 ? avg_max_ns / avg_med_ns : 1.0;
 
+    const double num_adj_partitions = static_cast<double>(el.num_adj_partitions);
+    const double num_unique_adj_partitions = static_cast<double>(el.num_unique_adj_partitions);
+    const double frac = num_adj_partitions > 0.0 && num_unique_adj_partitions > 0.0 ? num_unique_adj_partitions / num_adj_partitions : 1.0;
+
     fmt::print(os,
                "[AggregatedRuleStatistics] Number of executions: {}\n"
                "[AggregatedRuleStatistics] Number of bindings: {}\n"
@@ -274,7 +278,10 @@ std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& e
                "[AggregatedRuleStatistics] T_avg_min - minimum average wallclock time inside parallel: {} ms ({} ns)\n"
                "[AggregatedRuleStatistics] T_avg_max - maximum average wallclock time inside parallel: {} ms ({} ns)\n"
                "[AggregatedRuleStatistics] T_avg_med - median average wallclock time inside parallel: {} ms ({} ns)\n"
-               "[AggregatedRuleStatistics] T_avg_max / T_avg_med_par - Average skew: {:.2f}",
+               "[AggregatedRuleStatistics] T_avg_max / T_avg_med_par - Average skew: {:.2f}\n"
+               "[AggregatedRuleStatistics] Num adj partitions: {}\n"
+               "[AggregatedRuleStatistics] Num unique adj partitions: {}\n"
+               "[AggregatedRuleStatistics] Frac of unique adj partitions: {:.4f}",
                el.num_executions,
                el.num_bindings,
                el.sample_count,
@@ -303,7 +310,10 @@ std::ostream& print(std::ostream& os, const datalog::AggregatedRuleStatistics& e
                to_ns(el.avg_time_max),
                to_ms(el.avg_time_median),
                to_ns(el.avg_time_median),
-               avg_skew);
+               avg_skew,
+               el.num_adj_partitions,
+               el.num_unique_adj_partitions,
+               frac);
 
     return os;
 }

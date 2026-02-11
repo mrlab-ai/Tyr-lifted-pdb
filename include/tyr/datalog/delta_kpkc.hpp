@@ -24,6 +24,7 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc_graph.hpp"
 #include "tyr/datalog/formatter.hpp"
+#include "tyr/datalog/statistics/rule.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 #include <cstddef>
@@ -94,7 +95,7 @@ public:
 
     /// @brief Set new fact set to compute deltas.
     /// @param assignment_sets
-    std::pair<size_t, size_t> set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSets& assignment_sets);
+    SetNewAssignmentSetsStatistics set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSets& assignment_sets);
 
     /// @brief Reset should be called before first iteration.
     void reset();

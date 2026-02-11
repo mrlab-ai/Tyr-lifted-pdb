@@ -65,6 +65,9 @@ RE_AVG_MIN = re.compile(r'^\[AggregatedRuleStatistics\]\s+T_avg_min\s*-\s*.*:\s*
 RE_AVG_MAX = re.compile(r'^\[AggregatedRuleStatistics\]\s+T_avg_max\s*-\s*.*:\s*(?P<ms>\d+)\s*ms(?:\s*\(\s*(?P<ns>\d+)\s*ns\s*\))?\s*$')
 RE_AVG_MED = re.compile(r'^\[AggregatedRuleStatistics\]\s+T_avg_med\s*-\s*.*:\s*(?P<ms>\d+)\s*ms(?:\s*\(\s*(?P<ns>\d+)\s*ns\s*\))?\s*$')
 
+RE_ADJ_PART = re.compile(r'^\[AggregatedRuleStatistics\]\s+Num adj partitions: (?:(?P<v>\d+))?\s*$')
+RE_UNIQUE_ADJ_PART = re.compile(r'^\[AggregatedRuleStatistics\]\s+Num unique adj partitions: (?:(?P<v>\d+))?\s*$')
+RE_FRAC_ADJ_PART = re.compile(r'^\[AggregatedRuleStatistics\]\s+Frac of unique adj partitions: (?:(?P<v>.+))?\s*$')
 
 # Skews
 RE_TOT_SKEW = re.compile(
@@ -139,6 +142,15 @@ def parse_datalog_summaries(content: str, props: dict):
 
         m = RE_RULE_SAMPLES.match(line)
         if m: put("rule_samples", int(m.group("v"))); continue
+
+        m = RE_ADJ_PART.match(line)
+        if m: put("num_adj_partitions", int(m.group("v"))); continue
+
+        m = RE_UNIQUE_ADJ_PART.match(line)
+        if m: put("num_unique_adj_partitions", int(m.group("v"))); continue
+
+        m = RE_FRAC_ADJ_PART.match(line)
+        if m: put("frac_adj_partitions", float(m.group("v"))); continue
 
         # Min/med/max totals (ms) + optional ns
         m = RE_TOT_MIN_MS.match(line)

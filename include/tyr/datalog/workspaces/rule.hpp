@@ -169,7 +169,7 @@ struct RuleWorkspace
     {
         explicit Common(const formalism::datalog::Repository& program_repository, const StaticConsistencyGraph& static_consistency_graph);
 
-        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
+        SetNewAssignmentSetsStatistics initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
 
         void clear() noexcept;
 
@@ -304,9 +304,10 @@ void RuleWorkspace<AndAP>::Common::clear() noexcept
 }
 
 template<typename AndAP>
-void RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets)
+SetNewAssignmentSetsStatistics RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
+                                                                                  const AssignmentSets& assignment_sets)
 {
-    kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
+    return kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
 }
 
 template<typename AndAP>
