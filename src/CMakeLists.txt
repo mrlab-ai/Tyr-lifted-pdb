@@ -57,6 +57,8 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/programs/rpg.cpp
     planning/programs/ground.cpp
 
+    planning/algorithms/astar_eager.cpp
+    planning/algorithms/astar_eager/event_handler.cpp
     planning/algorithms/gbfs_lazy.cpp
     planning/algorithms/gbfs_lazy/event_handler.cpp
 

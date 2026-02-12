@@ -61,6 +61,18 @@ class Plan;
 
 class Statistics;
 
+namespace astar_eager
+{
+template<typename Task>
+class EventHandler;
+template<typename Task>
+using EventHandlerPtr = std::shared_ptr<EventHandler<Task>>;
+template<typename Task>
+class DefaultEventHandler;
+template<typename Task>
+using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Task>>;
+}
+
 namespace gbfs_lazy
 {
 template<typename Task>
@@ -68,14 +80,9 @@ class EventHandler;
 template<typename Task>
 using EventHandlerPtr = std::shared_ptr<EventHandler<Task>>;
 template<typename Task>
-class DebugEventHandler;
-template<typename Task>
-using DebugEventHandlerPtr = std::shared_ptr<DebugEventHandler<Task>>;
-template<typename Task>
 class DefaultEventHandler;
 template<typename Task>
 using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Task>>;
-
 }
 }
 
