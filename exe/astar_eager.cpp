@@ -87,7 +87,15 @@ int main(int argc, char** argv)
         options.random_seed = random_seed;
         options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
-        auto ff_heuristic = planning::FFRPGHeuristic<planning::LiftedTask>::create(lifted_task, execution_context);
+        auto patterns = planning::PatternGenerator<planning::LiftedTask>(*lifted_task).generate();
+        print(std::cout, patterns);
+        std::cout << std::endl;
+
+        // auto projections = planning::ProjectionGenerator<planning::LiftedTask>(*lifted_task, patterns);
+        // auto canonical_heuristic = planning::CanonicalHeuristic::create(*lifted_task, projections);
+        // auto scp_heuristic = planning::SaturatedCostPartitioningHeuristic::create(*lifted_task, projections);
+
+        auto ff_heuristic = planning::FFHeuristic<planning::LiftedTask>::create(lifted_task, execution_context);
 
         auto result = planning::astar_eager::find_solution(*lifted_task, successor_generator, *ff_heuristic, options);
 
