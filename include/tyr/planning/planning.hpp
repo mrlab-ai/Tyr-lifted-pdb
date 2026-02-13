@@ -39,6 +39,8 @@
 #include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/planning/heuristics/goal_count.hpp"
 #include "tyr/planning/lifted_task.hpp"
+#include "tyr/planning/lifted_task/abstractions/pattern_generator.hpp"
+#include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 #include "tyr/planning/lifted_task/axiom_evaluator.hpp"
 #include "tyr/planning/lifted_task/heuristics/rpg_add.hpp"
 #include "tyr/planning/lifted_task/heuristics/rpg_ff.hpp"
