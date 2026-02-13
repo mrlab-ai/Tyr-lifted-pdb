@@ -76,8 +76,8 @@ int main(int argc, char** argv)
         options.event_handler = planning::astar_eager::DefaultEventHandler<planning::LiftedTask>::create(verbosity);
 
         auto patterns = planning::PatternGenerator<planning::LiftedTask>(*lifted_task).generate();
-        print(std::cout, patterns);
-        std::cout << std::endl;
+        // print(std::cout, patterns);
+        // std::cout << std::endl;
 
         // auto projections = planning::ProjectionGenerator<planning::LiftedTask>(*lifted_task, patterns);
         // auto canonical_heuristic = planning::CanonicalHeuristic::create(*lifted_task, projections);
