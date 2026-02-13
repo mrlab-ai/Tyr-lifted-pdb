@@ -37,7 +37,8 @@ PredicateFactSet<T>::PredicateFactSet(View<Index<formalism::Predicate<T>>, forma
     m_predicate(predicate.get_index()),
     m_context(predicate.get_context()),
     m_indices(),
-    m_bitset()
+    m_bitset(),
+    m_columns(predicate.get_arity())
 {
 }
 
@@ -46,6 +47,8 @@ void PredicateFactSet<T>::reset()
 {
     m_indices.clear();
     m_bitset.reset();
+    for (auto& column : m_columns)
+        column.clear();
 }
 
 template<f::FactKind T>
@@ -54,10 +57,16 @@ void PredicateFactSet<T>::insert(Index<formalism::datalog::GroundAtom<T>> ground
     if (ground_atom.value >= m_bitset.size())
         m_bitset.resize(ground_atom.value + 1, false);
 
-    if (!m_bitset.test(ground_atom.value))
-        m_indices.push_back(ground_atom);
+    if (m_bitset.test(ground_atom.value))
+        return;
 
+    m_indices.push_back(ground_atom);
     m_bitset.set(ground_atom.value);
+
+    const auto objs = make_view(ground_atom, m_context).get_objects().get_data();
+    assert(m_columns.size() == objs.size());
+    for (size_t pos = 0; pos < objs.size(); ++pos)
+        m_columns[pos].push_back(objs[pos]);
 }
 
 template<f::FactKind T>
@@ -66,7 +75,21 @@ void PredicateFactSet<T>::insert(View<Index<fd::GroundAtom<T>>, fd::Repository> 
     if (&m_context != &ground_atom.get_context())
         throw std::runtime_error("Incompatible contexts.");
 
-    return insert(ground_atom.get_index());
+    const auto ground_atom_index = ground_atom.get_index();
+
+    if (ground_atom_index.value >= m_bitset.size())
+        m_bitset.resize(ground_atom_index.value + 1, false);
+
+    if (m_bitset.test(ground_atom_index.value))
+        return;
+
+    m_indices.push_back(ground_atom_index);
+    m_bitset.set(ground_atom_index.value);
+
+    const auto objs = ground_atom.get_objects().get_data();
+    assert(m_columns.size() == objs.size());
+    for (size_t pos = 0; pos < objs.size(); ++pos)
+        m_columns[pos].push_back(objs[pos]);
 }
 
 template<f::FactKind T>
@@ -94,6 +117,13 @@ template<f::FactKind T>
 View<IndexList<fd::GroundAtom<T>>, fd::Repository> PredicateFactSet<T>::get_facts() const noexcept
 {
     return make_view(m_indices, m_context);
+}
+
+template<f::FactKind T>
+const std::vector<Index<formalism::Object>>& PredicateFactSet<T>::get_column(formalism::ParameterIndex parameter) const noexcept
+{
+    assert(parameter.value < m_columns.size());
+    return m_columns[parameter.value];
 }
 
 template<f::FactKind T>

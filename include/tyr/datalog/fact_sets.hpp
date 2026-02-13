@@ -38,6 +38,8 @@ private:
 
     boost::dynamic_bitset<> m_bitset;
 
+    std::vector<std::vector<Index<formalism::Object>>> m_columns;
+
 public:
     explicit PredicateFactSet(View<Index<formalism::Predicate<T>>, formalism::datalog::Repository> predicate);
 
@@ -54,6 +56,8 @@ public:
     bool contains(View<Index<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> ground_atom) const noexcept;
 
     View<IndexList<formalism::datalog::GroundAtom<T>>, formalism::datalog::Repository> get_facts() const noexcept;
+
+    const std::vector<Index<formalism::Object>>& get_column(formalism::ParameterIndex parameter) const noexcept;
 
     const boost::dynamic_bitset<>& get_bitset() const noexcept;
 };
