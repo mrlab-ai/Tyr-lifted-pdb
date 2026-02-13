@@ -221,6 +221,7 @@ static Index<fp::Task> create_projected_task(View<Index<fp::Task>, fp::Repositor
 
 ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
 
+<<<<<<< HEAD
 static auto project_state(const State<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
 {
     auto uastate = state_repository.get_unregistered_state();
@@ -235,10 +236,13 @@ static auto project_state(const State<LiftedTask>& element, const Pattern& patte
     return state_repository.register_state(uastate);
 }
 
+=======
+>>>>>>> cf76fbf (work on task projection)
 void ProjectionGenerator<LiftedTask>::generate()
 {
     for (const auto& pattern : m_patterns)
     {
+<<<<<<< HEAD
         // Step 1: Create the projected task
         auto repository = std::make_shared<fp::Repository>(m_task.get_repository().get());
         auto projected_task_index = create_projected_task(m_task.get_task(), *repository, pattern);
@@ -315,4 +319,16 @@ void ProjectionGenerator<LiftedTask>::generate()
         std::cout << projection << std::endl;
     }
 }
+=======
+        // TODO: create projected task
+        auto repository = fp::Repository();
+        auto overlay_repository = f::OverlayRepository<f::OverlayRepository<fp::Repository>, fp::Repository>(*m_task.get_repository(), repository);
+        auto projected_task = create_projected_task(m_task.get_task(), overlay_repository, pattern);
+        // TODO: create lifted projected task
+        // TODO: ground lifted projected task
+        // TODO: expand state space
+    }
+}
+
+>>>>>>> cf76fbf (work on task projection)
 }
