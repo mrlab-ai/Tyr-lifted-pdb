@@ -46,6 +46,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/ground_task/state.cpp
     planning/ground_task/successor_generator.cpp
 
+    planning/lifted_task/abstractions/pattern_generator.cpp
     planning/lifted_task/axiom_evaluator.cpp
     planning/lifted_task/node.cpp
     planning/lifted_task/state_repository.cpp

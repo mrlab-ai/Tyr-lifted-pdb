@@ -75,6 +75,14 @@ int main(int argc, char** argv)
         options.start_node = successor_generator.get_initial_node();
         options.event_handler = planning::astar_eager::DefaultEventHandler<planning::LiftedTask>::create(verbosity);
 
+        auto patterns = planning::PatternGenerator<planning::LiftedTask>(*lifted_task).generate();
+        print(std::cout, patterns);
+        std::cout << std::endl;
+
+        // auto projections = planning::ProjectionGenerator<planning::LiftedTask>(*lifted_task, patterns);
+        // auto canonical_heuristic = planning::CanonicalHeuristic::create(*lifted_task, projections);
+        // auto scp_heuristic = planning::SaturatedCostPartitioningHeuristic::create(*lifted_task, projections);
+
         auto ff_heuristic = planning::FFHeuristic<planning::LiftedTask>::create(lifted_task);
         ff_heuristic->set_goal(lifted_task->get_task().get_goal());
 
