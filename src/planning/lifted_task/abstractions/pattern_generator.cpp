@@ -18,8 +18,11 @@
 #include "tyr/planning/lifted_task/abstractions/pattern_generator.hpp"
 
 #include "tyr/common/declarations.hpp"
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
+#include "tyr/formalism/predicate_view.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted_task.hpp"
@@ -36,7 +39,11 @@ PatternCollection PatternGenerator<LiftedTask>::generate()
     for (const auto fact : m_task.get_task().get_goal().get_facts<formalism::FluentTag>())
     {
         auto pattern = Pattern {};
-        pattern.insert(fact.get_data());
+        pattern.facts.insert(fact.get_data());
+        for (const auto atom : fact.get_variable().get_atoms())
+        {
+            pattern.predicates.insert(atom.get_predicate().get_index());
+        }
         patterns.push_back(std::move(pattern));
     }
 
