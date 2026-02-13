@@ -19,10 +19,20 @@
 #define TYR_PLANNING_ABSTRACTIONS_PATTERN_GENERATOR_HPP_
 
 #include "tyr/common/declarations.hpp"
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/fdr_fact_data.hpp"
+#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/planning/declarations.hpp"
 
 namespace tyr::planning
 {
-using Pattern = UnorderedSet<Data<formalism::planning::FDRFact<formalism::FluentTag>>>;
+struct Pattern
+{
+    UnorderedSet<Data<formalism::planning::FDRFact<formalism::FluentTag>>> facts;
+    UnorderedSet<Index<formalism::Predicate<formalism::FluentTag>>> predicates;
+};
 
 using PatternCollection = std::vector<Pattern>;
 
