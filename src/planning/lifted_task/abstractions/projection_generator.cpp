@@ -18,9 +18,14 @@
 #include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 
 #include "tyr/common/declarations.hpp"
+<<<<<<< HEAD
 #include "tyr/common/itertools.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"
+    =======
+#include "tyr/formalism/overlay_repository.hpp"
+#include "tyr/formalism/planning/builder.hpp"
+    >>>>>>> 75f7e95 (work on task projection)
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -37,7 +42,7 @@
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
-namespace f = tyr::formalism;
+    namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
