@@ -22,6 +22,7 @@
 #include "tyr/common/vector.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/datalog/builder.hpp"
 #include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
@@ -126,7 +127,7 @@ concept AndAnnotationPolicyConcept = requires(const T& p,
                                               const OrAnnotationsList& or_annot,
                                               AndAnnotationsMap& and_annot,
                                               HeadToWitness& delta_head_to_witness,
-                                              formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) {
+                                              formalism::datalog::GrounderContext& delta_context) {
     /// Ground the witness and annotate the cost of it from the given annotations.
     {
         p.update_annotation(program_head,
@@ -174,7 +175,7 @@ public:
                            const OrAnnotationsList& or_annot,
                            AndAnnotationsMap& and_annot,
                            HeadToWitness& head_to_witness,
-                           formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) const noexcept
+                           formalism::datalog::GrounderContext& delta_context) const noexcept
     {
     }
 };
@@ -274,7 +275,7 @@ public:
                            const OrAnnotationsList& or_annot,
                            AndAnnotationsMap& and_annot,
                            HeadToWitness& delta_head_to_witness,
-                           formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context) const
+                           formalism::datalog::GrounderContext& delta_context) const
     {
         // Use min among global minimum in cost of last iteration and thread local minimum.
         const auto best_global_cost = fetch_atom_cost(program_head, or_annot);
@@ -315,7 +316,7 @@ private:
     try_ground_better_witness(uint_t best_cost,
                               View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
                               View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> witness_condition,
-                              formalism::datalog::GrounderContext<formalism::datalog::Repository>& delta_context,
+                              formalism::datalog::GrounderContext& delta_context,
                               const formalism::datalog::Repository& program_repository,
                               const OrAnnotationsList& or_annot)
     {

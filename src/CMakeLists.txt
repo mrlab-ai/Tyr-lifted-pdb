@@ -26,6 +26,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     analysis/task_domains.cpp
 
     formalism/datalog/merge.cpp
+    formalism/datalog/grounder.cpp
     formalism/datalog/variable_dependency_graph.cpp
     formalism/planning/fdr_context.cpp
 

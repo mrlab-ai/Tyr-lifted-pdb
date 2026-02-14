@@ -25,6 +25,7 @@
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
+#include "tyr/formalism/datalog/canonicalization.hpp"
 #include "tyr/formalism/datalog/expression_arity.hpp"
 #include "tyr/formalism/datalog/expression_properties.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"

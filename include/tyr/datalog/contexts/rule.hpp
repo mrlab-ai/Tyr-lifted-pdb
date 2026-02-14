@@ -109,9 +109,9 @@ public:
     private:
         RuleWorkspace<AndAP>::Worker& m_ws_worker;
 
-        formalism::datalog::ConstGrounderContext<formalism::datalog::Repository> m_const_ground_context_program;
-        formalism::datalog::GrounderContext<formalism::datalog::Repository> m_ground_context_solve;
-        formalism::datalog::GrounderContext<formalism::datalog::Repository> m_ground_context_iteration;
+        formalism::datalog::ConstGrounderContext m_const_ground_context_program;
+        formalism::datalog::GrounderContext m_ground_context_solve;
+        formalism::datalog::GrounderContext m_ground_context_iteration;
     };
 
     RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP>& rctx, RuleWorkspace<AndAP>::Worker& ws_worker) :
