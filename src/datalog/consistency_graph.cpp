@@ -1064,6 +1064,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
     m_condition(condition),
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition),
+    m_binary_overapproximation_vdg(binary_overapproximation_condition),
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
     m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
@@ -1083,6 +1084,8 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
     m_adj_matrix = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
 
     // std::cout << "Num vertices: " << m_vertices.size() << " num edges: " << m_targets.size() << std::endl;
+
+    // std::cout << m_binary_overapproximation_vdg << std::endl;
 
     // std::cout << std::endl;
     // std::cout << "Unary overapproximation condition" << std::endl;

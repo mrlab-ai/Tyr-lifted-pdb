@@ -24,6 +24,7 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc_graph.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
+#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
@@ -381,6 +382,8 @@ private:
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_condition;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_unary_overapproximation_condition;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_binary_overapproximation_condition;
+
+    formalism::datalog::VariableDependencyGraph m_binary_overapproximation_vdg;
 
     /* The data member of the consistency graph. */
     details::Vertices m_vertices;

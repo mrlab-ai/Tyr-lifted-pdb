@@ -21,6 +21,7 @@
 #include "tyr/common/formatter.hpp"
 #include "tyr/common/iostream.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
+#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 #include "tyr/formalism/formatter.hpp"
 
@@ -36,6 +37,7 @@ namespace tyr
  */
 namespace formalism::datalog
 {
+inline std::ostream& operator<<(std::ostream& os, const VariableDependencyGraph& el);
 
 template<OpKind Op, typename T>
 inline std::ostream& operator<<(std::ostream& os, const Data<UnaryOperator<Op, T>>& el);
@@ -149,6 +151,51 @@ inline std::ostream& operator<<(std::ostream& os, const View<Index<Program>, C>&
 /**
  * Definitions
  */
+
+inline std::ostream& print(std::ostream& os, const formalism::datalog::VariableDependencyGraph& el)
+{
+    os << "graph {\n";
+
+    const auto& adj_matrix = el.get_adj_matrix();
+    const auto k = adj_matrix.k();
+
+    for (uint_t i = 0; i < k; ++i)
+    {
+        fmt::print(os, "n{} [label=\"V{}\"];\n", i, i);
+    }
+
+    for (uint_t i = 0; i < k; ++i)
+    {
+        for (uint_t j = i + 1; j < k; ++j)
+        {
+            const auto& cell = adj_matrix.get_cell(formalism::ParameterIndex(i), formalism::ParameterIndex(j));
+
+            auto labels = std::vector<std::string> {};
+
+            for (const auto& label : cell.get_predicate_labels<formalism::StaticTag, formalism::PositiveTag>())
+                labels.push_back(to_string(label));
+            for (const auto& label : cell.get_predicate_labels<formalism::StaticTag, formalism::NegativeTag>())
+                labels.push_back(to_string(label));
+            for (const auto& label : cell.get_predicate_labels<formalism::FluentTag, formalism::PositiveTag>())
+                labels.push_back(to_string(label));
+            for (const auto& label : cell.get_function_labels<formalism::StaticTag>())
+                labels.push_back(to_string(label));
+            for (const auto& label : cell.get_function_labels<formalism::FluentTag>())
+                labels.push_back(to_string(label));
+            for (const auto& label : cell.get_numeric_constraint_labels())
+                labels.push_back(to_string(label));
+
+            if (!labels.empty())
+            {
+                fmt::print(os, "n{} -- n{} [label=\"{}\\l\"];\n", i, j, fmt::join(labels, "\\l"));
+            }
+        }
+    }
+
+    os << "}\n";
+
+    return os;
+}
 
 template<formalism::OpKind Op, typename T>
 inline std::ostream& print(std::ostream& os, const Data<formalism::datalog::UnaryOperator<Op, T>>& el)
@@ -569,6 +616,8 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::datalog
 
 namespace formalism::datalog
 {
+
+inline std::ostream& operator<<(std::ostream& os, const VariableDependencyGraph& el) { return tyr::print(os, el); }
 
 template<OpKind Op, typename T>
 inline std::ostream& operator<<(std::ostream& os, const Data<UnaryOperator<Op, T>>& el)

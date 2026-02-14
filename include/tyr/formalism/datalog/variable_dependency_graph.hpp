@@ -120,6 +120,8 @@ public:
                     static_assert(dependent_false<T>::value, "Missing case");
             }
 
+            const auto& get_numeric_constraint_labels() const noexcept { return numeric_constraint_labels; }
+
             std::vector<Index<Predicate<StaticTag>>> positive_static_predicate_labels;
             std::vector<Index<Predicate<FluentTag>>> positive_fluent_predicate_labels;
             std::vector<Index<Predicate<StaticTag>>> negative_static_predicate_labels;
@@ -142,12 +144,16 @@ public:
             return m_upper_adj_lists[upper_index(uint_t(lhs), uint_t(rhs), m_k)];
         }
 
+        auto k() const noexcept { return m_k; }
+
     private:
         uint_t m_k;
         std::vector<Cell> m_upper_adj_lists;
     };
 
     explicit VariableDependencyGraph(View<Index<ConjunctiveCondition>, Repository> condition);
+
+    const AdjacencyMatrix& get_adj_matrix() const noexcept { return adj_matrix; }
 
 private:
     AdjacencyMatrix adj_matrix;
