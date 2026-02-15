@@ -251,10 +251,10 @@ private:
                      const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
     /// @brief Helper to initialize edges.
-    kpkc::PartitionedAdjacencyMatrix compute_edges(const details::TaggedIndexedLiterals<formalism::StaticTag>& indexed_literals,
-                                                   const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
-                                                   const details::Vertices& vertices,
-                                                   const std::vector<std::vector<uint_t>>& vertex_partitions);
+    kpkc::PartitionedAdjacencyLists compute_edges(const details::TaggedIndexedLiterals<formalism::StaticTag>& indexed_literals,
+                                                  const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
+                                                  const details::Vertices& vertices,
+                                                  const std::vector<std::vector<uint_t>>& vertex_partitions);
 
     template<formalism::FactKind T>
     bool constant_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
@@ -372,10 +372,11 @@ public:
 
     View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> get_rule() const noexcept;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> get_condition() const noexcept;
+    const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     const std::vector<std::vector<uint_t>>& get_vertex_partitions() const noexcept;
     const std::vector<std::vector<uint_t>>& get_object_to_vertex_partitions() const noexcept;
     const details::IndexedAnchors& get_predicate_to_anchors() const noexcept;
-    const kpkc::PartitionedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
+    const kpkc::PartitionedAdjacencyLists& get_adjacency_matrix() const noexcept;
 
 private:
     View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> m_rule;
@@ -392,7 +393,7 @@ private:
     std::vector<std::vector<uint_t>> m_vertex_partitions;
     std::vector<std::vector<uint_t>> m_object_to_vertex_partitions;
 
-    kpkc::PartitionedAdjacencyMatrix m_adj_matrix;
+    kpkc::PartitionedAdjacencyLists m_adj_matrix;
 
     details::IndexedLiterals m_unary_overapproximation_indexed_literals;
     details::IndexedLiterals m_binary_overapproximation_indexed_literals;

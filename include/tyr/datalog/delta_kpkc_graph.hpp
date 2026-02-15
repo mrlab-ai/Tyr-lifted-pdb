@@ -35,10 +35,10 @@ namespace tyr::datalog::kpkc
 /// @brief A compact adjacency matrix representation for k partite graphs.
 ///
 /// Row-major adjacency lists with targets grouped by partition.
-struct PartitionedAdjacencyMatrix
+struct PartitionedAdjacencyLists
 {
-    PartitionedAdjacencyMatrix() : m_vertex_partitions(), m_data(), m_row_offsets(), m_num_edges(0), m_k(0) {}
-    PartitionedAdjacencyMatrix(std::vector<std::vector<uint_t>> vertex_partitions) :
+    PartitionedAdjacencyLists() : m_vertex_partitions(), m_data(), m_row_offsets(), m_num_edges(0), m_k(0) {}
+    PartitionedAdjacencyLists(std::vector<std::vector<uint_t>> vertex_partitions) :
         m_vertex_partitions(std::move(vertex_partitions)),
         m_data(),
         m_row_offsets(),
@@ -52,7 +52,12 @@ struct PartitionedAdjacencyMatrix
      * Construction
      */
 
-    void clear() noexcept { m_row_offsets.push_back(m_data.size()); }
+    void clear() noexcept
+    {
+        m_data.clear();
+        m_row_offsets.push_back(m_data.size());
+        m_num_edges = 0;
+    }
 
     void start_row(uint_t v, uint_t p) noexcept
     {
@@ -76,15 +81,22 @@ struct PartitionedAdjacencyMatrix
         ++m_num_edges;
     }
 
-    void finish_partition(uint_t p)
+    void finish_partition_without_edge(uint_t p)
     {
-        m_partition_data_end_pos = m_data.size();
+        m_data[m_partition_len_pos] = kpkc::PartitionedAdjacencyLists::RowView::FULL;
+        const auto num_targets = m_vertex_partitions[p].size();
+        m_row_len += num_targets;
+        m_num_edges += num_targets;
+    }
 
-        const auto num_targets = m_partition_data_end_pos - m_partition_data_start_pos;
+    void finish_partition_with_edge(uint_t p)
+    {
+        uint_t partition_data_end_pos = m_data.size();
+        const auto num_targets = partition_data_end_pos - m_partition_data_start_pos;
         if (num_targets == m_vertex_partitions[p].size())
         {
             // Use partition reference mechanism for dense regions
-            m_data[m_partition_len_pos] = kpkc::PartitionedAdjacencyMatrix::RowView::FULL;
+            m_data[m_partition_len_pos] = kpkc::PartitionedAdjacencyLists::RowView::FULL;
             m_data.resize(m_partition_len_pos + 1);
         }
         else
@@ -122,7 +134,7 @@ struct PartitionedAdjacencyMatrix
     struct RowView
     {
     public:
-        RowView(const PartitionedAdjacencyMatrix& matrix, uint_t row, uint_t len, uint_t v, uint_t p, std::span<const uint_t> data) noexcept :
+        RowView(const PartitionedAdjacencyLists& matrix, uint_t row, uint_t len, uint_t v, uint_t p, std::span<const uint_t> data) noexcept :
             m_matrix(matrix),
             m_row(row),
             m_len(len),
@@ -171,7 +183,7 @@ struct PartitionedAdjacencyMatrix
         uint_t p() const noexcept { return m_p; }
 
     private:
-        const PartitionedAdjacencyMatrix& m_matrix;
+        const PartitionedAdjacencyLists& m_matrix;
         uint_t m_row;
         uint_t m_len;
         uint_t m_v;
@@ -226,33 +238,6 @@ private:
     uint_t m_row_len;
     uint_t m_partition_len_pos;
     uint_t m_partition_data_start_pos;
-    uint_t m_partition_data_end_pos;
-};
-
-struct Vertex
-{
-    uint_t index;
-
-    constexpr Vertex() noexcept : index(std::numeric_limits<uint_t>::max()) {}
-    constexpr explicit Vertex(uint_t i) noexcept : index(i) {}
-
-    friend constexpr bool operator==(Vertex lhs, Vertex rhs) noexcept { return lhs.index == rhs.index; }
-};
-
-struct Edge
-{
-    Vertex src;
-    Vertex dst;
-
-    constexpr Edge() noexcept : src(), dst() {}
-    constexpr Edge(Vertex u, Vertex v) noexcept : src(u.index < v.index ? u : v), dst(u.index < v.index ? v : u) {}
-
-    friend constexpr bool operator==(Edge lhs, Edge rhs) noexcept { return lhs.src == rhs.src && lhs.dst == rhs.dst; }
-
-    /// @brief Get the rank relative to a given number of vertices.
-    /// @param nv is the total number of vertices.
-    /// @return is the rank of the edge.
-    uint_t rank(uint_t nv) const noexcept { return src.index * nv + dst.index; }
 };
 
 struct GraphLayout
@@ -283,6 +268,54 @@ struct GraphLayout
     PartitionInfo info;
 
     GraphLayout(const StaticConsistencyGraph& static_graph);
+};
+
+class PartitionedAdjacencyMatrix
+{
+public:
+    PartitionedAdjacencyMatrix(const GraphLayout& layout) : m_layout(layout), m_partition_vertices_data(), m_partition_adjacency_matrix_data() {}
+
+    struct Partition
+    {
+    };
+
+    struct Row
+    {
+    };
+
+private:
+    std::reference_wrapper<const GraphLayout> m_layout;
+
+    std::vector<uint64_t> m_partition_vertices_data;
+
+    std::vector<uint64_t> m_partition_adjacency_matrix_data;
+    std::vector<uint_t> m_vertex_offset;
+};
+
+struct Vertex
+{
+    uint_t index;
+
+    constexpr Vertex() noexcept : index(std::numeric_limits<uint_t>::max()) {}
+    constexpr explicit Vertex(uint_t i) noexcept : index(i) {}
+
+    friend constexpr bool operator==(Vertex lhs, Vertex rhs) noexcept { return lhs.index == rhs.index; }
+};
+
+struct Edge
+{
+    Vertex src;
+    Vertex dst;
+
+    constexpr Edge() noexcept : src(), dst() {}
+    constexpr Edge(Vertex u, Vertex v) noexcept : src(u.index < v.index ? u : v), dst(u.index < v.index ? v : u) {}
+
+    friend constexpr bool operator==(Edge lhs, Edge rhs) noexcept { return lhs.src == rhs.src && lhs.dst == rhs.dst; }
+
+    /// @brief Get the rank relative to a given number of vertices.
+    /// @param nv is the total number of vertices.
+    /// @return is the rank of the edge.
+    uint_t rank(uint_t nv) const noexcept { return src.index * nv + dst.index; }
 };
 
 struct GraphActivityMasks

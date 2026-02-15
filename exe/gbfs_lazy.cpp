@@ -65,8 +65,6 @@ int main(int argc, char** argv)
 
         std::cout << "Num objects: " << lifted_task->get_task().get_objects().size() << std::endl;
 
-        std::terminate();
-
         if (verbosity > 0)
             std::cout << *domain << std::endl;
 

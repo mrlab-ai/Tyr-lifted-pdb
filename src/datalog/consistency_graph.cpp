@@ -67,15 +67,45 @@ bool Vertex::consistent_literals(const TaggedIndexedLiterals<T>& indexed_literal
 
         for (const auto position : info.position_mappings.parameter_to_positions[uint_t(m_parameter_index)])
         {
-            auto assignment = VertexAssignment(f::ParameterIndex(position), m_object_index);
-            assert(assignment.is_valid());
+            {
+                auto assignment = VertexAssignment(f::ParameterIndex(position), m_object_index);
+                assert(assignment.is_valid());
 
-            // std::cout << assignment << std::endl;
+                // std::cout << assignment << std::endl;
 
-            const auto true_assignment = pred_set.at(assignment);
+                const auto true_assignment = pred_set.at(assignment);
 
-            if (polarity != true_assignment)
-                return false;
+                if (polarity != true_assignment)
+                    return false;
+            }
+
+            {
+                /// constant c with position pos_c < pos_p or pos_c > pos_p
+                /// E.g. (category_round V0 tharvest)
+                for (const auto& [pos_c, obj_c] : info.position_mappings.constant_positions)
+                {
+                    assert(position != pos_c);
+
+                    auto first_pos = position;
+                    auto second_pos = pos_c;
+                    auto first_obj = m_object_index;
+                    auto second_obj = obj_c;
+
+                    if (first_pos > second_pos)
+                    {
+                        std::swap(first_pos, second_pos);
+                        std::swap(first_obj, second_obj);
+                    }
+
+                    auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
+                    assert(assignment.is_valid());
+
+                    // std::cout << assignment << std::endl;
+
+                    if (polarity != pred_set.at(assignment))
+                        return false;
+                }
+            }
         }
     }
 
@@ -680,14 +710,19 @@ ConjunctiveCondition(
 In the example above, there exist many pairs of variables are unrestricted by static literals, resulting in dense reguiosn
 
  */
-kpkc::PartitionedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
-                                                                       const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
-                                                                       const details::Vertices& vertices,
-                                                                       const std::vector<std::vector<uint_t>>& vertex_partitions)
+kpkc::PartitionedAdjacencyLists StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
+                                                                      const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
+                                                                      const details::Vertices& vertices,
+                                                                      const std::vector<std::vector<uint_t>>& vertex_partitions)
 {
     const auto k = vertex_partitions.size();
 
-    auto adj_matrix = kpkc::PartitionedAdjacencyMatrix(vertex_partitions);
+    auto adj_matrix = kpkc::PartitionedAdjacencyLists(vertex_partitions);
+
+    // std::cout << m_condition << std::endl;
+    // std::cout << m_unary_overapproximation_condition << std::endl;
+    // std::cout << m_binary_overapproximation_condition << std::endl;
+    // std::cout << m_binary_overapproximation_vdg << std::endl;
 
     if (constant_pair_consistent_literals(indexed_literals, static_assignment_sets.predicate))
     {
@@ -705,23 +740,47 @@ kpkc::PartitionedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const det
                 {
                     adj_matrix.start_partition();
 
-                    for (const auto second_index : vertex_partitions[pj])
+                    if (m_binary_overapproximation_vdg.get_adj_matrix()
+                            .get_cell(f::ParameterIndex(pi), f::ParameterIndex(pj))
+                            .get_literal_labels<f::StaticTag>()
+                            .empty())
                     {
-                        const auto& second_vertex = vertices.at(second_index);
+                        adj_matrix.finish_partition_without_edge(pj);
 
-                        assert(first_vertex.get_index() == first_index);
-                        assert(second_vertex.get_index() == second_index);
+                        // Ensure soundness of skipping the computation
+                        assert(std::all_of(vertex_partitions[pj].begin(),
+                                           vertex_partitions[pj].end(),
+                                           [&](auto&& second_index)
+                                           {
+                                               const auto& second_vertex = vertices.at(second_index);
 
-                        auto edge = details::Edge(std::numeric_limits<uint_t>::max(), first_vertex, second_vertex);
+                                               assert(first_vertex.get_index() == first_index);
+                                               assert(second_vertex.get_index() == second_index);
 
-                        // Part 1 of definition of substitution consistency graph (Stahlberg-ecai2023): exclude I^\neq
-                        if (edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
-                        {
-                            adj_matrix.add_target(second_index);
-                        }
+                                               auto edge = details::Edge(std::numeric_limits<uint_t>::max(), first_vertex, second_vertex);
+
+                                               return edge.consistent_literals(indexed_literals, static_assignment_sets.predicate);
+                                           }));
                     }
+                    else
+                    {
+                        for (const auto second_index : vertex_partitions[pj])
+                        {
+                            const auto& second_vertex = vertices.at(second_index);
 
-                    adj_matrix.finish_partition(pj);
+                            assert(first_vertex.get_index() == first_index);
+                            assert(second_vertex.get_index() == second_index);
+
+                            auto edge = details::Edge(std::numeric_limits<uint_t>::max(), first_vertex, second_vertex);
+
+                            if (edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
+                            {
+                                adj_matrix.add_target(second_index);
+                            }
+                        }
+
+                        adj_matrix.finish_partition_with_edge(pj);
+                    }
                 }
 
                 adj_matrix.finish_row();
@@ -1114,13 +1173,18 @@ View<Index<fd::Rule>, fd::Repository> StaticConsistencyGraph::get_rule() const n
 
 View<Index<fd::ConjunctiveCondition>, fd::Repository> StaticConsistencyGraph::get_condition() const noexcept { return m_condition; }
 
+const formalism::datalog::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept
+{
+    return m_binary_overapproximation_vdg;
+}
+
 const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_vertex_partitions() const noexcept { return m_vertex_partitions; }
 
 const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_object_to_vertex_partitions() const noexcept { return m_object_to_vertex_partitions; }
 
 const details::IndexedAnchors& StaticConsistencyGraph::get_predicate_to_anchors() const noexcept { return m_predicate_to_anchors; }
 
-const kpkc::PartitionedAdjacencyMatrix& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_adj_matrix; }
+const kpkc::PartitionedAdjacencyLists& StaticConsistencyGraph::get_adjacency_matrix() const noexcept { return m_adj_matrix; }
 
 std::pair<Index<fd::GroundConjunctiveCondition>, bool> create_ground_nullary_condition(View<Index<fd::ConjunctiveCondition>, fd::Repository> condition,
                                                                                        fd::Repository& context)
