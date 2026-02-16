@@ -740,10 +740,7 @@ kpkc::PartitionedAdjacencyLists StaticConsistencyGraph::compute_edges(const deta
                 {
                     adj_matrix.start_partition();
 
-                    if (m_binary_overapproximation_vdg.get_adj_matrix()
-                            .get_cell(f::ParameterIndex(pi), f::ParameterIndex(pj))
-                            .get_literal_labels<f::StaticTag>()
-                            .empty())
+                    if (m_binary_overapproximation_vdg.get_adj_matrix().get_cell(f::ParameterIndex(pi), f::ParameterIndex(pj)).statically_empty())
                     {
                         adj_matrix.finish_partition_without_edge(pj);
 
@@ -1156,6 +1153,53 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
     // std::cout << m_binary_overapproximation_condition << std::endl;
     // std::cout << "Binary overapproximation indexed literals" << std::endl;
     // std::cout << m_binary_overapproximation_indexed_literals << std::endl;
+}
+
+void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
+                                                                   kpkc::Graph2& delta_graph,
+                                                                   kpkc::Graph2& full_graph) const
+{
+    // Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
+    delta_graph.copy_from(full_graph);
+
+    // TODO: compute full and delta vertex partitions
+
+    // TODO: iterate over the parts that need explicit evaluation
+    const auto constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+
+    m_adj_matrix.for_each_row(
+        [&](auto&& row)
+        {
+            const auto v = row.v();
+            const auto pi = row.p();
+
+            const auto& src = get_vertex(v);
+
+            row.for_each_partition(
+                [&](auto&& partition)
+                {
+                    const auto pj = partition.p();
+
+                    if (full_graph.matrix.get_cell(v, pj).mode == kpkc::PartitionedAdjacencyMatrix::Cell::Mode::IMPLICIT)
+                        return;  // Already checked via vertex consistency
+
+                    partition.for_each_target(
+                        [&](auto&& target)
+                        {
+                            const auto& dst = get_vertex(target);
+                            const auto edge = details::Edge(uint_t(0), src, dst);
+
+                            if (edge.consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                                && edge.consistent_numeric_constraints(constraints, m_binary_overapproximation_indexed_constraints, assignment_sets))
+                            {
+                                full_graph.matrix.get_bitset(v, pj).set(target);
+                                full_graph.matrix.get_bitset(target, pi).set(v);
+                            }
+                        });
+                });
+        });
+
+    delta_graph.diff_from(full_graph);
 }
 
 const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices.at(index); }

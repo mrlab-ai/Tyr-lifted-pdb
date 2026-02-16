@@ -276,6 +276,8 @@ public:
                            uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
+    void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets, kpkc::Graph2& delta_graph, kpkc::Graph2& full_graph) const;
+
     auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
 
     /// @brief Efficient iteration over delta-consistent vertices.

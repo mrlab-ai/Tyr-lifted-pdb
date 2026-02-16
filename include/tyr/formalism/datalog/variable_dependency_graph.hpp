@@ -73,6 +73,9 @@ public:
             auto& get_numeric_constraint_labels() noexcept { return numeric_constraint_labels; }
             const auto& get_numeric_constraint_labels() const noexcept { return numeric_constraint_labels; }
 
+            bool statically_empty() const noexcept { return static_literal_labels.empty(); }
+            bool dynamically_empty() const noexcept { return fluent_literal_labels.empty() && numeric_constraint_labels.empty(); }
+
             std::vector<Index<Literal<StaticTag>>> static_literal_labels;
             std::vector<Index<Literal<FluentTag>>> fluent_literal_labels;
             std::vector<Data<BooleanOperator<Data<FunctionExpression>>>> numeric_constraint_labels;

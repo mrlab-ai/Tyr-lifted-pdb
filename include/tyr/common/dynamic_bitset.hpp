@@ -73,13 +73,26 @@ public:
     }
     constexpr friend bool operator!=(const BitsetSpan& lhs, const BitsetSpan& rhs) noexcept { return !(lhs == rhs); }
 
-    void copy_from(const BitsetSpan<const U>& other) noexcept
+    BitsetSpan& copy_from(const BitsetSpan<const U>& other) noexcept
     {
         assert(m_num_bits == other.m_num_bits);
 
         const size_t n = num_blocks(m_num_bits);
         for (size_t i = 0; i < n; ++i)
             m_data[i] = other.m_data[i];
+
+        return *this;
+    }
+
+    BitsetSpan& diff_from(const BitsetSpan<const U>& other) noexcept
+    {
+        assert(m_num_bits == other.m_num_bits);
+
+        const size_t n = num_blocks(m_num_bits);
+        for (size_t i = 0; i < n; ++i)
+            m_data[i] = other.m_data[i] & ~m_data[i];
+
+        return *this;
     }
 
     bool test(size_t pos) const noexcept

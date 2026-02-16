@@ -27,16 +27,20 @@ DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
     m_delta_graph(Graph(m_const_graph)),
     m_full_graph(Graph(m_const_graph)),
     m_masks(GraphActivityMasks(static_graph)),
-    m_iteration(0)
+    m_iteration(0),
+    m_delta_graph2(m_const_graph, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
+    m_full_graph2(m_const_graph, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph())
 {
 }
 
-DeltaKPKC::DeltaKPKC(GraphLayout const_graph, Graph delta_graph, Graph full_graph, GraphActivityMasks masks) :
+DeltaKPKC::DeltaKPKC(GraphLayout const_graph, Graph delta_graph, Graph full_graph, GraphActivityMasks masks, Graph2 delta_graph2, Graph2 full_graph2) :
     m_const_graph(std::move(const_graph)),
     m_delta_graph(std::move(delta_graph)),
     m_full_graph(std::move(full_graph)),
     m_masks(std::move(masks)),
-    m_iteration(0)
+    m_iteration(0),
+    m_delta_graph2(std::move(delta_graph2)),
+    m_full_graph2(std::move(full_graph2))
 {
 }
 
