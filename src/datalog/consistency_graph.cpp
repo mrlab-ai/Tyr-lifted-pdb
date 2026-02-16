@@ -1156,48 +1156,82 @@ StaticConsistencyGraph::StaticConsistencyGraph(View<Index<formalism::datalog::Ru
 }
 
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
+                                                                   const kpkc::GraphLayout& layout,
                                                                    kpkc::Graph2& delta_graph,
                                                                    kpkc::Graph2& full_graph) const
 {
-    // Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
+    /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
+
     delta_graph.copy_from(full_graph);
 
-    // TODO: compute full and delta vertex partitions
-
-    // TODO: iterate over the parts that need explicit evaluation
+    // Fetch some data
     const auto constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+
+    /// 2. Monotonically update full consistent vertices partition
+
+    auto vertex_index_offset = uint_t(0);
+
+    for (const auto& info : layout.info.infos)
+    {
+        auto vertices = BitsetSpan<uint64_t>(full_graph.matrix.partition_vertices_data().data() + info.block_offset, info.num_bits);
+
+        for (auto bit = vertices.find_first_zero(); bit != BitsetSpan<uint64_t>::npos; bit = vertices.find_next_zero(bit))
+        {
+            const auto& vertex = get_vertex(vertex_index_offset + bit);
+
+            if (vertex.consistent_literals(m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                && vertex.consistent_numeric_constraints(constraints, m_unary_overapproximation_indexed_constraints, assignment_sets))
+            {
+                vertices.set(bit);
+            }
+        }
+
+        vertex_index_offset += info.num_bits;
+    }
+
+    /// 3. Monotonically update full explicitly consistent edges
 
     m_adj_matrix.for_each_row(
         [&](auto&& row)
         {
-            const auto v = row.v();
+            const auto vi = row.v();
             const auto pi = row.p();
-
-            const auto& src = get_vertex(v);
+            const auto bi = layout.vertex_to_bit[vi];
+            const auto& vertex_i = get_vertex(vi);
 
             row.for_each_partition(
                 [&](auto&& partition)
                 {
                     const auto pj = partition.p();
 
-                    if (full_graph.matrix.get_cell(v, pj).mode == kpkc::PartitionedAdjacencyMatrix::Cell::Mode::IMPLICIT)
+                    if (full_graph.matrix.get_cell(vi, pj).mode == kpkc::PartitionedAdjacencyMatrix::Cell::Mode::IMPLICIT)
                         return;  // Already checked via vertex consistency
 
                     partition.for_each_target(
-                        [&](auto&& target)
+                        [&](auto&& vj)
                         {
-                            const auto& dst = get_vertex(target);
-                            const auto edge = details::Edge(uint_t(0), src, dst);
+                            const auto bj = layout.vertex_to_bit[vj];
+
+                            if (full_graph.matrix.get_bitset(vi, pj).test(bj))
+                            {
+                                assert(full_graph.matrix.get_bitset(vj, pi).test(bi));
+                                return;
+                            }
+
+                            const auto& vertex_j = get_vertex(vj);
+                            const auto edge = details::Edge(uint_t(0), vertex_i, vertex_j);
 
                             if (edge.consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
                                 && edge.consistent_numeric_constraints(constraints, m_binary_overapproximation_indexed_constraints, assignment_sets))
                             {
-                                full_graph.matrix.get_bitset(v, pj).set(target);
-                                full_graph.matrix.get_bitset(target, pi).set(v);
+                                full_graph.matrix.get_bitset(vi, pj).set(bj);
+                                full_graph.matrix.get_bitset(vj, pi).set(bi);
                             }
                         });
                 });
         });
+
+    /// 4. Set delta to diff accordingly
 
     delta_graph.diff_from(full_graph);
 }

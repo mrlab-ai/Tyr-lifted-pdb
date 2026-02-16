@@ -61,6 +61,14 @@ public:
 
     static constexpr size_t npos = std::numeric_limits<size_t>::max();
 
+    static constexpr U full_mask() noexcept { return ~U { 0 }; }
+
+    static constexpr U last_mask(size_t num_bits) noexcept
+    {
+        const size_t r = num_bits % digits;
+        return (r == 0) ? full_mask() : (U { 1 } << r) - U { 1 };
+    }
+
 public:
     BitsetSpan(Block* data, size_t num_bits) noexcept : m_data(data), m_num_bits(num_bits) {}
 
@@ -174,6 +182,54 @@ public:
                 return npos;
 
             w = m_data[i];
+        }
+    }
+
+    size_t find_first_zero() const noexcept
+    {
+        const size_t n = num_blocks(m_num_bits);
+        for (size_t i = 0; i < n; ++i)
+        {
+            U w = ~m_data[i];
+
+            if (i == n - 1)
+                w &= last_mask(m_num_bits);
+
+            if (w == U { 0 })
+                continue;
+
+            const size_t bit = i * digits + std::countr_zero(w);
+            return bit < m_num_bits ? bit : npos;
+        }
+
+        return npos;
+    }
+
+    size_t find_next_zero(size_t pos) const noexcept
+    {
+        ++pos;
+        if (pos >= m_num_bits)
+            return npos;
+
+        size_t i = block_index(pos);
+        U w = ~m_data[i] & (~U { 0 } << block_pos(pos));
+
+        const size_t n = num_blocks(m_num_bits);
+        for (;;)
+        {
+            if (i == n - 1)
+                w &= last_mask(m_num_bits);
+
+            if (w != U { 0 })
+            {
+                const size_t bit = i * digits + std::countr_zero(w);
+                return bit < m_num_bits ? bit : npos;
+            }
+
+            if (++i == n)
+                return npos;
+
+            w = ~m_data[i];
         }
     }
 

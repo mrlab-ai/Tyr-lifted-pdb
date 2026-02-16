@@ -291,7 +291,14 @@ public:
                 {
                     auto& cell = m_adj_span(v, pj);
 
-                    if (dependency_graph.get_adj_matrix().get_cell(formalism::ParameterIndex(pi), formalism::ParameterIndex(pj)).dynamically_empty())
+                    // ADJ represents upper triangle only
+                    auto ppi = pi;
+                    auto ppj = pj;
+                    if (ppi > ppj)
+                        std::swap(ppi, ppj);
+
+                    if (ppi < ppj
+                        && dependency_graph.get_adj_matrix().get_cell(formalism::ParameterIndex(ppi), formalism::ParameterIndex(ppj)).dynamically_empty())
                     {
                         cell.mode = Cell::Mode::IMPLICIT;
                         cell.offset = std::numeric_limits<uint_t>::max();  // unused
