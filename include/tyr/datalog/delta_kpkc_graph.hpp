@@ -273,7 +273,15 @@ struct GraphLayout
 class PartitionedAdjacencyMatrix
 {
 public:
-    PartitionedAdjacencyMatrix(const GraphLayout& layout) : m_layout(layout), m_partition_vertices_data(), m_partition_adjacency_matrix_data() {}
+    PartitionedAdjacencyMatrix(const GraphLayout& layout) :
+        m_layout(layout),
+        m_adj_data(m_layout.get().k * m_layout.get().k),
+        m_adj_span(m_adj_data.data(), std::array<size_t, 2> { m_layout.get().k, m_layout.get().k }),
+        m_bitset_data(),
+        m_bitset_offset(),
+        m_partition_vertices_data()
+    {
+    }
 
     struct Partition
     {
@@ -286,10 +294,16 @@ public:
 private:
     std::reference_wrapper<const GraphLayout> m_layout;
 
-    std::vector<uint64_t> m_partition_vertices_data;
+    /// k x k matrix where each cell refers to a bitset either stored explicitly or referring implicitly to a vertex partition.
+    std::vector<uint_t> m_adj_data;
+    MDSpan<uint_t, 2> m_adj_span;
 
-    std::vector<uint64_t> m_partition_adjacency_matrix_data;
-    std::vector<uint_t> m_vertex_offset;
+    /// Explicit storage
+    std::vector<uint64_t> m_bitset_data;
+    std::vector<uint_t> m_bitset_offset;
+
+    /// Implicit storage: the active vertices in the partition
+    std::vector<uint64_t> m_partition_vertices_data;
 };
 
 struct Vertex
