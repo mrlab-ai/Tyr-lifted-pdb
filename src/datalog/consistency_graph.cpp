@@ -1162,6 +1162,9 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 {
     /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
 
+    std::cout << m_unary_overapproximation_condition << std::endl;
+    std::cout << m_binary_overapproximation_condition << std::endl;
+
     delta_graph.copy_from(full_graph);
 
     /// 2. Monotonically update full consistent vertices partition
@@ -1210,7 +1213,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         const auto pj = partition.p();
 
                         if (full_graph.matrix.get_cell(vi, pj).mode == kpkc::PartitionedAdjacencyMatrix::Cell::Mode::IMPLICIT)
+                        {
+                            std::cout << vi << " " << pj << " is implicit" << std::endl;
                             return;  // Already checked via vertex consistency
+                        }
 
                         partition.for_each_target(
                             [&](auto&& vj)

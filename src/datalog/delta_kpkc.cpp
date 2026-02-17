@@ -159,13 +159,10 @@ SetNewAssignmentSetsStatistics DeltaKPKC::set_next_assignment_sets(const StaticC
         const auto full_partition2 = BitsetSpan<uint64_t>(full_partition_row2.data() + info.block_offset, info.num_bits);
 
         // Ensure new matches old implementation
-        if (delta_partition != delta_partition2)
-        {
-            std::cout << "Delta partition 1: " << delta_partition << std::endl;
-            std::cout << "Delta partition 2: " << delta_partition2 << std::endl;
-        }
         assert(delta_partition == delta_partition2);
         assert(full_partition == full_partition2);
+
+        std::cout << delta_partition << " " << delta_partition2 << " " << full_partition << " " << full_partition2 << std::endl;
     }
 
     for (uint_t v = 0; v < m_const_graph.nv; ++v)
@@ -184,6 +181,48 @@ SetNewAssignmentSetsStatistics DeltaKPKC::set_next_assignment_sets(const StaticC
             auto full_v_adj_list = BitsetSpan<uint64_t>(full_v_adj_list_row.data() + info.block_offset, info.num_bits);
             full_v_adj_list |= delta_v_adj_list;
         }
+    }
+
+    uint_t offset = 0;
+
+    for (uint_t pi = 0; pi < m_const_graph.k; ++pi)
+    {
+        const auto& info_i = m_const_graph.info.infos[pi];
+        const auto& delta_partition_row = m_delta_graph.partition_vertices_data;
+        const auto delta_partition = BitsetSpan<const uint64_t>(delta_partition_row.data() + info_i.block_offset, info_i.num_bits);
+
+        const auto& delta_partition_row2 = m_delta_graph2.matrix.partition_vertices_data();
+        const auto delta_partition2 = BitsetSpan<const uint64_t>(delta_partition_row2.data() + info_i.block_offset, info_i.num_bits);
+
+        for (auto bit = delta_partition.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = delta_partition.find_next(bit))
+        {
+            const auto v = offset + bit;
+            const auto delta_v_adj_list_row = m_delta_graph.partition_adjacency_matrix_span(v);
+            auto full_v_adj_list_row = m_full_graph.partition_adjacency_matrix_span(v);
+
+            for (uint_t pj = 0; pj < m_const_graph.k; ++pj)
+            {
+                if (pi == pj)
+                    continue;  ///< no edges between vertices in the same partition
+
+                const auto& info_j = m_const_graph.info.infos[pj];
+                auto delta_v_adj_list = BitsetSpan<const uint64_t>(delta_v_adj_list_row.data() + info_j.block_offset, info_j.num_bits);
+                auto full_v_adj_list = BitsetSpan<uint64_t>(full_v_adj_list_row.data() + info_j.block_offset, info_j.num_bits);
+                full_v_adj_list |= delta_v_adj_list;
+
+                const auto& matrix = m_delta_graph2.matrix;
+                const auto delta_v_adj_list2 = matrix.get_bitset(v, pj);
+                if (delta_v_adj_list != delta_v_adj_list2)
+                {
+                    std::cout << v << " " << pi << " " << bit << " " << pj << std::endl;
+                    std::cout << "Delta adj partition 1: " << delta_v_adj_list << std::endl;
+                    std::cout << "Delta adj partition 2: " << delta_v_adj_list2 << std::endl;
+                }
+                //  assert(delta_v_adj_list == delta_v_adj_list2);
+            }
+        }
+
+        offset += info_i.num_bits;
     }
 
     size_t full_partitions = 0;

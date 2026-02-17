@@ -72,15 +72,6 @@ public:
 public:
     BitsetSpan(Block* data, size_t num_bits) noexcept : m_data(data), m_num_bits(num_bits) {}
 
-    constexpr friend bool operator==(const BitsetSpan& lhs, const BitsetSpan& rhs) noexcept
-    {
-        if (lhs.m_num_bits != rhs.m_num_bits)
-            return false;
-
-        return std::equal(lhs.blocks().begin(), lhs.blocks().end(), rhs.blocks().begin());
-    }
-    constexpr friend bool operator!=(const BitsetSpan& lhs, const BitsetSpan& rhs) noexcept { return !(lhs == rhs); }
-
     BitsetSpan& copy_from(const BitsetSpan<const U>& other) noexcept
     {
         assert(m_num_bits == other.m_num_bits);
@@ -266,13 +257,38 @@ public:
         return *this;
     }
 
-    std::span<const Block> blocks() const noexcept { return { m_data, num_blocks(m_num_bits) }; }
+    std::span<const U> blocks() const noexcept { return { m_data, num_blocks(m_num_bits) }; }
     size_t num_bits() const noexcept { return m_num_bits; }
 
 private:
     Block* m_data;
     size_t m_num_bits;
 };
+
+template<std::unsigned_integral B1, std::unsigned_integral B2>
+    requires(std::same_as<std::remove_const_t<B1>, std::remove_const_t<B2>>)
+constexpr bool operator==(const BitsetSpan<B1>& lhs, const BitsetSpan<B2>& rhs) noexcept
+{
+    if (lhs.num_bits() != rhs.num_bits())
+        return false;
+
+    const size_t n = BitsetSpan<std::remove_const_t<B1>>::num_blocks(lhs.num_bits());
+    // Need access to raw blocks: use blocks() but ensure both spans are same length.
+    auto lb = lhs.blocks();
+    auto rb = rhs.blocks();
+    for (size_t i = 0; i < n; ++i)
+        if (lb[i] != rb[i])
+            return false;
+
+    return true;
+}
+
+template<std::unsigned_integral B1, std::unsigned_integral B2>
+    requires(std::same_as<std::remove_const_t<B1>, std::remove_const_t<B2>>)
+constexpr bool operator!=(const BitsetSpan<B1>& lhs, const BitsetSpan<B2>& rhs) noexcept
+{
+    return !(lhs == rhs);
+}
 
 }
 

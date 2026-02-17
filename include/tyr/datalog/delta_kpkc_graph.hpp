@@ -358,11 +358,13 @@ public:
 
         if (cell.mode == Cell::Mode::EXPLICIT)
         {
+            std::cout << "Explicit" << std::endl;
             return BitsetSpan<const uint64_t>(m_bitset_data.data() + m_adj_span(v, p).offset, info.num_bits);
         }
         else
         {
             assert(cell.mode == Cell::Mode::IMPLICIT);
+            std::cout << "Implicit" << std::endl;
             return BitsetSpan<const uint64_t>(m_partition_vertices_data.data() + info.block_offset, info.num_bits);
         }
     }
