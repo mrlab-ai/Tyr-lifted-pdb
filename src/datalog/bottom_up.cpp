@@ -325,10 +325,10 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
     {
         // std::cout << "Cost: " << cost_buckets.current_cost() << std::endl;
 
-        for (const auto& set : facts.fact_sets.predicate.get_sets())
-        {
-            std::cout << set.get_facts() << std::endl;
-        }
+        // for (const auto& set : facts.fact_sets.predicate.get_sets())
+        //{
+        //     std::cout << set.get_facts() << std::endl;
+        // }
 
         // Check whether min cost for goal was proven.
         if (tp.check())

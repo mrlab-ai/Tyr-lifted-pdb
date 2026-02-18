@@ -1162,9 +1162,9 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 {
     /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
 
-    std::cout << std::endl;
-    std::cout << m_unary_overapproximation_condition << std::endl;
-    std::cout << m_binary_overapproximation_condition << std::endl;
+    // std::cout << std::endl;
+    // std::cout << m_unary_overapproximation_condition << std::endl;
+    // std::cout << m_binary_overapproximation_condition << std::endl;
 
     delta_graph.affected_partitions.reset();
     delta_graph.delta_partitions.reset();
@@ -1228,21 +1228,19 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     return;  ///< vi vertex inconsistent
 
                 const auto& vertex_i = get_vertex(vi);
+                auto full_delta_partition_i = full_graph.delta_partitions.get_bitset(info_i);
                 auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(info_i);
                 auto delta_delta_partition_i = delta_graph.delta_partitions.get_bitset(info_i);
-                auto full_delta_partition_i = full_graph.delta_partitions.get_bitset(info_i);
 
                 row.for_each_partition(
                     [&](auto&& partition)
                     {
                         const auto pj = partition.p();
                         const auto info_j = layout.info.infos[pj];
-                        auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
                         auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
                         const auto delta_delta_partition_j = delta_graph.delta_partitions.get_bitset(info_j);
-                        auto full_delta_partition_j = full_graph.delta_partitions.get_bitset(info_j);
 
-                        if (full_graph.matrix.get_cell(vi, pj).mode == kpkc::PartitionedAdjacencyMatrix::Cell::Mode::IMPLICIT)
+                        if (full_graph.matrix.get_cell(vi, pj).is_implicit())
                         {
                             // If vi is new, then mark all implicit vj's in pj as affected
 
@@ -1254,6 +1252,9 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                             return;  // Already checked via vertex consistency
                         }
+
+                        auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
+                        auto full_delta_partition_j = full_graph.delta_partitions.get_bitset(info_j);
 
                         partition.for_each_target(
                             [&](auto&& vj)
@@ -1299,10 +1300,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
     delta_graph.matrix.diff_from(full_graph.matrix);
 
-    std::cout << "Delta graph:" << std::endl;
-    std::cout << delta_graph.matrix << std::endl;
-    std::cout << "Full graph:" << std::endl;
-    std::cout << full_graph.matrix << std::endl;
+    // std::cout << "Delta graph:" << std::endl;
+    // std::cout << delta_graph.matrix << std::endl;
+    // std::cout << "Full graph:" << std::endl;
+    // std::cout << full_graph.matrix << std::endl;
 }
 
 const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices.at(index); }

@@ -383,7 +383,7 @@ public:
         const auto& cell = m_adj_span(v, p);
         const auto& info = m_layout.get().info.infos[p];
 
-        if (cell.mode == Cell::Mode::EXPLICIT)
+        if (cell.is_explicit())
         {
             return BitsetSpan<const uint64_t>(m_bitset_data.data() + m_adj_span(v, p).offset, info.num_bits);
         }
@@ -409,6 +409,9 @@ public:
 
         Mode mode;
         uint_t offset;
+
+        bool is_explicit() const noexcept { return mode == Mode::EXPLICIT; }
+        bool is_implicit() const noexcept { return mode == Mode::IMPLICIT; }
     };
 
     void copy_from(const PartitionedAdjacencyMatrix& other) noexcept
@@ -421,7 +424,7 @@ public:
 
                 assert(cell.mode == other.m_adj_span(v, p).mode);
 
-                if (cell.mode == PartitionedAdjacencyMatrix::Cell::Mode::IMPLICIT)
+                if (cell.is_implicit())
                     continue;
 
                 get_bitset(v, p).copy_from(other.get_bitset(v, p));
@@ -439,7 +442,7 @@ public:
 
                 assert(cell.mode == other.m_adj_span(v, p).mode);
 
-                if (cell.mode == PartitionedAdjacencyMatrix::Cell::Mode::IMPLICIT)
+                if (cell.is_implicit())
                     continue;
 
                 get_bitset(v, p).diff_from(other.get_bitset(v, p));
@@ -455,7 +458,7 @@ public:
         for (uint_t p = 0; p < m_layout.get().k; ++p)
         {
             const auto& info = m_layout.get().info.infos[p];
-            auto partition = BitsetSpan<const uint64_t>(m_affected_partitions.get().data().data() + info.block_offset, info.num_bits);
+            auto partition = m_affected_partitions.get().get_bitset(info);
 
             for (auto bit = partition.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = partition.find_next(bit))
             {
@@ -498,8 +501,6 @@ public:
                             continue;
 
                         const uint_t vj = dst_offset + static_cast<uint_t>(bj);
-
-                        std::cout << "<" << vi << "," << vj << std::endl;
 
                         callback(Edge(Vertex(vi), Vertex(vj)));
                     }
