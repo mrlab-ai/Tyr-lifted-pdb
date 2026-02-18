@@ -303,6 +303,14 @@ public:
 
     void reset() noexcept { std::memset(m_data.data(), 0, m_data.size() * sizeof(uint64_t)); }
 
+    auto get_bitset(const GraphLayout::BitsetInfo& info) noexcept { return BitsetSpan<uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
+
+    auto get_bitset(const GraphLayout::BitsetInfo& info) const noexcept { return BitsetSpan<const uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
+
+    auto get_bitset(uint_t p) noexcept { return get_bitset(m_layout.info.infos[p]); }
+
+    auto get_bitset(uint_t p) const noexcept { return get_bitset(m_layout.info.infos[p]); }
+
     auto& data() noexcept { return m_data; }
     const auto& data() const noexcept { return m_data; }
 
@@ -317,13 +325,13 @@ class PartitionedAdjacencyMatrix
 {
 public:
     PartitionedAdjacencyMatrix(const GraphLayout& layout,
-                               const VertexPartitions& partitions,
-                               const VertexPartitions& consistent,
+                               const VertexPartitions& affected_partitions,
+                               const VertexPartitions& delta_partitions,
                                const std::vector<std::vector<uint_t>>& static_partitions,
                                const formalism::datalog::VariableDependencyGraph& dependency_graph) :
         m_layout(layout),
-        m_partitions(partitions),
-        m_consistent(consistent),
+        m_affected_partitions(affected_partitions),
+        m_delta_partitions(delta_partitions),
         m_adj_data(m_layout.get().nv * m_layout.get().k, Cell { Cell::Mode::IMPLICIT, std::numeric_limits<uint_t>::max() }),
         m_adj_span(m_adj_data.data(), std::array<size_t, 2> { m_layout.get().nv, m_layout.get().k }),
         m_bitset_data()
@@ -382,10 +390,12 @@ public:
         else
         {
             assert(cell.mode == Cell::Mode::IMPLICIT);
-            // TODO: if v is new, then return
-            // return BitsetSpan<const uint64_t>(m_partitions.get().data().data() + info.block_offset, info.num_bits);
-            // else
-            return BitsetSpan<const uint64_t>(m_partitions.get().data().data() + info.block_offset, info.num_bits);
+            const auto pv = m_layout.get().vertex_to_partition[v];
+            const auto bit = m_layout.get().vertex_to_bit[v];
+            const auto& info_v = m_layout.get().info.infos[pv];
+            const auto consistent_v = m_delta_partitions.get().get_bitset(info_v);
+
+            return consistent_v.test(bit) ? m_affected_partitions.get().get_bitset(info) : m_delta_partitions.get().get_bitset(info);
         }
     }
 
@@ -445,7 +455,7 @@ public:
         for (uint_t p = 0; p < m_layout.get().k; ++p)
         {
             const auto& info = m_layout.get().info.infos[p];
-            auto partition = BitsetSpan<const uint64_t>(m_partitions.get().data().data() + info.block_offset, info.num_bits);
+            auto partition = BitsetSpan<const uint64_t>(m_affected_partitions.get().data().data() + info.block_offset, info.num_bits);
 
             for (auto bit = partition.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = partition.find_next(bit))
             {
@@ -466,7 +476,7 @@ public:
         for (uint_t pi = 0; pi < m_layout.get().k; ++pi)
         {
             const auto& info_i = m_layout.get().info.infos[pi];
-            auto src_bits = BitsetSpan<const uint64_t>(m_partitions.get().data().data() + info_i.block_offset, info_i.num_bits);
+            auto src_bits = m_affected_partitions.get().get_bitset(info_i);
 
             for (auto bi = src_bits.find_first(); bi != BitsetSpan<const uint64_t>::npos; bi = src_bits.find_next(bi))
             {
@@ -478,7 +488,7 @@ public:
                 {
                     const auto& info_j = m_layout.get().info.infos[pj];
 
-                    auto dst_active = BitsetSpan<const uint64_t>(m_partitions.get().data().data() + info_j.block_offset, info_j.num_bits);
+                    auto dst_active = m_affected_partitions.get().get_bitset(info_j);
 
                     auto adj = get_bitset(vi, pj);
 
@@ -488,6 +498,8 @@ public:
                             continue;
 
                         const uint_t vj = dst_offset + static_cast<uint_t>(bj);
+
+                        std::cout << "<" << vi << "," << vj << std::endl;
 
                         callback(Edge(Vertex(vi), Vertex(vj)));
                     }
@@ -505,7 +517,8 @@ public:
     const auto& get_cell(uint_t v, uint_t p) const noexcept { return m_adj_span(v, p); }
 
     const auto& layout() const noexcept { return m_layout.get(); }
-    const auto& partitions() const noexcept { return m_partitions.get(); }
+    const auto& affected_partitions() const noexcept { return m_affected_partitions.get(); }
+    const auto& delta_partitions() const noexcept { return m_delta_partitions.get(); }
     const auto& adj_data() const noexcept { return m_adj_data; }
     auto adj_span() const noexcept { return m_adj_span; }
 
@@ -513,8 +526,8 @@ public:
 
 private:
     std::reference_wrapper<const GraphLayout> m_layout;
-    std::reference_wrapper<const VertexPartitions> m_partitions;
-    std::reference_wrapper<const VertexPartitions> m_consistent;
+    std::reference_wrapper<const VertexPartitions> m_affected_partitions;
+    std::reference_wrapper<const VertexPartitions> m_delta_partitions;
 
     /// k x k matrix where each cell refers to a bitset either stored explicitly or referring implicitly to a vertex partition.
     std::vector<Cell> m_adj_data;
@@ -529,21 +542,21 @@ struct Graph2
     Graph2(const GraphLayout& layout,
            const std::vector<std::vector<uint_t>>& static_partitions,
            const formalism::datalog::VariableDependencyGraph& dependency_graph) :
-        partitions(layout),
-        consistent(layout),
-        matrix(layout, partitions, consistent, static_partitions, dependency_graph)
+        affected_partitions(layout),
+        delta_partitions(layout),
+        matrix(layout, affected_partitions, delta_partitions, static_partitions, dependency_graph)
     {
     }
 
     void reset() noexcept
     {
-        partitions.reset();
-        consistent.reset();
+        affected_partitions.reset();
+        delta_partitions.reset();
         matrix.reset();
     }
 
-    VertexPartitions partitions;
-    VertexPartitions consistent;
+    VertexPartitions affected_partitions;
+    VertexPartitions delta_partitions;
     PartitionedAdjacencyMatrix matrix;
 };
 

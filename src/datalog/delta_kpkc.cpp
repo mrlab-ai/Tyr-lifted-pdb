@@ -80,7 +80,7 @@ void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
         const auto& info = m_const_graph.info.infos[p];
         auto cv_0 = BitsetSpan<uint64_t>(cv_0_row.data() + info.block_offset, info.num_bits);
 
-        auto partition = BitsetSpan<const uint64_t>(m_full_graph2.matrix.partitions().data().data() + info.block_offset, info.num_bits);
+        auto partition = m_full_graph2.matrix.affected_partitions().get_bitset(info);
         cv_0.copy_from(partition);
     }
 }

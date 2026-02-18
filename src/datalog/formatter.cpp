@@ -199,11 +199,19 @@ std::ostream& print(std::ostream& os, const datalog::kpkc::PartitionedAdjacencyM
     {
         IndentScope scope(os);
 
-        os << print_indent << "partitions = [";
+        os << print_indent << "affected partitions = [";
         for (uint_t p = 0; p < el.layout().k; ++p)
         {
             const auto& info = el.layout().info.infos[p];
-            os << BitsetSpan<const uint64_t>(el.partitions().data().data() + info.block_offset, info.num_bits) << ", ";
+            os << BitsetSpan<const uint64_t>(el.affected_partitions().data().data() + info.block_offset, info.num_bits) << ", ";
+        }
+        os << "]\n";
+
+        os << print_indent << "delta partitions = [";
+        for (uint_t p = 0; p < el.layout().k; ++p)
+        {
+            const auto& info = el.layout().info.infos[p];
+            os << BitsetSpan<const uint64_t>(el.delta_partitions().data().data() + info.block_offset, info.num_bits) << ", ";
         }
         os << "]\n";
 

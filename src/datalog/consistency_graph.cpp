@@ -1166,8 +1166,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     std::cout << m_unary_overapproximation_condition << std::endl;
     std::cout << m_binary_overapproximation_condition << std::endl;
 
-    delta_graph.partitions.reset();
-    delta_graph.consistent.reset();
+    delta_graph.affected_partitions.reset();
+    delta_graph.delta_partitions.reset();
     delta_graph.matrix.copy_from(full_graph.matrix);
 
     // std::cout << "Delta graph:" << std::endl;
@@ -1183,13 +1183,13 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     {
         for (const auto& info : layout.info.infos)
         {
-            auto full_vertices = BitsetSpan<uint64_t>(full_graph.partitions.data().data() + info.block_offset, info.num_bits);
-            auto delta_vertices = BitsetSpan<uint64_t>(delta_graph.partitions.data().data() + info.block_offset, info.num_bits);
+            auto full_affected_partition = full_graph.affected_partitions.get_bitset(info);
+            auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(info);
+            auto full_delta_partition = full_graph.delta_partitions.get_bitset(info);
+            auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(info);
 
-            auto full_consistent = BitsetSpan<uint64_t>(full_graph.consistent.data().data() + info.block_offset, info.num_bits);
-            auto delta_consistent = BitsetSpan<uint64_t>(delta_graph.consistent.data().data() + info.block_offset, info.num_bits);
-
-            for (auto bit = full_vertices.find_first_zero(); bit != BitsetSpan<uint64_t>::npos; bit = full_vertices.find_next_zero(bit))
+            /// Iterate over deltas
+            for (auto bit = full_affected_partition.find_first_zero(); bit != BitsetSpan<uint64_t>::npos; bit = full_affected_partition.find_next_zero(bit))
             {
                 const auto v = vertex_index_offset + bit;
                 const auto& vertex = get_vertex(v);
@@ -1200,12 +1200,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                                                              assignment_sets))
                 {
                     /// Process delta consistent vertex.
-
-                    full_vertices.set(bit);
-                    delta_vertices.set(bit);
-
-                    full_consistent.set(bit);
-                    delta_consistent.set(bit);
+                    full_affected_partition.set(bit);
+                    delta_affected_partition.set(bit);
+                    full_delta_partition.set(bit);
+                    delta_delta_partition.set(bit);
                 }
             }
 
@@ -1223,33 +1221,47 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                 const auto vi = row.v();
                 const auto pi = layout.vertex_to_partition[vi];
                 const auto bi = layout.vertex_to_bit[vi];
-                const auto& vertex_i = get_vertex(vi);
                 const auto info_i = layout.info.infos[pi];
-                auto full_vertices_i = BitsetSpan<uint64_t>(full_graph.partitions.data().data() + info_i.block_offset, info_i.num_bits);
-                auto delta_vertices_i = BitsetSpan<uint64_t>(delta_graph.partitions.data().data() + info_i.block_offset, info_i.num_bits);
+                auto full_affected_partition_i = full_graph.affected_partitions.get_bitset(info_i);
 
-                if (!full_vertices_i.test(bi))
-                    return;  ///< vi vertex inconsisitent
+                if (!full_affected_partition_i.test(bi))
+                    return;  ///< vi vertex inconsistent
+
+                const auto& vertex_i = get_vertex(vi);
+                auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(info_i);
+                auto delta_delta_partition_i = delta_graph.delta_partitions.get_bitset(info_i);
+                auto full_delta_partition_i = full_graph.delta_partitions.get_bitset(info_i);
 
                 row.for_each_partition(
                     [&](auto&& partition)
                     {
                         const auto pj = partition.p();
+                        const auto info_j = layout.info.infos[pj];
+                        auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
+                        auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
+                        const auto delta_delta_partition_j = delta_graph.delta_partitions.get_bitset(info_j);
+                        auto full_delta_partition_j = full_graph.delta_partitions.get_bitset(info_j);
 
                         if (full_graph.matrix.get_cell(vi, pj).mode == kpkc::PartitionedAdjacencyMatrix::Cell::Mode::IMPLICIT)
+                        {
+                            // If vi is new, then mark all implicit vj's in pj as affected
+
+                            if (delta_delta_partition_i.test(bi))
+                                delta_affected_partition_j |= full_graph.affected_partitions.get_bitset(info_j);
+
+                            if (delta_delta_partition_j.any())
+                                delta_affected_partition_i |= full_graph.affected_partitions.get_bitset(info_i);
+
                             return;  // Already checked via vertex consistency
+                        }
 
                         partition.for_each_target(
                             [&](auto&& vj)
                             {
                                 const auto bj = layout.vertex_to_bit[vj];
-                                const auto info_j = layout.info.infos[pj];
-                                auto full_vertices_j = BitsetSpan<uint64_t>(full_graph.partitions.data().data() + info_j.block_offset, info_j.num_bits);
 
-                                if (!full_vertices_j.test(bj))
+                                if (!full_affected_partition_j.test(bj))
                                     return;  ///< vj vertex inconsistent
-
-                                auto delta_vertices_j = BitsetSpan<uint64_t>(delta_graph.partitions.data().data() + info_j.block_offset, info_j.num_bits);
 
                                 if (full_graph.matrix.get_bitset(vi, pj).test(bj))
                                 {
@@ -1270,10 +1282,13 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                                     full_graph.matrix.get_bitset(vi, pj).set(bj);
                                     full_graph.matrix.get_bitset(vj, pi).set(bi);
 
-                                    full_vertices_i.set(bi);
-                                    full_vertices_j.set(bj);
-                                    delta_vertices_i.set(bi);
-                                    delta_vertices_j.set(bj);
+                                    full_affected_partition_i.set(bi);
+                                    full_affected_partition_j.set(bj);
+                                    delta_affected_partition_i.set(bi);
+                                    delta_affected_partition_j.set(bj);
+
+                                    full_delta_partition_i.set(bi);
+                                    full_delta_partition_j.set(bj);
                                 }
                             });
                     });

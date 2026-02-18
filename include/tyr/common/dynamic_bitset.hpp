@@ -72,7 +72,9 @@ public:
 public:
     BitsetSpan(Block* data, size_t num_bits) noexcept : m_data(data), m_num_bits(num_bits) {}
 
-    BitsetSpan& copy_from(const BitsetSpan<const U>& other) noexcept
+    template<std::unsigned_integral OtherBlock>
+        requires(std::same_as<std::remove_const_t<OtherBlock>, U>)
+    BitsetSpan& copy_from(const BitsetSpan<OtherBlock>& other) noexcept
     {
         assert(m_num_bits == other.m_num_bits);
 
@@ -83,7 +85,9 @@ public:
         return *this;
     }
 
-    BitsetSpan& diff_from(const BitsetSpan<const U>& other) noexcept
+    template<std::unsigned_integral OtherBlock>
+        requires(std::same_as<std::remove_const_t<OtherBlock>, U>)
+    BitsetSpan& diff_from(const BitsetSpan<OtherBlock>& other) noexcept
     {
         assert(m_num_bits == other.m_num_bits);
 
@@ -224,7 +228,9 @@ public:
         }
     }
 
-    BitsetSpan& operator&=(const BitsetSpan<const U>& other) noexcept
+    template<std::unsigned_integral OtherBlock>
+        requires(std::same_as<std::remove_const_t<OtherBlock>, U>)
+    BitsetSpan& operator&=(const BitsetSpan<OtherBlock>& other) noexcept
     {
         assert(m_num_bits == other.m_num_bits);
 
@@ -235,7 +241,9 @@ public:
         return *this;
     }
 
-    BitsetSpan& operator|=(const BitsetSpan<const U>& other) noexcept
+    template<std::unsigned_integral OtherBlock>
+        requires(std::same_as<std::remove_const_t<OtherBlock>, U>)
+    BitsetSpan& operator|=(const BitsetSpan<OtherBlock>& other) noexcept
     {
         assert(m_num_bits == other.m_num_bits);
 
@@ -246,7 +254,9 @@ public:
         return *this;
     }
 
-    BitsetSpan& operator-=(const BitsetSpan<const U>& other) noexcept
+    template<std::unsigned_integral OtherBlock>
+        requires(std::same_as<std::remove_const_t<OtherBlock>, U>)
+    BitsetSpan& operator-=(const BitsetSpan<OtherBlock>& other) noexcept
     {
         assert(m_num_bits == other.m_num_bits);
 
