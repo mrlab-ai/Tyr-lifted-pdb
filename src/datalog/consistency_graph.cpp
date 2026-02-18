@@ -1172,13 +1172,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         uint64_t vertex_ns = 0;
         uint64_t edge_ns = 0;
         uint64_t implicit_ns = 0;
-        uint64_t copy_ns = 0;
-        uint64_t diff_ns = 0;
         uint64_t delta_touched_partitions = 0;
         uint64_t full_touched_partitions = 0;
     };
 
-    // static PhaseTimes T;
+    static PhaseTimes T;
 
     /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
 
@@ -1186,13 +1184,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     // std::cout << m_unary_overapproximation_condition << std::endl;
     // std::cout << m_binary_overapproximation_condition << std::endl;
 
-    // std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
-
-    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
     delta_graph.reset();
 
-    // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     // std::cout << "Delta graph:" << std::endl;
     // std::cout << delta_graph.matrix << std::endl;
@@ -1238,7 +1234,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         }
     }
 
-    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
     /// 3. Monotonically update full explicitly consistent edges
 
@@ -1325,7 +1321,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
             });
     }
 
-    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
     /// If vi is new, then mark all implicit vj's in pj as affected, and vice versa.
     for (uint_t pi = 0; pi < layout.k; ++pi)
@@ -1351,34 +1347,30 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         }
     }
 
-    // std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
-
-    // std::chrono::steady_clock::time_point t6 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
 
     // std::cout << "Delta graph:" << std::endl;
     // std::cout << delta_graph.matrix << std::endl;
     // std::cout << "Full graph:" << std::endl;
     // std::cout << full_graph.matrix << std::endl;
 
-    //    T.calls++;
-    //    T.reset_ns += to_ns(t1 - t0);
-    //    T.copy_ns += to_ns(t2 - t1);
-    //    T.vertex_ns += to_ns(t3 - t2);
-    //    T.edge_ns += to_ns(t4 - t3);
-    //    T.implicit_ns += to_ns(t5 - t4);
-    //    T.diff_ns += to_ns(t6 - t5);
-    //    T.delta_touched_partitions += delta_graph.matrix.touched_partitions().count();
-    //    T.full_touched_partitions += full_graph.matrix.touched_partitions().count();
-    //
-    //    if ((T.calls % 1000) == 0)
-    //    {
-    //        std::cout << "avg reset " << (T.copy_ns / T.calls) << " ns\n"
-    //                  << "avg vertex " << (T.vertex_ns / T.calls) << " ns\n"
-    //                  << "avg edge " << (T.edge_ns / T.calls) << " ns\n"
-    //                  << "avg implicit " << (T.implicit_ns / T.calls) << " ns\n"
-    //                  << "delta touched partitions " << static_cast<double>(T.delta_touched_partitions / T.calls) / (layout.nv * layout.k) << "\n"
-    //                  << "full touched partitions " << static_cast<double>(T.full_touched_partitions / T.calls) / (layout.nv * layout.k) << "\n";
-    //    }
+    T.calls++;
+    T.reset_ns += to_ns(t1 - t0);
+    T.vertex_ns += to_ns(t2 - t1);
+    T.edge_ns += to_ns(t3 - t2);
+    T.implicit_ns += to_ns(t4 - t3);
+    T.delta_touched_partitions += delta_graph.matrix.touched_partitions().count();
+    T.full_touched_partitions += full_graph.matrix.touched_partitions().count();
+
+    if ((T.calls % 1000) == 0)
+    {
+        std::cout << "avg reset " << (T.reset_ns / T.calls) << " ns\n"
+                  << "avg vertex " << (T.vertex_ns / T.calls) << " ns\n"
+                  << "avg edge " << (T.edge_ns / T.calls) << " ns\n"
+                  << "avg implicit " << (T.implicit_ns / T.calls) << " ns\n"
+                  << "delta touched partitions " << static_cast<double>(T.delta_touched_partitions / T.calls) / (layout.nv * layout.k) << "\n"
+                  << "full touched partitions " << static_cast<double>(T.full_touched_partitions / T.calls) / (layout.nv * layout.k) << "\n";
+    }
 }
 
 const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices.at(index); }

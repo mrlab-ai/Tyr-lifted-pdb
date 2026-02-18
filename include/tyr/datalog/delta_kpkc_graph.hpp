@@ -556,8 +556,15 @@ public:
 
     void reset() noexcept
     {
+        for (auto t = m_touched_partitions.find_first(); t != boost::dynamic_bitset<>::npos; t = m_touched_partitions.find_next(t))
+        {
+            const auto v = t / m_layout.get().k;
+            const auto p = t % m_layout.get().k;
+
+            get_bitset(v, p).reset();
+        }
+
         m_touched_partitions.reset();
-        std::memset(m_bitset_data.data(), 0, m_bitset_data.size() * sizeof(uint64_t));
     }
 
     const auto& get_cell(uint_t v, uint_t p) const noexcept { return m_adj_span(v, p); }
