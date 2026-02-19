@@ -280,8 +280,9 @@ public:
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
                                                const kpkc::GraphLayout& layout,
-                                               kpkc::Graph2& delta_graph,
-                                               kpkc::Graph2& full_graph) const;
+                                               kpkc::Graph& delta_graph,
+                                               kpkc::Graph& full_graph,
+                                               kpkc::VertexPartitions& fact_induced_candidates) const;
 
     auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
 
@@ -325,6 +326,8 @@ private:
     details::IndexedConstraints m_binary_overapproximation_indexed_constraints;
 
     details::IndexedAnchors m_predicate_to_anchors;
+    details::IndexedAnchors m_unary_overapproximation_predicate_to_anchors;
+    details::IndexedAnchors m_binary_overapproximation_predicate_to_anchors;
 };
 
 extern std::pair<Index<formalism::datalog::GroundConjunctiveCondition>, bool>

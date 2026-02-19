@@ -50,6 +50,9 @@ private:
 
 public:
     static constexpr size_t digits = std::numeric_limits<Block>::digits;
+    static constexpr size_t BlockShift = std::countr_zero(digits);
+    static constexpr size_t BlockMask = digits - 1;
+
     static size_t block_index(size_t pos) { return pos / digits; }
     static size_t block_pos(size_t pos) { return pos % digits; }
     static size_t num_blocks(size_t num_bits)
@@ -110,6 +113,13 @@ public:
         assert(pos < m_num_bits);
 
         m_data[block_index(pos)] |= (U { 1 } << block_pos(pos));
+    }
+
+    void reset(size_t pos) noexcept
+    {
+        assert(pos < m_num_bits);
+
+        m_data[block_index(pos)] &= (~(U { 1 } << block_pos(pos)));
     }
 
     void reset() noexcept

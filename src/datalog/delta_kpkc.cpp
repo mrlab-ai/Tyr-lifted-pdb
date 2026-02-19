@@ -23,18 +23,20 @@ namespace tyr::datalog::kpkc
 {
 
 DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
-    m_const_graph(GraphLayout(static_graph.get_num_vertices(), static_graph.get_vertex_partitions())),
+    m_layout(GraphLayout(static_graph.get_num_vertices(), static_graph.get_vertex_partitions())),
     m_iteration(0),
-    m_delta_graph2(m_const_graph, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
-    m_full_graph2(m_const_graph, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph())
+    m_delta_graph(m_layout, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
+    m_full_graph(m_layout, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
+    m_fact_induced_candidates(m_layout)
 {
 }
 
-DeltaKPKC::DeltaKPKC(GraphLayout const_graph, Graph2 delta_graph2, Graph2 full_graph2) :
-    m_const_graph(std::move(const_graph)),
+DeltaKPKC::DeltaKPKC(GraphLayout layout, Graph delta_graph2, Graph full_graph2) :
+    m_layout(std::move(layout)),
     m_iteration(0),
-    m_delta_graph2(std::move(delta_graph2)),
-    m_full_graph2(std::move(full_graph2))
+    m_delta_graph(std::move(delta_graph2)),
+    m_full_graph(std::move(full_graph2)),
+    m_fact_induced_candidates(m_layout)
 {
 }
 
@@ -42,15 +44,15 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                          const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
                                          const AssignmentSets& assignment_sets)
 {
-    static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_fact_sets, m_const_graph, m_delta_graph2, m_full_graph2);
+    static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_fact_sets, m_layout, m_delta_graph, m_full_graph, m_fact_induced_candidates);
 
     ++m_iteration;
 }
 
 void DeltaKPKC::reset()
 {
-    m_delta_graph2.reset();
-    m_full_graph2.reset();
+    m_delta_graph.reset();
+    m_full_graph.reset();
     m_iteration = 0;
 }
 
@@ -71,12 +73,12 @@ void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
 
     auto cv_0_row = workspace.compatible_vertices_span(0);
 
-    for (uint_t p = 0; p < m_const_graph.k; ++p)
+    for (uint_t p = 0; p < m_layout.k; ++p)
     {
-        const auto& info = m_const_graph.info.infos[p];
+        const auto& info = m_layout.info.infos[p];
         auto cv_0 = BitsetSpan<uint64_t>(cv_0_row.data() + info.block_offset, info.num_bits);
 
-        auto partition = m_full_graph2.matrix.affected_partitions().get_bitset(info);
+        auto partition = m_full_graph.matrix.affected_partitions().get_bitset(info);
         cv_0.copy_from(partition);
     }
 }
@@ -87,11 +89,11 @@ bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
     workspace.partial_solution.push_back(edge.src);
     workspace.partial_solution.push_back(edge.dst);
 
-    const uint_t pi = m_const_graph.vertex_to_partition[edge.src.index];
-    const uint_t pj = m_const_graph.vertex_to_partition[edge.dst.index];
+    const uint_t pi = m_layout.vertex_to_partition[edge.src.index];
+    const uint_t pj = m_layout.vertex_to_partition[edge.dst.index];
     assert(pi < pj);
 
-    workspace.anchor_key = edge.rank(m_const_graph.nv);
+    workspace.anchor_key = edge.rank(m_layout.nv);
     workspace.anchor_pi = pi;
     workspace.anchor_pj = pj;
     workspace.partition_bits.reset();
@@ -100,15 +102,15 @@ bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 
     auto cv_0_row = workspace.compatible_vertices_span(0);
 
-    for (uint_t p = 0; p < m_const_graph.k; ++p)
+    for (uint_t p = 0; p < m_layout.k; ++p)
     {
         if (p == pi || p == pj)
             continue;
 
-        const auto& info = m_const_graph.info.infos[p];
+        const auto& info = m_layout.info.infos[p];
         auto cv_0 = BitsetSpan<uint64_t>(cv_0_row.data() + info.block_offset, info.num_bits);
-        auto full_src_adj_list = m_full_graph2.matrix.get_bitset(edge.src.index, p);
-        auto full_dst_adj_list = m_full_graph2.matrix.get_bitset(edge.dst.index, p);
+        auto full_src_adj_list = m_full_graph.matrix.get_bitset(edge.src.index, p);
+        auto full_dst_adj_list = m_full_graph.matrix.get_bitset(edge.dst.index, p);
 
         cv_0.copy_from(full_src_adj_list);
         cv_0 &= full_dst_adj_list;
@@ -116,7 +118,7 @@ bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
         if (!cv_0.any())
             return false;  ///< triangle pruning
 
-        auto delta_src_adj_list = m_delta_graph2.matrix.get_bitset(edge.src.index, p);
+        auto delta_src_adj_list = m_delta_graph.matrix.get_bitset(edge.src.index, p);
 
         if (p < pj)
             cv_0 -= delta_src_adj_list;
@@ -124,7 +126,7 @@ bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
         if (!cv_0.any())
             return false;  ///< triangle pruning
 
-        auto delta_dst_adj_list = m_delta_graph2.matrix.get_bitset(edge.dst.index, p);
+        auto delta_dst_adj_list = m_delta_graph.matrix.get_bitset(edge.dst.index, p);
 
         if (p < pi)
             cv_0 -= delta_dst_adj_list;
@@ -138,7 +140,7 @@ bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 
 uint_t DeltaKPKC::choose_best_partition(size_t depth, const Workspace& workspace) const
 {
-    const uint_t k = m_const_graph.k;
+    const uint_t k = m_layout.k;
     const auto& partition_bits = workspace.partition_bits;
 
     uint_t best_partition = std::numeric_limits<uint_t>::max();
@@ -149,7 +151,7 @@ uint_t DeltaKPKC::choose_best_partition(size_t depth, const Workspace& workspace
         if (partition_bits.test(p))
             continue;
 
-        const auto& info = m_const_graph.info.infos[p];
+        const auto& info = m_layout.info.infos[p];
         auto cv_curr = BitsetSpan<const uint64_t>(cv_curr_row.data() + info.block_offset, info.num_bits);
 
         const auto num_set_bits = cv_curr.count();

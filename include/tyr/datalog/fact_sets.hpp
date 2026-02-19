@@ -43,6 +43,8 @@ private:
 public:
     explicit PredicateFactSet(View<Index<formalism::Predicate<T>>, formalism::datalog::Repository> predicate);
 
+    auto get_predicate() const noexcept { return make_view(m_predicate, m_context); }
+
     void insert(const PredicateFactSet<T>& other) { insert(other.get_facts()); }
 
     void reset();

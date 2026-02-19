@@ -61,10 +61,10 @@ TEST(TyrTests, TyrDatalogDeltaKPKCStandard3)
     const auto nv = uint_t(6);
     const auto k = uint_t(3);
 
-    auto const_graph = d::kpkc::GraphLayout(nv,
-                                            k,
-                                            std::vector<std::vector<d::kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }) },
-                                            std::vector<uint_t> { 0, 0, 1, 1, 2, 2 });
+    auto layout = d::kpkc::GraphLayout(nv,
+                                       k,
+                                       std::vector<std::vector<d::kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }) },
+                                       std::vector<uint_t> { 0, 0, 1, 1, 2, 2 });
 
     auto delta_graph = d::kpkc::Graph {};
     delta_graph.adjacency_matrix.resize(nv);
@@ -102,7 +102,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCStandard3)
     full_graph.adjacency_matrix[3].set(4);
     full_graph.adjacency_matrix[4].set(3);
 
-    auto dkpkc = d::kpkc::DeltaKPKC(std::move(const_graph), std::move(delta_graph), std::move(full_graph));
+    auto dkpkc = d::kpkc::DeltaKPKC(std::move(layout), std::move(delta_graph), std::move(full_graph));
 
     auto workspace = d::kpkc::Workspace(dkpkc.get_graph_layout());
     auto cliques = enumerate_cliques(dkpkc, workspace);
@@ -116,10 +116,10 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta3)
     const auto nv = uint_t(6);
     const auto k = uint_t(3);
 
-    auto const_graph = d::kpkc::GraphLayout(nv,
-                                            k,
-                                            std::vector<std::vector<d::kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }) },
-                                            std::vector<uint_t> { 0, 0, 1, 1, 2, 2 });
+    auto layout = d::kpkc::GraphLayout(nv,
+                                       k,
+                                       std::vector<std::vector<d::kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }) },
+                                       std::vector<uint_t> { 0, 0, 1, 1, 2, 2 });
 
     auto delta_graph = d::kpkc::Graph {};
     delta_graph.adjacency_matrix.resize(nv);
@@ -161,7 +161,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta3)
     full_graph.adjacency_matrix[3].set(5);
     full_graph.adjacency_matrix[5].set(3);
 
-    auto dkpkc = d::kpkc::DeltaKPKC(std::move(const_graph), std::move(delta_graph), std::move(full_graph));
+    auto dkpkc = d::kpkc::DeltaKPKC(std::move(layout), std::move(delta_graph), std::move(full_graph));
 
     auto workspace = d::kpkc::Workspace(dkpkc.get_graph_layout());
     auto cliques = enumerate_cliques(dkpkc, workspace);
@@ -175,10 +175,10 @@ TEST(TyrTests, TyrDatalogDeltaKPKCStandard4)
     const auto nv = uint_t(8);
     const auto k = uint_t(4);
 
-    auto const_graph = d::kpkc::GraphLayout(nv,
-                                            k,
-                                            std::vector<std::vector<d::kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }), V({ 6, 7 }) },
-                                            std::vector<uint_t> { 0, 0, 1, 1, 2, 2, 3, 3 });
+    auto layout = d::kpkc::GraphLayout(nv,
+                                       k,
+                                       std::vector<std::vector<d::kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }), V({ 6, 7 }) },
+                                       std::vector<uint_t> { 0, 0, 1, 1, 2, 2, 3, 3 });
 
     auto delta_graph = d::kpkc::Graph {};
     delta_graph.adjacency_matrix.resize(nv);
@@ -234,7 +234,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCStandard4)
     full_graph.adjacency_matrix[4].set(7);
     full_graph.adjacency_matrix[7].set(4);
 
-    auto dkpkc = d::kpkc::DeltaKPKC(std::move(const_graph), std::move(delta_graph), std::move(full_graph));
+    auto dkpkc = d::kpkc::DeltaKPKC(std::move(layout), std::move(delta_graph), std::move(full_graph));
 
     auto workspace = d::kpkc::Workspace(dkpkc.get_graph_layout());
     auto cliques = enumerate_cliques(dkpkc, workspace);
@@ -248,10 +248,10 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta4)
     const auto nv = uint_t(8);
     const auto k = uint_t(4);
 
-    auto const_graph = d::kpkc::GraphLayout(nv,
-                                            k,
-                                            std::vector<std::vector<d::kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }), V({ 6, 7 }) },
-                                            std::vector<uint_t> { 0, 0, 1, 1, 2, 2, 3, 3 });
+    auto layout = d::kpkc::GraphLayout(nv,
+                                       k,
+                                       std::vector<std::vector<d::kpkc::Vertex>> { V({ 0, 1 }), V({ 2, 3 }), V({ 4, 5 }), V({ 6, 7 }) },
+                                       std::vector<uint_t> { 0, 0, 1, 1, 2, 2, 3, 3 });
 
     auto delta_graph = d::kpkc::Graph {};
     delta_graph.adjacency_matrix.resize(nv);
@@ -303,7 +303,7 @@ TEST(TyrTests, TyrDatalogDeltaKPKCDelta4)
     full_graph.adjacency_matrix[4].set(6);
     full_graph.adjacency_matrix[6].set(4);
 
-    auto dkpkc = d::kpkc::DeltaKPKC(std::move(const_graph), std::move(delta_graph), std::move(full_graph));
+    auto dkpkc = d::kpkc::DeltaKPKC(std::move(layout), std::move(delta_graph), std::move(full_graph));
 
     auto workspace = d::kpkc::Workspace(dkpkc.get_graph_layout());
     auto cliques = enumerate_cliques(dkpkc, workspace);

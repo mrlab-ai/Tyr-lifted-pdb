@@ -1111,7 +1111,9 @@ StaticConsistencyGraph::StaticConsistencyGraph(
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
     m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_constraints(compute_indexed_constraints(m_binary_overapproximation_condition)),
-    m_predicate_to_anchors(compute_indexed_anchors(condition, num_fluent_predicates))
+    m_predicate_to_anchors(compute_indexed_anchors(condition, num_fluent_predicates)),
+    m_unary_overapproximation_predicate_to_anchors(compute_indexed_anchors(m_unary_overapproximation_condition, num_fluent_predicates)),
+    m_binary_overapproximation_predicate_to_anchors(compute_indexed_anchors(m_binary_overapproximation_condition, num_fluent_predicates))
 {
     auto [vertices_, vertex_partitions_, object_to_vertex_partitions_] = compute_vertices(m_unary_overapproximation_indexed_literals.static_indexed,
                                                                                           parameter_domains,
@@ -1155,8 +1157,9 @@ StaticConsistencyGraph::StaticConsistencyGraph(
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                                    const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
                                                                    const kpkc::GraphLayout& layout,
-                                                                   kpkc::Graph2& delta_graph,
-                                                                   kpkc::Graph2& full_graph) const
+                                                                   kpkc::Graph& delta_graph,
+                                                                   kpkc::Graph& full_graph,
+                                                                   kpkc::VertexPartitions& fact_induced_candidates) const
 {
     struct PhaseTimes
     {
@@ -1183,9 +1186,51 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
+    fact_induced_candidates.reset();
     delta_graph.reset();
 
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+
+    std::cout << m_unary_overapproximation_condition << std::endl;
+
+    const auto& predicate_sets = delta_fact_sets.predicate.get_sets();
+
+    for (uint_t i = 0; i < delta_fact_sets.predicate.get_sets().size(); ++i)
+    {
+        const auto& predicate_set = predicate_sets[i];
+        const auto predicate = predicate_set.get_predicate();
+        const auto arity = predicate.get_arity();
+        const auto& predicate_to_anchors = m_unary_overapproximation_predicate_to_anchors.predicate_to_infos[i];
+
+        for (const auto fact : predicate_set.get_facts())
+        {
+            const auto objects = fact.get_objects().get_data();
+
+            std::cout << fact << " " << predicate_to_anchors.size() << std::endl;
+            for (const auto& info : predicate_to_anchors)
+            {
+                const auto& pos2param = info.parameter_mappings.position_to_parameter;
+
+                for (uint_t pos = 0; pos < arity; ++pos)
+                {
+                    const auto param = pos2param[pos];
+
+                    std::cout << pos << " " << param << std::endl;
+
+                    if (param == details::ParameterMappings::NoParam)
+                        continue;
+
+                    const auto object = objects[pos];
+                    // need index of param/object
+                    const auto& vertex = get_vertex(f::ParameterIndex(param), object);
+
+                    fact_induced_candidates.get_bitset(param).set(layout.vertex_to_bit[vertex.get_index()]);
+                }
+            }
+        }
+    }
+
+    std::cout << fact_induced_candidates << std::endl;
 
     // std::cout << "Delta graph:" << std::endl;
     // std::cout << delta_graph.matrix << std::endl;
@@ -1198,15 +1243,17 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
     if (constant_consistent_literals(m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate))
     {
-        for (const auto& info : layout.info.infos)
+        for (uint_t p = 0; p < layout.k; ++p)
         {
+            const auto& info = layout.info.infos[p];
+            auto induced_partition = fact_induced_candidates.get_bitset(p);
             auto full_affected_partition = full_graph.affected_partitions.get_bitset(info);
             auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(info);
             auto full_delta_partition = full_graph.delta_partitions.get_bitset(info);
             auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(info);
 
             /// TODO: Iterate over deltas only
-            for (auto bit = full_affected_partition.find_first_zero(); bit != BitsetSpan<uint64_t>::npos; bit = full_affected_partition.find_next_zero(bit))
+            for (auto bit = induced_partition.find_first(); bit != BitsetSpan<uint64_t>::npos; bit = induced_partition.find_next(bit))
             {
                 const auto v = vertex_index_offset + bit;
                 const auto& vertex = get_vertex(v);
@@ -1228,6 +1275,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                     ++T.delta_consistent_vertices;
                 }
+                else
+                {
+                    induced_partition.reset(bit);
+                }
             }
 
             vertex_index_offset += info.num_bits;
@@ -1241,12 +1292,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     if (constant_pair_consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate))
     {
         auto offset_i = 0;
-
-        // std::cout << "initialize: " << std::endl;
-
-        // std::cout << m_binary_overapproximation_condition << std::endl;
-
-        // std::cout << m_matrix << std::endl;
 
         for (uint_t pi = 0; pi < layout.k; ++pi)
         {

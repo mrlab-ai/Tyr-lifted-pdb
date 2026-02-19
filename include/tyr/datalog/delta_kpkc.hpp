@@ -91,7 +91,7 @@ public:
     explicit DeltaKPKC(const StaticConsistencyGraph& static_graph);
 
     /// @brief Complete member initialization (for testing purposes)
-    DeltaKPKC(GraphLayout const_graph, Graph2 delta_graph2, Graph2 full_graph2);
+    DeltaKPKC(GraphLayout layout, Graph delta_graph2, Graph full_graph2);
 
     /// @brief Set new fact set to compute deltas.
     /// @param assignment_sets
@@ -122,9 +122,9 @@ public:
      * Getters
      */
 
-    const GraphLayout& get_graph_layout() const noexcept { return m_const_graph; }
-    const Graph2& get_delta_graph() const noexcept { return m_delta_graph2; }
-    const Graph2& get_full_graph() const noexcept { return m_full_graph2; }
+    const GraphLayout& get_graph_layout() const noexcept { return m_layout; }
+    const Graph& get_delta_graph() const noexcept { return m_delta_graph; }
+    const Graph& get_full_graph() const noexcept { return m_full_graph; }
     size_t get_iteration() const noexcept { return m_iteration; }
 
 private:
@@ -176,11 +176,13 @@ private:
     bool update_compatible_adjacent_vertices_at_next_depth(Vertex src, size_t depth, Workspace& workspace) const;
 
 private:
-    GraphLayout m_const_graph;
+    GraphLayout m_layout;
     size_t m_iteration;
 
-    Graph2 m_delta_graph2;
-    Graph2 m_full_graph2;
+    Graph m_delta_graph;
+    Graph m_full_graph;
+
+    VertexPartitions m_fact_induced_candidates;
 };
 
 /**
@@ -190,9 +192,9 @@ private:
 template<typename Callback>
 void DeltaKPKC::for_each_new_unary_clique(Callback&& callback, Workspace& workspace) const
 {
-    assert(m_const_graph.k == 1);
+    assert(m_layout.k == 1);
 
-    m_delta_graph2.matrix.for_each_vertex(
+    m_delta_graph.matrix.for_each_vertex(
         [&](auto&& vertex)
         {
             workspace.partial_solution.clear();
@@ -205,9 +207,9 @@ void DeltaKPKC::for_each_new_unary_clique(Callback&& callback, Workspace& worksp
 template<typename Callback>
 void DeltaKPKC::for_each_unary_clique(Callback&& callback, Workspace& workspace) const
 {
-    assert(m_const_graph.k == 1);
+    assert(m_layout.k == 1);
 
-    m_full_graph2.matrix.for_each_vertex(
+    m_full_graph.matrix.for_each_vertex(
         [&](auto&& vertex)
         {
             workspace.partial_solution.clear();
@@ -220,9 +222,9 @@ void DeltaKPKC::for_each_unary_clique(Callback&& callback, Workspace& workspace)
 template<typename Callback>
 void DeltaKPKC::for_each_new_binary_clique(Callback&& callback, Workspace& workspace) const
 {
-    assert(m_const_graph.k == 2);
+    assert(m_layout.k == 2);
 
-    m_delta_graph2.matrix.for_each_edge(
+    m_delta_graph.matrix.for_each_edge(
         [&](auto&& edge)
         {
             workspace.partial_solution.clear();
@@ -236,9 +238,9 @@ void DeltaKPKC::for_each_new_binary_clique(Callback&& callback, Workspace& works
 template<typename Callback>
 void DeltaKPKC::for_each_binary_clique(Callback&& callback, Workspace& workspace) const
 {
-    assert(m_const_graph.k == 2);
+    assert(m_layout.k == 2);
 
-    m_full_graph2.matrix.for_each_edge(
+    m_full_graph.matrix.for_each_edge(
         [&](auto&& edge)
         {
             workspace.partial_solution.clear();
@@ -252,7 +254,7 @@ void DeltaKPKC::for_each_binary_clique(Callback&& callback, Workspace& workspace
 template<typename Callback>
 void DeltaKPKC::for_each_k_clique(Callback&& callback, Workspace& workspace) const
 {
-    const auto k = m_const_graph.k;
+    const auto k = m_layout.k;
 
     if (k == 0)
     {
@@ -285,7 +287,7 @@ void DeltaKPKC::for_each_new_k_clique(Callback&& callback, Workspace& workspace)
     }
     else
     {
-        const auto k = m_const_graph.k;
+        const auto k = m_layout.k;
 
         if (k == 0)
         {
@@ -301,7 +303,7 @@ void DeltaKPKC::for_each_new_k_clique(Callback&& callback, Workspace& workspace)
         }
         else
         {
-            m_delta_graph2.matrix.for_each_edge(
+            m_delta_graph.matrix.for_each_edge(
                 [&](auto&& edge)
                 {
                     if (seed_from_anchor(edge, workspace))
@@ -314,11 +316,11 @@ void DeltaKPKC::for_each_new_k_clique(Callback&& callback, Workspace& workspace)
 template<typename AnchorType>
 bool DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, size_t depth, Workspace& workspace) const
 {
-    const uint_t k = m_const_graph.k;
+    const uint_t k = m_layout.k;
 
     const auto& partition_bits = workspace.partition_bits;
 
-    const auto p_src = m_const_graph.vertex_to_partition[src.index];
+    const auto p_src = m_layout.vertex_to_partition[src.index];
     assert(p_src != workspace.anchor_pi);
     assert(p_src != workspace.anchor_pj);
 
@@ -330,10 +332,10 @@ bool DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
         if (partition_bits.test(p))
             continue;
 
-        const auto& info = m_const_graph.info.infos[p];
+        const auto& info = m_layout.info.infos[p];
         auto src_cur = BitsetSpan<const uint64_t>(cv_curr.data() + info.block_offset, info.num_bits);
         auto dst_next = BitsetSpan<uint64_t>(cv_next.data() + info.block_offset, info.num_bits);
-        auto src_full = m_full_graph2.matrix.get_bitset(src.index, p);
+        auto src_full = m_full_graph.matrix.get_bitset(src.index, p);
 
         dst_next.copy_from(src_cur);
         dst_next &= src_full;
@@ -347,7 +349,7 @@ bool DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
 
             if (p_src < workspace.anchor_pi || p < workspace.anchor_pi)
             {
-                auto src_delta = m_delta_graph2.matrix.get_bitset(src.index, p);
+                auto src_delta = m_delta_graph.matrix.get_bitset(src.index, p);
 
                 dst_next -= src_delta;
 
@@ -362,23 +364,23 @@ bool DeltaKPKC::update_compatible_adjacent_vertices_at_next_depth(Vertex src, si
 template<typename AnchorType, class Callback>
 void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace) const
 {
-    assert(depth < m_const_graph.k);
+    assert(depth < m_layout.k);
 
     const uint_t p = choose_best_partition(depth, workspace);
     if (p == std::numeric_limits<uint_t>::max())
         return;  // dead branch: no unused partition has candidates
 
-    const uint_t k = m_const_graph.k;
+    const uint_t k = m_layout.k;
 
     auto& partition_bits = workspace.partition_bits;
     auto& partial_solution = workspace.partial_solution;
-    const auto& info = m_const_graph.info.infos[p];
+    const auto& info = m_layout.info.infos[p];
     const auto cv_d_p = BitsetSpan<const uint64_t>(workspace.compatible_vertices_span(depth).data() + info.block_offset, info.num_bits);
 
     // Iterate through compatible vertices in the best partition
     for (auto bit = cv_d_p.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = cv_d_p.find_next(bit))
     {
-        const auto vertex = m_const_graph.partitions[info.bit_offset + bit];
+        const auto vertex = m_layout.partitions[info.bit_offset + bit];
 
         partial_solution.push_back(vertex);
 

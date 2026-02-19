@@ -108,6 +108,7 @@ public:
 
     auto& data() noexcept { return m_data; }
     const auto& data() const noexcept { return m_data; }
+    const auto& layout() const noexcept { return m_layout; }
 
 private:
     const GraphLayout& m_layout;
@@ -415,11 +416,11 @@ private:
     std::vector<uint64_t> m_bitset_data;
 };
 
-struct Graph2
+struct Graph
 {
-    Graph2(const GraphLayout& layout,
-           const std::vector<std::vector<uint_t>>& static_partitions,
-           const formalism::datalog::VariableDependencyGraph& dependency_graph) :
+    Graph(const GraphLayout& layout,
+          const std::vector<std::vector<uint_t>>& static_partitions,
+          const formalism::datalog::VariableDependencyGraph& dependency_graph) :
         affected_partitions(layout),
         delta_partitions(layout),
         matrix(layout, affected_partitions, delta_partitions, static_partitions, dependency_graph)
