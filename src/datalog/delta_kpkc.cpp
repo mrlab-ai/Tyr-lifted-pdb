@@ -23,7 +23,7 @@ namespace tyr::datalog::kpkc
 {
 
 DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
-    m_const_graph(GraphLayout(static_graph)),
+    m_const_graph(GraphLayout(static_graph.get_num_vertices(), static_graph.get_vertex_partitions())),
     m_iteration(0),
     m_delta_graph2(m_const_graph, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
     m_full_graph2(m_const_graph, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph())

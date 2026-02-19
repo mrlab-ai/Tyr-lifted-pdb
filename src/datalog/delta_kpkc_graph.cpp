@@ -43,9 +43,10 @@ namespace tyr::datalog::kpkc
     return true;
 }
 
-GraphLayout::GraphLayout(const StaticConsistencyGraph& static_graph) :
-    nv(static_graph.get_num_vertices()),
-    k(static_graph.get_vertex_partitions().size()),
+GraphLayout::GraphLayout(size_t nv, const std::vector<std::vector<uint_t>>& vertex_partitions_) :
+    nv(nv),
+    k(vertex_partitions.size()),
+    vertex_partitions(vertex_partitions_),
     partitions(),
     vertex_to_partition(),
     vertex_to_bit(),
@@ -60,7 +61,7 @@ GraphLayout::GraphLayout(const StaticConsistencyGraph& static_graph) :
 
     for (size_t p = 0; p < k; ++p)
     {
-        const auto& partition = static_graph.get_vertex_partitions()[p];
+        const auto& partition = vertex_partitions[p];
 
         const auto partition_size = static_cast<uint_t>(partition.size());
         const auto partition_blocks = static_cast<uint_t>(BitsetSpan<uint64_t>::num_blocks(partition_size));

@@ -251,10 +251,11 @@ private:
                      const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
     /// @brief Helper to initialize edges.
-    kpkc::PartitionedAdjacencyLists compute_edges(const details::TaggedIndexedLiterals<formalism::StaticTag>& indexed_literals,
-                                                  const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
-                                                  const details::Vertices& vertices,
-                                                  const std::vector<std::vector<uint_t>>& vertex_partitions);
+    std::tuple<kpkc::PartitionedAdjacencyLists, kpkc::DeduplicatedAdjacencyMatrix>
+    compute_edges(const details::TaggedIndexedLiterals<formalism::StaticTag>& indexed_literals,
+                  const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
+                  const details::Vertices& vertices,
+                  const std::vector<std::vector<uint_t>>& vertex_partitions);
 
     template<formalism::FactKind T>
     bool constant_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
@@ -316,8 +317,10 @@ private:
     std::vector<std::vector<uint_t>> m_vertex_partitions;
     std::vector<std::vector<uint_t>> m_object_to_vertex_partitions;
 
+    kpkc::GraphLayout m_layout;
+    kpkc::DeduplicatedAdjacencyMatrix m_matrix;
+
     kpkc::PartitionedAdjacencyLists m_adj_lists;
-    // kpkc::PartitionedAdjacencyMatrix m_adj_matrix;
 
     details::IndexedLiterals m_unary_overapproximation_indexed_literals;
     details::IndexedLiterals m_binary_overapproximation_indexed_literals;

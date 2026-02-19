@@ -58,6 +58,64 @@ struct Edge
     uint_t rank(uint_t nv) const noexcept { return src.index * nv + dst.index; }
 };
 
+struct GraphLayout
+{
+    /// Meta
+    size_t nv;
+    size_t k;
+    /// Vertex partitioning
+    std::vector<std::vector<uint_t>> vertex_partitions;
+    /// Vertex partitioning with continuous vertex indices [[0,1,2],[3,4],[5,6]]
+    std::vector<Vertex> partitions;
+    std::vector<uint_t> vertex_to_partition;
+    std::vector<uint_t> vertex_to_bit;
+
+    struct BitsetInfo
+    {
+        uint_t bit_offset;  // bit offset ignoring unused bits
+        uint_t num_bits;
+
+        uint_t block_offset;
+        uint_t num_blocks;
+    };
+
+    struct PartitionInfo
+    {
+        std::vector<BitsetInfo> infos;
+        size_t num_blocks;
+    };
+
+    PartitionInfo info;
+
+    GraphLayout() = default;
+    GraphLayout(size_t nv, const std::vector<std::vector<uint_t>>& vertex_partitions);
+};
+
+class VertexPartitions
+{
+public:
+    explicit VertexPartitions(const GraphLayout& layout) : m_layout(layout), m_data(layout.info.num_blocks, 0) {}
+
+    void reset() noexcept { std::memset(m_data.data(), 0, m_data.size() * sizeof(uint64_t)); }
+
+    auto get_bitset(const GraphLayout::BitsetInfo& info) noexcept { return BitsetSpan<uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
+
+    auto get_bitset(const GraphLayout::BitsetInfo& info) const noexcept { return BitsetSpan<const uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
+
+    auto get_bitset(uint_t p) noexcept { return get_bitset(m_layout.info.infos[p]); }
+
+    auto get_bitset(uint_t p) const noexcept { return get_bitset(m_layout.info.infos[p]); }
+
+    auto& data() noexcept { return m_data; }
+    const auto& data() const noexcept { return m_data; }
+
+private:
+    const GraphLayout& m_layout;
+
+    /// Implicit storage: the active vertices in the partition
+    std::vector<uint64_t> m_data;
+};
+
 /// @brief A compact adjacency matrix representation for k partite graphs.
 ///
 /// Row-major adjacency lists with targets grouped by partition.
@@ -266,59 +324,100 @@ private:
     uint_t m_partition_data_start_pos;
 };
 
-struct GraphLayout
-{
-    /// Meta
-    size_t nv;
-    size_t k;
-    /// Vertex partitioning with continuous vertex indices [[0,1,2],[3,4],[5,6]]
-    std::vector<Vertex> partitions;
-    std::vector<uint_t> vertex_to_partition;
-    std::vector<uint_t> vertex_to_bit;
-
-    struct BitsetInfo
-    {
-        uint_t bit_offset;  // bit offset ignoring unused bits
-        uint_t num_bits;
-
-        uint_t block_offset;
-        uint_t num_blocks;
-    };
-
-    struct PartitionInfo
-    {
-        std::vector<BitsetInfo> infos;
-        size_t num_blocks;
-    };
-
-    PartitionInfo info;
-
-    GraphLayout(const StaticConsistencyGraph& static_graph);
-};
-
-class VertexPartitions
+class AdjacencyMatrix
 {
 public:
-    explicit VertexPartitions(const GraphLayout& layout) : m_layout(layout), m_data(layout.info.num_blocks, 0) {}
+    AdjacencyMatrix(const GraphLayout& layout) : m_layout(layout), m_bitset_data(layout.nv * layout.k * layout.info.num_blocks) {}
 
-    void reset() noexcept { std::memset(m_data.data(), 0, m_data.size() * sizeof(uint64_t)); }
+    auto get_row(uint_t v) const noexcept
+    {
+        const auto& info = m_layout.get().info;
+        const auto row_offset = info.num_blocks * v;
+        return std::span<const uint64_t>(m_bitset_data.data() + row_offset, info.num_blocks);
+    }
 
-    auto get_bitset(const GraphLayout::BitsetInfo& info) noexcept { return BitsetSpan<uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
+    auto get_bitset(uint_t v, uint_t p) noexcept
+    {
+        const auto row_offset = m_layout.get().info.num_blocks * v;
+        const auto& info = m_layout.get().info.infos[p];
+        return BitsetSpan<uint64_t>(m_bitset_data.data() + row_offset + info.block_offset, info.num_bits);
+    }
 
-    auto get_bitset(const GraphLayout::BitsetInfo& info) const noexcept { return BitsetSpan<const uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
+    auto get_bitset(uint_t v, uint_t p) const noexcept
+    {
+        const auto row_offset = m_layout.get().info.num_blocks * v;
+        const auto& info = m_layout.get().info.infos[p];
+        return BitsetSpan<const uint64_t>(m_bitset_data.data() + row_offset + info.block_offset, info.num_bits);
+    }
 
-    auto get_bitset(uint_t p) noexcept { return get_bitset(m_layout.info.infos[p]); }
+    const auto& layout() const noexcept { return m_layout.get(); }
 
-    auto get_bitset(uint_t p) const noexcept { return get_bitset(m_layout.info.infos[p]); }
-
-    auto& data() noexcept { return m_data; }
-    const auto& data() const noexcept { return m_data; }
+    const auto& bitset_data() const noexcept { return m_bitset_data; }
 
 private:
-    const GraphLayout& m_layout;
+    std::reference_wrapper<const GraphLayout> m_layout;
 
-    /// Implicit storage: the active vertices in the partition
-    std::vector<uint64_t> m_data;
+    std::vector<uint64_t> m_bitset_data;
+};
+
+class DeduplicatedAdjacencyMatrix
+{
+public:
+    DeduplicatedAdjacencyMatrix(const GraphLayout& layout) : m_layout(layout), m_row_offset(), m_row_data(), m_bitset_data() {}
+
+    DeduplicatedAdjacencyMatrix(const AdjacencyMatrix& m) : m_layout(m.layout())
+    {
+        auto row_to_offset = UnorderedMap<std::span<const uint64_t>, uint_t> {};
+        auto partition_to_offset = UnorderedMap<BitsetSpan<const uint64_t>, uint_t> {};
+
+        for (uint_t v = 0; v < m.layout().nv; ++v)
+        {
+            const auto [it1, success1] = row_to_offset.emplace(m.get_row(v), m_row_data.size());
+
+            if (!success1)
+            {
+                m_row_offset.push_back(it1->second);
+                continue;  ///< succeeded row deduplication
+            }
+            m_row_offset.push_back(it1->second);  /// Build new row
+
+            for (uint_t k = 0; k < m.layout().k; ++k)
+            {
+                const auto b = m.get_bitset(v, k);
+                const auto [it2, success2] = partition_to_offset.emplace(b, m_bitset_data.size());
+
+                if (!success2)
+                {
+                    m_row_data.push_back(it2->second);
+                    continue;  ///< succeeded partition deduplication
+                }
+                m_row_data.push_back(it2->second);  /// Build new bitset
+
+                /// New bitset encountered
+                m_bitset_data.insert(m_bitset_data.end(), b.blocks().begin(), b.blocks().end());
+            }
+        }
+    }
+
+    auto get_bitset(uint_t v, uint_t p) const noexcept
+    {
+        const auto& info = m_layout.get().info.infos[p];
+        const auto start = m_row_data[m_row_offset[v] + p];
+
+        return BitsetSpan<const uint64_t>(m_bitset_data.data() + start, info.num_bits);
+    }
+
+    const auto& row_offset() const noexcept { return m_row_offset; }
+    const auto& row_data() const noexcept { return m_row_data; }
+    const auto& bitset_data() const noexcept { return m_bitset_data; }
+
+private:
+    std::reference_wrapper<const GraphLayout> m_layout;
+
+    std::vector<uint_t> m_row_offset;  // m_row_offset[v] is the offset into m_row_data
+    std::vector<uint_t> m_row_data;
+
+    std::vector<uint64_t> m_bitset_data;
 };
 
 class PartitionedAdjacencyMatrix
@@ -426,7 +525,7 @@ public:
 
         if (cell.is_explicit())
         {
-            return BitsetSpan<const uint64_t>(m_bitset_data.data() + m_adj_span(v, p).offset, info.num_bits);
+            return BitsetSpan<const uint64_t>(m_bitset_data.data() + cell.offset, info.num_bits);
         }
         else
         {
@@ -454,42 +553,6 @@ public:
         bool is_explicit() const noexcept { return mode == Mode::EXPLICIT; }
         bool is_implicit() const noexcept { return mode == Mode::IMPLICIT; }
     };
-
-    void copy_from(const PartitionedAdjacencyMatrix& other) noexcept
-    {
-        for (uint_t v = 0; v < m_layout.get().nv; ++v)
-        {
-            for (uint_t p = 0; p < m_layout.get().k; ++p)
-            {
-                auto& cell = m_adj_span(v, p);
-
-                assert(cell.mode == other.m_adj_span(v, p).mode);
-
-                if (cell.is_implicit())
-                    continue;
-
-                get_bitset(v, p).copy_from(other.get_bitset(v, p));
-            }
-        }
-    }
-
-    void diff_from(const PartitionedAdjacencyMatrix& other) noexcept
-    {
-        for (uint_t v = 0; v < m_layout.get().nv; ++v)
-        {
-            for (uint_t p = 0; p < m_layout.get().k; ++p)
-            {
-                auto& cell = m_adj_span(v, p);
-
-                assert(cell.mode == other.m_adj_span(v, p).mode);
-
-                if (cell.is_implicit())
-                    continue;
-
-                get_bitset(v, p).diff_from(other.get_bitset(v, p));
-            }
-        }
-    }
 
     template<typename Callback>
     void for_each_vertex(Callback&& callback) const noexcept

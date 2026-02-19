@@ -711,14 +711,17 @@ ConjunctiveCondition(
 In the example above, there exist many pairs of variables are unrestricted by static literals, resulting in dense reguiosn
 
  */
-kpkc::PartitionedAdjacencyLists StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
-                                                                      const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
-                                                                      const details::Vertices& vertices,
-                                                                      const std::vector<std::vector<uint_t>>& vertex_partitions)
+std::tuple<kpkc::PartitionedAdjacencyLists, kpkc::DeduplicatedAdjacencyMatrix>
+StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
+                                      const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
+                                      const details::Vertices& vertices,
+                                      const std::vector<std::vector<uint_t>>& vertex_partitions)
 {
     const auto k = vertex_partitions.size();
 
     auto adj_lists = kpkc::PartitionedAdjacencyLists(vertex_partitions);
+
+    auto matrix = kpkc::AdjacencyMatrix(m_layout);
 
     // std::cout << m_condition << std::endl;
     // std::cout << m_unary_overapproximation_condition << std::endl;
@@ -727,6 +730,43 @@ kpkc::PartitionedAdjacencyLists StaticConsistencyGraph::compute_edges(const deta
 
     if (constant_pair_consistent_literals(indexed_literals, static_assignment_sets.predicate))
     {
+        auto offset_i = 0;
+
+        for (uint_t pi = 0; pi < k; ++pi)
+        {
+            const auto pi_size = vertex_partitions[pi].size();
+
+            for (uint_t bi = 0; bi < pi_size; ++bi)
+            {
+                const auto vi = offset_i + bi;
+                const auto& vertex_i = get_vertex(vi);
+                auto offset_j = offset_i + pi_size;
+
+                for (uint_t pj = pi + 1; pj < k; ++pj)
+                {
+                    const auto pj_size = vertex_partitions[pj].size();
+
+                    for (uint_t bj = 0; bj < pj_size; ++bj)
+                    {
+                        const auto vj = offset_j + bj;
+                        const auto& vertex_j = get_vertex(vj);
+
+                        const auto edge = details::Edge(std::numeric_limits<uint_t>::max(), vertex_i, vertex_j);
+
+                        if (edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
+                        {
+                            matrix.get_bitset(vi, pj).set(bj);
+                            matrix.get_bitset(vj, pi).set(bi);
+                        }
+                    }
+
+                    offset_j += pj_size;
+                }
+            }
+
+            offset_i += pi_size;
+        }
+
         for (uint_t pi = 0; pi < k; ++pi)
         {
             for (const auto first_index : vertex_partitions[pi])
@@ -786,7 +826,9 @@ kpkc::PartitionedAdjacencyLists StaticConsistencyGraph::compute_edges(const deta
         }
     }
 
-    return adj_lists;
+    auto deduplicated_matrix = kpkc::DeduplicatedAdjacencyMatrix(matrix);
+
+    return { std::move(adj_lists), std::move(deduplicated_matrix) };
 }
 
 template<formalism::FactKind T>
@@ -1126,6 +1168,8 @@ StaticConsistencyGraph::StaticConsistencyGraph(
     m_static_binary_overapproximation_condition(static_binary_overapproximation_condition),
     m_binary_overapproximation_vdg(binary_overapproximation_condition),
     m_static_binary_overapproximation_vdg(static_binary_overapproximation_condition),
+    m_layout(),
+    m_matrix(m_layout),
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
     m_binary_overapproximation_indexed_literals(compute_indexed_literals(m_binary_overapproximation_condition)),
     m_unary_overapproximation_indexed_constraints(compute_indexed_constraints(m_unary_overapproximation_condition)),
@@ -1142,7 +1186,23 @@ StaticConsistencyGraph::StaticConsistencyGraph(
     m_vertex_partitions = std::move(vertex_partitions_);
     m_object_to_vertex_partitions = std::move(object_to_vertex_partitions_);
 
-    m_adj_lists = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
+    m_layout = kpkc::GraphLayout(m_vertices.size(), m_vertex_partitions);
+
+    auto [adj_lists, matrix] =
+        compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
+    m_adj_lists = std::move(adj_lists);
+    m_matrix = std::move(matrix);
+
+    std::cout << "adj list row_offset bytes: " << m_adj_lists.row_offsets().size() * sizeof(uint_t) << "\n";
+    std::cout << "adj list data bytes: " << m_adj_lists.data().size() * sizeof(uint_t) << "\n";
+    std::cout << "adj list total bytes: " << m_adj_lists.row_offsets().size() * sizeof(uint_t) + m_adj_lists.data().size() * sizeof(uint_t) << "\n";
+    std::cout << "adj matrix bitset bytes: " << m_matrix.bitset_data().size() * sizeof(uint64_t) << "\n";
+    std::cout << "adj matrix row_offset bytes: " << m_matrix.row_offset().size() * sizeof(uint_t) << "\n";
+    std::cout << "adj matrix row_data bytes: " << m_matrix.row_data().size() * sizeof(uint_t) << "\n";
+    std::cout << "adj matrix total bytes: "
+              << m_matrix.bitset_data().size() * sizeof(uint64_t) + m_matrix.row_offset().size() * sizeof(uint_t) + m_matrix.row_data().size() * sizeof(uint_t)
+              << "\n";
+    std::cout << std::endl;
 
     // std::cout << "Num vertices: " << m_vertices.size() << " num edges: " << m_targets.size() << std::endl;
 
@@ -1179,6 +1239,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         uint64_t delta_consistent_edges = 0;
         uint64_t static_vertices = 0;
         uint64_t static_edges = 0;
+        uint64_t matrix_bitset_data_bytes = 0;
+        uint64_t matrix_cell_data_bytes = 0;
     };
 
     static PhaseTimes T;
@@ -1227,6 +1289,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     /// Process delta consistent vertex.
                     full_affected_partition.set(bit);
                     delta_affected_partition.set(bit);
+
                     full_delta_partition.set(bit);
                     delta_delta_partition.set(bit);
 
@@ -1372,8 +1435,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     T.full_touched_partitions += full_graph.matrix.touched_partitions().count();
     T.static_vertices += get_num_vertices();
     T.static_edges += get_num_edges();
+    T.matrix_bitset_data_bytes += delta_graph.matrix.bitset_data().size() * sizeof(uint64_t);
+    T.matrix_cell_data_bytes += delta_graph.matrix.adj_data().size() * sizeof(kpkc::PartitionedAdjacencyMatrix::Cell);
 
-    if ((T.calls % 1000) == 0)
+    if ((T.calls % 100) == 0)
     {
         std::cout << "avg reset " << (T.reset_ns / T.calls) << " ns\n"
                   << "avg vertex " << (T.vertex_ns / T.calls) << " ns\n"
@@ -1384,7 +1449,9 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                   << "delta consistent vertices " << T.delta_consistent_vertices / T.calls << "\n"
                   << "delta consistent edges " << T.delta_consistent_edges / T.calls << "\n"
                   << "static vertices " << T.static_vertices / T.calls << "\n"
-                  << "static edges " << T.static_edges / T.calls << "\n";
+                  << "static edges " << T.static_edges / T.calls << "\n"
+                  << "matrix bitset data bytes " << T.matrix_bitset_data_bytes / T.calls << "\n"
+                  << "matrix cell data bytes " << T.matrix_cell_data_bytes / T.calls << "\n";
     }
 }
 
