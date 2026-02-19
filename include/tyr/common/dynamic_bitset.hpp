@@ -49,18 +49,15 @@ private:
     friend class BitsetSpan;
 
 public:
-    static constexpr size_t digits = std::numeric_limits<Block>::digits;
-    static constexpr size_t BlockShift = std::countr_zero(digits);
-    static constexpr size_t BlockMask = digits - 1;
-
-    static size_t block_index(size_t pos) { return pos / digits; }
-    static size_t block_pos(size_t pos) { return pos % digits; }
-    static size_t num_blocks(size_t num_bits)
-    {
-        return (num_bits + digits - 1) / digits;  // ceil
-    }
-
     using U = std::remove_const_t<Block>;
+
+    static constexpr size_t Digits = std::numeric_limits<U>::digits;
+    static constexpr size_t BlockShift = std::countr_zero(Digits);
+    static constexpr size_t BlockMask = Digits - 1;
+
+    static constexpr size_t block_index(size_t pos) noexcept { return pos >> BlockShift; }
+    static constexpr size_t block_pos(size_t pos) noexcept { return pos & BlockMask; }
+    static constexpr size_t num_blocks(size_t num_bits) noexcept { return (num_bits + Digits - 1) >> BlockShift; }
 
     static constexpr size_t npos = std::numeric_limits<size_t>::max();
 
@@ -68,7 +65,7 @@ public:
 
     static constexpr U last_mask(size_t num_bits) noexcept
     {
-        const size_t r = num_bits % digits;
+        const size_t r = num_bits % Digits;
         return (r == 0) ? full_mask() : (U { 1 } << r) - U { 1 };
     }
 
@@ -158,7 +155,7 @@ public:
             if (w == U { 0 })
                 continue;
 
-            const size_t bit = i * digits + std::countr_zero(w);
+            const size_t bit = i * Digits + std::countr_zero(w);
             return bit < m_num_bits ? bit : npos;
         }
 
@@ -179,7 +176,7 @@ public:
         {
             if (w != U { 0 })
             {
-                const size_t bit = i * digits + std::countr_zero(w);
+                const size_t bit = i * Digits + std::countr_zero(w);
                 return bit < m_num_bits ? bit : npos;
             }
 
@@ -203,7 +200,7 @@ public:
             if (w == U { 0 })
                 continue;
 
-            const size_t bit = i * digits + std::countr_zero(w);
+            const size_t bit = i * Digits + std::countr_zero(w);
             return bit < m_num_bits ? bit : npos;
         }
 
@@ -227,7 +224,7 @@ public:
 
             if (w != U { 0 })
             {
-                const size_t bit = i * digits + std::countr_zero(w);
+                const size_t bit = i * Digits + std::countr_zero(w);
                 return bit < m_num_bits ? bit : npos;
             }
 

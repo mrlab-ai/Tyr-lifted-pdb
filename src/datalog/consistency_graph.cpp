@@ -1191,10 +1191,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
-    std::cout << m_unary_overapproximation_condition << std::endl;
+    // std::cout << m_unary_overapproximation_condition << std::endl;
 
     const auto& predicate_sets = delta_fact_sets.predicate.get_sets();
 
+    /*
     for (uint_t i = 0; i < delta_fact_sets.predicate.get_sets().size(); ++i)
     {
         const auto& predicate_set = predicate_sets[i];
@@ -1231,6 +1232,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     }
 
     std::cout << fact_induced_candidates << std::endl;
+    */
 
     // std::cout << "Delta graph:" << std::endl;
     // std::cout << delta_graph.matrix << std::endl;
@@ -1246,14 +1248,15 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         for (uint_t p = 0; p < layout.k; ++p)
         {
             const auto& info = layout.info.infos[p];
-            auto induced_partition = fact_induced_candidates.get_bitset(p);
+            // auto induced_partition = fact_induced_candidates.get_bitset(p);
             auto full_affected_partition = full_graph.affected_partitions.get_bitset(info);
             auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(info);
             auto full_delta_partition = full_graph.delta_partitions.get_bitset(info);
             auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(info);
 
             /// TODO: Iterate over deltas only
-            for (auto bit = induced_partition.find_first(); bit != BitsetSpan<uint64_t>::npos; bit = induced_partition.find_next(bit))
+            // for (auto bit = induced_partition.find_first(); bit != BitsetSpan<uint64_t>::npos; bit = induced_partition.find_next(bit))
+            for (auto bit = full_affected_partition.find_first_zero(); bit != BitsetSpan<uint64_t>::npos; bit = full_affected_partition.find_next_zero(bit))
             {
                 const auto v = vertex_index_offset + bit;
                 const auto& vertex = get_vertex(v);
@@ -1277,7 +1280,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                 }
                 else
                 {
-                    induced_partition.reset(bit);
+                    // induced_partition.reset(bit);
                 }
             }
 
