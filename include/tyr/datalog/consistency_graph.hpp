@@ -157,6 +157,7 @@ struct IndexedAnchors
     std::vector<std::vector<LiteralAnchorInfo>> predicate_to_infos;
 
     boost::dynamic_bitset<> bound_parameters;
+    boost::dynamic_bitset<> negated_bound_parameters;
 };
 
 /**
@@ -257,14 +258,6 @@ private:
                                                     const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets,
                                                     const details::Vertices& vertices,
                                                     const std::vector<std::vector<uint_t>>& vertex_partitions);
-
-    template<formalism::FactKind T>
-    bool constant_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
-                                      const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept;
-
-    template<formalism::FactKind T>
-    bool constant_pair_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
-                                           const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept;
 
 public:
     StaticConsistencyGraph(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,

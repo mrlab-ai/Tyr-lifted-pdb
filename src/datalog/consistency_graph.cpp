@@ -656,62 +656,36 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedIndexedLiterals<f:
     auto vertex_partitions = std::vector<std::vector<uint_t>> {};
     auto object_to_vertex_partitions = std::vector<std::vector<uint_t>> {};
 
-    if (constant_consistent_literals(indexed_literals, static_assignment_sets.predicate))
+    for (uint_t parameter_index = begin_parameter_index; parameter_index < end_parameter_index; ++parameter_index)
     {
-        for (uint_t parameter_index = begin_parameter_index; parameter_index < end_parameter_index; ++parameter_index)
+        auto& parameter_domain = parameter_domains[parameter_index];
+
+        auto vertex_partition = std::vector<uint_t> {};
+        auto object_to_vertex_partition = std::vector<uint_t>(num_objects, std::numeric_limits<uint_t>::max());
+
+        for (const auto object_index : parameter_domain)
         {
-            auto& parameter_domain = parameter_domains[parameter_index];
+            const auto vertex_index = static_cast<uint_t>(vertices.size());
 
-            auto vertex_partition = std::vector<uint_t> {};
-            auto object_to_vertex_partition = std::vector<uint_t>(num_objects, std::numeric_limits<uint_t>::max());
+            auto vertex = details::Vertex(vertex_index, f::ParameterIndex(parameter_index), Index<f::Object>(object_index));
 
-            for (const auto object_index : parameter_domain)
+            assert(vertex.get_index() == vertex_index);
+
+            if (vertex.consistent_literals(indexed_literals, static_assignment_sets.predicate))
             {
-                const auto vertex_index = static_cast<uint_t>(vertices.size());
-
-                auto vertex = details::Vertex(vertex_index, f::ParameterIndex(parameter_index), Index<f::Object>(object_index));
-
-                assert(vertex.get_index() == vertex_index);
-
-                if (vertex.consistent_literals(indexed_literals, static_assignment_sets.predicate))
-                {
-                    vertices.push_back(std::move(vertex));
-                    vertex_partition.push_back(vertex.get_index());
-                    object_to_vertex_partition[uint_t(object_index)] = vertex.get_index();
-                }
+                vertices.push_back(std::move(vertex));
+                vertex_partition.push_back(vertex.get_index());
+                object_to_vertex_partition[uint_t(object_index)] = vertex.get_index();
             }
-
-            vertex_partitions.push_back(std::move(vertex_partition));
-            object_to_vertex_partitions.push_back(std::move(object_to_vertex_partition));
         }
-    }
-    else
-    {
-        // We need the partitions for the remaining code to work. Ideally we prune such actions
-        vertex_partitions.resize(end_parameter_index - begin_parameter_index);
-        object_to_vertex_partitions.resize(end_parameter_index - begin_parameter_index, std::vector<uint_t>(num_objects, std::numeric_limits<uint_t>::max()));
+
+        vertex_partitions.push_back(std::move(vertex_partition));
+        object_to_vertex_partitions.push_back(std::move(object_to_vertex_partition));
     }
 
     return { std::move(vertices), std::move(vertex_partitions), std::move(object_to_vertex_partitions) };
 }
 
-/**
- *
- ConjunctiveCondition(
-    variables = [?r_0, ?l_0, ?p_0, ?x_0, ?y_0]
-    static literals = [(object V0), (rover V0), (object V1), (object V2), (waypoint V2), (object V3), (waypoint V3), (object V4), (waypoint V4), (lander V1),
-(at_lander V1 V4), (visible V3 V4)] fluent literals = [(available V0), (at V0 V3), (have_soil_analysis V0 V2), (channel_free V1)] numeric constraints = []
-)
-ConjunctiveCondition(
-    variables = [?r_0, ?l_0, ?p_0, ?x_0, ?y_0]
-    static literals = [(at_lander V1 V4), (visible V3 V4)]
-    fluent literals = [(at V0 V3), (have_soil_analysis V0 V2)]
-    numeric constraints = []
-)
-
-In the example above, there exist many pairs of variables are unrestricted by static literals, resulting in dense reguiosn
-
- */
 kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
                                                                         const TaggedAssignmentSets<f::StaticTag>& static_assignment_sets,
                                                                         const details::Vertices& vertices,
@@ -721,131 +695,45 @@ kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const de
 
     auto matrix = kpkc::AdjacencyMatrix(m_layout);
 
-    // std::cout << m_condition << std::endl;
-    // std::cout << m_unary_overapproximation_condition << std::endl;
-    // std::cout << m_binary_overapproximation_condition << std::endl;
-    // std::cout << m_binary_overapproximation_vdg << std::endl;
+    auto offset_i = 0;
 
-    if (constant_pair_consistent_literals(indexed_literals, static_assignment_sets.predicate))
+    for (uint_t pi = 0; pi < k; ++pi)
     {
-        auto offset_i = 0;
+        const auto pi_size = vertex_partitions[pi].size();
 
-        for (uint_t pi = 0; pi < k; ++pi)
+        for (uint_t bi = 0; bi < pi_size; ++bi)
         {
-            const auto pi_size = vertex_partitions[pi].size();
+            const auto vi = offset_i + bi;
+            const auto& vertex_i = get_vertex(vi);
+            auto offset_j = offset_i + pi_size;
 
-            for (uint_t bi = 0; bi < pi_size; ++bi)
+            for (uint_t pj = pi + 1; pj < k; ++pj)
             {
-                const auto vi = offset_i + bi;
-                const auto& vertex_i = get_vertex(vi);
-                auto offset_j = offset_i + pi_size;
+                const auto pj_size = vertex_partitions[pj].size();
 
-                for (uint_t pj = pi + 1; pj < k; ++pj)
+                for (uint_t bj = 0; bj < pj_size; ++bj)
                 {
-                    const auto pj_size = vertex_partitions[pj].size();
+                    const auto vj = offset_j + bj;
+                    const auto& vertex_j = get_vertex(vj);
 
-                    for (uint_t bj = 0; bj < pj_size; ++bj)
+                    const auto edge = details::Edge(std::numeric_limits<uint_t>::max(), vertex_i, vertex_j);
+
+                    if (edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
                     {
-                        const auto vj = offset_j + bj;
-                        const auto& vertex_j = get_vertex(vj);
-
-                        const auto edge = details::Edge(std::numeric_limits<uint_t>::max(), vertex_i, vertex_j);
-
-                        if (edge.consistent_literals(indexed_literals, static_assignment_sets.predicate))
-                        {
-                            matrix.get_bitset(vi, pj).set(bj);
-                            matrix.get_bitset(vj, pi).set(bi);
-                        }
+                        matrix.get_bitset(vi, pj).set(bj);
+                        matrix.get_bitset(vj, pi).set(bi);
                     }
-
-                    offset_j += pj_size;
                 }
-            }
 
-            offset_i += pi_size;
+                offset_j += pj_size;
+            }
         }
+
+        offset_i += pi_size;
     }
 
     return kpkc::DeduplicatedAdjacencyMatrix(matrix);
 }
-
-template<formalism::FactKind T>
-bool StaticConsistencyGraph::constant_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
-                                                          const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
-{
-    for (const auto& lit_id : indexed_literals.info_mappings.infos_with_constants)
-    {
-        const auto& info = indexed_literals.infos[lit_id];
-        const auto predicate = info.predicate;
-        const auto& pred_set = predicate_assignment_sets.get_set(predicate);
-        const auto polarity = info.polarity;
-
-        assert(polarity || info.kpkc_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
-
-        for (const auto& [position, object] : info.position_mappings.constant_positions)
-        {
-            auto assignment = VertexAssignment(f::ParameterIndex(position), object);
-            assert(assignment.is_valid());
-
-            // std::cout << assignment << std::endl;
-
-            const auto true_assignment = pred_set.at(assignment);
-
-            if (polarity != true_assignment)
-                return false;
-        }
-    }
-
-    return true;
-}
-
-template bool StaticConsistencyGraph::constant_consistent_literals(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
-                                                                   const PredicateAssignmentSets<f::StaticTag>& predicate_assignment_sets) const noexcept;
-template bool StaticConsistencyGraph::constant_consistent_literals(const details::TaggedIndexedLiterals<f::FluentTag>& indexed_literals,
-                                                                   const PredicateAssignmentSets<f::FluentTag>& predicate_assignment_sets) const noexcept;
-
-template<formalism::FactKind T>
-bool StaticConsistencyGraph::constant_pair_consistent_literals(const details::TaggedIndexedLiterals<T>& indexed_literals,
-                                                               const PredicateAssignmentSets<T>& predicate_assignment_sets) const noexcept
-{
-    /// constants c,c' with positions pos_c < pos_c'
-    for (const auto& lit_id : indexed_literals.info_mappings.infos_with_constant_pairs)
-    {
-        const auto& info = indexed_literals.infos[lit_id];
-        const auto predicate = info.predicate;
-        const auto& pred_set = predicate_assignment_sets.get_set(predicate);
-        const auto polarity = info.polarity;
-
-        assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
-
-        for (uint_t i = 0; i < info.position_mappings.constant_positions.size(); ++i)
-        {
-            const auto& [first_pos, first_obj] = info.position_mappings.constant_positions[i];
-
-            for (uint_t j = i + 1; j < info.position_mappings.constant_positions.size(); ++j)
-            {
-                const auto& [second_pos, second_obj] = info.position_mappings.constant_positions[j];
-                assert(first_pos < second_pos);
-
-                auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
-                assert(assignment.is_valid());
-
-                // std::cout << assignment << std::endl;
-
-                const auto true_assignment = pred_set.at(assignment);
-                if (polarity != true_assignment)
-                    return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-template bool StaticConsistencyGraph::constant_pair_consistent_literals(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
-                                                                        const PredicateAssignmentSets<f::StaticTag>& predicate_assignment_sets) const noexcept;
-template bool StaticConsistencyGraph::constant_pair_consistent_literals(const details::TaggedIndexedLiterals<f::FluentTag>& indexed_literals,
-                                                                        const PredicateAssignmentSets<f::FluentTag>& predicate_assignment_sets) const noexcept;
 
 template<f::FactKind T>
 static auto compute_tagged_indexed_literals(View<IndexList<fd::Literal<T>>, fd::Repository> literals, size_t arity)
@@ -1055,6 +943,7 @@ static auto compute_indexed_anchors(View<Index<fd::ConjunctiveCondition>, fd::Re
     auto result = details::IndexedAnchors {};
     result.predicate_to_infos = std::vector<std::vector<details::LiteralAnchorInfo>>(num_fluent_predicates);
     result.bound_parameters = boost::dynamic_bitset<>(element.get_arity(), false);
+    result.negated_bound_parameters = boost::dynamic_bitset<>(element.get_arity(), true);
 
     auto bound_parameters = UnorderedSet<uint_t> {};
 
@@ -1079,6 +968,8 @@ static auto compute_indexed_anchors(View<Index<fd::ConjunctiveCondition>, fd::Re
                     {
                         info.parameter_mappings.position_to_parameter[position] = uint_t(arg);
                         result.bound_parameters.set(uint_t(arg));
+                        if (literal.get_polarity())
+                            result.negated_bound_parameters.set(uint_t(arg));
                     }
                     else if constexpr (std::is_same_v<Alternative, View<Index<f::Object>, fd::Repository>>) {}
                     else
@@ -1299,7 +1190,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         {
             const auto objects = fact.get_objects().get_data();
 
-            std::cout << fact << std::endl;
+            // std::cout << fact << std::endl;
 
             for (const auto& info : infos)
             {
@@ -1328,7 +1219,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     }
 
     for (uint_t p = 0; p < layout.k; ++p)
-        if (!m_unary_overapproximation_predicate_to_anchors.bound_parameters.test(p))
+        if (!m_unary_overapproximation_predicate_to_anchors.bound_parameters.test(p)
+            || m_unary_overapproximation_predicate_to_anchors.negated_bound_parameters.test(p))
             fact_induced_candidates.get_bitset(p).set();
 
     // std::cout << fact_induced_candidates << std::endl;
@@ -1346,10 +1238,9 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     for (uint_t p = 0; p < layout.k; ++p)
         static_induced.get_bitset(p).set();
 
-    auto vertex_index_offset = uint_t(0);
-
-    if (constant_consistent_literals(m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate))
     {
+        auto vertex_index_offset = uint_t(0);
+
         for (uint_t p = 0; p < layout.k; ++p)
         {
             const auto& info = layout.info.infos[p];
@@ -1418,7 +1309,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
     /// 3. Monotonically update full explicitly consistent edges
 
-    if (constant_pair_consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate))
     {
         auto offset_i = 0;
 
@@ -1624,15 +1514,15 @@ std::pair<Index<fd::GroundConjunctiveCondition>, bool> create_ground_nullary_con
     auto grounder_context = fd::GrounderContext { builder, context, binding_empty };
 
     for (const auto literal : condition.get_literals<f::StaticTag>())
-        if (kpkc_arity(literal) == 0)
+        if (parameter_arity(literal) == 0)
             conj_cond.static_literals.push_back(ground(literal, grounder_context).first);
 
     for (const auto literal : condition.get_literals<f::FluentTag>())
-        if (kpkc_arity(literal) == 0)
+        if (parameter_arity(literal) == 0)
             conj_cond.fluent_literals.push_back(ground(literal, grounder_context).first);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        if (kpkc_arity(numeric_constraint) == 0)
+        if (parameter_arity(numeric_constraint) == 0)
             conj_cond.numeric_constraints.push_back(ground(numeric_constraint, grounder_context));
 
     canonicalize(conj_cond);

@@ -288,6 +288,12 @@ size_t parameter_arity(View<Index<Literal<T>>, C> element)
     return collect_parameters(element).size();
 }
 
+template<FactKind T, Context C>
+size_t parameter_arity(View<Index<FunctionTerm<T>>, C> element)
+{
+    return collect_parameters(element).size();
+}
+
 template<Context C>
 size_t parameter_arity(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element)
 {
