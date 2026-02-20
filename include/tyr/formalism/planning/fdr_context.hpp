@@ -22,6 +22,7 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/types.hpp"
+#include "tyr/formalism/planning/canonicalization.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/fdr_value.hpp"
@@ -30,6 +31,7 @@
 #include "tyr/formalism/planning/fdr_variable_view.hpp"
 #include "tyr/formalism/planning/ground_atom_view.hpp"
 #include "tyr/formalism/planning/ground_literal_view.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 #include <concepts>
 #include <vector>
@@ -40,13 +42,38 @@ namespace tyr::formalism::planning
 class BinaryFDRContext
 {
 public:
-    explicit BinaryFDRContext(Repository& context);
+    explicit BinaryFDRContext(Repository& context) : m_context(context), m_variables(), m_mapping() {}
 
-    Data<FDRFact<FluentTag>> get_fact(Index<GroundAtom<FluentTag>> atom);
+    Data<FDRFact<FluentTag>> get_fact(Index<GroundAtom<FluentTag>> atom)
+    {
+        if (auto it = m_mapping.find(atom); it != m_mapping.end())
+            return it->second;
 
-    Data<FDRFact<FluentTag>> get_fact(Index<GroundLiteral<FluentTag>> literal);
+        m_builder.clear();
+        m_builder.domain_size = 2;
+        m_builder.atoms.push_back(atom);
+        canonicalize(m_builder);
+        const auto var_index = m_context.get_or_create(m_builder, m_buffer).first;
 
-    View<IndexList<FDRVariable<FluentTag>>, Repository> get_variables() const;
+        m_variables.push_back(var_index);
+        const auto fact = Data<FDRFact<FluentTag>>(var_index, FDRValue { 1 });
+        m_mapping.emplace(atom, fact);
+
+        return fact;
+    }
+
+    Data<FDRFact<FluentTag>> get_fact(Index<GroundLiteral<FluentTag>> literal)
+    {
+        auto literal_view = make_view(literal, m_context);
+        auto pos_fact = this->get_fact(literal_view.get_atom().get_index());
+
+        if (literal_view.get_polarity())
+            return pos_fact;
+
+        return Data<FDRFact<FluentTag>>(make_view(pos_fact, m_context).get_variable().get_index(), FDRValue { 0 });
+    }
+
+    View<IndexList<FDRVariable<FluentTag>>, Repository> get_variables() const { return make_view(m_variables, m_context); }
 
 private:
     Repository& m_context;
@@ -60,13 +87,43 @@ class GeneralFDRContext
 {
 public:
     // Create mapping based on mutexes.
-    GeneralFDRContext(const std::vector<std::vector<View<Index<GroundAtom<FluentTag>>, Repository>>>& mutexes, Repository& context);
+    GeneralFDRContext(const std::vector<std::vector<View<Index<GroundAtom<FluentTag>>, Repository>>>& mutexes, Repository& context) :
+        m_context(context),
+        m_variables(),
+        m_mapping()
+    {
+        auto buffer = buffer::Buffer();
+        auto variable = Data<FDRVariable<FluentTag>>();
 
-    Data<FDRFact<FluentTag>> get_fact(Index<GroundAtom<FluentTag>> atom) const;
+        for (const auto& group : mutexes)
+        {
+            variable.clear();
+            variable.domain_size = group.size() + 1;
+            for (const auto& atom : group)
+                variable.atoms.push_back(atom.get_index());
+            canonicalize(variable);
+            const auto new_variable = context.get_or_create(variable, buffer).first;
+            m_variables.push_back(new_variable);
+            for (uint_t i = 0; i < group.size(); ++i)
+                m_mapping.emplace(group[i].get_index(), Data<FDRFact<FluentTag>>(new_variable, FDRValue { i + 1 }));
+        }
+    }
 
-    Data<FDRFact<FluentTag>> get_fact(Index<GroundLiteral<FluentTag>> literal) const;
+    Data<FDRFact<FluentTag>> get_fact(Index<GroundAtom<FluentTag>> atom) const { return m_mapping.at(atom); }
 
-    View<IndexList<FDRVariable<FluentTag>>, Repository> get_variables() const;
+    Data<FDRFact<FluentTag>> get_fact(Index<GroundLiteral<FluentTag>> literal) const
+    {
+        auto literal_view = make_view(literal, m_context);
+        auto fact = this->get_fact(literal_view.get_atom().get_index());
+
+        if (literal_view.get_polarity())
+            return fact;
+
+        fact.value = FDRValue { 0 };
+        return fact;
+    }
+
+    View<IndexList<FDRVariable<FluentTag>>, Repository> get_variables() const { return make_view(m_variables, m_context); }
 
 private:
     Repository& m_context;
