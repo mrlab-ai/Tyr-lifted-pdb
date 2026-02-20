@@ -1054,89 +1054,6 @@ StaticConsistencyGraph::StaticConsistencyGraph(
     // std::cout << m_binary_overapproximation_indexed_literals << std::endl;
 }
 
-template<std::unsigned_integral Block1, std::unsigned_integral Block2, class F>
-    requires std::same_as<std::remove_const_t<Block1>, std::remove_const_t<Block2>>
-inline void for_each_bit_andnot(const BitsetSpan<Block1>& A, const BitsetSpan<Block2>& B, F&& fn) noexcept
-{
-    using U = std::remove_const_t<Block1>;
-
-    assert(A.num_bits() == B.num_bits());
-    assert(A.trailing_bits_zero());
-    assert(B.trailing_bits_zero());
-
-    const auto ab = A.blocks();
-    const auto bb = B.blocks();
-    const size_t n = ab.size();
-
-    const U last = BitsetSpan<const U>::last_mask(A.num_bits());
-
-    size_t offset = 0;
-
-    for (size_t block = 0; block < n; ++block)
-    {
-        U w = ab[block] & ~bb[block];
-        if (block + 1 == n)
-            w &= last;
-
-        while (w)
-        {
-            const unsigned tz = std::countr_zero(w);
-            const size_t bit = offset + tz;
-            fn(bit);
-            w &= (w - 1);
-        }
-
-        offset += BitsetSpan<const U>::Digits;
-    }
-}
-
-template<std::unsigned_integral Block1, std::unsigned_integral Block2, std::unsigned_integral Block3, class F>
-    requires std::same_as<std::remove_const_t<Block1>, std::remove_const_t<Block2>> && std::same_as<std::remove_const_t<Block1>, std::remove_const_t<Block3>>
-inline void for_each_bit_static_and_affected_andnot_full(const BitsetSpan<Block1>& static_edges,
-                                                         const BitsetSpan<Block2>& full_affected_j,
-                                                         const BitsetSpan<Block3>& full_edges_ij,
-                                                         F&& fn) noexcept
-{
-    using U = std::remove_const_t<Block1>;
-
-    // Preconditions: same length
-    assert(static_edges.num_bits() == full_affected_j.num_bits());
-    assert(static_edges.num_bits() == full_edges_ij.num_bits());
-
-    // Trailing bits must be clean for blockwise ops to be correct
-    assert(static_edges.trailing_bits_zero());
-    assert(full_affected_j.trailing_bits_zero());
-    assert(full_edges_ij.trailing_bits_zero());
-
-    const auto sb = static_edges.blocks();
-    const auto ab = full_affected_j.blocks();
-    const auto fb = full_edges_ij.blocks();
-
-    const size_t n = sb.size();
-    assert(ab.size() == n && fb.size() == n);
-
-    const U last = BitsetSpan<const U>::last_mask(static_edges.num_bits());
-
-    size_t offset = 0;
-
-    for (size_t block = 0; block < n; ++block)
-    {
-        U w = sb[block] & ab[block] & ~fb[block];
-        if (block + 1 == n)
-            w &= last;
-
-        while (w)
-        {
-            const unsigned tz = std::countr_zero(w);
-            const size_t bj = offset + tz;
-            fn(bj);
-            w &= (w - 1);  // clear lowest set bit
-        }
-
-        offset += BitsetSpan<const U>::Digits;
-    }
-}
-
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                                    const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
                                                                    const kpkc::GraphLayout& layout,
@@ -1162,7 +1079,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         uint64_t affected_bits = 0;
     };
 
-    // static PhaseTimes T;
+    static PhaseTimes T;
 
     /// 1. Copy old full into delta, then add new vertices and edges into delta, before finally subtracting full from delta.
 
@@ -1170,7 +1087,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     // std::cout << m_unary_overapproximation_condition << std::endl;
     // std::cout << m_binary_overapproximation_condition << std::endl;
 
-    // std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
     fact_induced_candidates.reset();
     delta_graph.reset();
@@ -1181,7 +1098,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
     // std::cout << m_unary_overapproximation_predicate_to_anchors << std::endl;
 
-    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
 
     /**
      * Compute delta fact induced vertices.
@@ -1237,6 +1154,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
     {
+        const auto unary_overapproximation_constraints = m_unary_overapproximation_condition.get_numeric_constraints();
+
         auto vertex_index_offset = uint_t(0);
 
         for (uint_t p = 0; p < layout.k; ++p)
@@ -1248,19 +1167,17 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
             auto full_delta_partition = full_graph.delta_partitions.get_bitset(info);
             auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(info);
 
-            // T.induced_bits += induced_partition.count();
-            // T.affected_bits += full_affected_partition.count_zeros();
+            T.induced_bits += induced_partition.count();
+            T.affected_bits += full_affected_partition.count_zeros();
 
-            for_each_bit_andnot(
-                induced_partition,
-                full_affected_partition,
+            for_each_bit(
                 [&](auto&& bit)
                 {
                     const auto v = vertex_index_offset + bit;
                     const auto& vertex = get_vertex(v);
 
                     if (vertex.consistent_literals(m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
-                        && vertex.consistent_numeric_constraints(m_unary_overapproximation_condition.get_numeric_constraints(),
+                        && vertex.consistent_numeric_constraints(unary_overapproximation_constraints,
                                                                  m_unary_overapproximation_indexed_constraints,
                                                                  assignment_sets))
                     {
@@ -1274,7 +1191,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         delta_graph.matrix.touched_partitions(v, layout.vertex_to_partition[v]) = true;
                         full_graph.matrix.touched_partitions(v, layout.vertex_to_partition[v]) = true;
 
-                        // ++T.delta_consistent_vertices;
+                        ++T.delta_consistent_vertices;
 
                         // if (uint_t(m_unary_overapproximation_condition.get_index()) == 36)
                         //{
@@ -1293,17 +1210,22 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         // Doesnt work yet because of numeric features
                         // assert(m_unary_overapproximation_predicate_to_anchors.bound_parameters.test(p));
                     }
-                });
+                },
+                [](auto&& a, auto&& b) noexcept { return a & ~b; },
+                induced_partition,
+                full_affected_partition);
 
             vertex_index_offset += info.num_bits;
         }
     }
 
-    // std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
     /// 3. Monotonically update full explicitly consistent edges
 
     {
+        const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+
         auto offset_i = 0;
 
         for (uint_t pi = 0; pi < layout.k; ++pi)
@@ -1351,10 +1273,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
                     auto full_touched_i = full_graph.matrix.touched_partitions(vi, pj);
 
-                    for_each_bit_static_and_affected_andnot_full(
-                        static_edges,
-                        full_affected_partition_j,
-                        full_edges_i,
+                    for_each_bit(
                         [&](auto&& bj)
                         {
                             const auto vj = offset_j + bj;
@@ -1366,7 +1285,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                             const auto edge = details::Edge(vertex_i, vertex_j);
 
                             if (edge.consistent_literals(m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
-                                && edge.consistent_numeric_constraints(m_binary_overapproximation_condition.get_numeric_constraints(),
+                                && edge.consistent_numeric_constraints(binary_overapproximation_constraints,
                                                                        m_binary_overapproximation_indexed_constraints,
                                                                        assignment_sets))
                             {
@@ -1397,7 +1316,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                                 // ++T.delta_consistent_edges;
                             }
-                        });
+                        },
+                        [](auto&& a, auto&& b, auto&& c) noexcept { return a & b & ~c; },
+                        static_edges,
+                        full_affected_partition_j,
+                        full_edges_i);
 
                     offset_j += info_j.num_bits;
                 }
@@ -1407,7 +1330,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
         }
     }
 
-    // std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point t4 = std::chrono::steady_clock::now();
 
     /// If vi is new, then mark all implicit vj's in pj as affected, and vice versa.
     for (uint_t pi = 0; pi < layout.k; ++pi)
@@ -1440,7 +1363,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     // std::cout << "Full graph:" << std::endl;
     // std::cout << full_graph.matrix << std::endl;
 
-    /*
     T.calls++;
     T.reset_ns += to_ns(t1 - t0);
     T.induced_ns += to_ns(t2 - t1);
@@ -1468,10 +1390,9 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                   << "induced bits " << T.induced_bits / T.calls << "\n"
                   << "affected bits " << T.affected_bits / T.calls << "\n";
     }
-    */
 }
 
-const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices.at(index); }
+const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices[index]; }
 
 const details::Vertex& StaticConsistencyGraph::get_vertex(formalism::ParameterIndex parameter, Index<formalism::Object> object) const
 {

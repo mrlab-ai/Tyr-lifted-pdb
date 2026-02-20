@@ -389,6 +389,49 @@ constexpr bool operator!=(const BitsetSpan<B1>& lhs, const BitsetSpan<B2>& rhs) 
     return !(lhs == rhs);
 }
 
+template<typename Callback, typename BlockCombiner, std::unsigned_integral Block0, std::unsigned_integral... Blocks>
+    requires(std::same_as<std::remove_const_t<Block0>, std::remove_const_t<Blocks>> && ...)
+void for_each_bit(Callback&& callback, BlockCombiner&& combiner, const BitsetSpan<Block0>& first, const BitsetSpan<Blocks>&... rest)
+{
+    using U = std::remove_const_t<Block0>;
+
+    const size_t num_bits = first.num_bits();
+
+    // ---- Assertions: same bit size + clean trailing bits ----
+    assert(first.trailing_bits_zero());
+    assert(((rest.num_bits() == num_bits) && ...));
+    assert(((rest.trailing_bits_zero()) && ...));
+
+    // Prefetch block views once
+    const auto fb = first.blocks();
+    const auto rb = std::tuple { rest.blocks()... };
+
+    const size_t n = fb.size();
+    assert(std::apply([&](auto const&... b) { return ((b.size() == n) && ...); }, rb));
+
+    const U last = BitsetSpan<const U>::last_mask(num_bits);
+
+    size_t offset = 0;
+
+    for (size_t block = 0; block < n; ++block)
+    {
+        // Extract per-span block words and pass only those
+        U w = std::apply([&](auto const&... b) noexcept -> U { return static_cast<U>(combiner(fb[block], b[block]...)); }, rb);
+
+        if (block + 1 == n)
+            w &= last;
+
+        while (w)
+        {
+            const unsigned tz = std::countr_zero(w);
+            callback(offset + tz);
+            w &= (w - 1);
+        }
+
+        offset += BitsetSpan<const U>::Digits;
+    }
+}
+
 }
 
 #endif

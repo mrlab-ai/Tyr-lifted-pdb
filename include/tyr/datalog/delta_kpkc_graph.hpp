@@ -98,11 +98,8 @@ public:
     void reset() noexcept { std::memset(m_data.data(), 0, m_data.size() * sizeof(uint64_t)); }
 
     auto get_bitset(const GraphLayout::BitsetInfo& info) noexcept { return BitsetSpan<uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
-
     auto get_bitset(const GraphLayout::BitsetInfo& info) const noexcept { return BitsetSpan<const uint64_t>(m_data.data() + info.block_offset, info.num_bits); }
-
     auto get_bitset(uint_t p) noexcept { return get_bitset(m_layout.info.infos[p]); }
-
     auto get_bitset(uint_t p) const noexcept { return get_bitset(m_layout.info.infos[p]); }
 
     auto& data() noexcept { return m_data; }
@@ -134,7 +131,6 @@ public:
         const auto& info = m_layout.info.infos[p];
         return BitsetSpan<uint64_t>(m_bitset_data.data() + row_offset + info.block_offset, info.num_bits);
     }
-
     auto get_bitset(uint_t v, uint_t p) const noexcept
     {
         const auto row_offset = m_layout.info.num_blocks * v;
@@ -296,6 +292,34 @@ public:
         }
     }
 
+    auto get_explicit_bitset(uint_t v, uint_t p, const GraphLayout::BitsetInfo& info) const noexcept
+    {
+        const auto& cell = m_adj_span(v, p);
+        assert(cell.is_explicit());
+        return BitsetSpan<const uint64_t>(m_bitset_data.data() + cell.offset, info.num_bits);
+    }
+    auto get_explicit_bitset(uint_t v, uint_t p) const noexcept
+    {
+        const auto& info = m_layout.get().info.infos[p];
+        return get_explicit_bitset(v, p, info);
+    }
+
+    auto get_implicit_bitset(const GraphLayout::BitsetInfo& info_v, uint_t bit_v, uint_t v, uint_t p) const noexcept
+    {
+        const auto& info = m_layout.get().info.infos[p];
+        assert(m_adj_span(v, p).is_implicit());
+        const auto consistent_v = m_delta_partitions.get().get_bitset(info_v);
+
+        return consistent_v.test(bit_v) ? m_affected_partitions.get().get_bitset(info) : m_delta_partitions.get().get_bitset(info);
+    }
+    auto get_implicit_bitset(uint_t v, uint_t p) const noexcept
+    {
+        const auto pv = m_layout.get().vertex_to_partition[v];
+        const auto bit_v = m_layout.get().vertex_to_bit[v];
+        const auto& info_v = m_layout.get().info.infos[pv];
+        return get_implicit_bitset(info_v, bit_v, v, p);
+    }
+
     struct Cell
     {
         enum class Mode
@@ -356,15 +380,16 @@ public:
 
                     auto adj = get_bitset(vi, pj);
 
-                    for (auto bj = adj.find_first(); bj != BitsetSpan<const uint64_t>::npos; bj = adj.find_next(bj))
-                    {
-                        if (!dst_active.test(bj))
-                            continue;
+                    for_each_bit(
+                        [&](auto&& bj)
+                        {
+                            const uint_t vj = dst_offset + static_cast<uint_t>(bj);
 
-                        const uint_t vj = dst_offset + static_cast<uint_t>(bj);
-
-                        callback(Edge(Vertex(vi), Vertex(vj)));
-                    }
+                            callback(Edge(Vertex(vi), Vertex(vj)));
+                        },
+                        [](auto&& a, auto&& b) noexcept { return a & b; },
+                        adj,
+                        dst_active);
 
                     dst_offset += info_j.num_bits;
                 }
