@@ -209,12 +209,11 @@ public:
 class Edge
 {
 private:
-    uint_t m_index;
     Vertex m_src;
     Vertex m_dst;
 
 public:
-    Edge(uint_t index, Vertex src, Vertex dst) noexcept : m_index(index), m_src(std::move(src)), m_dst(std::move(dst)) {}
+    Edge(Vertex src, Vertex dst) noexcept : m_src(std::move(src)), m_dst(std::move(dst)) {}
 
     /**
      * Classical
@@ -232,7 +231,6 @@ public:
         const IndexedConstraints& indexed_constraints,
         const AssignmentSets& assignment_sets) const noexcept;
 
-    uint_t get_index() const noexcept { return m_index; }
     const Vertex& get_src() const noexcept { return m_src; }
     const Vertex& get_dst() const noexcept { return m_dst; }
 };
