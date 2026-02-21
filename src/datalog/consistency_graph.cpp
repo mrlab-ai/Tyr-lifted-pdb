@@ -1115,7 +1115,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
         for (const auto fact : predicate_sets[i].get_facts())  ///< Outter loop because |facts| > |infos|
         {
-            const auto objects = fact.get_objects().get_data();
+            const auto objects = fact.get_objects();
 
             // std::cout << fact << std::endl;
 
@@ -1125,9 +1125,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                 for (const auto& [pos, param] : info.parameter_mappings.position_parameter_pairs)
                 {
-                    const auto object = objects[pos];
-
-                    const auto vertex_index = m_object_to_vertex_partitions[param][uint_t(object)];
+                    const auto vertex_index = m_object_to_vertex_partitions[param][uint_t(objects[pos].get_index())];
 
                     if (vertex_index == std::numeric_limits<uint_t>::max())
                         continue;

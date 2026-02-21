@@ -44,7 +44,7 @@ namespace tyr
 template<typename T>
 struct EqualTo
 {
-    bool operator()(const T& lhs, const T& rhs) const { return std::equal_to<T> {}(lhs, rhs); }
+    bool operator()(const T& lhs, const T& rhs) const noexcept { return std::equal_to<T> {}(lhs, rhs); }
 };
 
 template<>
@@ -52,7 +52,7 @@ struct EqualTo<::cista::offset::string>
 {
     using Type = ::cista::offset::string;
 
-    bool operator()(const Type& lhs, const Type& rhs) const { return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), EqualTo<char> {}); }
+    bool operator()(const Type& lhs, const Type& rhs) const noexcept { return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), EqualTo<char> {}); }
 };
 
 template<typename T, template<typename> typename Ptr, bool IndexPointers, typename TemplateSizeType, class Allocator>
@@ -60,7 +60,7 @@ struct EqualTo<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Al
 {
     using Type = ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>;
 
-    bool operator()(const Type& lhs, const Type& rhs) const { return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), EqualTo<T> {}); }
+    bool operator()(const Type& lhs, const Type& rhs) const noexcept { return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), EqualTo<T> {}); }
 };
 
 template<typename... Ts>
@@ -68,7 +68,7 @@ struct EqualTo<::cista::offset::variant<Ts...>>
 {
     using Type = ::cista::offset::variant<Ts...>;
 
-    bool operator()(const Type& lhs, const Type& rhs) const
+    bool operator()(const Type& lhs, const Type& rhs) const noexcept
     {
         return lhs.apply(
             [&](auto&& l)
@@ -76,12 +76,9 @@ struct EqualTo<::cista::offset::variant<Ts...>>
                 return rhs.apply(
                     [&](auto&& r)
                     {
-                        // Check if types match
+                        // Recursively apply EqualTo for matching types
                         if constexpr (std::is_same_v<std::remove_cvref_t<decltype(l)>, std::remove_cvref_t<decltype(r)>>)
-                        {
-                            // Recursively apply EqualTo for matching types
                             return EqualTo<std::remove_cvref_t<decltype(l)>> {}(l, r);
-                        }
                         // Different types are always unequal
                         return false;
                     });
@@ -94,7 +91,7 @@ struct EqualTo<::cista::optional<T>>
 {
     using Type = ::cista::optional<T>;
 
-    bool operator()(const Type& lhs, const Type& rhs) const
+    bool operator()(const Type& lhs, const Type& rhs) const noexcept
     {
         if (!lhs.has_value() && !rhs.has_value())
             return true;
@@ -109,7 +106,7 @@ struct EqualTo<::cista::optional<T>>
 template<typename T, size_t N>
 struct EqualTo<std::array<T, N>>
 {
-    bool operator()(const std::array<T, N>& lhs, const std::array<T, N>& rhs) const
+    bool operator()(const std::array<T, N>& lhs, const std::array<T, N>& rhs) const noexcept
     {
         if constexpr (N == 0)
             return true;
@@ -121,7 +118,7 @@ struct EqualTo<std::array<T, N>>
 template<typename T>
 struct EqualTo<std::reference_wrapper<T>>
 {
-    bool operator()(const std::reference_wrapper<T>& lhs, const std::reference_wrapper<T>& rhs) const
+    bool operator()(const std::reference_wrapper<T>& lhs, const std::reference_wrapper<T>& rhs) const noexcept
     {
         return EqualTo<std::remove_cvref_t<T>> {}(lhs.get(), rhs.get());
     }
@@ -130,13 +127,11 @@ struct EqualTo<std::reference_wrapper<T>>
 template<typename Key, typename Compare, typename Allocator>
 struct EqualTo<std::set<Key, Compare, Allocator>>
 {
-    bool operator()(const std::set<Key, Compare, Allocator>& lhs, const std::set<Key, Compare, Allocator>& rhs) const
+    bool operator()(const std::set<Key, Compare, Allocator>& lhs, const std::set<Key, Compare, Allocator>& rhs) const noexcept
     {
         // Check size first
         if (lhs.size() != rhs.size())
-        {
             return false;
-        }
 
         // Compare each element using EqualTo
         return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), EqualTo<std::remove_cvref_t<Key>> {});
@@ -146,13 +141,11 @@ struct EqualTo<std::set<Key, Compare, Allocator>>
 template<typename Key, typename T, typename Compare, typename Allocator>
 struct EqualTo<std::map<Key, T, Compare, Allocator>>
 {
-    bool operator()(const std::map<Key, T, Compare, Allocator>& lhs, const std::map<Key, T, Compare, Allocator>& rhs) const
+    bool operator()(const std::map<Key, T, Compare, Allocator>& lhs, const std::map<Key, T, Compare, Allocator>& rhs) const noexcept
     {
         // Check if sizes are different
         if (lhs.size() != rhs.size())
-        {
             return false;
-        }
 
         return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), EqualTo<std::pair<std::remove_cvref_t<Key>, std::remove_cvref_t<T>>> {});
     }
@@ -161,13 +154,11 @@ struct EqualTo<std::map<Key, T, Compare, Allocator>>
 template<typename T, typename Allocator>
 struct EqualTo<std::vector<T, Allocator>>
 {
-    bool operator()(const std::vector<T, Allocator>& lhs, const std::vector<T, Allocator>& rhs) const
+    bool operator()(const std::vector<T, Allocator>& lhs, const std::vector<T, Allocator>& rhs) const noexcept
     {
         // Check size first
         if (lhs.size() != rhs.size())
-        {
             return false;
-        }
 
         // Compare each element using EqualTo
         return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), EqualTo<std::remove_cvref_t<T>> {});
@@ -177,7 +168,7 @@ struct EqualTo<std::vector<T, Allocator>>
 template<typename T1, typename T2>
 struct EqualTo<std::pair<T1, T2>>
 {
-    bool operator()(const std::pair<T1, T2>& lhs, const std::pair<T1, T2>& rhs) const
+    bool operator()(const std::pair<T1, T2>& lhs, const std::pair<T1, T2>& rhs) const noexcept
     {
         return EqualTo<std::remove_cvref_t<T1>>()(lhs.first, rhs.first) && EqualTo<std::remove_cvref_t<T2>> {}(lhs.second, rhs.second);
     }
@@ -186,7 +177,7 @@ struct EqualTo<std::pair<T1, T2>>
 template<typename... Ts>
 struct EqualTo<std::tuple<Ts...>>
 {
-    bool operator()(const std::tuple<Ts...>& lhs, const std::tuple<Ts...>& rhs) const
+    bool operator()(const std::tuple<Ts...>& lhs, const std::tuple<Ts...>& rhs) const noexcept
     {
         return std::apply(
             [&rhs](const Ts&... lhs_args)
@@ -198,17 +189,14 @@ struct EqualTo<std::tuple<Ts...>>
 template<typename... Ts>
 struct EqualTo<std::variant<Ts...>>
 {
-    bool operator()(const std::variant<Ts...>& lhs, const std::variant<Ts...>& rhs) const
+    bool operator()(const std::variant<Ts...>& lhs, const std::variant<Ts...>& rhs) const noexcept
     {
         return std::visit(
             [](const auto& l, const auto& r)
             {
-                // Check if types match
+                // Recursively apply EqualTo for matching types
                 if constexpr (std::is_same_v<std::remove_cvref_t<decltype(l)>, std::remove_cvref_t<decltype(r)>>)
-                {
-                    // Recursively apply EqualTo for matching types
                     return EqualTo<std::remove_cvref_t<decltype(l)>> {}(l, r);
-                }
                 // Different types are always unequal
                 return false;
             },
@@ -220,19 +208,15 @@ struct EqualTo<std::variant<Ts...>>
 template<typename T>
 struct EqualTo<std::optional<T>>
 {
-    bool operator()(const std::optional<T>& lhs, const std::optional<T>& rhs) const
+    bool operator()(const std::optional<T>& lhs, const std::optional<T>& rhs) const noexcept
     {
         // Check for presence of values
         if (lhs.has_value() != rhs.has_value())
-        {
             return false;
-        }
 
         // If both are empty, they're equal
         if (!lhs.has_value() && !rhs.has_value())
-        {
             return true;
-        }
 
         // Compare the contained values using EqualTo
         return EqualTo<std::remove_cvref_t<T>> {}(lhs.value(), rhs.value());
@@ -242,13 +226,11 @@ struct EqualTo<std::optional<T>>
 template<typename T, std::size_t Extent>
 struct EqualTo<std::span<T, Extent>>
 {
-    bool operator()(const std::span<T, Extent>& lhs, const std::span<T, Extent>& rhs) const
+    bool operator()(const std::span<T, Extent>& lhs, const std::span<T, Extent>& rhs) const noexcept
     {
         // Check size first
         if (lhs.size() != rhs.size())
-        {
             return false;
-        }
 
         // Compare each element using EqualTo
         return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), EqualTo<std::remove_cvref_t<T>> {});
@@ -262,13 +244,13 @@ struct EqualTo<std::span<T, Extent>>
 template<typename T>
 struct EqualTo<ObserverPtr<T>>
 {
-    bool operator()(ObserverPtr<T> lhs, ObserverPtr<T> rhs) const { return EqualTo<std::remove_cvref_t<T>> {}(*lhs, *rhs); }
+    bool operator()(ObserverPtr<T> lhs, ObserverPtr<T> rhs) const noexcept { return EqualTo<std::remove_cvref_t<T>> {}(*lhs, *rhs); }
 };
 
 template<std::unsigned_integral Block>
 struct EqualTo<BitsetSpan<Block>>
 {
-    bool operator()(const BitsetSpan<Block>& lhs, const BitsetSpan<Block>& rhs) const { return lhs == rhs; }
+    bool operator()(const BitsetSpan<Block>& lhs, const BitsetSpan<Block>& rhs) const noexcept { return lhs == rhs; }
 };
 
 /// @brief EqualTo specialization for an `IdentifiableMembersView`
@@ -281,7 +263,7 @@ struct EqualTo<T>
 
     using MembersTupleType = decltype(std::declval<T>().identifying_members());
 
-    bool operator()(const T& lhs, const T& rhs) const
+    bool operator()(const T& lhs, const T& rhs) const noexcept
     {
         return EqualTo<std::remove_cvref_t<MembersTupleType>> {}(lhs.identifying_members(), rhs.identifying_members());
     }

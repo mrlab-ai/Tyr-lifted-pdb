@@ -42,13 +42,13 @@ namespace tyr
  */
 
 template<typename T>
-inline void hash_combine(size_t& seed, const T& value);
+inline void hash_combine(size_t& seed, const T& value) noexcept;
 
 template<typename T, typename... Rest>
-inline void hash_combine(size_t& seed, const Rest&... rest);
+inline void hash_combine(size_t& seed, const Rest&... rest) noexcept;
 
 template<typename... Ts>
-inline size_t hash_combine(const Ts&... rest);
+inline size_t hash_combine(const Ts&... rest) noexcept;
 
 /// @brief `Hash` is our custom hasher, like std::hash.
 ///
@@ -57,7 +57,7 @@ inline size_t hash_combine(const Ts&... rest);
 template<typename T>
 struct Hash
 {
-    size_t operator()(const T& el) const { return std::hash<T> {}(el); }
+    size_t operator()(const T& el) const noexcept { return std::hash<T> {}(el); }
 };
 
 template<>
@@ -65,15 +65,11 @@ struct Hash<::cista::offset::string>
 {
     using Type = ::cista::offset::string;
 
-    size_t operator()(const Type& el) const
+    size_t operator()(const Type& el) const noexcept
     {
         size_t aggregated_hash = el.size();
-
         for (const auto& item : el)
-        {
             hash_combine(aggregated_hash, item);
-        }
-
         return aggregated_hash;
     }
 };
@@ -83,15 +79,11 @@ struct Hash<::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Alloc
 {
     using Type = ::cista::basic_vector<T, Ptr, IndexPointers, TemplateSizeType, Allocator>;
 
-    size_t operator()(const Type& el) const
+    size_t operator()(const Type& el) const noexcept
     {
         size_t aggregated_hash = el.size();
-
         for (const auto& item : el)
-        {
             hash_combine(aggregated_hash, item);
-        }
-
         return aggregated_hash;
     }
 };
@@ -101,7 +93,7 @@ struct Hash<::cista::offset::variant<Ts...>>
 {
     using Type = ::cista::offset::variant<Ts...>;
 
-    size_t operator()(const Type& el) const
+    size_t operator()(const Type& el) const noexcept
     {
         return el.apply([](auto&& arg) -> size_t { return Hash<std::remove_cvref_t<decltype(arg)>> {}(arg); });
     }
@@ -112,7 +104,7 @@ struct Hash<::cista::optional<T>>
 {
     using Type = ::cista::optional<T>;
 
-    size_t operator()(const Type& el) const
+    size_t operator()(const Type& el) const noexcept
     {
         if (!el.has_value())
             return 0x9e3779b97f4a7c15ULL;
@@ -127,7 +119,7 @@ struct Hash<::cista::optional<T>>
 template<IsFloatingPoint T>
 struct Hash<T>
 {
-    size_t operator()(const T& el) const
+    size_t operator()(const T& el) const noexcept
     {
         if (std::isnan(el))
             return 0x9e3779b97f4a7c15ULL;  // any fixed salt
@@ -143,15 +135,11 @@ struct Hash<T>
 template<typename T, size_t N>
 struct Hash<std::array<T, N>>
 {
-    size_t operator()(const std::array<T, N>& arr) const
+    size_t operator()(const std::array<T, N>& arr) const noexcept
     {
         size_t aggregated_hash = N;
-
         for (const auto& element : arr)
-        {
             hash_combine(aggregated_hash, element);
-        }
-
         return aggregated_hash;
     }
 };
@@ -163,7 +151,7 @@ struct Hash<std::array<T, N>>
 template<typename T>
 struct Hash<std::reference_wrapper<T>>
 {
-    size_t operator()(const std::reference_wrapper<T>& ref) const { return Hash<std::remove_cvref_t<T>> {}(ref.get()); }
+    size_t operator()(const std::reference_wrapper<T>& ref) const noexcept { return Hash<std::remove_cvref_t<T>> {}(ref.get()); }
 };
 
 /// @brief Hash specialization for std::set.
@@ -173,14 +161,11 @@ struct Hash<std::reference_wrapper<T>>
 template<typename Key, typename Compare, typename Allocator>
 struct Hash<std::set<Key, Compare, Allocator>>
 {
-    size_t operator()(const std::set<Key, Compare, Allocator>& set) const
+    size_t operator()(const std::set<Key, Compare, Allocator>& set) const noexcept
     {
         std::size_t aggregated_hash = set.size();
-
         for (const auto& item : set)
-        {
             hash_combine(aggregated_hash, item);
-        }
         return aggregated_hash;
     }
 };
@@ -193,14 +178,11 @@ struct Hash<std::set<Key, Compare, Allocator>>
 template<typename Key, typename T, typename Compare, typename Allocator>
 struct Hash<std::map<Key, T, Compare, Allocator>>
 {
-    size_t operator()(const std::map<Key, T, Compare, Allocator>& map) const
+    size_t operator()(const std::map<Key, T, Compare, Allocator>& map) const noexcept
     {
         std::size_t aggregated_hash = map.size();
-
         for (const auto& item : map)
-        {
             hash_combine(aggregated_hash, item);
-        }
         return aggregated_hash;
     }
 };
@@ -212,15 +194,11 @@ struct Hash<std::map<Key, T, Compare, Allocator>>
 template<typename T, typename Allocator>
 struct Hash<std::vector<T, Allocator>>
 {
-    size_t operator()(const std::vector<T, Allocator>& vec) const
+    size_t operator()(const std::vector<T, Allocator>& vec) const noexcept
     {
         size_t aggregated_hash = vec.size();
-
         for (const auto& element : vec)
-        {
             hash_combine(aggregated_hash, element);
-        }
-
         return aggregated_hash;
     }
 };
@@ -233,7 +211,7 @@ struct Hash<std::vector<T, Allocator>>
 template<typename T1, typename T2>
 struct Hash<std::pair<T1, T2>>
 {
-    size_t operator()(const std::pair<T1, T2>& pair) const { return hash_combine(pair.first, pair.second); }
+    size_t operator()(const std::pair<T1, T2>& pair) const noexcept { return hash_combine(pair.first, pair.second); }
 };
 
 /// @brief Hash specialization for a std::tuple.
@@ -243,7 +221,7 @@ struct Hash<std::pair<T1, T2>>
 template<typename... Ts>
 struct Hash<std::tuple<Ts...>>
 {
-    size_t operator()(const std::tuple<Ts...>& tuple) const
+    size_t operator()(const std::tuple<Ts...>& tuple) const noexcept
     {
         size_t aggregated_hash = sizeof...(Ts);
         std::apply([&aggregated_hash](const Ts&... args) { (hash_combine(aggregated_hash, args), ...); }, tuple);
@@ -258,7 +236,7 @@ struct Hash<std::tuple<Ts...>>
 template<typename... Ts>
 struct Hash<std::variant<Ts...>>
 {
-    size_t operator()(const std::variant<Ts...>& variant) const
+    size_t operator()(const std::variant<Ts...>& variant) const noexcept
     {
         return std::visit([](const auto& arg) { return Hash<std::remove_cvref_t<decltype(arg)>> {}(arg); }, variant);
     }
@@ -271,7 +249,7 @@ struct Hash<std::variant<Ts...>>
 template<typename T>
 struct Hash<std::optional<T>>
 {
-    size_t operator()(const std::optional<T>& optional) const { return optional.has_value() ? Hash<std::remove_cvref_t<T>> {}(optional.value()) : 0; }
+    size_t operator()(const std::optional<T>& optional) const noexcept { return optional.has_value() ? Hash<std::remove_cvref_t<T>> {}(optional.value()) : 0; }
 };
 
 /// @brief Hash specialization for a std::span.
@@ -280,13 +258,11 @@ struct Hash<std::optional<T>>
 template<typename T, std::size_t Extent>
 struct Hash<std::span<T, Extent>>
 {
-    size_t operator()(const std::span<T, Extent>& span) const
+    size_t operator()(const std::span<T, Extent>& span) const noexcept
     {
         size_t aggregated_hash = span.size();
-
         for (const auto& x : span)
             hash_combine(aggregated_hash, x);
-
         return aggregated_hash;
     }
 };
@@ -298,13 +274,13 @@ struct Hash<std::span<T, Extent>>
 template<typename T>
 struct Hash<ObserverPtr<T>>
 {
-    size_t operator()(ObserverPtr<T> ptr) const { return Hash<std::remove_cvref_t<T>> {}(*ptr); }
+    size_t operator()(ObserverPtr<T> ptr) const noexcept { return Hash<std::remove_cvref_t<T>> {}(*ptr); }
 };
 
 template<std::unsigned_integral Block>
 struct Hash<BitsetSpan<Block>>
 {
-    size_t operator()(const BitsetSpan<Block>& bitset_span) const
+    size_t operator()(const BitsetSpan<Block>& bitset_span) const noexcept
     {
         size_t aggregated_hash = bitset_span.num_bits();
         for (const auto& block : bitset_span.blocks())
@@ -321,10 +297,10 @@ struct Hash<T>
 {
     using is_transparent = void;  // <-- enables hetero lookup
 
-    size_t operator()(const T& element) const { return hash_combine(element.identifying_members()); }
+    size_t operator()(const T& element) const noexcept { return hash_combine(element.identifying_members()); }
 
     template<typename... Args>
-    size_t operator()(const std::tuple<Args...>& view) const
+    size_t operator()(const std::tuple<Args...>& view) const noexcept
     {
         return hash_combine(view);
     }
@@ -339,19 +315,19 @@ struct Hash<T>
 /// @param seed is the seed.
 /// @param value is the object.
 template<typename T>
-inline void hash_combine(size_t& seed, const T& value)
+inline void hash_combine(size_t& seed, const T& value) noexcept
 {
     seed ^= Hash<std::remove_cvref_t<T>> {}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 template<typename T, typename... Rest>
-inline void hash_combine(size_t& seed, const Rest&... rest)
+inline void hash_combine(size_t& seed, const Rest&... rest) noexcept
 {
     (hash_combine(seed, rest), ...);
 }
 
 template<typename... Ts>
-inline size_t hash_combine(const Ts&... rest)
+inline size_t hash_combine(const Ts&... rest) noexcept
 {
     size_t seed = 0;
     (hash_combine(seed, rest), ...);
