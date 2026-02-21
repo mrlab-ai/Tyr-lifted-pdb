@@ -62,8 +62,6 @@ extern std::ostream& print(std::ostream& os, const datalog::kpkc::DeduplicatedAd
 
 extern std::ostream& print(std::ostream& os, const datalog::kpkc::PartitionedAdjacencyMatrix& el);
 
-extern std::ostream& print(std::ostream& os, const datalog::kpkc::DirtyPartitions& el);
-
 extern std::ostream& print(std::ostream& os, const datalog::ProgramStatistics& el);
 
 extern std::ostream& print(std::ostream& os, const datalog::RuleStatistics& el);
@@ -112,8 +110,6 @@ extern std::ostream& operator<<(std::ostream& os, const VertexPartitions& el);
 extern std::ostream& operator<<(std::ostream& os, const DeduplicatedAdjacencyMatrix& el);
 
 extern std::ostream& operator<<(std::ostream& os, const PartitionedAdjacencyMatrix& el);
-
-extern std::ostream& operator<<(std::ostream& os, const DirtyPartitions& el);
 
 }
 

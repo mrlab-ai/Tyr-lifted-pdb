@@ -1059,8 +1059,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                                                                    const kpkc::GraphLayout& layout,
                                                                    kpkc::Graph& delta_graph,
                                                                    kpkc::Graph& full_graph,
-                                                                   kpkc::VertexPartitions& fact_induced_candidates,
-                                                                   kpkc::DirtyPartitions& dirty_partitions) const
+                                                                   kpkc::VertexPartitions& fact_induced_candidates) const
 {
     struct PhaseTimes
     {
@@ -1091,7 +1090,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     // std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
     fact_induced_candidates.reset();
-    dirty_partitions.reset();
     delta_graph.reset();
 
     // std::cout << std::endl;
@@ -1138,18 +1136,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                         continue;
 
                     fact_induced_candidates.get_bitset(pi).set(layout.vertex_to_bit[vi]);
-
-                    for (uint_t j = i + 1; j < pairs_size; ++j)
-                    {
-                        const auto& [pos_j, pj] = pairs[j];
-
-                        const auto vj = m_object_to_vertex_partitions[pj][uint_t(objects[pos_j].get_index())];
-
-                        if (vj == std::numeric_limits<uint_t>::max())
-                            continue;
-
-                        dirty_partitions.set_dirty(pi, pj);
-                    }
                 }
             }
         }
@@ -1253,12 +1239,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
             const auto& info_i = layout.info.infos[pi];
 
-            if (!dirty_partitions.is_dirty_row(pi))
-            {
-                offset_i += info_i.num_bits;
-                continue;
-            }
-
             const auto full_affected_partition_i = full_graph.affected_partitions.get_bitset(info_i);
             auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(info_i);
 
@@ -1282,12 +1262,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     // std::cout << print_indent << "pj: " << pj << std::endl;
 
                     const auto& info_j = layout.info.infos[pj];
-
-                    if (!dirty_partitions.is_dirty(pi, pj))
-                    {
-                        offset_j += info_j.num_bits;
-                        continue;
-                    }
 
                     if (full_graph.matrix.get_cell(vi, pj).is_implicit())
                     {

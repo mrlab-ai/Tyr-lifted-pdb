@@ -27,8 +27,7 @@ DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
     m_iteration(0),
     m_delta_graph(m_layout, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
     m_full_graph(m_layout, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
-    m_fact_induced_candidates(m_layout),
-    m_dirty_partitions(static_graph.get_variable_dependeny_graph())
+    m_fact_induced_candidates(m_layout)
 {
 }
 
@@ -36,13 +35,7 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                          const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
                                          const AssignmentSets& assignment_sets)
 {
-    static_graph.initialize_dynamic_consistency_graphs(assignment_sets,
-                                                       delta_fact_sets,
-                                                       m_layout,
-                                                       m_delta_graph,
-                                                       m_full_graph,
-                                                       m_fact_induced_candidates,
-                                                       m_dirty_partitions);
+    static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_fact_sets, m_layout, m_delta_graph, m_full_graph, m_fact_induced_candidates);
 
     ++m_iteration;
 }

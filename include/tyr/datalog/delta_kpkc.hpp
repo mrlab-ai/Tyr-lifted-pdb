@@ -180,8 +180,6 @@ private:
     Graph m_full_graph;
 
     VertexPartitions m_fact_induced_candidates;
-
-    DirtyPartitions m_dirty_partitions;
 };
 
 /**

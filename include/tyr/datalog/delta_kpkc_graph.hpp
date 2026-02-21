@@ -113,63 +113,6 @@ private:
     std::vector<uint64_t> m_data;
 };
 
-class DirtyPartitions
-{
-public:
-    explicit DirtyPartitions(const formalism::datalog::VariableDependencyGraph& dependency_graph) :
-        m_k(dependency_graph.get_adj_matrix().k()),
-        m_dirty_matrix(m_k * m_k, false),
-        m_dirty_rows(m_k, false),
-        m_static_dirty_matrix(m_k * m_k, false),
-        m_static_dirty_rows(m_k, false)
-    {
-        for (uint_t pi = 0; pi < m_k; ++pi)
-        {
-            for (uint_t pj = pi + 1; pj < m_k; ++pj)
-            {
-                if (!dependency_graph.get_adj_matrix().get_cell(formalism::ParameterIndex { pi }, formalism::ParameterIndex { pj }).statically_empty())
-                {
-                    m_static_dirty_matrix.set(pi * m_k + pj);
-                    m_static_dirty_matrix.set(pj * m_k + pi);
-                    m_static_dirty_rows.set(pi);
-                    m_static_dirty_rows.set(pj);
-                }
-            }
-        }
-    }
-
-    void set_dirty(uint_t pi, uint_t pj) noexcept
-    {
-        m_dirty_matrix.set(pi * m_k + pj);
-        m_dirty_matrix.set(pj * m_k + pi);
-        m_dirty_rows.set(pi);
-        m_dirty_rows.set(pj);
-    }
-
-    bool is_dirty(uint_t pi, uint_t pj) const noexcept { return m_dirty_matrix.test(pi * m_k + pj); }
-
-    bool is_dirty_row(uint_t pi) const noexcept { return m_dirty_rows.test(pi); }
-
-    void reset() noexcept
-    {
-        m_dirty_matrix = m_static_dirty_matrix;
-        m_dirty_rows = m_static_dirty_rows;
-    }
-
-    const auto& dirty_matrix() const noexcept { return m_dirty_matrix; }
-    const auto& dirty_rows() const noexcept { return m_dirty_rows; }
-    const auto& static_dirty_matrix() const noexcept { return m_static_dirty_matrix; }
-    const auto& static_dirty_rows() const noexcept { return m_static_dirty_rows; }
-
-private:
-    uint_t m_k;
-    boost::dynamic_bitset<> m_dirty_matrix;
-    boost::dynamic_bitset<> m_dirty_rows;
-
-    boost::dynamic_bitset<> m_static_dirty_matrix;
-    boost::dynamic_bitset<> m_static_dirty_rows;
-};
-
 class AdjacencyMatrix
 {
 public:
