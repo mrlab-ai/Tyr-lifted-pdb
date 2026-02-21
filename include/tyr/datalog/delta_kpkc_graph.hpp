@@ -207,10 +207,10 @@ public:
 private:
     GraphLayout m_layout;
 
-    std::vector<uint_t> m_row_offset;  // m_row_offset[v] is the offset into m_row_data
-    std::vector<uint_t> m_row_data;
-
-    std::vector<uint64_t> m_bitset_data;
+    std::vector<uint_t> m_row_offset;     ///< m_row_offset[v] is the offset into m_row_data
+    std::vector<uint_t> m_row_data;       ///< m_row_data[m_row_offset[v] + p] is the offset into m_bitset_data.
+    std::vector<uint64_t> m_bitset_data;  ///< m_bitset_data.data() + m_row_data[m_row_offset[v] + p] is beginning of the bitset data for the set of vertices
+                                          ///< from v into partition p.
 };
 
 class PartitionedAdjacencyMatrix
@@ -219,7 +219,6 @@ public:
     PartitionedAdjacencyMatrix(const GraphLayout& layout,
                                const VertexPartitions& affected_partitions,
                                const VertexPartitions& delta_partitions,
-                               const std::vector<std::vector<uint_t>>& static_partitions,
                                const formalism::datalog::VariableDependencyGraph& dependency_graph) :
         m_layout(layout),
         m_affected_partitions(affected_partitions),
@@ -231,7 +230,7 @@ public:
     {
         for (uint_t pi = 0; pi < m_layout.get().k; ++pi)
         {
-            for (uint_t v : static_partitions[pi])
+            for (uint_t v : layout.vertex_partitions[pi])
             {
                 for (uint_t pj = 0; pj < m_layout.get().k; ++pj)
                 {
@@ -389,6 +388,7 @@ public:
     const auto& layout() const noexcept { return m_layout.get(); }
     const auto& affected_partitions() const noexcept { return m_affected_partitions.get(); }
     const auto& delta_partitions() const noexcept { return m_delta_partitions.get(); }
+    auto& touched_partitions() noexcept { return m_touched_partitions; }
     const auto& touched_partitions() const noexcept { return m_touched_partitions; }
     auto touched_partitions(uint_t v, uint_t p) noexcept { return m_touched_partitions[v * m_layout.get().k + p]; }
     const auto& adj_data() const noexcept { return m_adj_data; }
@@ -413,12 +413,10 @@ private:
 
 struct Graph
 {
-    Graph(const GraphLayout& layout,
-          const std::vector<std::vector<uint_t>>& static_partitions,
-          const formalism::datalog::VariableDependencyGraph& dependency_graph) :
+    Graph(const GraphLayout& layout, const formalism::datalog::VariableDependencyGraph& dependency_graph) :
         affected_partitions(layout),
         delta_partitions(layout),
-        matrix(layout, affected_partitions, delta_partitions, static_partitions, dependency_graph)
+        matrix(layout, affected_partitions, delta_partitions, dependency_graph)
     {
     }
 

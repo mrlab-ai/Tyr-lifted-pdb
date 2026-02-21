@@ -25,8 +25,8 @@ namespace tyr::datalog::kpkc
 DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
     m_layout(GraphLayout(static_graph.get_num_vertices(), static_graph.get_vertex_partitions())),
     m_iteration(0),
-    m_delta_graph(m_layout, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
-    m_full_graph(m_layout, static_graph.get_vertex_partitions(), static_graph.get_variable_dependeny_graph()),
+    m_delta_graph(m_layout, static_graph.get_variable_dependeny_graph()),
+    m_full_graph(m_layout, static_graph.get_variable_dependeny_graph()),
     m_fact_induced_candidates(m_layout)
 {
 }
