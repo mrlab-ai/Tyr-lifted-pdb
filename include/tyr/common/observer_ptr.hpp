@@ -75,6 +75,12 @@ private:
     T* ptr;
 };
 
+template<typename T>
+auto make_observer(const T& element) noexcept
+{
+    return ObserverPtr<const T>(&element);
+}
+
 }
 
 #endif

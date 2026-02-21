@@ -80,25 +80,35 @@ public:
         m_vec.clear();
     }
 
-    const Data<Tag>* find(const Data<Tag>& element) const noexcept
+    size_t hash(const Data<Tag>& element) const noexcept { return m_set.hash(make_observer(element)); }
+
+    const Data<Tag>* find_with_hash(const Data<Tag>& element, size_t hash) const noexcept
     {
         assert(is_canonical(element));
 
-        if (auto it = m_set.find(ObserverPtr<const Data<Tag>>(&element)); it != m_set.end())
+        const auto it = m_set.find(make_observer(element), hash);
+        if (it != m_set.end())
             return it->get();
 
         return nullptr;
     }
 
-    // const T* always points to a valid instantiation of the class.
-    // We return const T* here to avoid bugs when using structured bindings.
+    const Data<Tag>* find(const Data<Tag>& element) const noexcept
+    {
+        assert(is_canonical(element));
+
+        return find_with_hash(element, hash(element));
+    }
+
     template<::cista::mode Mode = CISTA_MODE>
-    std::pair<const Data<Tag>*, bool> insert(const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf)
+    std::pair<const Data<Tag>*, bool> insert_with_hash(size_t hash, const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf)
     {
         assert(is_canonical(element));
 
         // 1. Check if element already exists
-        if (auto it = m_set.find(ObserverPtr<const Data<Tag>>(&element)); it != m_set.end())
+
+        auto it = m_set.find(make_observer(element), hash);
+        if (it != m_set.end())
             return std::make_pair(it->get(), false);
 
         // 2. Serialize
@@ -108,13 +118,25 @@ public:
         // 3. Write to storage
         auto begin = m_storage.write(buf.base(), buf.size(), alignof(Data<Tag>));
 
-        // 4. Insert to set
-        auto [observer_ptr, success] = m_set.insert(::cista::deserialize<const Data<Tag>, Mode>(begin, begin + buf.size()));
+        // 4. Insert into set
+        const auto serialized_element = ::cista::deserialize<const Data<Tag>, Mode>(begin, begin + buf.size());
+        auto [it2, inserted] = m_set.emplace_with_hash(hash, serialized_element);
+        assert(inserted);
 
         // 5. Insert to vec
-        m_vec.push_back(observer_ptr->get());
+        m_vec.push_back(it2->get());
 
-        return std::make_pair(observer_ptr->get(), success);
+        return std::make_pair(it2->get(), true);
+    }
+
+    // const T* always points to a valid instantiation of the class.
+    // We return const T* here to avoid bugs when using structured bindings.
+    template<::cista::mode Mode = CISTA_MODE>
+    std::pair<const Data<Tag>*, bool> insert(const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf)
+    {
+        assert(is_canonical(element));
+
+        return insert_with_hash<Mode>(hash(element), element, buf);
     }
 
     /**
