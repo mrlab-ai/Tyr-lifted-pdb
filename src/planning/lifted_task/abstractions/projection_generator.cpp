@@ -23,7 +23,11 @@
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
+#include "tyr/planning/lifted_task/node.hpp"
+#include "tyr/planning/ground_task/node.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/ground_task/successor_generator.hpp"
+#include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
@@ -144,22 +148,23 @@ void ProjectionGenerator<LiftedTask>::generate()
 {
     for (const auto& pattern : m_patterns)
     {
-        // Step 1: create projected task
+        // Step 1: Create the projected task
         auto repository = std::make_shared<fp::Repository>(m_task.get_repository().get());
         auto projected_task = create_projected_task(m_task.get_task(), *repository, pattern);
         
-        // Step 2: create lifted projected task
+        // Step 2: Create the lifted projected task
         auto projected_lifted_task = LiftedTask(m_task.get_domain(), repository, make_view(projected_task, *repository), m_task.get_fdr_context());
         
-        // Step 3: ground lifted projected task
+        // Step 3: Ground the lifted projected task
         auto projected_ground_task = projected_lifted_task.get_ground_task();
         
-        // Step 4: expand state space
+        // Step 4: Fully expand state space while building the projection
         auto event_handler = ProjectionEventHandler();
-        auto options = astar_eager::Options<LiftedTask>();
+        auto options = astar_eager::Options<GroundTask>();
         options.stop_if_goal = false;
-        auto blind_heuristic = std::make_shared<BlindHeuristic>();
-        // auto search_result = astar_eager::
+        auto blind_heuristic = BlindHeuristic<GroundTask>();
+        auto successor_generator = SuccessorGenerator<GroundTask>(projected_ground_task);
+        auto search_result = astar_eager::find_solution(*projected_ground_task, successor_generator, blind_heuristic, options);
     }
 }
 
