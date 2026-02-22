@@ -18,14 +18,16 @@
 #include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 
 #include "tyr/common/declarations.hpp"
-#include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
+#include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
+#include "tyr/planning/algorithms/astar_eager/event_handler.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted_task.hpp"
 
@@ -35,12 +37,12 @@ namespace fp = tyr::formalism::planning;
 namespace tyr::planning
 {
 
-static Index<fp::Task> create_projected_task(View<Index<fp::Task>, f::OverlayRepository<fp::Repository>> task,
-                                             f::OverlayRepository<f::OverlayRepository<fp::Repository>, fp::Repository>& destination,
+static Index<fp::Task> create_projected_task(View<Index<fp::Task>, fp::Repository> task,
+                                             fp::Repository& destination,
                                              const Pattern& pattern)
 {
     auto builder = fp::Builder();
-    auto context = fp::MergeContext<f::OverlayRepository<f::OverlayRepository<fp::Repository>, fp::Repository>>(builder, destination);
+    auto context = fp::MergeContext(builder, destination);
     auto projected_task_ptr = builder.get_builder<fp::Task>();
     auto& projected_task = *projected_task_ptr;
     projected_task.clear();
@@ -97,19 +99,67 @@ static Index<fp::Task> create_projected_task(View<Index<fp::Task>, f::OverlayRep
     return destination.get_or_create(projected_task, builder.get_buffer()).first;
 }
 
+
+class ProjectionEventHandler : public astar_eager::EventHandlerBase<ProjectionEventHandler, LiftedTask>
+{
+private:
+    /* Implement EventHandlerBase interface */
+    friend class astar_eager::EventHandlerBase<ProjectionEventHandler, LiftedTask>;
+
+    void on_expand_node_impl(const Node<LiftedTask>& node) const;
+
+    void on_expand_goal_node_impl(const Node<LiftedTask>& node) const;
+
+    void on_generate_node_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const;
+
+    void on_generate_node_relaxed_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const;
+
+    void on_generate_node_not_relaxed_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const;
+
+    void on_close_node_impl(const Node<LiftedTask>& node) const;
+
+    void on_prune_node_impl(const Node<LiftedTask>& node) const;
+
+    void on_start_search_impl(const Node<LiftedTask>& node, float_t f_value) const;
+
+    void on_finish_f_layer_impl(float_t f_value, uint64_t num_expanded_states, uint64_t num_generated_states) const;
+
+    void on_end_search_impl() const;
+
+    void on_solved_impl(const Plan<LiftedTask>& plan) const;
+
+    void on_unsolvable_impl() const;
+
+    void on_exhausted_impl() const;
+
+public:
+    ProjectionEventHandler(size_t verbosity = 0);
+
+    static ProjectionEventHandler create(size_t verbosity = 0);
+};
+
 ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
 
 void ProjectionGenerator<LiftedTask>::generate()
 {
     for (const auto& pattern : m_patterns)
     {
-        // TODO: create projected task
-        auto repository = fp::Repository();
-        auto overlay_repository = f::OverlayRepository<f::OverlayRepository<fp::Repository>, fp::Repository>(*m_task.get_repository(), repository);
-        auto projected_task = create_projected_task(m_task.get_task(), overlay_repository, pattern);
-        // TODO: create lifted projected task
-        // TODO: ground lifted projected task
-        // TODO: expand state space
+        // Step 1: create projected task
+        auto repository = std::make_shared<fp::Repository>(m_task.get_repository().get());
+        auto projected_task = create_projected_task(m_task.get_task(), *repository, pattern);
+        
+        // Step 2: create lifted projected task
+        auto projected_lifted_task = LiftedTask(m_task.get_domain(), repository, make_view(projected_task, *repository), m_task.get_fdr_context());
+        
+        // Step 3: ground lifted projected task
+        auto projected_ground_task = projected_lifted_task.get_ground_task();
+        
+        // Step 4: expand state space
+        auto event_handler = ProjectionEventHandler();
+        auto options = astar_eager::Options<LiftedTask>();
+        options.stop_if_goal = false;
+        auto blind_heuristic = std::make_shared<BlindHeuristic>();
+        // auto search_result = astar_eager::
     }
 }
 
