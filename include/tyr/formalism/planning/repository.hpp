@@ -45,7 +45,8 @@ private:
         using value_type = T;
         using container_type = buffer::IndexedHashSet<T>;
 
-        container_type container;
+        container_type container = container_type {};
+        size_t parent_size = 0;
     };
 
     using RepositoryStorage = std::tuple<RepositoryEntry<Variable>,
@@ -140,43 +141,61 @@ private:
     const Repository* m_parent;
 
     template<typename T>
-    std::optional<Index<T>> find_impl(const Data<T>& builder) const noexcept
+    void initialize_entry(RepositoryEntry<T>& entry)
     {
-        const auto& indexed_hash_set = get_container<T>(m_repository);
+        entry.parent_size = m_parent ? m_parent->template size<T>() : 0;
+    }
 
-        if (auto ptr = indexed_hash_set.find(builder))
-            return ptr->index;
-
-        return std::nullopt;
+    void initialize_entries()
+    {
+        std::apply([&](auto&... e) { (initialize_entry(e), ...); }, m_repository);
     }
 
 public:
-    Repository(const Repository* parent = nullptr) : m_parent(parent) {}
+    Repository(const Repository* parent = nullptr) : m_parent(parent) { initialize_entries(); }
+
+    template<typename T>
+    std::optional<Index<T>> find_with_hash(const Data<T>& builder, size_t h) const noexcept
+    {
+        const auto& indexed_hash_set = std::get<RepositoryEntry<T>>(m_repository).container;
+        assert(h == indexed_hash_set.hash(builder) && "The given hash does not match container internal's hash.");
+
+        if (auto ptr = indexed_hash_set.find_with_hash(builder, h))
+        {
+            return ptr->index;
+        }
+
+        return m_parent ? m_parent->template find_with_hash<T>(builder, h) : std::nullopt;
+    }
 
     template<typename T>
     std::optional<Index<T>> find(const Data<T>& builder) const noexcept
     {
-        if (!m_parent)
-            return find_impl<T>(builder);
+        const auto& indexed_hash_set = std::get<RepositoryEntry<T>>(m_repository).container;
+        const auto h = indexed_hash_set.hash(builder);
 
-        if (auto ptr = find_impl<T>(builder))
-            return ptr;
-
-        return m_parent ? m_parent->template find<T>(builder) : std::nullopt;
+        return find_with_hash<T>(builder, h);
     }
 
     template<typename T>
     std::pair<Index<T>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
-        if (auto ptr = find(builder))
-            return { *ptr, false };
+        auto& entry = std::get<RepositoryEntry<T>>(m_repository);
+        auto& indexed_hash_set = entry.container;
+        const auto h = indexed_hash_set.hash(builder);
 
-        auto& indexed_hash_set = get_container<T>(m_repository);
+        if (m_parent)
+        {
+            if (auto ptr = m_parent->template find_with_hash<T>(builder, h))
+            {
+                return { *ptr, false };
+            }
+        }
 
         // Manually assign index to continue indexing.
-        builder.index.value = (m_parent ? m_parent->template size<T>() : 0) + indexed_hash_set.size();
+        builder.index.value = entry.parent_size + indexed_hash_set.size();
 
-        const auto [ptr, success] = indexed_hash_set.insert(builder, buf);
+        const auto [ptr, success] = indexed_hash_set.insert_with_hash(h, builder, buf);
 
         return { ptr->index, success };
     }
@@ -187,41 +206,49 @@ public:
     {
         assert(index != Index<T>::max() && "Unassigned index.");
 
-        const size_t parent_size = m_parent ? m_parent->template size<T>() : 0;
+        const auto& entry = std::get<RepositoryEntry<T>>(m_repository);
 
         // In parent range -> delegate
-        if (m_parent && index.value < parent_size)
+        if (index.value < entry.parent_size)
+        {
+            assert(m_parent);
             return (*m_parent)[index];
+        }
 
         // Local range -> shift down
-        index.value -= parent_size;
+        index.value -= entry.parent_size;
 
-        const auto& repo = get_container<T>(m_repository);
-        return repo[index];
+        return entry.container[index];
     }
 
     template<typename T>
     const Data<T>& front() const
     {
-        if (m_parent && m_parent->template size<T>() > 0)
-            return m_parent->template front<T>();  // recurse to root-most non-empty
+        const auto& entry = std::get<RepositoryEntry<T>>(m_repository);
 
-        const auto& repo = get_container<T>(m_repository);
-        return repo.front();
+        if (entry.parent_size > 0)
+        {
+            assert(m_parent);
+            return m_parent->template front<T>();  // recurse to root-most non-empty
+        }
+
+        return entry.container.front();
     }
 
     /// @brief Get the number of stored elements.
     template<typename T>
     size_t size() const noexcept
     {
-        const auto& repo = get_container<T>(m_repository);
-        return (m_parent ? m_parent->template size<T>() : 0) + repo.size();
+        const auto& entry = std::get<RepositoryEntry<T>>(m_repository);
+
+        return entry.parent_size + entry.container.size();
     }
 
     /// @brief Clear the repository but keep memory allocated.
     void clear() noexcept
     {
         std::apply([](auto&... slots) { (slots.container.clear(), ...); }, m_repository);
+        initialize_entries();
     }
 };
 
