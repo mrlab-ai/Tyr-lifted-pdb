@@ -25,34 +25,6 @@
 namespace tyr
 {
 
-template<typename T, std::size_t I, typename... Slots>
-constexpr auto& get_container_impl(std::tuple<Slots...>& tuple)
-{
-    using Slot = std::tuple_element_t<I, std::tuple<Slots...>>;
-
-    if constexpr (std::is_same_v<typename Slot::value_type, T>)
-    {
-        return std::get<I>(tuple).container;
-    }
-    else
-    {
-        static_assert(I + 1 < sizeof...(Slots), "Type T is not stored in this tuple");
-        return get_container_impl<T, I + 1, Slots...>(tuple);
-    }
-}
-
-template<typename T, typename... Slots>
-constexpr auto& get_container(std::tuple<Slots...>& tuple)
-{
-    return get_container_impl<T, 0, Slots...>(tuple);
-}
-
-template<typename T, typename... Slots>
-constexpr const auto& get_container(const std::tuple<Slots...>& tuple)
-{
-    return get_container_impl<T, 0, Slots...>(const_cast<std::tuple<Slots...>&>(tuple));
-}
-
 /**
  * std::get<I> with runtime I.
  */

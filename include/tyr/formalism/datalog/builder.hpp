@@ -30,17 +30,6 @@ namespace tyr::formalism::datalog
 {
 class Builder
 {
-public:
-    Builder() = default;
-
-    template<typename T>
-    [[nodiscard]] auto get_builder()
-    {
-        return get_container<T>(m_builder).get_or_allocate();
-    }
-
-    auto& get_buffer() noexcept { return buffer; }
-
 private:
     /**
      * Datalog
@@ -112,7 +101,18 @@ private:
 
     BuilderStorage m_builder;
 
-    buffer::Buffer buffer;
+    buffer::Buffer m_buffer;
+
+public:
+    Builder() = default;
+
+    template<typename T>
+    [[nodiscard]] auto get_builder()
+    {
+        return std::get<BuilderEntry<T>>(m_builder).container.get_or_allocate();
+    }
+
+    auto& get_buffer() noexcept { return m_buffer; }
 };
 
 }

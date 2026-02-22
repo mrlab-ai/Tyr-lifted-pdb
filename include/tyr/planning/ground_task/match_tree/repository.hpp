@@ -62,11 +62,6 @@ private:
                                          RepositoryEntry<VariableSelectorNode<Tag>>,
                                          RepositoryEntry<NumericConstraintSelectorNode<Tag>>,
                                          RepositoryEntry<ElementGeneratorNode<Tag>>,
-                                         RepositoryEntry<Node<Tag>>,
-                                         RepositoryEntry<AtomSelectorNode<Tag>>,
-                                         RepositoryEntry<VariableSelectorNode<Tag>>,
-                                         RepositoryEntry<NumericConstraintSelectorNode<Tag>>,
-                                         RepositoryEntry<ElementGeneratorNode<Tag>>,
                                          RepositoryEntry<Node<Tag>>>;
 
     RepositoryStorage m_repository;
@@ -81,7 +76,7 @@ public:
     template<typename T>
     std::optional<Index<T>> find(const Data<T>& builder) const noexcept
     {
-        const auto& indexed_hash_set = get_container<T>(m_repository);
+        const auto& indexed_hash_set = std::get<RepositoryEntry<T>>(m_repository).container;
 
         if (const auto ptr = indexed_hash_set.find(builder))
             return ptr->index;
@@ -92,7 +87,7 @@ public:
     template<typename T, bool AssignIndex = true>
     std::pair<Index<T>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
-        auto& indexed_hash_set = get_container<T>(m_repository);
+        auto& indexed_hash_set = std::get<RepositoryEntry<T>>(m_repository).container;
 
         if constexpr (AssignIndex)
             builder.index.value = indexed_hash_set.size();
@@ -108,7 +103,7 @@ public:
     {
         assert(index != Index<T>::max() && "Unassigned index.");
 
-        const auto& repository = get_container<T>(m_repository);
+        const auto& repository = std::get<RepositoryEntry<T>>(m_repository).container;
 
         return repository[index];
     }
@@ -116,7 +111,7 @@ public:
     template<typename T>
     const Data<T>& front() const
     {
-        const auto& repository = get_container<T>(m_repository);
+        const auto& repository = std::get<RepositoryEntry<T>>(m_repository).container;
 
         return repository.front();
     }
@@ -125,7 +120,7 @@ public:
     template<typename T>
     size_t size() const noexcept
     {
-        const auto& repository = get_container<T>(m_repository);
+        const auto& repository = std::get<RepositoryEntry<T>>(m_repository).container;
 
         return repository.size();
     }

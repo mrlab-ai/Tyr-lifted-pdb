@@ -123,9 +123,11 @@ private:
         requires(IndexConcept<Index<T>> && !GroupIndexConcept<Index<T>>)
     std::optional<Index<T>> find_impl(const Data<T>& builder) const noexcept
     {
-        const auto& repo = get_container<T>(m_repository);
+        const auto& repo = std::get<RepositoryEntry<T>>(m_repository).container;
+
         if (auto ptr = repo.find(builder))
             return ptr->index;
+
         return std::nullopt;
     }
 
@@ -133,7 +135,7 @@ private:
         requires(GroupIndexConcept<Index<T>>)
     std::optional<Index<T>> find_impl(const Data<T>& builder) const noexcept
     {
-        const auto& repos = get_container<T>(m_repository);
+        const auto& repos = std::get<RepositoryEntry<T>>(m_repository).container;
         const auto g = builder.index.group.value;
 
         if (g >= repos.size()) [[unlikely]]
@@ -167,7 +169,7 @@ public:
         if (auto ptr = find<T>(builder))
             return { *ptr, false };
 
-        auto& repo = get_container<T>(m_repository);
+        auto& repo = std::get<RepositoryEntry<T>>(m_repository).container;
 
         const size_t parent_size = m_parent ? m_parent->template size<T>() : 0;
         builder.index.value = parent_size + repo.size();
@@ -183,7 +185,7 @@ public:
         if (auto ptr = find<T>(builder))
             return { *ptr, false };
 
-        auto& repos = get_container<T>(m_repository);
+        auto& repos = std::get<RepositoryEntry<T>>(m_repository).container;
         const auto g = builder.index.group.value;
 
         if (g >= repos.size()) [[unlikely]]
@@ -210,7 +212,7 @@ public:
 
         index.value -= parent_size;
 
-        const auto& repo = get_container<T>(m_repository);
+        const auto& repo = std::get<RepositoryEntry<T>>(m_repository).container;
         return repo[index];
     }
 
@@ -227,7 +229,7 @@ public:
 
         index.value -= parent_size;
 
-        const auto& repos = get_container<T>(m_repository);
+        const auto& repos = std::get<RepositoryEntry<T>>(m_repository).container;
         // Assuming index.group.value is valid for local access when present.
         return repos[index.group.value][index];
     }
@@ -239,7 +241,7 @@ public:
         if (m_parent && m_parent->template size<T>() > 0)
             return m_parent->template front<T>();
 
-        const auto& repo = get_container<T>(m_repository);
+        const auto& repo = std::get<T>(m_repository).container;
         return repo.front();
     }
 
@@ -250,7 +252,7 @@ public:
         if (m_parent && m_parent->template size<T>(index) > 0)
             return m_parent->template front<T>(index);
 
-        const auto& repos = get_container<T>(m_repository);
+        const auto& repos = std::get<T>(m_repository).container;
         assert(index.group.value < repos.size());
         assert(repos[index.group.value].size() > 0);
         return repos[index.group.value].front();
@@ -261,7 +263,7 @@ public:
         requires(IndexConcept<Index<T>> && !GroupIndexConcept<Index<T>>)
     size_t size() const noexcept
     {
-        const auto& repo = get_container<T>(m_repository);
+        const auto& repo = std::get<RepositoryEntry<T>>(m_repository).container;
         return (m_parent ? m_parent->template size<T>() : 0) + repo.size();
     }
 
@@ -269,7 +271,7 @@ public:
         requires(GroupIndexConcept<Index<T>>)
     size_t size(Index<T> index) const noexcept
     {
-        const auto& repos = get_container<T>(m_repository);
+        const auto& repos = std::get<RepositoryEntry<T>>(m_repository).container;
         const auto g = index.group.value;
 
         const size_t parent_size = m_parent ? m_parent->template size<T>(index) : 0;
