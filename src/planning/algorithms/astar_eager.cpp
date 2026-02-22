@@ -116,7 +116,7 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
 
     const auto start_state_context = StateContext { task, start_state.get_unpacked_state(), start_node.get_metric() };
 
-    if (is_dynamically_applicable(task.get_task().get_goal(), start_state_context))
+    if (options.stop_if_goal && is_dynamically_applicable(task.get_task().get_goal(), start_state_context))
     {
         event_handler->on_end_search();
 
@@ -179,9 +179,7 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
         /* Close state. */
 
         if (search_node.status == SearchNodeStatus::CLOSED || search_node.status == SearchNodeStatus::DEAD_END)
-        {
             continue;
-        }
 
         /* Report search progress. */
 
@@ -192,7 +190,7 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
         }
 
         /* Test whether state achieves the dynamic goal. */
-        if (search_node.status == SearchNodeStatus::GOAL)
+        if (options.stop_if_goal && search_node.status == SearchNodeStatus::GOAL)
         {
             search_node.status = SearchNodeStatus::GOAL;
 

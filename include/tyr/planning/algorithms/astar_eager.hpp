@@ -35,6 +35,7 @@ struct Options
     EventHandlerPtr<Task> event_handler = nullptr;
     uint_t max_num_states = std::numeric_limits<uint_t>::max();
     std::optional<std::chrono::steady_clock::duration> max_time = std::nullopt;
+    bool stop_if_goal = true;
 
     Options() = default;
 };
