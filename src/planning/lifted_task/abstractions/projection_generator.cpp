@@ -110,36 +110,34 @@ private:
     /* Implement EventHandlerBase interface */
     friend class astar_eager::EventHandlerBase<ProjectionEventHandler, LiftedTask>;
 
-    void on_expand_node_impl(const Node<LiftedTask>& node) const;
+    void on_expand_node_impl(const Node<LiftedTask>& node) const {}
 
-    void on_expand_goal_node_impl(const Node<LiftedTask>& node) const;
+    void on_expand_goal_node_impl(const Node<LiftedTask>& node) const{}
 
-    void on_generate_node_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const;
+    void on_generate_node_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const{}
 
-    void on_generate_node_relaxed_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const;
+    void on_generate_node_relaxed_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const{}
 
-    void on_generate_node_not_relaxed_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const;
+    void on_generate_node_not_relaxed_impl(const LabeledNode<LiftedTask>& labeled_succ_node) const{}
 
-    void on_close_node_impl(const Node<LiftedTask>& node) const;
+    void on_close_node_impl(const Node<LiftedTask>& node) const{}
 
-    void on_prune_node_impl(const Node<LiftedTask>& node) const;
+    void on_prune_node_impl(const Node<LiftedTask>& node) const{}
 
-    void on_start_search_impl(const Node<LiftedTask>& node, float_t f_value) const;
+    void on_start_search_impl(const Node<LiftedTask>& node, float_t f_value) const{}
 
-    void on_finish_f_layer_impl(float_t f_value, uint64_t num_expanded_states, uint64_t num_generated_states) const;
+    void on_finish_f_layer_impl(float_t f_value, uint64_t num_expanded_states, uint64_t num_generated_states) const{}
 
-    void on_end_search_impl() const;
+    void on_end_search_impl() const{}
 
-    void on_solved_impl(const Plan<LiftedTask>& plan) const;
+    void on_solved_impl(const Plan<LiftedTask>& plan) const{}
 
-    void on_unsolvable_impl() const;
+    void on_unsolvable_impl() const{}
 
-    void on_exhausted_impl() const;
+    void on_exhausted_impl() const{}
 
 public:
-    ProjectionEventHandler(size_t verbosity = 0);
-
-    static ProjectionEventHandler create(size_t verbosity = 0);
+    ProjectionEventHandler(size_t verbosity = 0) : astar_eager::EventHandlerBase<ProjectionEventHandler, LiftedTask>(verbosity) { }
 };
 
 ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
@@ -151,6 +149,9 @@ void ProjectionGenerator<LiftedTask>::generate()
         // Step 1: Create the projected task
         auto repository = std::make_shared<fp::Repository>(m_task.get_repository().get());
         auto projected_task = create_projected_task(m_task.get_task(), *repository, pattern);
+
+        // TODO: make sure the projected task is correct
+        std::cout << make_view(projected_task, *repository) << std::endl;
         
         // Step 2: Create the lifted projected task
         auto projected_lifted_task = LiftedTask(m_task.get_domain(), repository, make_view(projected_task, *repository), m_task.get_fdr_context());
@@ -159,7 +160,7 @@ void ProjectionGenerator<LiftedTask>::generate()
         auto projected_ground_task = projected_lifted_task.get_ground_task();
         
         // Step 4: Fully expand state space while building the projection
-        auto event_handler = ProjectionEventHandler();
+        auto event_handler = ProjectionEventHandler(2);
         auto options = astar_eager::Options<GroundTask>();
         options.stop_if_goal = false;
         auto blind_heuristic = BlindHeuristic<GroundTask>();
