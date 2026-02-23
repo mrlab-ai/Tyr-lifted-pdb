@@ -62,7 +62,7 @@ void PredicateFactSet<T>::insert(Index<formalism::datalog::GroundAtom<T>> ground
     m_indices.push_back(ground_atom);
     m_bitset.set(ground_atom.value);
 
-    const auto objs = make_view(ground_atom, m_context).get_objects();
+    const auto objs = make_view(ground_atom, m_context).get_binding().get_objects();
     assert(m_columns.size() == objs.size());
     for (size_t pos = 0; pos < objs.size(); ++pos)
         m_columns[pos].push_back(objs[pos].get_index());
@@ -85,7 +85,7 @@ void PredicateFactSet<T>::insert(View<Index<fd::GroundAtom<T>>, fd::Repository> 
     m_indices.push_back(ground_atom_index);
     m_bitset.set(ground_atom_index.value);
 
-    const auto objs = ground_atom.get_objects();
+    const auto objs = ground_atom.get_binding().get_objects();
     assert(m_columns.size() == objs.size());
     for (size_t pos = 0; pos < objs.size(); ++pos)
         m_columns[pos].push_back(objs[pos].get_index());

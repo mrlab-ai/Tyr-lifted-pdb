@@ -20,7 +20,7 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/object_view.hpp"
+#include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/ground_atom_index.hpp"
 #include "tyr/formalism/predicate_view.hpp"
@@ -43,7 +43,7 @@ public:
 
     auto get_index() const noexcept { return m_handle; }
     auto get_predicate() const noexcept { return make_view(get_data().predicate, *m_context); }
-    auto get_objects() const noexcept { return make_view(get_data().objects, *m_context); }
+    auto get_binding() const noexcept { return make_view(get_data().binding, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

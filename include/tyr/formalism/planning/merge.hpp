@@ -220,7 +220,7 @@ inline std::pair<Index<GroundAtom<T>>, bool> merge_p2p(View<Index<GroundAtom<T>>
     atom.clear();
 
     atom.predicate = merge_p2p(element.get_predicate(), context).first;
-    atom.objects = element.get_data().objects;
+    atom.binding = merge_p2p(element.get_binding(), context).first;
 
     canonicalize(atom);
     return context.destination.get_or_create(atom, context.builder.get_buffer());
@@ -312,7 +312,7 @@ inline std::pair<Index<GroundFunctionTerm<T>>, bool> merge_p2p(View<Index<Ground
     fterm.clear();
 
     fterm.function = element.get_function().get_index();
-    fterm.objects = element.get_data().objects;
+    fterm.binding = merge_p2p(element.get_binding(), context).first;
 
     canonicalize(fterm);
     return context.destination.get_or_create(fterm, context.builder.get_buffer());

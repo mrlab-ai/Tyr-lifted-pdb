@@ -108,7 +108,7 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
 
                 const auto action = make_view(action_index, grounder_context.destination);
 
-                m_workspace.d2p.binding = fact.get_objects().get_data();
+                m_workspace.d2p.binding = fact.get_binding().get_objects().get_data();
 
                 const auto ground_action_index = fp::ground(action,
                                                             grounder_context,

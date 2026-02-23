@@ -205,7 +205,7 @@ inline std::pair<Index<GroundAtom<T>>, bool> merge_d2d(View<Index<GroundAtom<T>>
     atom.clear();
 
     atom.index.group = element.get_index().get_group();
-    atom.objects = element.get_data().objects;
+    atom.binding = merge_d2d(element.get_binding(), context).first;
 
     canonicalize(atom);
     return context.destination.get_or_create(atom, context.builder.get_buffer());
@@ -278,7 +278,7 @@ inline std::pair<Index<GroundFunctionTerm<T>>, bool> merge_d2d(View<Index<Ground
     fterm.clear();
 
     fterm.index.group = element.get_function().get_index();
-    fterm.objects = element.get_data().objects;
+    fterm.binding = merge_d2d(element.get_binding(), context).first;
 
     canonicalize(fterm);
     return context.destination.get_or_create(fterm, context.builder.get_buffer());
