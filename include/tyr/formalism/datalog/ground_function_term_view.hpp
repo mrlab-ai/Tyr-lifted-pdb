@@ -20,10 +20,10 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/vector.hpp"
+#include "tyr/formalism/binding_view.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/ground_function_term_index.hpp"
 #include "tyr/formalism/function_view.hpp"
-#include "tyr/formalism/object_view.hpp"
 
 namespace tyr
 {
@@ -43,7 +43,7 @@ public:
 
     auto get_index() const noexcept { return m_handle; }
     auto get_function() const noexcept { return make_view(m_handle.group, *m_context); }
-    auto get_objects() const noexcept { return make_view(get_data().objects, *m_context); }
+    auto get_binding() const noexcept { return make_view(get_data().binding, *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };

@@ -241,9 +241,18 @@ inline float_t evaluate_into_buffer(View<Index<formalism::datalog::FunctionTerm<
                                     const FactSets& fact_sets,
                                     formalism::datalog::ConstGrounderContext& context)
 {
+    auto binding_ptr = context.builder.template get_builder<formalism::Binding>();
+    auto& binding = *binding_ptr;
+    formalism::datalog::ground_into_buffer(element.get_terms(), context.binding, binding);
+    const auto program_binding = context.destination.find(binding);
+
+    if (!program_binding)
+        return std::numeric_limits<float_t>::quiet_NaN();
+
     auto ground_fterm_ptr = context.builder.template get_builder<formalism::datalog::GroundFunctionTerm<T>>();
     auto& ground_fterm = *ground_fterm_ptr;
-    formalism::datalog::ground_into_buffer(element, context.binding, ground_fterm);
+    ground_fterm.index.group = element.get_function().get_index();
+    ground_fterm.binding = *program_binding;
     const auto program_ground_fterm = context.destination.find(ground_fterm);
 
     if (!program_ground_fterm)
@@ -333,9 +342,18 @@ inline bool is_valid_binding(View<Index<formalism::datalog::Literal<T>>, formali
                              const FactSets& fact_sets,
                              formalism::datalog::ConstGrounderContext& context)
 {
+    auto binding_ptr = context.builder.template get_builder<formalism::Binding>();
+    auto& binding = *binding_ptr;
+    formalism::datalog::ground_into_buffer(element.get_atom().get_terms(), context.binding, binding);
+    const auto program_binding = context.destination.find(binding);
+
+    if (!program_binding)
+        return !element.get_polarity();
+
     auto ground_atom_ptr = context.builder.template get_builder<formalism::datalog::GroundAtom<T>>();
     auto& ground_atom = *ground_atom_ptr;
-    formalism::datalog::ground_into_buffer(element.get_atom(), context.binding, ground_atom);
+    ground_atom.index.group = element.get_atom().get_predicate().get_index();
+    ground_atom.binding = *program_binding;
     const auto program_ground_atom = context.destination.find(ground_atom);
 
     return (program_ground_atom) ? (fact_sets.template get<T>().predicate.contains(program_ground_atom.value()) == element.get_polarity()) :

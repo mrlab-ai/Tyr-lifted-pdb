@@ -362,7 +362,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::planning::Gro
 template<formalism::FactKind T, formalism::planning::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::planning::GroundAtom<T>>, C>& el)
 {
-    fmt::print(os, "({} {})", to_string(el.get_predicate().get_name()), fmt::format("{}", fmt::join(to_strings(el.get_objects()), " ")));
+    fmt::print(os, "({} {})", to_string(el.get_predicate().get_name()), to_string(el.get_binding()));
     return os;
 }
 
@@ -410,7 +410,7 @@ inline std::ostream& print(std::ostream& os, const Data<formalism::planning::Gro
 template<formalism::FactKind T, formalism::planning::Context C>
 inline std::ostream& print(std::ostream& os, const View<Index<formalism::planning::GroundFunctionTerm<T>>, C>& el)
 {
-    fmt::print(os, "({} {})", to_string(el.get_function().get_name()), fmt::format("{}", fmt::join(to_strings(el.get_objects()), " ")));
+    fmt::print(os, "({} {})", to_string(el.get_function().get_name()), to_string(el.get_binding()));
     return os;
 }
 

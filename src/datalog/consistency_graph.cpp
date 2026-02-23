@@ -1115,7 +1115,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
         for (const auto fact : predicate_sets[i].get_facts())  ///< Outter loop because |facts| > |infos|
         {
-            const auto objects = fact.get_objects();
+            const auto objects = fact.get_binding().get_objects();
 
             // std::cout << fact << std::endl;
 

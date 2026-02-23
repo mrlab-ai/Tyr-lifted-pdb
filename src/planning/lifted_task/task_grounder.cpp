@@ -326,7 +326,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
             {
                 const auto action_index = it->second;
 
-                workspace.d2p.binding = fact.get_objects().get_data();
+                workspace.d2p.binding = fact.get_binding().get_objects().get_data();
                 auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
 
                 const auto action = make_view(action_index, grounder_context.destination);
@@ -387,7 +387,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
             {
                 const auto axiom_index = it->second;
 
-                workspace.d2p.binding = fact.get_objects().get_data();
+                workspace.d2p.binding = fact.get_binding().get_objects().get_data();
                 auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
 
                 const auto axiom = make_view(axiom_index, grounder_context.destination);
