@@ -110,7 +110,7 @@ private:
 
             const auto ground_action_index = formalism::planning::ground(make_view(action, grounder_context.destination),
                                                                          grounder_context,
-                                                                         m_task->get_parameter_domains_per_cond_effect_per_action()[uint_t(action)],
+                                                                         m_task->get_parameter_domains_per_cond_effect_per_action().at(action),
                                                                          m_assign,
                                                                          m_iter_workspace,
                                                                          *m_task->get_fdr_context())

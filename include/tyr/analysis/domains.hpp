@@ -20,12 +20,16 @@
 
 #include "tyr/common/declarations.hpp"  // for UnorderedSet
 #include "tyr/common/equal_to.hpp"      // for EqualTo
-#include "tyr/common/hash.hpp"          // for Hash
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"  // for Hash
+#include "tyr/common/hash.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"   // for Object, Program (ptr only)
 #include "tyr/formalism/datalog/program_index.hpp"  // for Index
 #include "tyr/formalism/object_index.hpp"           // for Index
-#include "tyr/formalism/planning/task_index.hpp"    // for Index
+#include "tyr/formalism/planning/action_index.hpp"
+#include "tyr/formalism/planning/axiom_index.hpp"
+#include "tyr/formalism/planning/task_index.hpp"  // for Index
 
 #include <utility>  // for pair
 #include <vector>   // for vector
@@ -56,8 +60,8 @@ struct TaskVariableDomains
     DomainListListList derived_predicate_domains;
     DomainListListList static_function_domains;
     DomainListListList fluent_function_domains;
-    std::vector<std::pair<DomainListList, DomainListListList>> action_domains;
-    DomainListListList axiom_domains;
+    UnorderedMap<Index<formalism::planning::Action>, std::pair<DomainListList, DomainListListList>> action_domains;
+    UnorderedMap<Index<formalism::planning::Axiom>, DomainListList> axiom_domains;
 };
 
 extern ProgramVariableDomains compute_variable_domains(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program);

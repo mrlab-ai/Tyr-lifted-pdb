@@ -35,6 +35,9 @@
 #include <valla/valla.hpp>
 #include <vector>
 
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
+
 namespace tyr::planning
 {
 void fill_atoms(valla::Slot<uint_t> slot,
@@ -94,53 +97,45 @@ valla::Slot<uint_t> create_numeric_variables_slot(const std::vector<float_t>& nu
 }
 
 void insert_fluent_atoms_to_fact_set(const boost::dynamic_bitset<>& fluent_atoms,
-                                     const formalism::planning::Repository& atoms_context,
-                                     formalism::planning::MergeDatalogContext& merge_context,
-                                     datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
+                                     const fp::Repository& atoms_context,
+                                     fp::MergeDatalogContext& merge_context,
+                                     datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
     for (auto i = fluent_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = fluent_atoms.find_next(i))
-        fact_sets.predicate.insert(make_view(formalism::planning::merge_p2d<formalism::FluentTag, formalism::FluentTag>(
-                                                 make_view(Index<formalism::planning::GroundAtom<formalism::FluentTag>>(i), atoms_context),
-                                                 merge_context)
-                                                 .first,
-                                             merge_context.destination));
+        fact_sets.predicate.insert(
+            make_view(fp::merge_p2d<f::FluentTag, f::FluentTag>(make_view(Index<fp::GroundAtom<f::FluentTag>>(i), atoms_context), merge_context).first,
+                      merge_context.destination));
 }
 
 void insert_derived_atoms_to_fact_set(const boost::dynamic_bitset<>& derived_atoms,
-                                      const formalism::planning::Repository& atoms_context,
-                                      formalism::planning::MergeDatalogContext& merge_context,
-                                      datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
+                                      const fp::Repository& atoms_context,
+                                      fp::MergeDatalogContext& merge_context,
+                                      datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
     for (auto i = derived_atoms.find_first(); i != boost::dynamic_bitset<>::npos; i = derived_atoms.find_next(i))
-        fact_sets.predicate.insert(make_view(formalism::planning::merge_p2d<formalism::DerivedTag, formalism::FluentTag>(
-                                                 make_view(Index<formalism::planning::GroundAtom<formalism::DerivedTag>>(i), atoms_context),
-                                                 merge_context)
-                                                 .first,
-                                             merge_context.destination));
+        fact_sets.predicate.insert(
+            make_view(fp::merge_p2d<f::DerivedTag, f::FluentTag>(make_view(Index<fp::GroundAtom<f::DerivedTag>>(i), atoms_context), merge_context).first,
+                      merge_context.destination));
 }
 
 void insert_numeric_variables_to_fact_set(const std::vector<float_t>& numeric_variables,
-                                          const formalism::planning::Repository& numeric_variables_context,
-                                          formalism::planning::MergeDatalogContext& merge_context,
-                                          datalog::TaggedFactSets<formalism::FluentTag>& fact_sets)
+                                          const fp::Repository& numeric_variables_context,
+                                          fp::MergeDatalogContext& merge_context,
+                                          datalog::TaggedFactSets<f::FluentTag>& fact_sets)
 {
     for (uint_t i = 0; i < numeric_variables.size(); ++i)
     {
         if (!std::isnan(numeric_variables[i]))
         {
             fact_sets.function.insert(
-                make_view(formalism::planning::merge_p2d(
-                              make_view(Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>(i), numeric_variables_context),
-                              merge_context)
-                              .first,
+                make_view(fp::merge_p2d(make_view(Index<fp::GroundFunctionTerm<f::FluentTag>>(i), numeric_variables_context), merge_context).first,
                           merge_context.destination),
                 numeric_variables[i]);
         }
     }
 }
 
-void insert_fact_sets_into_assignment_sets(const datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
-                                           datalog::TaggedAssignmentSets<formalism::FluentTag>& assignment_sets)
+void insert_fact_sets_into_assignment_sets(const datalog::TaggedFactSets<f::FluentTag>& fact_sets, datalog::TaggedAssignmentSets<f::FluentTag>& assignment_sets)
 {
     assignment_sets.reset();
 
@@ -148,31 +143,31 @@ void insert_fact_sets_into_assignment_sets(const datalog::TaggedFactSets<formali
 }
 
 void insert_extended_state(const UnpackedState<LiftedTask>& unpacked_state,
-                           const formalism::planning::Repository& atoms_context,
-                           formalism::planning::MergeDatalogContext& merge_context,
-                           datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
-                           datalog::TaggedAssignmentSets<formalism::FluentTag>& assignment_sets)
+                           const fp::Repository& atoms_context,
+                           fp::MergeDatalogContext& merge_context,
+                           datalog::TaggedFactSets<f::FluentTag>& fact_sets,
+                           datalog::TaggedAssignmentSets<f::FluentTag>& assignment_sets)
 {
     fact_sets.reset();
     assignment_sets.reset();
 
-    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<formalism::FluentTag>(), atoms_context, merge_context, fact_sets);
-    insert_derived_atoms_to_fact_set(unpacked_state.get_atoms<formalism::DerivedTag>(), atoms_context, merge_context, fact_sets);
+    insert_fluent_atoms_to_fact_set(unpacked_state.get_atoms<f::FluentTag>(), atoms_context, merge_context, fact_sets);
+    insert_derived_atoms_to_fact_set(unpacked_state.get_atoms<f::DerivedTag>(), atoms_context, merge_context, fact_sets);
     insert_numeric_variables_to_fact_set(unpacked_state.get_numeric_variables(), atoms_context, merge_context, fact_sets);
 
     insert_fact_sets_into_assignment_sets(fact_sets, assignment_sets);
 }
 
-std::vector<analysis::DomainListListList>
-compute_parameter_domains_per_cond_effect_per_action(View<Index<formalism::planning::Task>, formalism::planning::Repository> task)
+UnorderedMap<Index<fp::Action>, analysis::DomainListListList> compute_parameter_domains_per_cond_effect_per_action(View<Index<fp::Task>, fp::Repository> task)
 {
-    auto result = std::vector<analysis::DomainListListList> {};
+    auto result = UnorderedMap<Index<fp::Action>, analysis::DomainListListList> {};
 
     const auto variable_domains = analysis::compute_variable_domains(task);
 
     for (uint_t action_index = 0; action_index < task.get_domain().get_actions().size(); ++action_index)
     {
         const auto action = task.get_domain().get_actions()[action_index];
+        const auto& action_domains = variable_domains.action_domains.at(action.get_index());
 
         auto parameter_domains_per_cond_effect = analysis::DomainListListList {};
 
@@ -180,17 +175,17 @@ compute_parameter_domains_per_cond_effect_per_action(View<Index<formalism::plann
         {
             const auto cond_effect = action.get_effects()[cond_effect_index];
 
-            assert(variable_domains.action_domains[action_index].second[cond_effect_index].size() == action.get_arity() + cond_effect.get_arity());
+            assert(action_domains.second[cond_effect_index].size() == action.get_arity() + cond_effect.get_arity());
 
             auto parameter_domains = analysis::DomainListList {};
 
             for (uint_t i = action.get_arity(); i < action.get_arity() + cond_effect.get_arity(); ++i)
-                parameter_domains.push_back(variable_domains.action_domains[action_index].second[cond_effect_index][i]);
+                parameter_domains.push_back(action_domains.second[cond_effect_index][i]);
 
             parameter_domains_per_cond_effect.push_back(std::move(parameter_domains));
         }
 
-        result.push_back(std::move(parameter_domains_per_cond_effect));
+        result.emplace(action.get_index(), std::move(parameter_domains_per_cond_effect));
     }
 
     return result;

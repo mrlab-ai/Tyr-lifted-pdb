@@ -112,7 +112,7 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
 
                 const auto ground_action_index = fp::ground(action,
                                                             grounder_context,
-                                                            m_task->get_parameter_domains_per_cond_effect_per_action()[action_index.get_value()],
+                                                            m_task->get_parameter_domains_per_cond_effect_per_action().at(action_index),
                                                             fluent_assign,
                                                             iter_workspace,
                                                             *m_task->get_fdr_context())

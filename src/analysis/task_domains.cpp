@@ -40,11 +40,11 @@ namespace fp = tyr::formalism::planning;
 namespace tyr::analysis
 {
 
-static DomainListListList to_list(const DomainSetListList& set)
+static DomainListListList to_list(const DomainSetListList& element)
 {
-    auto vec = DomainListListList();
-    vec.reserve(set.size());
-    for (const auto& parameter_domains : set)
+    auto result = DomainListListList();
+    result.reserve(element.size());
+    for (const auto& parameter_domains : element)
     {
         auto predicate_domains_vec = DomainListList();
         predicate_domains_vec.reserve(parameter_domains.size());
@@ -54,33 +54,48 @@ static DomainListListList to_list(const DomainSetListList& set)
             std::sort(domain.begin(), domain.end());
             predicate_domains_vec.push_back(std::move(domain));
         }
-        vec.push_back(predicate_domains_vec);
+        result.push_back(predicate_domains_vec);
     }
-    return vec;
+    return result;
 }
 
-static DomainListList to_list(const DomainSetList& set)
+static DomainListList to_list(const DomainSetList& element)
 {
-    auto vec = DomainListList();
-    vec.reserve(set.size());
-    for (const auto& parameter_domain : set)
+    auto result = DomainListList();
+    result.reserve(element.size());
+    for (const auto& parameter_domain : element)
     {
         auto domain = DomainList(parameter_domain.begin(), parameter_domain.end());
         std::sort(domain.begin(), domain.end());
-        vec.push_back(std::move(domain));
+        result.push_back(std::move(domain));
     }
-    return vec;
+    return result;
 }
 
-static std::vector<std::pair<DomainListList, DomainListListList>> to_list(const std::vector<std::pair<DomainSetList, DomainSetListList>>& set)
+template<typename T>
+static UnorderedMap<Index<T>, DomainListList> to_list(const UnorderedMap<Index<T>, DomainSetList>& element)
 {
-    auto vec = std::vector<std::pair<DomainListList, DomainListListList>>();
-    vec.reserve(set.size());
-    for (const auto& [parameter_domains, parameter_domains_per_cond_effect] : set)
+    auto result = UnorderedMap<Index<T>, DomainListList>();
+
+    for (const auto& [key, val] : element)
     {
-        vec.emplace_back(to_list(parameter_domains), to_list(parameter_domains_per_cond_effect));
+        result.emplace(key, to_list(val));
     }
-    return vec;
+    return result;
+}
+
+template<typename T>
+static UnorderedMap<Index<T>, std::pair<DomainListList, DomainListListList>>
+to_list(const UnorderedMap<Index<T>, std::pair<DomainSetList, DomainSetListList>>& element)
+{
+    auto result = UnorderedMap<Index<T>, std::pair<DomainListList, DomainListListList>>();
+
+    for (const auto& [key, val] : element)
+    {
+        const auto& [parameter_domains, parameter_domains_per_cond_effect] = val;
+        result.emplace(key, std::make_pair(to_list(parameter_domains), to_list(parameter_domains_per_cond_effect)));
+    }
+    return result;
 }
 
 template<f::FactKind T, fp::Context C>
@@ -727,7 +742,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, fp::Repositor
 
     ///--- Step 3: Compute rule parameter domains as tightest bound from the previously computed domains of the static predicates.
 
-    auto action_domain_sets = std::vector<std::pair<DomainSetList, DomainSetListList>> {};
+    auto action_domain_sets = UnorderedMap<Index<fp::Action>, std::pair<DomainSetList, DomainSetListList>> {};
     {
         for (const auto action : task.get_domain().get_actions())
         {
@@ -758,12 +773,11 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, fp::Repositor
                 parameter_domains_per_cond_effect.push_back(std::move(c_parameter_domains));
             }
 
-            assert(action.get_index().value == action_domain_sets.size());
-            action_domain_sets.emplace_back(std::make_pair(std::move(parameter_domains), std::move(parameter_domains_per_cond_effect)));
+            action_domain_sets.emplace(action.get_index(), std::make_pair(std::move(parameter_domains), std::move(parameter_domains_per_cond_effect)));
         }
     }
 
-    auto axiom_domain_sets = DomainSetListList();
+    auto axiom_domain_sets = UnorderedMap<Index<fp::Axiom>, DomainSetList>();
     {
         for (const auto axiom : task.get_domain().get_axioms())
         {
@@ -777,7 +791,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, fp::Repositor
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
 
             assert(axiom.get_index().value == axiom_domain_sets.size());
-            axiom_domain_sets.push_back(std::move(parameter_domains));
+            axiom_domain_sets.emplace(axiom.get_index(), std::move(parameter_domains));
         }
 
         for (const auto axiom : task.get_axioms())
@@ -792,7 +806,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, fp::Repositor
                 restrict_parameter_domain(op, parameter_domains, static_function_domain_sets);
 
             assert(axiom.get_index().value == axiom_domain_sets.size());
-            axiom_domain_sets.push_back(std::move(parameter_domains));
+            axiom_domain_sets.emplace(axiom.get_index(), std::move(parameter_domains));
         }
     }
 
@@ -806,7 +820,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, fp::Repositor
 
         for (const auto action : task.get_domain().get_actions())
         {
-            auto& [parameter_domains, parameter_domains_per_cond_effect] = action_domain_sets[action.get_index().value];
+            auto& [parameter_domains, parameter_domains_per_cond_effect] = action_domain_sets[action.get_index()];
 
             for (const auto literal : action.get_condition().get_literals<f::StaticTag>())
                 if (lift_parameter_domain(literal, parameter_domains, static_predicate_domain_sets))
@@ -853,7 +867,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, fp::Repositor
 
         for (const auto axiom : task.get_domain().get_axioms())
         {
-            auto& parameter_domains = axiom_domain_sets[axiom.get_index().value];
+            auto& parameter_domains = axiom_domain_sets[axiom.get_index()];
 
             for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
                 if (lift_parameter_domain(literal, parameter_domains, static_predicate_domain_sets))
@@ -877,7 +891,7 @@ TaskVariableDomains compute_variable_domains(View<Index<fp::Task>, fp::Repositor
 
         for (const auto axiom : task.get_axioms())
         {
-            auto& parameter_domains = axiom_domain_sets[axiom.get_index().value];
+            auto& parameter_domains = axiom_domain_sets[axiom.get_index()];
 
             for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
                 if (lift_parameter_domain(literal, parameter_domains, static_predicate_domain_sets))

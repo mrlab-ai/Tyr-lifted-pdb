@@ -76,7 +76,7 @@ extern void insert_extended_state(const UnpackedState<LiftedTask>& unpacked_stat
                                   datalog::TaggedFactSets<formalism::FluentTag>& fact_sets,
                                   datalog::TaggedAssignmentSets<formalism::FluentTag>& assignment_sets);
 
-extern std::vector<analysis::DomainListListList>
+extern UnorderedMap<Index<formalism::planning::Action>, analysis::DomainListListList>
 compute_parameter_domains_per_cond_effect_per_action(View<Index<formalism::planning::Task>, formalism::planning::Repository> task);
 }
 
