@@ -86,7 +86,7 @@ private:
     AxiomEvaluatorProgram m_axiom_program;
 
     ApplicableActionProgram m_action_program;
-    std::vector<analysis::DomainListListList> m_parameter_domains_per_cond_effect_per_action;
+    UnorderedMap<Index<formalism::planning::Action>, analysis::DomainListListList> m_parameter_domains_per_cond_effect_per_action;
 
     RPGProgram m_rpg_program;
 };

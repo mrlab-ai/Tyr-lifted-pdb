@@ -20,7 +20,9 @@
 
 #include "tyr/common/declarations.hpp"  // for UnorderedSet
 #include "tyr/common/equal_to.hpp"      // for EqualTo
-#include "tyr/common/hash.hpp"          // for Hash
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"  // for Hash
+#include "tyr/common/hash.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -54,8 +56,8 @@ struct TaskVariableDomains
     DomainListListList derived_predicate_domains;
     DomainListListList static_function_domains;
     DomainListListList fluent_function_domains;
-    std::vector<std::pair<DomainListList, DomainListListList>> action_domains;
-    DomainListListList axiom_domains;
+    UnorderedMap<Index<formalism::planning::Action>, std::pair<DomainListList, DomainListListList>> action_domains;
+    UnorderedMap<Index<formalism::planning::Axiom>, DomainListList> axiom_domains;
 };
 
 extern ProgramVariableDomains compute_variable_domains(formalism::datalog::ProgramView program);
