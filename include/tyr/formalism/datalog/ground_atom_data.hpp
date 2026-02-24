@@ -20,9 +20,9 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
+#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
 
 namespace tyr
@@ -31,10 +31,10 @@ template<formalism::FactKind T>
 struct Data<formalism::datalog::GroundAtom<T>>
 {
     Index<formalism::datalog::GroundAtom<T>> index;
-    Index<formalism::Binding> binding;
+    IndexList<formalism::Object> objects;
 
     Data() = default;
-    Data(Index<formalism::datalog::GroundAtom<T>> index, Index<formalism::Binding> binding) : index(index), binding(binding) {}
+    Data(Index<formalism::datalog::GroundAtom<T>> index, IndexList<formalism::Object> objects) : index(index), objects(objects) {}
     Data(const Data& other) = delete;
     Data& operator=(const Data& other) = delete;
     Data(Data&& other) = default;
@@ -43,11 +43,11 @@ struct Data<formalism::datalog::GroundAtom<T>>
     void clear() noexcept
     {
         tyr::clear(index);
-        tyr::clear(binding);
+        tyr::clear(objects);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, binding); }
-    auto identifying_members() const noexcept { return std::tie(index.group, binding); }
+    auto cista_members() const noexcept { return std::tie(index, objects); }
+    auto identifying_members() const noexcept { return std::tie(index.group, objects); }
 };
 
 }

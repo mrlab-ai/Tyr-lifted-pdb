@@ -246,7 +246,6 @@ inline IndexList<formalism::datalog::GroundAtom<formalism::StaticTag>> add_stati
 {
     auto result = IndexList<formalism::datalog::GroundAtom<formalism::StaticTag>> {};
 
-    auto binding_builder = Data<formalism::Binding> {};
     auto ground_atom_builder = Data<formalism::datalog::GroundAtom<formalism::StaticTag>> {};
     auto buffer = buffer::Buffer {};
 
@@ -266,11 +265,9 @@ inline IndexList<formalism::datalog::GroundAtom<formalism::StaticTag>> add_stati
 
         for (const auto& atom : atoms)
         {
-            binding_builder.clear();
+            ground_atom_builder.objects.clear();
             for (const auto& term : atom)
-                binding_builder.objects.push_back(convert(term));
-            canonicalize(binding_builder);
-            ground_atom_builder.binding = repository.get_or_create(binding_builder, buffer).first;
+                ground_atom_builder.objects.push_back(convert(term));
 
             canonicalize(ground_atom_builder);
             result.push_back(repository.get_or_create(ground_atom_builder, buffer).first);
@@ -291,7 +288,6 @@ inline IndexList<formalism::datalog::GroundAtom<formalism::FluentTag>> add_fluen
 {
     auto result = IndexList<formalism::datalog::GroundAtom<formalism::FluentTag>> {};
 
-    auto binding_builder = Data<formalism::Binding> {};
     auto ground_atom_builder = Data<formalism::datalog::GroundAtom<formalism::FluentTag>> {};
     auto buffer = buffer::Buffer {};
 
@@ -303,11 +299,9 @@ inline IndexList<formalism::datalog::GroundAtom<formalism::FluentTag>> add_fluen
         ground_atom_builder.index.group = convert(predicate);
         for (const auto& atom : atoms)
         {
-            binding_builder.clear();
+            ground_atom_builder.objects.clear();
             for (const auto& term : atom)
-                binding_builder.objects.push_back(convert(term));
-            canonicalize(binding_builder);
-            ground_atom_builder.binding = repository.get_or_create(binding_builder, buffer).first;
+                ground_atom_builder.objects.push_back(convert(term));
 
             canonicalize(ground_atom_builder);
             result.push_back(repository.get_or_create(ground_atom_builder, buffer).first);

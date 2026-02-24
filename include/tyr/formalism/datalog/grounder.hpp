@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_DATALOG_GROUNDER_HPP_
-#define TYR_FORMALISM_DATALOG_GROUNDER_HPP_
+#ifndef TYR_FORMALISM_DATALOG_GROUNDER_DATALOG_HPP_
+#define TYR_FORMALISM_DATALOG_GROUNDER_DATALOG_HPP_
 
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/itertools.hpp"
@@ -92,7 +92,11 @@ std::pair<Index<GroundRule>, bool> ground(View<Index<Rule>, Repository> element,
  * ground_into_buffer
  */
 
-void ground_into_buffer(View<DataList<Term>, Repository> element, const IndexList<Object>& binding, Data<Binding>& out_binding);
+template<FactKind T>
+void ground_into_buffer(View<Index<Atom<T>>, Repository> element, const IndexList<Object>& binding, Data<GroundAtom<T>>& out_atom);
+
+template<FactKind T>
+void ground_into_buffer(View<Index<FunctionTerm<T>>, Repository> element, const IndexList<Object>& binding, Data<GroundFunctionTerm<T>>& out_fterm);
 
 /**
  * is_ground
@@ -187,7 +191,22 @@ inline std::pair<Index<GroundFunctionTerm<T>>, bool> ground(View<Index<FunctionT
 
     // Fill data
     fterm.index.group = element.get_function().get_index();
-    fterm.binding = ground(element.get_terms(), context).first;
+    for (const auto term : element.get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                    fterm.objects.push_back(context.binding[uint_t(arg)]);
+                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, Repository>>)
+                    fterm.objects.push_back(arg.get_index());
+                else
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+    }
 
     // Canonicalize and Serialize
     canonicalize(fterm);
@@ -286,7 +305,22 @@ inline std::pair<Index<GroundAtom<T>>, bool> ground(View<Index<Atom<T>>, Reposit
 
     // Fill data
     atom.index.group = element.get_predicate().get_index();
-    atom.binding = ground(element.get_terms(), context).first;
+    for (const auto term : element.get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                    atom.objects.push_back(context.binding[uint_t(arg)]);
+                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, Repository>>)
+                    atom.objects.push_back(arg.get_index());
+                else
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+    }
 
     // Canonicalize and Serialize
     canonicalize(atom);
@@ -352,11 +386,15 @@ inline std::pair<Index<GroundRule>, bool> ground(View<Index<Rule>, Repository> e
  * ground_into_buffer
  */
 
-inline void ground_into_buffer(View<DataList<Term>, Repository> element, const IndexList<Object>& binding, Data<Binding>& out_binding)
+template<FactKind T>
+inline void ground_into_buffer(View<Index<Atom<T>>, Repository> element, const IndexList<Object>& binding, Data<GroundAtom<T>>& out_atom)
 {
-    out_binding.clear();
+    // Fetch and clear
+    out_atom.clear();
 
-    for (const auto term : element)
+    // Fill data
+    out_atom.index.group = element.get_predicate().get_index();
+    for (const auto term : element.get_terms())
     {
         visit(
             [&](auto&& arg)
@@ -364,14 +402,46 @@ inline void ground_into_buffer(View<DataList<Term>, Repository> element, const I
                 using Alternative = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                    out_binding.objects.push_back(binding[uint_t(arg)]);
+                    out_atom.objects.push_back(binding[uint_t(arg)]);
                 else if constexpr (std::is_same_v<Alternative, View<Index<Object>, Repository>>)
-                    out_binding.objects.push_back(arg.get_index());
+                    out_atom.objects.push_back(arg.get_index());
                 else
                     static_assert(dependent_false<Alternative>::value, "Missing case");
             },
             term.get_variant());
     }
+
+    // Canonicalize and Serialize
+    canonicalize(out_atom);
+}
+
+template<FactKind T>
+inline void ground_into_buffer(View<Index<FunctionTerm<T>>, Repository> element, const IndexList<Object>& binding, Data<GroundFunctionTerm<T>>& out_fterm)
+{
+    // Fetch and clear
+    out_fterm.clear();
+
+    // Fill data
+    out_fterm.index.group = element.get_function().get_index();
+    for (const auto term : element.get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Alternative = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Alternative, ParameterIndex>)
+                    out_fterm.objects.push_back(binding[uint_t(arg)]);
+                else if constexpr (std::is_same_v<Alternative, View<Index<Object>, Repository>>)
+                    out_fterm.objects.push_back(arg.get_index());
+                else
+                    static_assert(dependent_false<Alternative>::value, "Missing case");
+            },
+            term.get_variant());
+    }
+
+    // Canonicalize and Serialize
+    canonicalize(out_fterm);
 }
 
 /**

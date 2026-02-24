@@ -20,7 +20,7 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/binding_index.hpp"
+#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/ground_atom_index.hpp"
 #include "tyr/formalism/predicate_index.hpp"
@@ -32,13 +32,13 @@ struct Data<formalism::planning::GroundAtom<T>>
 {
     Index<formalism::planning::GroundAtom<T>> index;
     Index<formalism::Predicate<T>> predicate;
-    Index<formalism::Binding> binding;
+    IndexList<formalism::Object> objects;
 
     Data() = default;
-    Data(Index<formalism::planning::GroundAtom<T>> index, Index<formalism::Predicate<T>> predicate, Index<formalism::Binding> binding) :
+    Data(Index<formalism::planning::GroundAtom<T>> index, Index<formalism::Predicate<T>> predicate, IndexList<formalism::Object> objects) :
         index(index),
         predicate(predicate),
-        binding(binding)
+        objects(objects)
     {
     }
     Data(const Data& other) = delete;
@@ -50,11 +50,11 @@ struct Data<formalism::planning::GroundAtom<T>>
     {
         tyr::clear(index);
         tyr::clear(predicate);
-        tyr::clear(binding);
+        tyr::clear(objects);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, predicate, binding); }
-    auto identifying_members() const noexcept { return std::tie(predicate, binding); }
+    auto cista_members() const noexcept { return std::tie(index, predicate, objects); }
+    auto identifying_members() const noexcept { return std::tie(predicate, objects); }
 };
 
 }

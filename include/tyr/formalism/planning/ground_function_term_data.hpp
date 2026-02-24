@@ -20,8 +20,8 @@
 
 #include "tyr/common/types.hpp"
 #include "tyr/common/types_utils.hpp"
-#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/function_index.hpp"
+#include "tyr/formalism/object_index.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/ground_function_term_index.hpp"
 
@@ -33,13 +33,13 @@ struct Data<formalism::planning::GroundFunctionTerm<T>>
 {
     Index<formalism::planning::GroundFunctionTerm<T>> index;
     Index<formalism::Function<T>> function;
-    Index<formalism::Binding> binding;
+    IndexList<formalism::Object> objects;
 
     Data() = default;
-    Data(Index<formalism::planning::GroundFunctionTerm<T>> index, Index<formalism::Function<T>> function, Index<formalism::Binding> binding) :
+    Data(Index<formalism::planning::GroundFunctionTerm<T>> index, Index<formalism::Function<T>> function, IndexList<formalism::Object> objects) :
         index(index),
         function(function),
-        binding(binding)
+        objects(objects)
     {
     }
     Data(const Data& other) = delete;
@@ -51,11 +51,11 @@ struct Data<formalism::planning::GroundFunctionTerm<T>>
     {
         tyr::clear(index);
         tyr::clear(function);
-        tyr::clear(binding);
+        tyr::clear(objects);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, function, binding); }
-    auto identifying_members() const noexcept { return std::tie(function, binding); }
+    auto cista_members() const noexcept { return std::tie(index, function, objects); }
+    auto identifying_members() const noexcept { return std::tie(function, objects); }
 };
 }
 

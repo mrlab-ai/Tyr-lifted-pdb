@@ -225,7 +225,7 @@ inline auto merge_p2d(View<Index<GroundAtom<T_SRC>>, Repository> element, MergeD
     atom.clear();
 
     atom.index.group = merge_p2d<T_SRC, T_DST>(element.get_predicate(), context).first;
-    atom.binding = merge_p2d(element.get_binding(), context).first;
+    atom.objects = element.get_data().objects;
 
     canonicalize(atom);
     return context.destination.get_or_create(atom, context.builder.get_buffer());
@@ -315,7 +315,7 @@ inline auto merge_p2d(View<Index<GroundFunctionTerm<T>>, Repository> element, Me
     fterm.clear();
 
     fterm.index.group = element.get_function().get_index();
-    fterm.binding = merge_p2d(element.get_binding(), context).first;
+    fterm.objects = element.get_data().objects;
 
     canonicalize(fterm);
     return context.destination.get_or_create(fterm, context.builder.get_buffer());

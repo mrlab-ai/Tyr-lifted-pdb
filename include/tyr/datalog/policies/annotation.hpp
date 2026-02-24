@@ -330,9 +330,6 @@ private:
         ground_conj_cond.clear();
 
         // We only use it to find in the program repository.
-        auto binding_ptr = delta_context.builder.get_builder<formalism::Binding>();
-        auto& binding = *binding_ptr;
-
         auto ground_atom_ptr = delta_context.builder.get_builder<formalism::datalog::GroundAtom<formalism::FluentTag>>();
         auto& ground_atom = *ground_atom_ptr;
 
@@ -343,13 +340,7 @@ private:
         {
             assert(literal.get_polarity());
 
-            formalism::datalog::ground_into_buffer(literal.get_atom().get_terms(), delta_context.binding, binding);
-
-            const auto program_binding = program_repository.find(binding);
-            assert(program_binding);  // must exist
-
-            ground_atom.index.group = literal.get_atom().get_predicate().get_index();
-            ground_atom.binding = *program_binding;
+            formalism::datalog::ground_into_buffer(literal.get_atom(), delta_context.binding, ground_atom);
 
             const auto program_ground_atom = program_repository.find(ground_atom);
             assert(program_ground_atom);  // must exist
