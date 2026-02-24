@@ -89,8 +89,7 @@ Workspace::Workspace(const GraphLayout& graph) :
     compatible_vertices_span(compatible_vertices_data.data(), std::array<size_t, 2> { graph.k, graph.info.num_blocks }),
     partition_bits(graph.k, false),
     partial_solution(graph.k),
-    partial_solution_size(0),
-    anchor_key(std::numeric_limits<uint_t>::max())
+    partial_solution_size(0)
 {
 }
 

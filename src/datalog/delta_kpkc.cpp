@@ -27,6 +27,7 @@ DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
     m_iteration(0),
     m_delta_graph(m_layout, static_graph.get_variable_dependeny_graph()),
     m_full_graph(m_layout, static_graph.get_variable_dependeny_graph()),
+    m_delta_edges(),
     m_fact_induced_candidates(m_layout)
 {
 }
@@ -35,7 +36,13 @@ void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_gr
                                          const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
                                          const AssignmentSets& assignment_sets)
 {
-    static_graph.initialize_dynamic_consistency_graphs(assignment_sets, delta_fact_sets, m_layout, m_delta_graph, m_full_graph, m_fact_induced_candidates);
+    static_graph.initialize_dynamic_consistency_graphs(assignment_sets,
+                                                       delta_fact_sets,
+                                                       m_layout,
+                                                       m_delta_graph,
+                                                       m_full_graph,
+                                                       m_delta_edges,
+                                                       m_fact_induced_candidates);
 
     ++m_iteration;
 }
@@ -47,20 +54,12 @@ void DeltaKPKC::reset()
     m_iteration = 0;
 }
 
-void DeltaKPKC::for_each_new_k_clique(Cliques& cliques, Workspace& workspace) const
-{
-    cliques.clear();
-
-    for_each_new_k_clique([&](auto&& clique) { cliques.append(std::span<Vertex>(clique)); }, workspace);
-}
-
 void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
 {
     workspace.partial_solution_size = 0;
     workspace.partition_bits.reset();
-    workspace.anchor_key = std::numeric_limits<uint_t>::max();  // unused
-    workspace.anchor_pi = std::numeric_limits<uint_t>::max();   // unused
-    workspace.anchor_pj = std::numeric_limits<uint_t>::max();   // unused
+    workspace.anchor_pi = std::numeric_limits<uint_t>::max();  // unused
+    workspace.anchor_pj = std::numeric_limits<uint_t>::max();  // unused
 
     auto cv_0_row = workspace.compatible_vertices_span(0);
 
@@ -84,7 +83,6 @@ bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
     workspace.partial_solution[pj] = edge.dst;
     workspace.partial_solution_size = 2;
 
-    workspace.anchor_key = edge.rank(m_layout.nv);
     workspace.anchor_pi = pi;
     workspace.anchor_pj = pj;
     workspace.partition_bits.reset();

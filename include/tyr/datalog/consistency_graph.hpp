@@ -169,13 +169,11 @@ struct IndexedAnchors
 class Vertex
 {
 private:
-    uint_t m_index;
     formalism::ParameterIndex m_parameter_index;
     Index<formalism::Object> m_object_index;
 
 public:
-    Vertex(uint_t index, formalism::ParameterIndex parameter_index, Index<formalism::Object> object_index) noexcept :
-        m_index(index),
+    Vertex(formalism::ParameterIndex parameter_index, Index<formalism::Object> object_index) noexcept :
         m_parameter_index(parameter_index),
         m_object_index(object_index)
     {
@@ -197,7 +195,6 @@ public:
         const IndexedConstraints& indexed_constraints,
         const AssignmentSets& assignment_sets) const noexcept;
 
-    uint_t get_index() const noexcept { return m_index; }
     formalism::ParameterIndex get_parameter_index() const noexcept { return m_parameter_index; }
     Index<formalism::Object> get_object_index() const noexcept { return m_object_index; }
 };
@@ -334,6 +331,7 @@ public:
                                                const kpkc::GraphLayout& layout,
                                                kpkc::Graph& delta_graph,
                                                kpkc::Graph& full_graph,
+                                               std::vector<kpkc::Edge>& delta_edges,
                                                kpkc::VertexPartitions& fact_induced_candidates) const;
 
     auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }

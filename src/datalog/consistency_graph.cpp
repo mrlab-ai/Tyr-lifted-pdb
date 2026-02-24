@@ -748,15 +748,13 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedIndexedLiterals<f:
         {
             const auto vertex_index = static_cast<uint_t>(vertices.size());
 
-            auto vertex = details::Vertex(vertex_index, f::ParameterIndex(parameter_index), Index<f::Object>(object_index));
-
-            assert(vertex.get_index() == vertex_index);
+            auto vertex = details::Vertex(f::ParameterIndex(parameter_index), Index<f::Object>(object_index));
 
             if (vertex.consistent_literals(indexed_literals, static_assignment_sets.predicate))
             {
                 vertices.push_back(std::move(vertex));
-                vertex_partition.push_back(vertex.get_index());
-                object_to_vertex_partition[uint_t(object_index)] = vertex.get_index();
+                vertex_partition.push_back(vertex_index);
+                object_to_vertex_partition[uint_t(object_index)] = vertex_index;
             }
         }
 
@@ -1140,6 +1138,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                                                                    const kpkc::GraphLayout& layout,
                                                                    kpkc::Graph& delta_graph,
                                                                    kpkc::Graph& full_graph,
+                                                                   std::vector<kpkc::Edge>& delta_edges,
                                                                    kpkc::VertexPartitions& fact_induced_candidates) const
 {
     struct PhaseTimes
@@ -1310,6 +1309,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
     /// 3. Monotonically update full explicitly consistent edges
 
     {
+        delta_edges.clear();
+
         const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
 
         auto offset_i = 0;
@@ -1383,6 +1384,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                                 delta_edges_i.set(bj);
                                 delta_graph.matrix.get_bitset(vj, pi).set(bi);
+
+                                delta_edges.emplace_back(kpkc::Vertex(vi), kpkc::Vertex(vj));
 
                                 // Set/test affected partitions
                                 assert(full_affected_partition_i.test(bi));
