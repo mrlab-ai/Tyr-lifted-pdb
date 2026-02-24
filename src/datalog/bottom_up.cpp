@@ -193,38 +193,62 @@ template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, Termi
 void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
     const auto& kpkc_algorithm = rctx.ws_rule.common.kpkc;
-    auto& kpkc_cliques = rctx.ws_rule.common.kpkc_cliques;
-    auto& kpkc_workspace = rctx.ws_rule.common.kpkc_workspace;
-
-    kpkc_algorithm.for_each_new_k_clique(kpkc_cliques, kpkc_workspace);
-    rctx.ws_rule.common.statistics.num_bindings += kpkc_cliques.size();
 
     constexpr size_t PAR_THRESHOLD = 1024;
     constexpr size_t GRAIN = 256;
 
-    const int arena_conc = oneapi::tbb::this_task_arena::max_concurrency();
+    const auto arena_conc = static_cast<size_t>(oneapi::tbb::this_task_arena::max_concurrency());
 
-    const bool do_parallel_inner = (kpkc_cliques.size() >= PAR_THRESHOLD) && (arena_conc >= 2);
+    const auto& delta_edges = kpkc_algorithm.get_delta_edges();
 
+    // Decide whether we want to trigger the parallel loop.
+    // Currently disabled.
+    const bool do_parallel_inner = false && (rctx.cws_rule.get_rule().get_arity() > 2) && (delta_edges.size() >= PAR_THRESHOLD) && (arena_conc >= 2);
+
+    if (do_parallel_inner)
     {
-        if (do_parallel_inner)
-        {
-            oneapi::tbb::parallel_for(oneapi::tbb::blocked_range<size_t>(0, kpkc_cliques.size(), GRAIN),
-                                      [&](const oneapi::tbb::blocked_range<size_t>& r)
-                                      {
-                                          auto wrctx = rctx.get_rule_worker_execution_context();
+        // Determine the number of tasks we want to schedule.
+        const auto num_tasks = std::min(((delta_edges.size() + GRAIN - 1) / GRAIN), arena_conc);
 
-                                          for (size_t i = r.begin(); i != r.end(); ++i)
-                                              process_clique(wrctx, kpkc_cliques[i]);
-                                      });
-        }
-        else
-        {
-            auto wrctx = rctx.get_rule_worker_execution_context();
+        // This parallelization sometimes work, e.g., logistics-large-simple/goal-2/p-a1-c1-s1000-p10-t1-g2.pddl
+        // but not on logistics-large-simple/goal-2/p-a1-c1-s2000-p10-t1-g2.pddl
+        // It seems that the parameters need to be tuned better in this case
 
-            for (size_t i = 0; i < kpkc_cliques.size(); ++i)
-                process_clique(wrctx, kpkc_cliques[i]);
-        }
+        // Moreover seeding from edges in first iteration is wasteful.
+        // We could seed from all vertices in a partition instead.
+
+        oneapi::tbb::parallel_for(
+            oneapi::tbb::blocked_range<uint_t>(0, num_tasks, 1),
+            [&](const oneapi::tbb::blocked_range<uint_t>& lanes)
+            {
+                for (uint_t lane = lanes.begin(); lane != lanes.end(); ++lane)
+                {
+                    auto wrctx = rctx.get_rule_worker_execution_context();
+                    auto& out = wrctx.out();
+                    auto& kpkc_workspace = out.kpkc_workspace();
+
+                    // Round-robin: lane 0 gets 0,p,2p,...; lane 1 gets 1,p+1,...
+                    for (uint_t e = lane; e < delta_edges.size(); e += num_tasks)
+                    {
+                        const auto& edge = delta_edges[e];
+
+                        if (!kpkc_algorithm.seed_from_anchor(edge, kpkc_workspace))
+                            continue;  ///< anchor failed
+
+                        kpkc_algorithm.template complete_from_seed<kpkc::Edge>([&](auto&& clique) { process_clique(wrctx, clique); }, 0, kpkc_workspace);
+                    }
+                }
+            },
+            oneapi::tbb::static_partitioner {}  // keep lanes stable/sane
+        );
+    }
+    else
+    {
+        auto wrctx = rctx.get_rule_worker_execution_context();
+        auto& out = wrctx.out();
+        auto& kpkc_workspace = out.kpkc_workspace();
+
+        kpkc_algorithm.for_each_new_k_clique([&](auto&& clique) { process_clique(wrctx, clique); }, kpkc_workspace);
     }
 }
 

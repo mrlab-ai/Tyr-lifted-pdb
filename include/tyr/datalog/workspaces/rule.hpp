@@ -174,10 +174,8 @@ struct RuleWorkspace
         /// Program repository to ground witnesses for which ground entities must already exist and we can simply call find.
         const formalism::datalog::Repository& program_repository;
 
-        /// Enumerate once, process in parallel
+        /// KPKC
         kpkc::DeltaKPKC kpkc;
-        kpkc::Workspace kpkc_workspace;
-        kpkc::Cliques kpkc_cliques;
 
         /// Statistics
         RuleStatistics statistics;
@@ -201,6 +199,9 @@ struct RuleWorkspace
 
         // Annotations stored in stage_repository
         AndAnnotationsMap and_annot;
+
+        /// KPKC
+        kpkc::Workspace kpkc_workspace;
     };
 
     struct Solve
@@ -286,8 +287,6 @@ template<typename AndAP>
 RuleWorkspace<AndAP>::Common::Common(const formalism::datalog::Repository& program_repository, const StaticConsistencyGraph& static_consistency_graph) :
     program_repository(program_repository),
     kpkc(static_consistency_graph),
-    kpkc_workspace(kpkc.get_graph_layout()),
-    kpkc_cliques(kpkc.get_graph_layout().k),
     statistics()
 {
 }
@@ -307,7 +306,11 @@ void RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyG
 }
 
 template<typename AndAP>
-RuleWorkspace<AndAP>::Iteration::Iteration(const Common& common) : program_overlay_repository(&common.program_repository), heads(), and_annot()
+RuleWorkspace<AndAP>::Iteration::Iteration(const Common& common) :
+    program_overlay_repository(&common.program_repository),
+    heads(),
+    and_annot(),
+    kpkc_workspace(common.kpkc.get_graph_layout())
 {
 }
 

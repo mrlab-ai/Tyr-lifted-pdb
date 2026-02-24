@@ -43,45 +43,12 @@ struct Workspace
     boost::dynamic_bitset<> partition_bits;  ///< Dimensions K
     std::vector<Vertex> partial_solution;    ///< Dimensions K
     uint_t partial_solution_size;
-    uint_t anchor_key;
     uint_t anchor_pi;
     uint_t anchor_pj;
 
     /// @brief Allocate workspace memory layout for a given graph layout.
     /// @param graph
     explicit Workspace(const GraphLayout& graph);
-};
-
-struct Cliques
-{
-    explicit Cliques(size_t k) : m_k(k), m_size(0), m_data() {}
-
-    void append(std::span<const Vertex> clique)
-    {
-        assert(clique.size() == m_k);
-
-        m_data.insert(m_data.end(), clique.begin(), clique.end());
-        ++m_size;
-    }
-
-    std::span<const Vertex> operator[](size_t index) const noexcept
-    {
-        assert(index < m_size);
-
-        return std::span<const Vertex>(m_data.data() + m_k * index, m_k);
-    }
-
-    void clear() noexcept
-    {
-        m_data.clear();
-        m_size = 0;
-    }
-
-    size_t size() const noexcept { return m_size; }
-
-    size_t m_k;
-    size_t m_size;
-    std::vector<Vertex> m_data;
 };
 
 class DeltaKPKC
@@ -111,10 +78,28 @@ public:
     void for_each_new_k_clique(Callback&& callback, Workspace& workspace) const;
 
     /**
-     * Parallel API
+     * Expert API
      */
 
-    void for_each_new_k_clique(Cliques& cliques, Workspace& workspace) const;
+    /// @brief Seed the P part of BronKerbosch.
+    ///
+    /// Initialize compatible vertices at depth 0 with empty partial solution
+    /// for each partition with the vertices that are active in the full graph.
+    void seed_without_anchor(Workspace& workspace) const;
+
+    /// @brief Seed the P part of BronKerbosch based on an anchor edge.
+    ///
+    /// Initialize compatible vertices at depth 0 with partial solution of size 2, i.e., the vertices adjacent to the anchor.
+    /// @param edge is the anchor edge.
+    bool seed_from_anchor(const Edge& edge, Workspace& workspace) const;
+
+    /// @brief Complete the k-clique recursively.
+    /// @tparam Callback is called upon finding a k-clique.
+    /// @tparam AnchorType is the type of the anchor.
+    /// @param callback is the callback function.
+    /// @param depth is the recursion depth.
+    template<typename AnchorType, class Callback>
+    void complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace) const;
 
     /**
      * Getters
@@ -124,6 +109,7 @@ public:
     const Graph& get_delta_graph() const noexcept { return m_delta_graph; }
     const Graph& get_full_graph() const noexcept { return m_full_graph; }
     size_t get_iteration() const noexcept { return m_iteration; }
+    const auto& get_delta_edges() const noexcept { return m_delta_edges; }
 
 private:
     template<typename Callback>
@@ -137,28 +123,6 @@ private:
 
     template<typename Callback>
     void for_each_binary_clique(Callback&& callback, Workspace& workspace) const;
-
-    /// @brief Seed the P part of BronKerbosch.
-    ///
-    /// Initialize compatible vertices at depth 0 with empty solution
-    /// for each partition with the vertices that are active in the full graph.
-    void seed_without_anchor(Workspace& workspace) const;
-
-    /// @brief Seed the P part of BronKerbosch based on an anchor edge.
-    ///
-    /// Initialize compatible vertices at depth 0 with solution of size 2, i.e., the vertices adjacent to the anchor,
-    /// for each remaining partition with the vertices that are connected to vertices adjacent to the anchor
-    /// through edges that satisfy the delta constraint, i.e., such edges must have higher delta rank.
-    /// @param edge is the anchor edge.
-    bool seed_from_anchor(const Edge& edge, Workspace& workspace) const;
-
-    /// @brief Complete the k-clique recursively.
-    /// @tparam Callback is called upon finding a k-clique.
-    /// @tparam AnchorType is the type of the anchor.
-    /// @param callback is the callback function.
-    /// @param depth is the recursion depth.
-    template<typename AnchorType, class Callback>
-    void complete_from_seed(Callback&& callback, size_t depth, Workspace& workspace) const;
 
     /// @brief Find the pivot partition that greedily minimizes the number of recursive calls,
     /// i.e., the partition with the smallest number of candidate vertices.
@@ -179,6 +143,8 @@ private:
 
     Graph m_delta_graph;
     Graph m_full_graph;
+
+    std::vector<Edge> m_delta_edges;
 
     VertexPartitions m_fact_induced_candidates;
 };
