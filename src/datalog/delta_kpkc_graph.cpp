@@ -17,6 +17,10 @@
 
 #include "tyr/datalog/consistency_graph.hpp"
 #include "tyr/datalog/delta_kpkc.hpp"
+#include "tyr/formalism/datalog/expression_arity.hpp"
+
+namespace f = tyr::formalism;
+namespace fd = tyr::formalism::datalog;
 
 namespace tyr::datalog::kpkc
 {
@@ -91,6 +95,87 @@ Workspace::Workspace(const GraphLayout& graph) :
     partial_solution(graph.k),
     partial_solution_size(0)
 {
+}
+
+/**
+ * VariableDependencyGraph
+ */
+
+template<f::FactKind T>
+static void insert_literal(View<Index<fd::Literal<T>>, fd::Repository> literal,
+                           uint_t k,
+                           boost::dynamic_bitset<>& positive_dependencies,
+                           boost::dynamic_bitset<>& negative_dependencies)
+{
+    const auto parameters_set = collect_parameters(literal);
+    auto parameters = std::vector<f::ParameterIndex>(parameters_set.begin(), parameters_set.end());
+    std::sort(parameters.begin(), parameters.end());
+
+    for (uint_t i = 0; i < parameters.size(); ++i)
+    {
+        const auto pi = uint_t(parameters[i]);
+
+        for (uint_t j = i + 1; j < parameters.size(); ++j)
+        {
+            const auto pj = uint_t(parameters[j]);
+
+            const auto i1 = VariableDependencyGraph::get_index(pi, pj, k);
+            const auto i2 = VariableDependencyGraph::get_index(pj, pi, k);
+
+            if (literal.get_polarity())
+            {
+                positive_dependencies.set(i1);
+                positive_dependencies.set(i2);
+            }
+            else
+            {
+                negative_dependencies.set(i1);
+                negative_dependencies.set(i2);
+            }
+        }
+    }
+}
+
+static void insert_numeric_constraint(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, fd::Repository> numeric_constraint,
+                                      uint_t k,
+                                      boost::dynamic_bitset<>& positive_dependencies)
+{
+    const auto parameters_set = collect_parameters(numeric_constraint);
+    auto parameters = std::vector<f::ParameterIndex>(parameters_set.begin(), parameters_set.end());
+    std::sort(parameters.begin(), parameters.end());
+
+    for (uint_t i = 0; i < parameters.size(); ++i)
+    {
+        const auto pi = uint_t(parameters[i]);
+
+        for (uint_t j = i + 1; j < parameters.size(); ++j)
+        {
+            const auto pj = uint_t(parameters[j]);
+
+            const auto i1 = VariableDependencyGraph::get_index(pi, pj, k);
+            const auto i2 = VariableDependencyGraph::get_index(pj, pi, k);
+
+            positive_dependencies.set(i1);
+            positive_dependencies.set(i2);
+        }
+    }
+}
+
+VariableDependencyGraph::VariableDependencyGraph(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition) :
+    m_k(condition.get_arity()),
+    m_static_positive_dependencies(m_k * m_k),
+    m_static_negative_dependencies(m_k * m_k),
+    m_fluent_positive_dependencies(m_k * m_k),
+    m_fluent_negative_dependencies(m_k * m_k)
+{
+    for (const auto literal : condition.get_literals<f::StaticTag>())
+        insert_literal(literal, m_k, m_static_positive_dependencies, m_static_negative_dependencies);
+
+    for (const auto literal : condition.get_literals<f::FluentTag>())
+        insert_literal(literal, m_k, m_fluent_positive_dependencies, m_fluent_negative_dependencies);
+
+    for (const auto numeric_constraint : condition.get_numeric_constraints())
+        insert_numeric_constraint(numeric_constraint, m_k, m_fluent_positive_dependencies);
 }
 
 }

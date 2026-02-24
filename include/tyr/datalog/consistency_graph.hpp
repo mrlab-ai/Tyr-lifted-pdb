@@ -24,7 +24,6 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc_graph.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
-#include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
 #include <boost/dynamic_bitset/dynamic_bitset.hpp>
@@ -235,64 +234,6 @@ public:
 
 using Vertices = std::vector<Vertex>;
 
-class VariableDependencyGraph
-{
-private:
-    template<formalism::FactKind T, formalism::PolarityKind P>
-    const auto& get_dependency() const noexcept
-    {
-        if constexpr (std::is_same_v<T, formalism::StaticTag>)
-            if constexpr (std::is_same_v<P, formalism::PositiveTag>)
-                return m_static_positive_dependencies;
-            else if constexpr (std::is_same_v<P, formalism::NegativeTag>)
-                return m_static_negative_dependencies;
-            else
-                static_assert(dependent_false<P>::value, "Missing case");
-        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-            if constexpr (std::is_same_v<P, formalism::PositiveTag>)
-                return m_fluent_positive_dependencies;
-            else if constexpr (std::is_same_v<P, formalism::NegativeTag>)
-                return m_fluent_negative_dependencies;
-            else
-                static_assert(dependent_false<P>::value, "Missing case");
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-public:
-    explicit VariableDependencyGraph(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition);
-
-    static constexpr uint_t get_index(uint_t pi, uint_t pj, uint_t k) noexcept
-    {
-        assert(pi < k && pj < k);
-        return pi * k + pj;
-    }
-
-    template<formalism::FactKind T, formalism::PolarityKind P>
-    bool has_dependency(uint_t pi, uint_t pj) const noexcept
-    {
-        return get_dependency<T, P>().test(get_index(pi, pj, m_k));
-    }
-
-    template<formalism::FactKind T>
-    bool has_dependency(uint_t pi, uint_t pj) const noexcept
-    {
-        return has_dependency<T, formalism::PositiveTag>(pi, pj) || has_dependency<T, formalism::NegativeTag>(pi, pj);
-    }
-
-    bool has_dependency(uint_t pi, uint_t pj) const noexcept
-    {
-        return has_dependency<formalism::StaticTag>(pi, pj) || has_dependency<formalism::FluentTag>(pi, pj);
-    }
-
-private:
-    uint_t m_k;
-    boost::dynamic_bitset<> m_static_positive_dependencies;
-    boost::dynamic_bitset<> m_static_negative_dependencies;
-    boost::dynamic_bitset<> m_fluent_positive_dependencies;
-    boost::dynamic_bitset<> m_fluent_negative_dependencies;
-};
-
 }
 
 class StaticConsistencyGraph
@@ -337,15 +278,14 @@ public:
     auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
 
     const details::Vertex& get_vertex(uint_t index) const;
-    const details::Vertex& get_vertex(formalism::ParameterIndex parameter, Index<formalism::Object> object) const;
 
     size_t get_num_vertices() const noexcept;
 
     View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> get_rule() const noexcept;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> get_condition() const noexcept;
-    const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
+    const kpkc::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     const std::vector<std::vector<uint_t>>& get_vertex_partitions() const noexcept;
-    const std::vector<std::vector<uint_t>>& get_object_to_vertex_partitions() const noexcept;
+    const std::vector<std::vector<uint_t>>& get_object_to_vertex_per_partition() const noexcept;
     const details::IndexedAnchors& get_predicate_to_anchors() const noexcept;
     const kpkc::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
 
@@ -354,17 +294,15 @@ private:
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_condition;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_unary_overapproximation_condition;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_binary_overapproximation_condition;
-    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_static_binary_overapproximation_condition;
 
-    formalism::datalog::VariableDependencyGraph m_binary_overapproximation_vdg;
-    formalism::datalog::VariableDependencyGraph m_static_binary_overapproximation_vdg;
+    kpkc::VariableDependencyGraph m_binary_overapproximation_vdg;
 
     /* The data member of the consistency graph. */
     details::Vertices m_vertices;
 
     // Adjacency list of edges.
     std::vector<std::vector<uint_t>> m_vertex_partitions;
-    std::vector<std::vector<uint_t>> m_object_to_vertex_partitions;
+    std::vector<std::vector<uint_t>> m_object_to_vertex_per_partition;
 
     kpkc::GraphLayout m_layout;
     kpkc::DeduplicatedAdjacencyMatrix m_matrix;

@@ -213,47 +213,107 @@ private:
                                           ///< from v into partition p.
 };
 
+class VariableDependencyGraph
+{
+private:
+    template<formalism::FactKind T, formalism::PolarityKind P>
+    const auto& get_dependency() const noexcept
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            if constexpr (std::is_same_v<P, formalism::PositiveTag>)
+                return m_static_positive_dependencies;
+            else if constexpr (std::is_same_v<P, formalism::NegativeTag>)
+                return m_static_negative_dependencies;
+            else
+                static_assert(dependent_false<P>::value, "Missing case");
+        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
+            if constexpr (std::is_same_v<P, formalism::PositiveTag>)
+                return m_fluent_positive_dependencies;
+            else if constexpr (std::is_same_v<P, formalism::NegativeTag>)
+                return m_fluent_negative_dependencies;
+            else
+                static_assert(dependent_false<P>::value, "Missing case");
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
+    }
+
+public:
+    explicit VariableDependencyGraph(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition);
+
+    static constexpr uint_t get_index(uint_t pi, uint_t pj, uint_t k) noexcept
+    {
+        assert(pi < k && pj < k);
+        return pi * k + pj;
+    }
+
+    template<formalism::FactKind T, formalism::PolarityKind P>
+    bool has_dependency(uint_t pi, uint_t pj) const noexcept
+    {
+        return get_dependency<T, P>().test(get_index(pi, pj, m_k));
+    }
+
+    template<formalism::FactKind T>
+    bool has_dependency(uint_t pi, uint_t pj) const noexcept
+    {
+        return has_dependency<T, formalism::PositiveTag>(pi, pj) || has_dependency<T, formalism::NegativeTag>(pi, pj);
+    }
+
+    template<formalism::PolarityKind P>
+    bool has_dependency(uint_t pi, uint_t pj) const noexcept
+    {
+        return has_dependency<formalism::StaticTag, P>(pi, pj) || has_dependency<formalism::FluentTag, P>(pi, pj);
+    }
+
+    bool has_dependency(uint_t pi, uint_t pj) const noexcept
+    {
+        return has_dependency<formalism::StaticTag>(pi, pj) || has_dependency<formalism::FluentTag>(pi, pj);
+    }
+
+private:
+    uint_t m_k;
+    boost::dynamic_bitset<> m_static_positive_dependencies;
+    boost::dynamic_bitset<> m_static_negative_dependencies;
+    boost::dynamic_bitset<> m_fluent_positive_dependencies;
+    boost::dynamic_bitset<> m_fluent_negative_dependencies;
+};
+
 class PartitionedAdjacencyMatrix
 {
+private:
+    static constexpr uint_t UNUSED = std::numeric_limits<uint_t>::max();
+
 public:
     PartitionedAdjacencyMatrix(const GraphLayout& layout,
                                const VertexPartitions& affected_partitions,
                                const VertexPartitions& delta_partitions,
-                               const formalism::datalog::VariableDependencyGraph& dependency_graph) :
+                               const VariableDependencyGraph& dependency_graph) :
         m_layout(layout),
         m_affected_partitions(affected_partitions),
         m_delta_partitions(delta_partitions),
-        m_adj_data(m_layout.get().nv * m_layout.get().k, Cell { Cell::Mode::IMPLICIT, std::numeric_limits<uint_t>::max() }),
-        m_adj_span(m_adj_data.data(), std::array<size_t, 2> { m_layout.get().nv, m_layout.get().k }),
-        m_touched_partitions(m_layout.get().nv * m_layout.get().k, false),
+        m_dependency_graph(dependency_graph),
+        m_adj_data(m_layout.nv * m_layout.k, Cell { UNUSED }),
+        m_adj_span(m_adj_data.data(), std::array<size_t, 2> { m_layout.nv, m_layout.k }),
+        m_touched_partitions(m_layout.nv * m_layout.k, false),
         m_bitset_data()
     {
-        for (uint_t pi = 0; pi < m_layout.get().k; ++pi)
+        for (uint_t pi = 0; pi < m_layout.k; ++pi)
         {
             for (uint_t v : layout.vertex_partitions[pi])
             {
-                for (uint_t pj = 0; pj < m_layout.get().k; ++pj)
+                for (uint_t pj = 0; pj < m_layout.k; ++pj)
                 {
                     auto& cell = m_adj_span(v, pj);
 
-                    // ADJ represents upper triangle only
-                    auto ppi = pi;
-                    auto ppj = pj;
-                    if (ppi > ppj)
-                        std::swap(ppi, ppj);
-
-                    if (ppi < ppj && dependency_graph.get_adj_matrix().get_cell(formalism::ParameterIndex(ppi), formalism::ParameterIndex(ppj)).empty())
+                    if (dependency_graph.has_dependency(pi, pj))
                     {
-                        cell.mode = Cell::Mode::IMPLICIT;
-                        cell.offset = std::numeric_limits<uint_t>::max();  // unused
+                        cell.offset = m_bitset_data.size();
+
+                        const auto& info = m_layout.info.infos[pj];
+                        m_bitset_data.resize(m_bitset_data.size() + info.num_blocks);
                     }
                     else
                     {
-                        cell.mode = Cell::Mode::EXPLICIT;
-                        cell.offset = m_bitset_data.size();
-
-                        const auto& info = m_layout.get().info.infos[pj];
-                        m_bitset_data.resize(m_bitset_data.size() + info.num_blocks);
+                        cell.offset = UNUSED;
                     }
                 }
             }
@@ -262,10 +322,10 @@ public:
 
     auto get_bitset(uint_t v, uint_t p) noexcept
     {
-        assert(m_adj_span(v, p).mode == Cell::Mode::EXPLICIT);
+        assert(m_dependency_graph.has_dependency(m_layout.vertex_to_partition[v], p) && "Should only modify adjacency when there is a binary dependency");
 
         const auto& cell = m_adj_span(v, p);
-        const auto& info = m_layout.get().info.infos[p];
+        const auto& info = m_layout.info.infos[p];
 
         return BitsetSpan<uint64_t>(m_bitset_data.data() + cell.offset, info.num_bits);
     }
@@ -273,37 +333,27 @@ public:
     auto get_bitset(uint_t v, uint_t p) const noexcept
     {
         const auto& cell = m_adj_span(v, p);
-        const auto& info = m_layout.get().info.infos[p];
+        const auto& info = m_layout.info.infos[p];
+        const auto pv = m_layout.vertex_to_partition[v];
 
-        if (cell.is_explicit())
+        if (m_dependency_graph.has_dependency(pv, p))
         {
             return BitsetSpan<const uint64_t>(m_bitset_data.data() + cell.offset, info.num_bits);
         }
         else
         {
-            assert(cell.mode == Cell::Mode::IMPLICIT);
-            const auto pv = m_layout.get().vertex_to_partition[v];
-            const auto bit = m_layout.get().vertex_to_bit[v];
-            const auto& info_v = m_layout.get().info.infos[pv];
-            const auto consistent_v = m_delta_partitions.get().get_bitset(info_v);
+            assert(cell.offset == UNUSED);
+            const auto bit = m_layout.vertex_to_bit[v];
+            const auto& info_v = m_layout.info.infos[pv];
+            const auto consistent_v = m_delta_partitions.get_bitset(info_v);
 
-            return consistent_v.test(bit) ? m_affected_partitions.get().get_bitset(info) : m_delta_partitions.get().get_bitset(info);
+            return consistent_v.test(bit) ? m_affected_partitions.get_bitset(info) : m_delta_partitions.get_bitset(info);
         }
     }
 
     struct Cell
     {
-        enum class Mode
-        {
-            EXPLICIT = 0,
-            IMPLICIT = 1,
-        };
-
-        Mode mode;
         uint_t offset;
-
-        bool is_explicit() const noexcept { return mode == Mode::EXPLICIT; }
-        bool is_implicit() const noexcept { return mode == Mode::IMPLICIT; }
     };
 
     template<typename Callback>
@@ -311,10 +361,10 @@ public:
     {
         auto offset = uint_t(0);
 
-        for (uint_t p = 0; p < m_layout.get().k; ++p)
+        for (uint_t p = 0; p < m_layout.k; ++p)
         {
-            const auto& info = m_layout.get().info.infos[p];
-            auto partition = m_affected_partitions.get().get_bitset(info);
+            const auto& info = m_layout.info.infos[p];
+            auto partition = m_affected_partitions.get_bitset(info);
 
             for (auto bit = partition.find_first(); bit != BitsetSpan<const uint64_t>::npos; bit = partition.find_next(bit))
             {
@@ -332,10 +382,10 @@ public:
     {
         uint_t src_offset = 0;
 
-        for (uint_t pi = 0; pi < m_layout.get().k; ++pi)
+        for (uint_t pi = 0; pi < m_layout.k; ++pi)
         {
-            const auto& info_i = m_layout.get().info.infos[pi];
-            auto src_bits = m_affected_partitions.get().get_bitset(info_i);
+            const auto& info_i = m_layout.info.infos[pi];
+            auto src_bits = m_affected_partitions.get_bitset(info_i);
 
             for (auto bi = src_bits.find_first(); bi != BitsetSpan<const uint64_t>::npos; bi = src_bits.find_next(bi))
             {
@@ -343,11 +393,11 @@ public:
 
                 uint_t dst_offset = src_offset + info_i.num_bits;
 
-                for (uint_t pj = pi + 1; pj < m_layout.get().k; ++pj)
+                for (uint_t pj = pi + 1; pj < m_layout.k; ++pj)
                 {
-                    const auto& info_j = m_layout.get().info.infos[pj];
+                    const auto& info_j = m_layout.info.infos[pj];
 
-                    auto dst_active = m_affected_partitions.get().get_bitset(info_j);
+                    auto dst_active = m_affected_partitions.get_bitset(info_j);
 
                     auto adj = get_bitset(vi, pj);
 
@@ -374,8 +424,8 @@ public:
     {
         for (auto t = m_touched_partitions.find_first(); t != boost::dynamic_bitset<>::npos; t = m_touched_partitions.find_next(t))
         {
-            const auto v = t / m_layout.get().k;
-            const auto p = t % m_layout.get().k;
+            const auto v = t / m_layout.k;
+            const auto p = t % m_layout.k;
 
             get_bitset(v, p).reset();
         }
@@ -385,20 +435,21 @@ public:
 
     const auto& get_cell(uint_t v, uint_t p) const noexcept { return m_adj_span(v, p); }
 
-    const auto& layout() const noexcept { return m_layout.get(); }
-    const auto& affected_partitions() const noexcept { return m_affected_partitions.get(); }
-    const auto& delta_partitions() const noexcept { return m_delta_partitions.get(); }
+    const auto& layout() const noexcept { return m_layout; }
+    const auto& affected_partitions() const noexcept { return m_affected_partitions; }
+    const auto& delta_partitions() const noexcept { return m_delta_partitions; }
     auto& touched_partitions() noexcept { return m_touched_partitions; }
     const auto& touched_partitions() const noexcept { return m_touched_partitions; }
-    auto touched_partitions(uint_t v, uint_t p) noexcept { return m_touched_partitions[v * m_layout.get().k + p]; }
+    auto touched_partitions(uint_t v, uint_t p) noexcept { return m_touched_partitions[v * m_layout.k + p]; }
     const auto& adj_data() const noexcept { return m_adj_data; }
     auto adj_span() const noexcept { return m_adj_span; }
     const auto& bitset_data() const noexcept { return m_bitset_data; }
 
 private:
-    std::reference_wrapper<const GraphLayout> m_layout;
-    std::reference_wrapper<const VertexPartitions> m_affected_partitions;
-    std::reference_wrapper<const VertexPartitions> m_delta_partitions;
+    const GraphLayout& m_layout;
+    const VertexPartitions& m_affected_partitions;
+    const VertexPartitions& m_delta_partitions;
+    const VariableDependencyGraph& m_dependency_graph;
 
     /// v x k matrix where each cell refers to a bitset either stored explicitly or referring implicitly to a vertex partition.
     std::vector<Cell> m_adj_data;
@@ -413,7 +464,7 @@ private:
 
 struct Graph
 {
-    Graph(const GraphLayout& layout, const formalism::datalog::VariableDependencyGraph& dependency_graph) :
+    Graph(const GraphLayout& layout, const VariableDependencyGraph& dependency_graph) :
         affected_partitions(layout),
         delta_partitions(layout),
         matrix(layout, affected_partitions, delta_partitions, dependency_graph)
