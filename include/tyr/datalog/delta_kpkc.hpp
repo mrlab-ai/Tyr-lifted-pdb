@@ -42,6 +42,7 @@ struct Workspace
 
     boost::dynamic_bitset<> partition_bits;  ///< Dimensions K
     std::vector<Vertex> partial_solution;    ///< Dimensions K
+    uint_t partial_solution_size;
     uint_t anchor_key;
     uint_t anchor_pi;
     uint_t anchor_pj;
@@ -194,8 +195,9 @@ void DeltaKPKC::for_each_new_unary_clique(Callback&& callback, Workspace& worksp
     m_delta_graph.matrix.for_each_vertex(
         [&](auto&& vertex)
         {
-            workspace.partial_solution.clear();
-            workspace.partial_solution.push_back(vertex);
+            assert(workspace.partial_solution.size() == 1);
+            workspace.partial_solution[0] = vertex;
+            workspace.partial_solution_size = 1;
 
             callback(workspace.partial_solution);
         });
@@ -209,8 +211,9 @@ void DeltaKPKC::for_each_unary_clique(Callback&& callback, Workspace& workspace)
     m_full_graph.matrix.for_each_vertex(
         [&](auto&& vertex)
         {
-            workspace.partial_solution.clear();
-            workspace.partial_solution.push_back(vertex);
+            assert(workspace.partial_solution.size() == 1);
+            workspace.partial_solution[0] = vertex;
+            workspace.partial_solution_size = 1;
 
             callback(workspace.partial_solution);
         });
@@ -224,9 +227,10 @@ void DeltaKPKC::for_each_new_binary_clique(Callback&& callback, Workspace& works
     m_delta_graph.matrix.for_each_edge(
         [&](auto&& edge)
         {
-            workspace.partial_solution.clear();
-            workspace.partial_solution.push_back(edge.src);
-            workspace.partial_solution.push_back(edge.dst);
+            assert(workspace.partial_solution.size() == 2);
+            workspace.partial_solution[0] = edge.src;
+            workspace.partial_solution[1] = edge.dst;
+            workspace.partial_solution_size = 2;
 
             callback(workspace.partial_solution);
         });
@@ -240,9 +244,10 @@ void DeltaKPKC::for_each_binary_clique(Callback&& callback, Workspace& workspace
     m_full_graph.matrix.for_each_edge(
         [&](auto&& edge)
         {
-            workspace.partial_solution.clear();
-            workspace.partial_solution.push_back(edge.src);
-            workspace.partial_solution.push_back(edge.dst);
+            assert(workspace.partial_solution.size() == 2);
+            workspace.partial_solution[0] = edge.src;
+            workspace.partial_solution[1] = edge.dst;
+            workspace.partial_solution_size = 2;
 
             callback(workspace.partial_solution);
         });
@@ -255,7 +260,9 @@ void DeltaKPKC::for_each_k_clique(Callback&& callback, Workspace& workspace) con
 
     if (k == 0)
     {
-        workspace.partial_solution.clear();
+        assert(workspace.partial_solution.size() == 0);
+        workspace.partial_solution_size = 0;
+
         callback(workspace.partial_solution);
         return;
     }
@@ -371,6 +378,7 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
 
     auto& partition_bits = workspace.partition_bits;
     auto& partial_solution = workspace.partial_solution;
+    auto& partial_solution_size = workspace.partial_solution_size;
     const auto& info = m_layout.info.infos[p];
     const auto cv_d_p = BitsetSpan<const uint64_t>(workspace.compatible_vertices_span(depth).data() + info.block_offset, info.num_bits);
 
@@ -379,12 +387,14 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
     {
         const auto vertex = Vertex(info.bit_offset + bit);
 
-        partial_solution.push_back(vertex);
+        assert(p < partial_solution.size());
+        partial_solution[p] = vertex;
+        ++partial_solution_size;
 
         // print(std::cout, partial_solution);
         // std::cout << std::endl;
 
-        if (partial_solution.size() == k)
+        if (partial_solution_size == k)
         {
             callback(partial_solution);
         }
@@ -398,7 +408,7 @@ void DeltaKPKC::complete_from_seed(Callback&& callback, size_t depth, Workspace&
             partition_bits.reset(p);
         }
 
-        partial_solution.pop_back();
+        --partial_solution_size;
     }
 }
 }

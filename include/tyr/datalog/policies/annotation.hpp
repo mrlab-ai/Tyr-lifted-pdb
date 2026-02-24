@@ -83,24 +83,7 @@ private:
     Cost m_cost;
 };
 
-// TODO: change name to AndAnnotationsMap
 using AndAnnotationsMap = UnorderedMap<Index<formalism::datalog::GroundAtom<formalism::FluentTag>>, Witness>;
-
-/// @brief `CostAnnotations` encapsulates the cost of nodes.
-struct CostAnnotations
-{
-    OrAnnotationsList or_annot;
-    std::vector<AndAnnotationsMap> and_annots;
-
-    CostAnnotations(OrAnnotationsList or_annot, std::vector<AndAnnotationsMap> and_annots) : or_annot(std::move(or_annot)), and_annots(std::move(and_annots)) {}
-
-    void clear() noexcept
-    {
-        or_annot.clear();
-        for (auto& and_annot : and_annots)
-            and_annot.clear();
-    }
-};
 
 struct CostUpdate
 {

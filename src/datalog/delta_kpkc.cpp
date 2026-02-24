@@ -56,7 +56,7 @@ void DeltaKPKC::for_each_new_k_clique(Cliques& cliques, Workspace& workspace) co
 
 void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
 {
-    workspace.partial_solution.clear();
+    workspace.partial_solution_size = 0;
     workspace.partition_bits.reset();
     workspace.anchor_key = std::numeric_limits<uint_t>::max();  // unused
     workspace.anchor_pi = std::numeric_limits<uint_t>::max();   // unused
@@ -76,13 +76,13 @@ void DeltaKPKC::seed_without_anchor(Workspace& workspace) const
 
 bool DeltaKPKC::seed_from_anchor(const Edge& edge, Workspace& workspace) const
 {
-    workspace.partial_solution.clear();
-    workspace.partial_solution.push_back(edge.src);
-    workspace.partial_solution.push_back(edge.dst);
-
     const uint_t pi = m_layout.vertex_to_partition[edge.src.index];
     const uint_t pj = m_layout.vertex_to_partition[edge.dst.index];
     assert(pi < pj);
+
+    workspace.partial_solution[pi] = edge.src;
+    workspace.partial_solution[pj] = edge.dst;
+    workspace.partial_solution_size = 2;
 
     workspace.anchor_key = edge.rank(m_layout.nv);
     workspace.anchor_pi = pi;

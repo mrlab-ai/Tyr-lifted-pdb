@@ -63,12 +63,16 @@ static void create_nullary_binding(IndexList<f::Object>& binding) { binding.clea
 
 static void create_general_binding(std::span<const kpkc::Vertex> clique, const StaticConsistencyGraph& consistency_graph, IndexList<f::Object>& binding)
 {
-    binding.resize(clique.size());
-    for (const auto v : clique)
+    const auto k = clique.size();
+
+    binding.resize(k);
+
+    for (uint_t p = 0; p < k; ++p)
     {
-        const auto& vertex = consistency_graph.get_vertex(v.index);
-        assert(uint_t(vertex.get_parameter_index()) < clique.size());
-        binding[uint_t(vertex.get_parameter_index())] = vertex.get_object_index();
+        const auto& vertex = consistency_graph.get_vertex(clique[p].index);
+        assert(uint_t(vertex.get_parameter_index()) == p);
+
+        binding[p] = vertex.get_object_index();
     }
 }
 

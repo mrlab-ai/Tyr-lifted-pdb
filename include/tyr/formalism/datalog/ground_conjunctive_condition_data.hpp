@@ -40,7 +40,6 @@ struct Data<formalism::datalog::GroundConjunctiveCondition>
     Data(Index<formalism::datalog::GroundConjunctiveCondition> index,
          IndexList<formalism::datalog::GroundLiteral<formalism::StaticTag>> static_literals,
          IndexList<formalism::datalog::GroundLiteral<formalism::FluentTag>> fluent_literals,
-         IndexList<formalism::datalog::GroundLiteral<formalism::DerivedTag>> derived_literals,
          DataList<formalism::datalog::BooleanOperator<Data<formalism::datalog::GroundFunctionExpression>>> numeric_constraints) :
         index(index),
         static_literals(std::move(static_literals)),
