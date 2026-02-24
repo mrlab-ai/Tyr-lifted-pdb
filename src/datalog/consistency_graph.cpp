@@ -638,86 +638,6 @@ bool Edge::consistent_numeric_constraints(View<DataList<fd::BooleanOperator<Data
     return true;
 }
 
-/**
- * VariableDependencyGraph
- */
-
-template<f::FactKind T>
-static void insert_literal(View<Index<fd::Literal<T>>, fd::Repository> literal,
-                           uint_t k,
-                           boost::dynamic_bitset<>& positive_dependencies,
-                           boost::dynamic_bitset<>& negative_dependencies)
-{
-    const auto parameters_set = collect_parameters(literal);
-    auto parameters = std::vector<f::ParameterIndex>(parameters_set.begin(), parameters_set.end());
-    std::sort(parameters.begin(), parameters.end());
-
-    for (uint_t i = 0; i < parameters.size(); ++i)
-    {
-        const auto pi = uint_t(parameters[i]);
-
-        for (uint_t j = i + 1; j < parameters.size(); ++j)
-        {
-            const auto pj = uint_t(parameters[j]);
-
-            const auto i1 = VariableDependencyGraph::get_index(pi, pj, k);
-            const auto i2 = VariableDependencyGraph::get_index(pj, pi, k);
-
-            if (literal.get_polarity())
-            {
-                positive_dependencies.set(i1);
-                positive_dependencies.set(i2);
-            }
-            else
-            {
-                negative_dependencies.set(i1);
-                negative_dependencies.set(i2);
-            }
-        }
-    }
-}
-
-static void insert_numeric_constraint(View<Data<fd::BooleanOperator<Data<fd::FunctionExpression>>>, fd::Repository> numeric_constraint,
-                                      uint_t k,
-                                      boost::dynamic_bitset<>& positive_dependencies)
-{
-    const auto parameters_set = collect_parameters(numeric_constraint);
-    auto parameters = std::vector<f::ParameterIndex>(parameters_set.begin(), parameters_set.end());
-    std::sort(parameters.begin(), parameters.end());
-
-    for (uint_t i = 0; i < parameters.size(); ++i)
-    {
-        const auto pi = uint_t(parameters[i]);
-
-        for (uint_t j = i + 1; j < parameters.size(); ++j)
-        {
-            const auto pj = uint_t(parameters[j]);
-
-            const auto i1 = VariableDependencyGraph::get_index(pi, pj, k);
-            const auto i2 = VariableDependencyGraph::get_index(pj, pi, k);
-
-            positive_dependencies.set(i1);
-            positive_dependencies.set(i2);
-        }
-    }
-}
-
-VariableDependencyGraph::VariableDependencyGraph(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition) :
-    m_k(condition.get_arity()),
-    m_static_positive_dependencies(m_k * m_k),
-    m_static_negative_dependencies(m_k * m_k),
-    m_fluent_positive_dependencies(m_k * m_k),
-    m_fluent_negative_dependencies(m_k * m_k)
-{
-    for (const auto literal : condition.get_literals<f::StaticTag>())
-        insert_literal(literal, m_k, m_static_positive_dependencies, m_static_negative_dependencies);
-
-    for (const auto literal : condition.get_literals<f::FluentTag>())
-        insert_literal(literal, m_k, m_fluent_positive_dependencies, m_fluent_negative_dependencies);
-
-    for (const auto numeric_constraint : condition.get_numeric_constraints())
-        insert_numeric_constraint(numeric_constraint, m_k, m_fluent_positive_dependencies);
-}
 }
 
 /**
@@ -735,7 +655,7 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedIndexedLiterals<f:
     auto vertices = details::Vertices {};
 
     auto vertex_partitions = std::vector<std::vector<uint_t>> {};
-    auto object_to_vertex_partitions = std::vector<std::vector<uint_t>> {};
+    auto object_to_vertex_per_partition = std::vector<std::vector<uint_t>> {};
 
     for (uint_t parameter_index = begin_parameter_index; parameter_index < end_parameter_index; ++parameter_index)
     {
@@ -759,10 +679,10 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedIndexedLiterals<f:
         }
 
         vertex_partitions.push_back(std::move(vertex_partition));
-        object_to_vertex_partitions.push_back(std::move(object_to_vertex_partition));
+        object_to_vertex_per_partition.push_back(std::move(object_to_vertex_partition));
     }
 
-    return { std::move(vertices), std::move(vertex_partitions), std::move(object_to_vertex_partitions) };
+    return { std::move(vertices), std::move(vertex_partitions), std::move(object_to_vertex_per_partition) };
 }
 
 kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const details::TaggedIndexedLiterals<f::StaticTag>& indexed_literals,
@@ -1081,9 +1001,7 @@ StaticConsistencyGraph::StaticConsistencyGraph(
     m_condition(condition),
     m_unary_overapproximation_condition(unary_overapproximation_condition),
     m_binary_overapproximation_condition(binary_overapproximation_condition),
-    m_static_binary_overapproximation_condition(static_binary_overapproximation_condition),
     m_binary_overapproximation_vdg(binary_overapproximation_condition),
-    m_static_binary_overapproximation_vdg(static_binary_overapproximation_condition),
     m_layout(),
     m_matrix(m_layout),
     m_unary_overapproximation_indexed_literals(compute_indexed_literals(m_unary_overapproximation_condition)),
@@ -1094,15 +1012,15 @@ StaticConsistencyGraph::StaticConsistencyGraph(
     m_unary_overapproximation_predicate_to_anchors(compute_indexed_anchors(m_unary_overapproximation_condition, num_fluent_predicates)),
     m_binary_overapproximation_predicate_to_anchors(compute_indexed_anchors(m_binary_overapproximation_condition, num_fluent_predicates))
 {
-    auto [vertices_, vertex_partitions_, object_to_vertex_partitions_] = compute_vertices(m_unary_overapproximation_indexed_literals.static_indexed,
-                                                                                          parameter_domains,
-                                                                                          num_objects,
-                                                                                          begin_parameter_index,
-                                                                                          end_parameter_index,
-                                                                                          static_assignment_sets);
+    auto [vertices_, vertex_partitions_, object_to_vertex_per_partition_] = compute_vertices(m_unary_overapproximation_indexed_literals.static_indexed,
+                                                                                             parameter_domains,
+                                                                                             num_objects,
+                                                                                             begin_parameter_index,
+                                                                                             end_parameter_index,
+                                                                                             static_assignment_sets);
     m_vertices = std::move(vertices_);
     m_vertex_partitions = std::move(vertex_partitions_);
-    m_object_to_vertex_partitions = std::move(object_to_vertex_partitions_);
+    m_object_to_vertex_per_partition = std::move(object_to_vertex_per_partition_);
 
     m_layout = kpkc::GraphLayout(m_vertices.size(), m_vertex_partitions);
 
@@ -1210,7 +1128,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                 {
                     const auto& [pos_i, pi] = pairs[i];
 
-                    const auto vi = m_object_to_vertex_partitions[pi][uint_t(objects[pos_i].get_index())];
+                    const auto vi = m_object_to_vertex_per_partition[pi][uint_t(objects[pos_i].get_index())];
 
                     if (vi == std::numeric_limits<uint_t>::max())
                         continue;
@@ -1272,9 +1190,6 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                         full_delta_partition.set(bit);
                         delta_delta_partition.set(bit);
-
-                        delta_graph.matrix.touched_partitions(v, layout.vertex_to_partition[v]) = true;
-                        full_graph.matrix.touched_partitions(v, layout.vertex_to_partition[v]) = true;
 
                         ++T.delta_consistent_vertices;
 
@@ -1345,7 +1260,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
                     const auto& info_j = layout.info.infos[pj];
 
-                    if (full_graph.matrix.get_cell(vi, pj).is_implicit())
+                    if (!m_binary_overapproximation_vdg.has_dependency(pi, pj))
                     {
                         offset_j += info_j.num_bits;
                         continue;  // Already checked via vertex consistency
@@ -1430,12 +1345,12 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
         for (uint_t pj = pi + 1; pj < layout.k; ++pj)
         {
-            const auto& info_j = layout.info.infos[pj];
-            auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
-            const auto delta_delta_partition_j = delta_graph.delta_partitions.get_bitset(info_j);
-
-            if (m_binary_overapproximation_vdg.get_adj_matrix().get_cell(f::ParameterIndex(pi), f::ParameterIndex(pj)).empty())
+            if (!m_binary_overapproximation_vdg.has_dependency(pi, pj))
             {
+                const auto& info_j = layout.info.infos[pj];
+                auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
+                const auto delta_delta_partition_j = delta_graph.delta_partitions.get_bitset(info_j);
+
                 if (delta_delta_partition_i.any())
                     delta_affected_partition_j |= full_graph.affected_partitions.get_bitset(info_j);
 
@@ -1484,25 +1399,17 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
 const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices[index]; }
 
-const details::Vertex& StaticConsistencyGraph::get_vertex(formalism::ParameterIndex parameter, Index<formalism::Object> object) const
-{
-    return get_vertex(m_object_to_vertex_partitions[uint_t(parameter)][uint_t(object)]);
-}
-
 size_t StaticConsistencyGraph::get_num_vertices() const noexcept { return m_vertices.size(); }
 
 View<Index<fd::Rule>, fd::Repository> StaticConsistencyGraph::get_rule() const noexcept { return m_rule; }
 
 View<Index<fd::ConjunctiveCondition>, fd::Repository> StaticConsistencyGraph::get_condition() const noexcept { return m_condition; }
 
-const formalism::datalog::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept
-{
-    return m_binary_overapproximation_vdg;
-}
+const kpkc::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept { return m_binary_overapproximation_vdg; }
 
 const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_vertex_partitions() const noexcept { return m_vertex_partitions; }
 
-const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_object_to_vertex_partitions() const noexcept { return m_object_to_vertex_partitions; }
+const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_object_to_vertex_per_partition() const noexcept { return m_object_to_vertex_per_partition; }
 
 const details::IndexedAnchors& StaticConsistencyGraph::get_predicate_to_anchors() const noexcept { return m_predicate_to_anchors; }
 
