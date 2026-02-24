@@ -434,10 +434,10 @@ std::ostream& print(std::ostream& os, const datalog::AggregatedRuleWorkerStatist
     auto overapproximation_ratio = (gen > 0) ? (pen + gen) / gen : float_t { 1.0 };
 
     fmt::print(os,
-               "[AggregatedRuleWorkerStatistics] N_exec =  {:>10}    | executions\n"
-               "[AggregatedRuleWorkerStatistics] N_gen  =  {:>10}    | generated rules\n"
-               "[AggregatedRuleWorkerStatistics] N_pen  =  {:>10}    | pending rules\n"
-               "[AggregatedRuleWorkerStatistics] OA     =  {:>10.2f}    | overapproximation ratio (1 + N_pen / N_gen)",
+               "[AggregatedRuleWorkerStatistics] N_exec =  {:>10} | executions\n"
+               "[AggregatedRuleWorkerStatistics] N_gen  =  {:>10} | generated rules\n"
+               "[AggregatedRuleWorkerStatistics] N_pen  =  {:>10} | pending rules\n"
+               "[AggregatedRuleWorkerStatistics] OA     =  {:>10.2f} | overapproximation ratio (1 + N_pen / N_gen)",
                el.num_executions,
                el.num_generated_rules,
                el.num_pending_rules,
