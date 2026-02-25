@@ -90,6 +90,9 @@ class DefaultEventHandler;
 template<TaskKind Kind>
 using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Kind>>;
 }
+
+template<typename Task>
+class ExplicitProjection;
 }
 
 #endif
