@@ -76,22 +76,7 @@ static SearchNode& get_or_create_search_node(StateIndex state_index, SearchNodeV
  * GBFS queue
  */
 
-struct GreedyQueueEntry
-{
-    using KeyType = std::tuple<uint_t, SearchNodeStatus>;
-    using ItemType = StateIndex;
-
-    StateIndex state;
-    uint_t step;
-    SearchNodeStatus status;
-
-    KeyType get_key() const { return std::make_tuple(step, status); }
-    ItemType get_item() const { return state; }
-};
-
-static_assert(sizeof(GreedyQueueEntry) == 12);
-
-struct ExhaustiveQueueEntry
+struct QueueEntry
 {
     using KeyType = std::tuple<float_t, float_t, uint_t, SearchNodeStatus>;
     using ItemType = StateIndex;
@@ -106,10 +91,9 @@ struct ExhaustiveQueueEntry
     ItemType get_item() const { return state; }
 };
 
-static_assert(sizeof(ExhaustiveQueueEntry) == 32);
+static_assert(sizeof(QueueEntry) == 32);
 
-using GreedyQueue = PriorityQueue<GreedyQueueEntry>;
-using ExhaustiveQueue = PriorityQueue<ExhaustiveQueueEntry>;
+using Queue = PriorityQueue<QueueEntry>;
 
 template<typename Task>
 SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor_generator, Heuristic<Task>& heuristic, const Options<Task>& options)
@@ -124,11 +108,9 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
     auto step = uint_t(0);
     auto result = SearchResult<Task>();
     auto search_nodes = SearchNodeVector();
-    auto preferred_openlist = ExhaustiveQueue();
-    auto standard_openlist = ExhaustiveQueue();
-    auto openlist = AlternatingOpenList<ExhaustiveQueue, ExhaustiveQueue>(preferred_openlist,
-                                                                          standard_openlist,
-                                                                          std::array<size_t, 2> { options.prefered_queue_weight, 1 });
+    auto preferred_openlist = Queue();
+    auto standard_openlist = Queue();
+    auto openlist = AlternatingOpenList<Queue, Queue>(preferred_openlist, standard_openlist, std::array<size_t, 2> { options.prefered_queue_weight, 1 });
     const auto start_h_value = heuristic.evaluate(start_state);
     auto best_h_value = start_h_value;
     const auto start_preferred = false;
@@ -185,7 +167,7 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
 
     auto labeled_succ_nodes = std::vector<LabeledNode<Task>> {};
 
-    standard_openlist.insert(ExhaustiveQueueEntry { start_node.get_metric(), start_h_value, start_state_index, step++, start_search_node.status });
+    standard_openlist.insert(QueueEntry { start_node.get_metric(), start_h_value, start_state_index, step++, start_search_node.status });
 
     auto stopwatch = options.max_time ? std::optional<CountdownWatch>(options.max_time.value()) : std::nullopt;
 
@@ -306,11 +288,9 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
             /* Exploration strategy */
 
             if (is_preferred)
-                preferred_openlist.insert(
-                    ExhaustiveQueueEntry { succ_node.get_metric(), state_h_value, succ_state_index, step++, successor_search_node.status });
+                preferred_openlist.insert(QueueEntry { succ_node.get_metric(), state_h_value, succ_state_index, step++, successor_search_node.status });
             else
-                standard_openlist.insert(
-                    ExhaustiveQueueEntry { succ_node.get_metric(), state_h_value, succ_state_index, step++, successor_search_node.status });
+                standard_openlist.insert(QueueEntry { succ_node.get_metric(), state_h_value, succ_state_index, step++, successor_search_node.status });
         }
     }
 
