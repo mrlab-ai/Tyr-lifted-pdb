@@ -176,7 +176,6 @@ ATTRIBUTES = [
     "ff_rule_worker_n_gen",
     "ff_rule_worker_n_pen",
     Attribute("ff_rule_worker_oa", function=geometric_mean, min_wins=False),
-
 ]
 
 MEMORY_LIMIT = 5000
