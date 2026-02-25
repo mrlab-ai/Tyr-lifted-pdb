@@ -91,6 +91,9 @@ class DefaultEventHandler;
 template<typename Task>
 using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Task>>;
 }
+
+template<typename Task>
+class ExplicitProjection;
 }
 
 #endif
