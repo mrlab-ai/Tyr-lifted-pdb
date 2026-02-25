@@ -32,6 +32,8 @@ struct Pattern
 {
     UnorderedSet<Data<formalism::planning::FDRFact<formalism::FluentTag>>> facts;
     UnorderedSet<Index<formalism::Predicate<formalism::FluentTag>>> predicates;
+
+    auto size() const noexcept { return facts.size(); }
 };
 
 using PatternCollection = std::vector<Pattern>;
