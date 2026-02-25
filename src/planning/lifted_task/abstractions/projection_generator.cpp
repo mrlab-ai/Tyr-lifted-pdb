@@ -18,22 +18,24 @@
 #include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 
 #include "tyr/common/declarations.hpp"
+#include "tyr/common/itertools.hpp"
 #include "tyr/formalism/planning/builder.hpp"
+#include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
-#include "tyr/planning/algorithms/astar_eager.hpp"
-#include "tyr/planning/algorithms/astar_eager/event_handler.hpp"
+#include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/ground_task.hpp"
-#include "tyr/planning/ground_task/node.hpp"
-#include "tyr/planning/ground_task/successor_generator.hpp"
+#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/lifted_task/node.hpp"
+#include "tyr/planning/lifted_task/state.hpp"
+#include "tyr/planning/lifted_task/successor_generator.hpp"
+#include "tyr/planning/lifted_task/unpacked_state.hpp"
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
@@ -216,45 +218,26 @@ static Index<fp::Task> create_projected_task(View<Index<fp::Task>, fp::Repositor
     return destination.get_or_create(task, builder.get_buffer()).first;
 }
 
-class ProjectionEventHandler : public astar_eager::EventHandlerBase<ProjectionEventHandler, GroundTask>
-{
-private:
-    /* Implement EventHandlerBase interface */
-    friend class astar_eager::EventHandlerBase<ProjectionEventHandler, GroundTask>;
-
-    void on_expand_node_impl(const Node<GroundTask>& node) const {}
-
-    void on_expand_goal_node_impl(const Node<GroundTask>& node) const {}
-
-    void on_generate_node_impl(const LabeledNode<GroundTask>& labeled_succ_node) const {}
-
-    void on_generate_node_relaxed_impl(const LabeledNode<GroundTask>& labeled_succ_node) const {}
-
-    void on_generate_node_not_relaxed_impl(const LabeledNode<GroundTask>& labeled_succ_node) const {}
-
-    void on_close_node_impl(const Node<GroundTask>& node) const {}
-
-    void on_prune_node_impl(const Node<GroundTask>& node) const {}
-
-    void on_start_search_impl(const Node<GroundTask>& node, float_t f_value) const {}
-
-    void on_finish_f_layer_impl(float_t f_value, uint64_t num_expanded_states, uint64_t num_generated_states) const {}
-
-    void on_end_search_impl() const {}
-
-    void on_solved_impl(const Plan<GroundTask>& plan) const {}
-
-    void on_unsolvable_impl() const {}
-
-    void on_exhausted_impl() const {}
-
-public:
-    ProjectionEventHandler(size_t verbosity = 0) : astar_eager::EventHandlerBase<ProjectionEventHandler, GroundTask>(verbosity) {}
-
-    static astar_eager::EventHandlerPtr<GroundTask> create(size_t verbosity = 0) { return std::make_shared<ProjectionEventHandler>(verbosity); }
-};
-
 ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
+
+static auto project_state(const State<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
+{
+    auto uastate = state_repository.get_unregistered_state();
+    auto bitset = element.get_atoms<f::FluentTag>();
+    for (auto bit = bitset.find_first(); bit != boost::dynamic_bitset<>::npos; bit = bitset.find_next(bit))
+    {
+        const auto var = Index<fp::FDRVariable<f::FluentTag>> { bit };
+        const auto val = element.get(var);
+        const auto fact = Data<fp::FDRFact<f::FluentTag>>(var, val);
+
+        if (!pattern.facts.contains(fact))
+            continue;
+
+        uastate->set(fact);
+    }
+
+    return state_repository.register_state(uastate);
+}
 
 void ProjectionGenerator<LiftedTask>::generate()
 {
@@ -262,27 +245,72 @@ void ProjectionGenerator<LiftedTask>::generate()
     {
         // Step 1: Create the projected task
         auto repository = std::make_shared<fp::Repository>(m_task.get_repository().get());
-        auto projected_task = create_projected_task(m_task.get_task(), *repository, pattern);
+        auto projected_task_index = create_projected_task(m_task.get_task(), *repository, pattern);
+        auto projected_task = make_view(projected_task_index, *repository);
 
         // TODO: make sure the projected task is correct
-        std::cout << make_view(projected_task, *repository).get_domain() << std::endl;
-        std::cout << make_view(projected_task, *repository) << std::endl;
+        std::cout << projected_task.get_domain() << std::endl;
+        std::cout << projected_task << std::endl;
 
         // Step 2: Create the lifted projected task
-        auto projected_lifted_task = LiftedTask(m_task.get_domain(), repository, make_view(projected_task, *repository), m_task.get_fdr_context());
+        auto projected_lifted_task = std::make_shared<LiftedTask>(m_task.get_domain(), repository, projected_task, m_task.get_fdr_context());
 
-        // Step 3: Ground the lifted projected task
-        auto projected_ground_task = projected_lifted_task.get_ground_task();
+        auto successor_generator = SuccessorGenerator<LiftedTask>(projected_lifted_task);
+        auto& state_repository = successor_generator.get_state_repository();
+        auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
 
-        // Step 4: Fully expand state space while building the projection
-        auto event_handler = ProjectionEventHandler::create(2);
-        auto options = astar_eager::Options<GroundTask>();
-        options.stop_if_goal = false;
-        // options.event_handler = event_handler;
-        auto blind_heuristic = BlindHeuristic<GroundTask>();
-        auto successor_generator = SuccessorGenerator<GroundTask>(projected_ground_task);
-        auto search_result = astar_eager::find_solution(*projected_ground_task, successor_generator, blind_heuristic, options);
+        auto facts_vec = DataList<fp::FDRFact<f::FluentTag>>(pattern.facts.begin(), pattern.facts.end());
+
+        auto astates = std::vector<State<LiftedTask>> {};
+        {
+            itertools::for_each_boolean_vector(
+                [&](auto&& vec)
+                {
+                    auto uastate = state_repository->get_unregistered_state();
+                    uastate->clear();
+
+                    for (uint_t i = 0; i < vec.size(); ++i)
+                        if (vec[i])
+                            uastate->set(facts_vec[i]);
+
+                    astates.push_back(state_repository->register_state(uastate));
+                },
+                pattern.size());
+        }
+
+        auto adj_matrix = std::vector<std::vector<std::vector<View<Index<formalism::planning::GroundAction>, formalism::planning::Repository>>>>(
+            astates.size(),
+            std::vector<std::vector<View<Index<formalism::planning::GroundAction>, formalism::planning::Repository>>>(astates.size()));
+        {
+            for (const auto& astate : astates)
+            {
+                auto& adj_row = adj_matrix[uint_t(astate.get_index())];
+
+                auto anode = Node<LiftedTask>(astate, float_t { 0 });
+
+                const auto state_context = StateContext { m_task, astate.get_unpacked_state(), float_t { 0 } };
+                const auto is_goal = is_dynamically_applicable(projected_task.get_goal(), state_context);
+
+                successor_generator.get_labeled_successor_nodes(anode, labeled_succ_nodes);
+
+                for (const auto& labeled_succ_node : labeled_succ_nodes)
+                {
+                    auto pastate = project_state(labeled_succ_node.node.get_state(), pattern, *state_repository);
+
+                    std::cout << pastate << std::endl;
+
+                    assert(uint_t(pastate.get_index()) < astates.size());
+
+                    auto& adj_cell = adj_row[uint_t(pastate.get_index())];
+
+                    adj_cell.push_back(labeled_succ_node.label);
+                }
+            }
+        }
+
+        auto projection = ExplicitProjection<LiftedTask>(std::move(astates), std::move(adj_matrix));
+
+        std::cout << projection << std::endl;
     }
 }
-
 }

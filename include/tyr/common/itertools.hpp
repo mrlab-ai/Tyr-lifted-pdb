@@ -85,6 +85,36 @@ void for_each_element(OuterRandomIt first, OuterRandomIt last, Workspace<T>& wor
 
 }
 
+template<typename F>
+void for_each_boolean_vector(F&& callback, size_t n)
+{
+    auto indices = std::vector<bool>(n, false);
+
+    callback(indices);
+
+    while (true)
+    {
+        // use indices here
+
+        // increment binary vector
+        size_t i = 0;
+        for (; i < indices.size(); ++i)
+        {
+            if (!indices[i])
+            {
+                indices[i] = true;
+                callback(indices);
+                break;
+            }
+            indices[i] = false;
+        }
+
+        // if we overflowed past the last bit -> done
+        if (i == indices.size())
+            break;
+    }
+}
+
 }
 
 #endif

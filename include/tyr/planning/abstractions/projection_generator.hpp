@@ -19,6 +19,7 @@
 #define TYR_PLANNING_ABSTRACTIONS_PROJECTION_GENERATOR_HPP_
 
 #include "tyr/common/declarations.hpp"
+#include "tyr/planning/state.hpp"
 
 namespace tyr::planning
 {
@@ -27,6 +28,25 @@ template<typename Task>
 class ProjectionGenerator
 {
     static_assert(dependent_false<Task>::value, "PatternGenerator is not defined for type T.");
+};
+
+template<typename Task>
+class ExplicitProjection
+{
+public:
+    ExplicitProjection(std::vector<State<Task>> astates,
+                       std::vector<std::vector<std::vector<View<Index<formalism::planning::GroundAction>, formalism::planning::Repository>>>> adj_matrix) :
+        m_astates(std::move(astates)),
+        m_adj_matrix(std::move(adj_matrix))
+    {
+    }
+
+    const auto& astates() const noexcept { return m_astates; }
+    const auto& adj_matrix() const noexcept { return m_adj_matrix; }
+
+private:
+    std::vector<State<Task>> m_astates;
+    std::vector<std::vector<std::vector<View<Index<formalism::planning::GroundAction>, formalism::planning::Repository>>>> m_adj_matrix;
 };
 
 }

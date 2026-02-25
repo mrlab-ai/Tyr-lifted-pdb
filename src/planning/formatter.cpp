@@ -29,6 +29,7 @@
 #include "tyr/formalism/planning/formatter.hpp"      // for operator<<
 #include "tyr/formalism/planning/repository.hpp"     // for Repository
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/abstractions/projection_generator.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"  // for Statistics
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"             // for Domain
@@ -253,6 +254,41 @@ std::ostream& print(std::ostream& os, const planning::Plan<Task>& el)
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::LiftedTask>& el);
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::GroundTask>& el);
 
+template<typename Task>
+std::ostream& print(std::ostream& os, const planning::ExplicitProjection<Task>& el)
+{
+    os << "digraph {\n";
+
+    const auto& astates = el.astates();
+    const auto& adj_matrix = el.adj_matrix();
+
+    for (const auto& astate : astates)
+        fmt::print(os, "n{} [label=\"{}\"];\n", to_string(astate.get_index()), to_string(astate));
+
+    for (uint_t vi = 0; vi < astates.size(); ++vi)
+    {
+        for (uint_t vj = 0; vj < astates.size(); ++vj)
+        {
+            const auto labels = adj_matrix[vi][vj];
+            if (labels.empty())
+                continue;
+
+            auto label_strings = std::vector<std::string> {};
+            for (const auto& label : labels)
+                label_strings.push_back(to_string(std::make_pair(label, formalism::planning::PlanFormatting())));
+
+            fmt::print(os, "n{} -> n{} [label=\"{}\\l\"];\n", vi, vj, fmt::join(label_strings, "\\l"));
+        }
+    }
+
+    os << "}\n";
+
+    return os;
+}
+
+template std::ostream& print(std::ostream& os, const planning::ExplicitProjection<planning::LiftedTask>& el);
+template std::ostream& print(std::ostream& os, const planning::ExplicitProjection<planning::GroundTask>& el);
+
 namespace planning
 {
 std::ostream& operator<<(std::ostream& os, const Domain& el) { return tyr::print(os, el); }
@@ -287,6 +323,15 @@ std::ostream& operator<<(std::ostream& os, const Plan<Task>& el)
 
 template std::ostream& operator<<(std::ostream& os, const Plan<LiftedTask>& el);
 template std::ostream& operator<<(std::ostream& os, const Plan<GroundTask>& el);
+
+template<typename Task>
+std::ostream& operator<<(std::ostream& os, const ExplicitProjection<Task>& el)
+{
+    return tyr::print(os, el);
+}
+
+template std::ostream& operator<<(std::ostream& os, const ExplicitProjection<LiftedTask>& el);
+template std::ostream& operator<<(std::ostream& os, const ExplicitProjection<GroundTask>& el);
 
 }
 }

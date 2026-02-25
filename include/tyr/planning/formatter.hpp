@@ -63,6 +63,9 @@ extern std::ostream& print(std::ostream& os, const planning::Statistics& el);
 template<typename Task>
 std::ostream& print(std::ostream& os, const planning::Plan<Task>& el);
 
+template<typename Task>
+std::ostream& print(std::ostream& os, const planning::ExplicitProjection<Task>& el);
+
 namespace planning
 {
 extern std::ostream& operator<<(std::ostream& os, const Domain& el);
@@ -91,6 +94,9 @@ extern std::ostream& operator<<(std::ostream& os, const Statistics& el);
 
 template<typename Task>
 std::ostream& operator<<(std::ostream& os, const Plan<Task>& el);
+
+template<typename Task>
+std::ostream& operator<<(std::ostream& os, const ExplicitProjection<Task>& el);
 
 }
 }
