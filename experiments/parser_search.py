@@ -22,7 +22,10 @@ def add_total_time(content, props):
 
 def add_search_time_us_per_expanded(context, props):
     if "search_time_ns" in props:
-        props["search_time_us_per_expanded"] = props["search_time_ns"] / 1000 / props["num_expanded"]
+        if props["num_expanded"] == 0:
+            props["search_time_us_per_expanded"] = 1
+        else:
+            props["search_time_us_per_expanded"] = props["search_time_ns"] / 1000 / props["num_expanded"]
 
 def add_memory(content, props):
     if "peak_memory_usage_bytes" in props:
