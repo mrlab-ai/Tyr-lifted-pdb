@@ -9,7 +9,7 @@ from suite import SUITE_IPC_SATISFICING_ADL, SUITE_IPC_SATISFICING_STRIPS
 
 # Create custom report class with suitable info and error attributes.
 class BaseReport(AbsoluteReport):
-    INFO_ATTRIBUTES = ["time_limit", "memory_limit"]
+    INFO_ATTRIBUTES = ["wall_time_limit", "memory_limit"]
     ERROR_ATTRIBUTES = [
         "domain",
         "problem",

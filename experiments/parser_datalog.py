@@ -2,6 +2,7 @@
 
 from lab.parser import Parser
 from lab import tools
+from lab.reports import Attribute, geometric_mean, arithmetic_mean
 
 import re
 
@@ -65,16 +66,16 @@ def parse_datalog_summaries(content: str, props: dict):
         if m: put("prog_n_exec", int(m.group("v"))); continue
 
         m = RE_PROG_T_SEQ.match(line)
-        if m: put("prog_t_seq", int(m.group("ms"))); continue
+        if m: put("prog_t_seq_ms", int(m.group("ms"))); continue
 
         m = RE_PROG_T_PAR.match(line)
-        if m: put("prog_t_par", int(m.group("ms"))); continue
+        if m: put("prog_t_par_ms", int(m.group("ms"))); continue
 
         m = RE_PROG_T_TOT.match(line)
-        if m: put("prog_t_tot", int(m.group("ms"))); continue
+        if m: put("prog_t_tot_ms", int(m.group("ms"))); continue
 
         m = RE_PROG_T_AVG.match(line)
-        if m: put("prog_t_avg", int(m.group("us"))); continue
+        if m: put("prog_t_avg_us", int(m.group("us"))); continue
 
         m = RE_PROG_PF.match(line)
         if m: put("prog_pf", float(m.group("v"))); continue
@@ -88,16 +89,16 @@ def parse_datalog_summaries(content: str, props: dict):
         if m: put("rule_n_samples", int(m.group("v"))); continue
 
         m = RE_RULE_T_SEQ.match(line)
-        if m: put("rule_t_seq", int(m.group("ms"))); continue
+        if m: put("rule_t_seq_ms", int(m.group("ms"))); continue
 
         m = RE_RULE_T_PAR.match(line)
-        if m: put("rule_t_par", int(m.group("ms"))); continue
+        if m: put("rule_t_par_ms", int(m.group("ms"))); continue
 
         m = RE_RULE_T_TOT.match(line)
-        if m: put("rule_t_tot", int(m.group("ms"))); continue
+        if m: put("rule_t_tot_ms", int(m.group("ms"))); continue
 
         m = RE_RULE_T_AVG.match(line)
-        if m: put("rule_t_avg", int(m.group("us"))); continue
+        if m: put("rule_t_avg_us", int(m.group("us"))); continue
 
         m = RE_RULE_PF.match(line)
         if m: put("rule_pf", float(m.group("v"))); continue
@@ -206,6 +207,75 @@ class DatalogParser(Parser):
     """
     def __init__(self):
         super().__init__()
-
         self.add_function(parse_datalog_summaries)
+
+    @staticmethod
+    def get_attributes():
+        return [
+            "succgen_prog_n_exec",
+            "succgen_prog_t_seq_ms",
+            "succgen_prog_t_par_ms",
+            "succgen_prog_t_tot_ms",
+            "succgen_prog_t_avg_us",
+            Attribute("succgen_prog_pf", function=geometric_mean, min_wins=False),
+
+            "succgen_rule_n_exec",
+            "succgen_rule_n_samples",
+            "succgen_rule_t_seq_ms",
+            "succgen_rule_t_par_ms",
+            "succgen_rule_t_tot_ms",
+            "succgen_rule_t_avg_us",
+            Attribute("succgen_rule_pf", function=geometric_mean, min_wins=False),
+            "succgen_rule_skew_tot",
+            "succgen_rule_skew_avg",
+
+            "succgen_rule_worker_n_exec",
+            "succgen_rule_worker_n_gen",
+            "succgen_rule_worker_n_pen",
+            Attribute("succgen_rule_worker_oa", function=geometric_mean, min_wins=False),
+
+            "axiom_prog_n_exec",
+            "axiom_prog_t_seq_ms",
+            "axiom_prog_t_par_ms",
+            "axiom_prog_t_tot_ms",
+            "axiom_prog_t_avg_us",
+            Attribute("axiom_prog_pf", function=geometric_mean, min_wins=False),
+
+            "axiom_rule_n_exec",
+            "axiom_rule_n_samples",
+            "axiom_rule_t_seq_ms",
+            "axiom_rule_t_par_ms",
+            "axiom_rule_t_tot_ms",
+            "axiom_rule_t_avg_us",
+            Attribute("axiom_rule_pf", function=geometric_mean, min_wins=False),
+            "axiom_rule_skew_tot",
+            "axiom_rule_skew_avg",
+
+            "axiom_rule_worker_n_exec",
+            "axiom_rule_worker_n_gen",
+            "axiom_rule_worker_n_pen",
+            Attribute("axiom_rule_worker_oa", function=geometric_mean, min_wins=False),
+
+            "ff_prog_n_exec",
+            "ff_prog_t_seq_ms",
+            "ff_prog_t_par_ms",
+            "ff_prog_t_tot_ms",
+            "ff_prog_t_avg_us",
+            Attribute("ff_prog_pf", function=geometric_mean, min_wins=False),
+
+            "ff_rule_n_exec",
+            "ff_rule_n_samples",
+            "ff_rule_t_seq_ms",
+            "ff_rule_t_par_ms",
+            "ff_rule_t_tot_ms",
+            "ff_rule_t_avg_us",
+            Attribute("ff_rule_pf", function=geometric_mean, min_wins=False),
+            "ff_rule_skew_tot",
+            "ff_rule_skew_avg",
+            
+            "ff_rule_worker_n_exec",
+            "ff_rule_worker_n_gen",
+            "ff_rule_worker_n_pen",
+            Attribute("ff_rule_worker_oa", function=geometric_mean, min_wins=False),
+        ]
         

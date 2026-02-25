@@ -2,6 +2,7 @@
 
 from lab.parser import Parser
 from lab import tools
+from lab.reports import Attribute, geometric_mean, arithmetic_mean
 
 import re
 
@@ -86,3 +87,21 @@ class SearchParser(Parser):
         self.add_function(add_search_time_us_per_expanded)
         self.add_function(add_memory)
         self.add_function(add_coverage)
+
+    @staticmethod
+    def get_attributes():
+        return [
+            "num_objects",
+            Attribute("coverage", min_wins=False),
+            "cost",
+            "length",
+            "unsolvable",
+            "invalid",
+            "initial_h_value",
+            Attribute("search_time", function=geometric_mean),
+            "num_expanded",
+            "num_generated",
+            Attribute("search_time_us_per_expanded", function=geometric_mean),
+            Attribute("total_time", function=geometric_mean),
+            "memory",
+        ]
