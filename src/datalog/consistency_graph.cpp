@@ -1026,6 +1026,11 @@ StaticConsistencyGraph::StaticConsistencyGraph(
 
     m_matrix = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
 
+    if (uint_t(m_rule.get_index()) == 263)
+    {
+        std::cout << fd::VariableDependencyGraph(m_condition) << std::endl;
+    }
+
     // std::cout << "adj matrix bitset bytes: " << m_matrix.bitset_data().size() * sizeof(uint64_t) << "\n";
     // std::cout << "adj matrix row_offset bytes: " << m_matrix.row_offset().size() * sizeof(uint_t) << "\n";
     // std::cout << "adj matrix row_data bytes: " << m_matrix.row_data().size() * sizeof(uint_t) << "\n";
@@ -1405,7 +1410,10 @@ View<Index<fd::Rule>, fd::Repository> StaticConsistencyGraph::get_rule() const n
 
 View<Index<fd::ConjunctiveCondition>, fd::Repository> StaticConsistencyGraph::get_condition() const noexcept { return m_condition; }
 
-const kpkc::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept { return m_binary_overapproximation_vdg; }
+const formalism::datalog::VariableDependencyGraph& StaticConsistencyGraph::get_variable_dependeny_graph() const noexcept
+{
+    return m_binary_overapproximation_vdg;
+}
 
 const std::vector<std::vector<uint_t>>& StaticConsistencyGraph::get_vertex_partitions() const noexcept { return m_vertex_partitions; }
 

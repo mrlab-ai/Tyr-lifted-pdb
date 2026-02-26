@@ -23,9 +23,11 @@
 
 namespace tyr::formalism::datalog
 {
-
 template<FactKind T>
-static void insert_literal(View<Index<Literal<T>>, Repository> literal, VariableDependencyGraph::AdjacencyMatrix& adj_matrix)
+static void insert_literal(View<Index<Literal<T>>, Repository> literal,
+                           uint_t k,
+                           boost::dynamic_bitset<>& positive_dependencies,
+                           boost::dynamic_bitset<>& negative_dependencies)
 {
     const auto parameters_set = collect_parameters(literal);
     auto parameters = std::vector<ParameterIndex>(parameters_set.begin(), parameters_set.end());
@@ -33,21 +35,32 @@ static void insert_literal(View<Index<Literal<T>>, Repository> literal, Variable
 
     for (uint_t i = 0; i < parameters.size(); ++i)
     {
-        const auto first_param = parameters[i];
+        const auto pi = uint_t(parameters[i]);
 
         for (uint_t j = i + 1; j < parameters.size(); ++j)
         {
-            const auto second_param = parameters[j];
+            const auto pj = uint_t(parameters[j]);
 
-            auto& cell = adj_matrix.get_cell(first_param, second_param);
+            const auto i1 = VariableDependencyGraph::get_index(pi, pj, k);
+            const auto i2 = VariableDependencyGraph::get_index(pj, pi, k);
 
-            cell.template get_literal_labels<T>().push_back(literal.get_index());
+            if (literal.get_polarity())
+            {
+                positive_dependencies.set(i1);
+                positive_dependencies.set(i2);
+            }
+            else
+            {
+                negative_dependencies.set(i1);
+                negative_dependencies.set(i2);
+            }
         }
     }
 }
 
 static void insert_numeric_constraint(View<Data<BooleanOperator<Data<FunctionExpression>>>, Repository> numeric_constraint,
-                                      VariableDependencyGraph::AdjacencyMatrix& adj_matrix)
+                                      uint_t k,
+                                      boost::dynamic_bitset<>& positive_dependencies)
 {
     const auto parameters_set = collect_parameters(numeric_constraint);
     auto parameters = std::vector<ParameterIndex>(parameters_set.begin(), parameters_set.end());
@@ -55,47 +68,36 @@ static void insert_numeric_constraint(View<Data<BooleanOperator<Data<FunctionExp
 
     for (uint_t i = 0; i < parameters.size(); ++i)
     {
-        const auto first_param = parameters[i];
+        const auto pi = uint_t(parameters[i]);
 
         for (uint_t j = i + 1; j < parameters.size(); ++j)
         {
-            const auto second_param = parameters[j];
+            const auto pj = uint_t(parameters[j]);
 
-            auto& cell = adj_matrix.get_cell(first_param, second_param);
+            const auto i1 = VariableDependencyGraph::get_index(pi, pj, k);
+            const auto i2 = VariableDependencyGraph::get_index(pj, pi, k);
 
-            cell.get_numeric_constraint_labels().push_back(numeric_constraint.get_data());
+            positive_dependencies.set(i1);
+            positive_dependencies.set(i2);
         }
     }
 }
 
-VariableDependencyGraph::VariableDependencyGraph(View<Index<ConjunctiveCondition>, Repository> condition) : adj_matrix(condition.get_variables().size())
+VariableDependencyGraph::VariableDependencyGraph(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition) :
+    m_k(condition.get_arity()),
+    m_static_positive_dependencies(m_k * m_k),
+    m_static_negative_dependencies(m_k * m_k),
+    m_fluent_positive_dependencies(m_k * m_k),
+    m_fluent_negative_dependencies(m_k * m_k)
 {
     for (const auto literal : condition.get_literals<StaticTag>())
-        insert_literal(literal, adj_matrix);
+        insert_literal(literal, m_k, m_static_positive_dependencies, m_static_negative_dependencies);
 
     for (const auto literal : condition.get_literals<FluentTag>())
-        insert_literal(literal, adj_matrix);
+        insert_literal(literal, m_k, m_fluent_positive_dependencies, m_fluent_negative_dependencies);
 
     for (const auto numeric_constraint : condition.get_numeric_constraints())
-        insert_numeric_constraint(numeric_constraint, adj_matrix);
-
-    auto dedup = [](auto& v)
-    {
-        std::sort(v.begin(), v.end());
-        v.erase(std::unique(v.begin(), v.end()), v.end());
-        v.shrink_to_fit();
-    };
-
-    for (uint_t i = 0; i < condition.get_variables().size(); ++i)
-    {
-        for (uint_t j = i + 1; j < condition.get_variables().size(); ++j)
-        {
-            auto& cell = adj_matrix.get_cell(ParameterIndex(i), ParameterIndex(j));
-            dedup(cell.static_literal_labels);
-            dedup(cell.fluent_literal_labels);
-            dedup(cell.numeric_constraint_labels);
-        }
-    }
+        insert_numeric_constraint(numeric_constraint, m_k, m_fluent_positive_dependencies);
 }
 
 }

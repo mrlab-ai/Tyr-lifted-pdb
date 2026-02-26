@@ -27,87 +27,68 @@
 
 namespace tyr::formalism::datalog
 {
+
 class VariableDependencyGraph
 {
-public:
-    struct AdjacencyMatrix
+private:
+    template<FactKind T, PolarityKind P>
+    const auto& get_dependency() const noexcept
     {
-    private:
-        static constexpr uint_t upper_index(uint_t i, uint_t j, uint_t k) noexcept
-        {
-            // number of entries in rows 0..i-1:
-            // (k-1) + (k-2) + ... + (k-i) = i*k - i*(i+1)/2
-            // then offset within row i: (j - i - 1)
-            return i * k - (i * (i + 1)) / 2 + (j - i - 1);
-        }
+        if constexpr (std::is_same_v<T, StaticTag>)
+            if constexpr (std::is_same_v<P, PositiveTag>)
+                return m_static_positive_dependencies;
+            else if constexpr (std::is_same_v<P, NegativeTag>)
+                return m_static_negative_dependencies;
+            else
+                static_assert(dependent_false<P>::value, "Missing case");
+        else if constexpr (std::is_same_v<T, FluentTag>)
+            if constexpr (std::is_same_v<P, PositiveTag>)
+                return m_fluent_positive_dependencies;
+            else if constexpr (std::is_same_v<P, NegativeTag>)
+                return m_fluent_negative_dependencies;
+            else
+                static_assert(dependent_false<P>::value, "Missing case");
+        else
+            static_assert(dependent_false<T>::value, "Missing case");
+    }
 
-    public:
-        AdjacencyMatrix() = default;
-
-        explicit AdjacencyMatrix(uint_t k) : m_k(k), m_upper_adj_lists(k * (k - 1) / 2) {}
-
-        struct Cell
-        {
-            template<FactKind T>
-            auto& get_literal_labels() noexcept
-            {
-                if constexpr (std::is_same_v<T, StaticTag>)
-                    return static_literal_labels;
-                else if constexpr (std::is_same_v<T, FluentTag>)
-                    return fluent_literal_labels;
-                else
-                    static_assert(dependent_false<T>::value, "Missing case");
-            }
-
-            template<FactKind T>
-            const auto& get_literal_labels() const noexcept
-            {
-                if constexpr (std::is_same_v<T, StaticTag>)
-                    return static_literal_labels;
-                else if constexpr (std::is_same_v<T, FluentTag>)
-                    return fluent_literal_labels;
-                else
-                    static_assert(dependent_false<T>::value, "Missing case");
-            }
-
-            auto& get_numeric_constraint_labels() noexcept { return numeric_constraint_labels; }
-            const auto& get_numeric_constraint_labels() const noexcept { return numeric_constraint_labels; }
-
-            bool statically_empty() const noexcept { return static_literal_labels.empty(); }
-            bool dynamically_empty() const noexcept { return fluent_literal_labels.empty() && numeric_constraint_labels.empty(); }
-            bool empty() const noexcept { return statically_empty() && dynamically_empty(); }
-
-            std::vector<Index<Literal<StaticTag>>> static_literal_labels;
-            std::vector<Index<Literal<FluentTag>>> fluent_literal_labels;
-            std::vector<Data<BooleanOperator<Data<FunctionExpression>>>> numeric_constraint_labels;
-        };
-
-        auto& get_cell(ParameterIndex lhs, ParameterIndex rhs) noexcept
-        {
-            assert(lhs < rhs);
-            assert(uint_t(rhs) < m_k);
-            return m_upper_adj_lists[upper_index(uint_t(lhs), uint_t(rhs), m_k)];
-        }
-        const auto& get_cell(ParameterIndex lhs, ParameterIndex rhs) const noexcept
-        {
-            assert(lhs < rhs);
-            assert(uint_t(rhs) < m_k);
-            return m_upper_adj_lists[upper_index(uint_t(lhs), uint_t(rhs), m_k)];
-        }
-
-        auto k() const noexcept { return m_k; }
-
-    private:
-        uint_t m_k;
-        std::vector<Cell> m_upper_adj_lists;
-    };
-
+public:
     explicit VariableDependencyGraph(View<Index<ConjunctiveCondition>, Repository> condition);
 
-    const AdjacencyMatrix& get_adj_matrix() const noexcept { return adj_matrix; }
+    static constexpr uint_t get_index(uint_t pi, uint_t pj, uint_t k) noexcept
+    {
+        assert(pi < k && pj < k);
+        return pi * k + pj;
+    }
+
+    template<FactKind T, PolarityKind P>
+    bool has_dependency(uint_t pi, uint_t pj) const noexcept
+    {
+        return get_dependency<T, P>().test(get_index(pi, pj, m_k));
+    }
+
+    template<FactKind T>
+    bool has_dependency(uint_t pi, uint_t pj) const noexcept
+    {
+        return has_dependency<T, PositiveTag>(pi, pj) || has_dependency<T, NegativeTag>(pi, pj);
+    }
+
+    template<PolarityKind P>
+    bool has_dependency(uint_t pi, uint_t pj) const noexcept
+    {
+        return has_dependency<StaticTag, P>(pi, pj) || has_dependency<FluentTag, P>(pi, pj);
+    }
+
+    bool has_dependency(uint_t pi, uint_t pj) const noexcept { return has_dependency<StaticTag>(pi, pj) || has_dependency<FluentTag>(pi, pj); }
+
+    auto k() const noexcept { return m_k; }
 
 private:
-    AdjacencyMatrix adj_matrix;
+    uint_t m_k;
+    boost::dynamic_bitset<> m_static_positive_dependencies;
+    boost::dynamic_bitset<> m_static_negative_dependencies;
+    boost::dynamic_bitset<> m_fluent_positive_dependencies;
+    boost::dynamic_bitset<> m_fluent_negative_dependencies;
 };
 }
 

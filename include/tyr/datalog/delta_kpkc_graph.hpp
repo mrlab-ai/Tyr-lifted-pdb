@@ -213,70 +213,6 @@ private:
                                           ///< from v into partition p.
 };
 
-class VariableDependencyGraph
-{
-private:
-    template<formalism::FactKind T, formalism::PolarityKind P>
-    const auto& get_dependency() const noexcept
-    {
-        if constexpr (std::is_same_v<T, formalism::StaticTag>)
-            if constexpr (std::is_same_v<P, formalism::PositiveTag>)
-                return m_static_positive_dependencies;
-            else if constexpr (std::is_same_v<P, formalism::NegativeTag>)
-                return m_static_negative_dependencies;
-            else
-                static_assert(dependent_false<P>::value, "Missing case");
-        else if constexpr (std::is_same_v<T, formalism::FluentTag>)
-            if constexpr (std::is_same_v<P, formalism::PositiveTag>)
-                return m_fluent_positive_dependencies;
-            else if constexpr (std::is_same_v<P, formalism::NegativeTag>)
-                return m_fluent_negative_dependencies;
-            else
-                static_assert(dependent_false<P>::value, "Missing case");
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-public:
-    explicit VariableDependencyGraph(View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> condition);
-
-    static constexpr uint_t get_index(uint_t pi, uint_t pj, uint_t k) noexcept
-    {
-        assert(pi < k && pj < k);
-        return pi * k + pj;
-    }
-
-    template<formalism::FactKind T, formalism::PolarityKind P>
-    bool has_dependency(uint_t pi, uint_t pj) const noexcept
-    {
-        return get_dependency<T, P>().test(get_index(pi, pj, m_k));
-    }
-
-    template<formalism::FactKind T>
-    bool has_dependency(uint_t pi, uint_t pj) const noexcept
-    {
-        return has_dependency<T, formalism::PositiveTag>(pi, pj) || has_dependency<T, formalism::NegativeTag>(pi, pj);
-    }
-
-    template<formalism::PolarityKind P>
-    bool has_dependency(uint_t pi, uint_t pj) const noexcept
-    {
-        return has_dependency<formalism::StaticTag, P>(pi, pj) || has_dependency<formalism::FluentTag, P>(pi, pj);
-    }
-
-    bool has_dependency(uint_t pi, uint_t pj) const noexcept
-    {
-        return has_dependency<formalism::StaticTag>(pi, pj) || has_dependency<formalism::FluentTag>(pi, pj);
-    }
-
-private:
-    uint_t m_k;
-    boost::dynamic_bitset<> m_static_positive_dependencies;
-    boost::dynamic_bitset<> m_static_negative_dependencies;
-    boost::dynamic_bitset<> m_fluent_positive_dependencies;
-    boost::dynamic_bitset<> m_fluent_negative_dependencies;
-};
-
 class PartitionedAdjacencyMatrix
 {
 private:
@@ -286,7 +222,7 @@ public:
     PartitionedAdjacencyMatrix(const GraphLayout& layout,
                                const VertexPartitions& affected_partitions,
                                const VertexPartitions& delta_partitions,
-                               const VariableDependencyGraph& dependency_graph) :
+                               const formalism::datalog::VariableDependencyGraph& dependency_graph) :
         m_layout(layout),
         m_affected_partitions(affected_partitions),
         m_delta_partitions(delta_partitions),
@@ -449,7 +385,7 @@ private:
     const GraphLayout& m_layout;
     const VertexPartitions& m_affected_partitions;
     const VertexPartitions& m_delta_partitions;
-    const VariableDependencyGraph& m_dependency_graph;
+    const formalism::datalog::VariableDependencyGraph& m_dependency_graph;
 
     /// v x k matrix where each cell refers to a bitset either stored explicitly or referring implicitly to a vertex partition.
     std::vector<Cell> m_adj_data;
@@ -464,7 +400,7 @@ private:
 
 struct Graph
 {
-    Graph(const GraphLayout& layout, const VariableDependencyGraph& dependency_graph) :
+    Graph(const GraphLayout& layout, const formalism::datalog::VariableDependencyGraph& dependency_graph) :
         affected_partitions(layout),
         delta_partitions(layout),
         matrix(layout, affected_partitions, delta_partitions, dependency_graph)

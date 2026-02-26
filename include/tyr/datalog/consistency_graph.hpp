@@ -283,7 +283,7 @@ public:
 
     View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> get_rule() const noexcept;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> get_condition() const noexcept;
-    const kpkc::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
+    const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     const std::vector<std::vector<uint_t>>& get_vertex_partitions() const noexcept;
     const std::vector<std::vector<uint_t>>& get_object_to_vertex_per_partition() const noexcept;
     const details::IndexedAnchors& get_predicate_to_anchors() const noexcept;
@@ -295,7 +295,7 @@ private:
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_unary_overapproximation_condition;
     View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> m_binary_overapproximation_condition;
 
-    kpkc::VariableDependencyGraph m_binary_overapproximation_vdg;
+    formalism::datalog::VariableDependencyGraph m_binary_overapproximation_vdg;
 
     /* The data member of the consistency graph. */
     details::Vertices m_vertices;
