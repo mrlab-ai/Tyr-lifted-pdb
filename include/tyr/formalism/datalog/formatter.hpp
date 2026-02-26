@@ -156,8 +156,7 @@ inline std::ostream& print(std::ostream& os, const formalism::datalog::VariableD
 {
     os << "graph {\n";
 
-    const auto& adj_matrix = el.get_adj_matrix();
-    const auto k = adj_matrix.k();
+    const auto k = el.k();
 
     for (uint_t i = 0; i < k; ++i)
     {
@@ -168,20 +167,9 @@ inline std::ostream& print(std::ostream& os, const formalism::datalog::VariableD
     {
         for (uint_t j = i + 1; j < k; ++j)
         {
-            const auto& cell = adj_matrix.get_cell(formalism::ParameterIndex(i), formalism::ParameterIndex(j));
-
-            auto labels = std::vector<std::string> {};
-
-            for (const auto& label : cell.get_literal_labels<formalism::StaticTag>())
-                labels.push_back(to_string(label));
-            for (const auto& label : cell.get_literal_labels<formalism::FluentTag>())
-                labels.push_back(to_string(label));
-            for (const auto& label : cell.get_numeric_constraint_labels())
-                labels.push_back(to_string(label));
-
-            if (!labels.empty())
+            if (el.has_dependency(i, j))
             {
-                fmt::print(os, "n{} -- n{} [label=\"{}\\l\"];\n", i, j, fmt::join(labels, "\\l"));
+                fmt::print(os, "n{} -- n{};\n", i, j);
             }
         }
     }
