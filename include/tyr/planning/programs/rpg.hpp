@@ -34,17 +34,17 @@ namespace tyr::planning
 class RPGProgram
 {
 public:
-    using AppPredicateToActionsMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::planning::Action>>;
+    using RuleToActionMapping = UnorderedMap<Index<formalism::datalog::Rule>, Index<formalism::planning::Action>>;
 
     explicit RPGProgram(View<Index<formalism::planning::Task>, formalism::planning::Repository> task);
 
-    const AppPredicateToActionsMapping& get_predicate_to_actions_mapping() const noexcept;
+    const RuleToActionMapping& get_rule_to_action_mapping() const noexcept;
     datalog::ProgramContext& get_program_context() noexcept;
     const datalog::ProgramContext& get_program_context() const noexcept;
     const datalog::ConstProgramWorkspace& get_const_program_workspace() const noexcept;
 
 private:
-    AppPredicateToActionsMapping m_predicate_to_actions;
+    RuleToActionMapping m_rule_to_action;
 
     datalog::ProgramContext m_program_context;
 

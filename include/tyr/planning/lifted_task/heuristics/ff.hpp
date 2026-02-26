@@ -98,11 +98,9 @@ private:
             return;
 
         const auto& witness = it->second;
+        const auto& mapping = this->m_task->get_rpg_program().get_rule_to_action_mapping();
 
-        const auto predicate_index = make_view(witness.get_rule(), this->m_workspace.repository).get_head().get_predicate().get_index();
-        const auto& mapping = this->m_task->get_rpg_program().get_predicate_to_actions_mapping();
-
-        if (const auto it = mapping.find(predicate_index); it != mapping.end())
+        if (const auto it = mapping.find(witness.get_rule()); it != mapping.end())
         {
             const auto action = it->second;
 
