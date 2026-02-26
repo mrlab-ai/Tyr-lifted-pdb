@@ -76,10 +76,25 @@ public:
         for (const auto atom : m_workspace.tp.get_atoms())
             extract_relaxed_plan_and_preferred_actions(atom, state_context, grounder_context);
 
+        // std::cout << "Num pref: " << m_preferred_actions.size() << " h: " << m_relaxed_plan.size() << std::endl;
+        // for (const auto& action : m_preferred_actions)
+        // {
+        //     std::cout << std::make_pair(make_view(action, *this->m_task->get_repository()), formalism::planning::PlanFormatting()) << std::endl;
+        // }
+
         return m_relaxed_plan.size();
     }
 
     const UnorderedSet<Index<formalism::planning::GroundAction>>& get_preferred_actions() override { return m_preferred_actions; }
+
+    bool mark_atom(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> atom)
+    {
+        assert(uint_t(atom.group) < m_markings.size());
+        if (tyr::test(atom.value, m_markings[uint_t(atom.group)]))
+            return true;
+        tyr::set(atom.value, true, m_markings[uint_t(atom.group)]);
+        return false;
+    }
 
 private:
     void extract_relaxed_plan_and_preferred_actions(Index<formalism::datalog::GroundAtom<formalism::FluentTag>> atom,
@@ -87,10 +102,8 @@ private:
                                                     formalism::planning::GrounderContext& grounder_context)
     {
         // Base case 1: atom is already marked => do not recurse again
-        assert(uint_t(atom.group) < m_markings.size());
-        if (tyr::test(atom.value, m_markings[uint_t(atom.group)]))
+        if (mark_atom(atom))
             return;
-        tyr::set(atom.value, true, m_markings[uint_t(atom.group)]);
 
         // Base case 2: atom has no witness, i.e., was true initially => do not recurse again
         const auto it = m_workspace.and_annot.find(atom);
@@ -99,6 +112,7 @@ private:
 
         const auto& witness = it->second;
         const auto& mapping = this->m_task->get_rpg_program().get_rule_to_action_mapping();
+        auto merge_context = formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.repository };
 
         if (const auto it = mapping.find(witness.get_rule()); it != mapping.end())
         {
@@ -119,6 +133,22 @@ private:
             const auto ground_action = make_view(ground_action_index, grounder_context.destination);
             if (is_applicable(ground_action, state_context, m_effect_families))
                 m_preferred_actions.insert(ground_action_index);
+
+            for (const auto cond_effect : ground_action.get_effects())
+            {
+                if (!cond_effect.get_condition().get_facts<formalism::FluentTag>().empty())
+                    continue;
+
+                for (const auto fact : cond_effect.get_effect().get_facts())
+                {
+                    if (!fact.has_value())
+                        continue;
+
+                    const auto merged_atom = formalism::planning::merge_p2d(fact.get_atom(), merge_context).first;
+
+                    mark_atom(merged_atom);
+                }
+            }
         }
 
         // Divide case: recursively call for preconditions.

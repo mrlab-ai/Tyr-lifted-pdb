@@ -208,14 +208,11 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     const auto& delta_edges = kpkc_algorithm.get_delta_edges();
 
     // Decide whether we want to trigger the parallel loop.
-    // Currently disabled.
-    const bool do_parallel_inner = false && (rctx.cws_rule.get_rule().get_arity() > 2) && (delta_edges.size() >= PAR_THRESHOLD) && (arena_conc >= 2);
+    const bool do_parallel_inner =
+        kpkc_algorithm.get_iteration() > 1 && (rctx.cws_rule.get_rule().get_arity() > 2) && (delta_edges.size() >= PAR_THRESHOLD) && (arena_conc >= 2);
 
     if (do_parallel_inner)
     {
-        // Determine the number of tasks we want to schedule.
-        const auto num_tasks = std::min(((delta_edges.size() + GRAIN - 1) / GRAIN), arena_conc);
-
         // This parallelization sometimes work, e.g., logistics-large-simple/goal-2/p-a1-c1-s1000-p10-t1-g2.pddl
         // but not on logistics-large-simple/goal-2/p-a1-c1-s2000-p10-t1-g2.pddl
         // It seems that the parameters need to be tuned better in this case
@@ -223,31 +220,30 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
         // Moreover seeding from edges in first iteration is wasteful.
         // We could seed from all vertices in a partition instead.
 
-        oneapi::tbb::parallel_for(
-            oneapi::tbb::blocked_range<uint_t>(0, num_tasks, 1),
-            [&](const oneapi::tbb::blocked_range<uint_t>& lanes)
+        oneapi::tbb::this_task_arena::isolate(
+            [&]
             {
-                for (uint_t lane = lanes.begin(); lane != lanes.end(); ++lane)
-                {
-                    auto wrctx = rctx.get_rule_worker_execution_context();
-                    auto& out = wrctx.out();
-                    auto& kpkc_workspace = out.kpkc_workspace();
-                    ++out.statistics().num_executions;
-
-                    // Round-robin: lane 0 gets 0,p,2p,...; lane 1 gets 1,p+1,...
-                    for (uint_t e = lane; e < delta_edges.size(); e += num_tasks)
+                oneapi::tbb::parallel_for(
+                    oneapi::tbb::blocked_range<size_t>(0, delta_edges.size(), GRAIN),
+                    [&](const oneapi::tbb::blocked_range<size_t>& r)
                     {
-                        const auto& edge = delta_edges[e];
+                        auto wrctx = rctx.get_rule_worker_execution_context();
+                        auto& out = wrctx.out();
+                        auto& ws = out.kpkc_workspace();
+                        ++out.statistics().num_executions;
 
-                        if (!kpkc_algorithm.seed_from_anchor(edge, kpkc_workspace))
-                            continue;  ///< anchor failed
+                        for (size_t e = r.begin(); e != r.end(); ++e)
+                        {
+                            const auto& edge = delta_edges[e];
+                            if (!kpkc_algorithm.seed_from_anchor(edge, ws))
+                                continue;
 
-                        kpkc_algorithm.template complete_from_seed<kpkc::Edge>([&](auto&& clique) { process_clique(wrctx, clique); }, 0, kpkc_workspace);
-                    }
-                }
-            },
-            oneapi::tbb::static_partitioner {}  // keep lanes stable/sane
-        );
+                            kpkc_algorithm.template complete_from_seed<kpkc::Edge>([&](auto&& clique) { process_clique(wrctx, clique); }, 0, ws);
+                        }
+                    },
+                    oneapi::tbb::auto_partitioner {}  // allow splitting/stealing
+                );
+            });
     }
     else
     {

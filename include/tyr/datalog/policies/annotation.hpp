@@ -269,6 +269,7 @@ public:
         const auto best_local_cost = fetch_current_best_cost(delta_head, delta_and_annot);
         const auto best_cost = std::min(best_global_cost, best_local_cost);
         const auto cur_cost_lower_bound = current_cost + rule.get_cost();
+
         if (best_cost <= cur_cost_lower_bound)
             return;  ///< No local or global improvement
 

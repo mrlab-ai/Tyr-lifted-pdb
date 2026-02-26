@@ -1026,6 +1026,9 @@ StaticConsistencyGraph::StaticConsistencyGraph(
 
     m_matrix = compute_edges(m_binary_overapproximation_indexed_literals.static_indexed, static_assignment_sets, m_vertices, m_vertex_partitions);
 
+    // std::ofstream file("graph_" + std::to_string(uint_t(m_rule.get_index())) + ".dot");
+    // file << formalism::datalog::VariableDependencyGraph(m_condition) << std::endl;
+
     // std::cout << "adj matrix bitset bytes: " << m_matrix.bitset_data().size() * sizeof(uint64_t) << "\n";
     // std::cout << "adj matrix row_offset bytes: " << m_matrix.row_offset().size() * sizeof(uint_t) << "\n";
     // std::cout << "adj matrix row_data bytes: " << m_matrix.row_data().size() * sizeof(uint_t) << "\n";

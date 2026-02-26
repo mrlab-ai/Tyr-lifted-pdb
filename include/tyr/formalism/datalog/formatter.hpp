@@ -167,9 +167,13 @@ inline std::ostream& print(std::ostream& os, const formalism::datalog::VariableD
     {
         for (uint_t j = i + 1; j < k; ++j)
         {
-            if (el.has_dependency(i, j))
+            if (el.has_dependency<formalism::StaticTag>(i, j))
             {
-                fmt::print(os, "n{} -- n{};\n", i, j);
+                fmt::print(os, "n{} -- n{} [color=blue, key=1];\n", i, j);
+            }
+            if (el.has_dependency<formalism::FluentTag>(i, j))
+            {
+                fmt::print(os, "n{} -- n{} [color=red, key=2];\n", i, j);
             }
         }
     }
