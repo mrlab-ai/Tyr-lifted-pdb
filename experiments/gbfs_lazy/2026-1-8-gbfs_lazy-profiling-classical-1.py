@@ -43,6 +43,7 @@ NODE = platform.node()
 REMOTE = re.match(r"tetralith\d+.nsc.liu.se|n\d+", NODE)
 
 NUM_THREADS = 1
+RANDOM_SEED = 0
 
 if REMOTE:
     ENV = TetralithEnvironment(
@@ -122,7 +123,8 @@ for prefix, SUITE in SUITES:
                     "{domain}", 
                     "{problem}",
                     "plan.out",
-                    str(NUM_THREADS)
+                    str(NUM_THREADS),
+                    str(RANDOM_SEED)
                 ],
                 time_limit=None,
                 wall_time_limit=WALL_TIME_LIMIT,

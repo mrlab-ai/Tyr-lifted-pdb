@@ -42,6 +42,8 @@
 #include "tyr/planning/search_space.hpp"
 #include "tyr/planning/state_index.hpp"
 
+#include <algorithm>
+
 namespace tyr::planning::gbfs_lazy
 {
 
@@ -104,13 +106,14 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
     const auto event_handler = (options.event_handler) ? options.event_handler : DefaultEventHandler<Task>::create(0);
     const auto pruning_strategy = (options.pruning_strategy) ? options.pruning_strategy : PruningStrategy<Task>::create();
     const auto goal_strategy = (options.goal_strategy) ? options.goal_strategy : TaskGoalStrategy<Task>::create(task);
+    auto rng = std::mt19937_64(options.random_seed);
 
     auto step = uint_t(0);
     auto result = SearchResult<Task>();
     auto search_nodes = SearchNodeVector();
     auto preferred_openlist = Queue();
     auto standard_openlist = Queue();
-    auto openlist = AlternatingOpenList<Queue, Queue>(preferred_openlist, standard_openlist, std::array<size_t, 2> { options.prefered_queue_weight, 1 });
+    auto openlist = AlternatingOpenList<Queue, Queue>(preferred_openlist, standard_openlist, std::array<size_t, 2> { 1, 1 });
     const auto start_h_value = heuristic.evaluate(start_state);
     auto best_h_value = start_h_value;
     const auto start_preferred = false;
@@ -171,6 +174,8 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
 
     auto stopwatch = options.max_time ? std::optional<CountdownWatch>(options.max_time.value()) : std::nullopt;
 
+    auto& openlist_weights = openlist.get_weights();
+
     while (!openlist.empty())
     {
         if (stopwatch && stopwatch->has_finished())
@@ -185,6 +190,8 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
         const auto state = successor_generator.get_state(state_index);
 
         openlist.pop();
+        // Weight decay of prefered queue
+        openlist_weights[0] = std::max(openlist_weights[0] - 1, size_t { 1 });
 
         auto& search_node = get_or_create_search_node(state_index, search_nodes);
         auto node = Node<Task>(state, search_node.g_value);
@@ -211,6 +218,9 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
         {
             best_h_value = state_h_value;
             event_handler->on_new_best_h_value(best_h_value);
+
+            // Boost prefered queue
+            openlist_weights[0] += options.boost_preferred_queue;
         }
 
         const auto& preferred_actions = heuristic.get_preferred_actions();
@@ -220,6 +230,9 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
         search_node.status = SearchNodeStatus::CLOSED;
 
         successor_generator.get_labeled_successor_nodes(node, labeled_succ_nodes);
+
+        if (options.shuffle_labeled_succ_nodes)
+            std::shuffle(labeled_succ_nodes.begin(), labeled_succ_nodes.end(), rng);
 
         for (const auto& labeled_succ_node : labeled_succ_nodes)
         {

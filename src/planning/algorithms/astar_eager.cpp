@@ -42,6 +42,8 @@
 #include "tyr/planning/search_space.hpp"
 #include "tyr/planning/state_index.hpp"
 
+#include <algorithm>
+
 namespace tyr::planning::astar_eager
 {
 
@@ -101,6 +103,7 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
     const auto event_handler = (options.event_handler) ? options.event_handler : DefaultEventHandler<Task>::create(0);
     const auto pruning_strategy = (options.pruning_strategy) ? options.pruning_strategy : PruningStrategy<Task>::create();
     const auto goal_strategy = (options.goal_strategy) ? options.goal_strategy : TaskGoalStrategy<Task>::create(task);
+    auto rng = std::mt19937_64(options.random_seed);
 
     auto result = SearchResult<Task>();
     auto search_nodes = SearchNodeVector();
@@ -221,6 +224,9 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
         search_node.status = SearchNodeStatus::CLOSED;
 
         successor_generator.get_labeled_successor_nodes(node, labeled_succ_nodes);
+
+        if (options.shuffle_labeled_succ_nodes)
+            std::shuffle(labeled_succ_nodes.begin(), labeled_succ_nodes.end(), rng);
 
         for (const auto& labeled_succ_node : labeled_succ_nodes)
         {

@@ -7,6 +7,7 @@ domain_file=$2
 problem_file=$3
 plan_file=$4
 num_threads=$5
+random_seed=$6
 
 # Check if the plan file already exists and prompt for removal
 if [ -f "$plan_file" ]; then
@@ -18,7 +19,7 @@ fi
 export LANG=C
 
 # Run planner
-MALLOC_ARENA_MAX=1 "$planner_exe" "-D" "$domain_file" "-P" "$problem_file" "-O" "$plan_file" "-N" "$num_threads"
+MALLOC_ARENA_MAX=1 "$planner_exe" "-D" "$domain_file" "-P" "$problem_file" "-O" "$plan_file" "-N" "$num_threads" "-R" "$random_seed" "-S"
 
 # Run VAL
 echo -e "\nRun VAL\n"
