@@ -154,7 +154,22 @@ struct LiteralAnchorInfo
 
 struct IndexedAnchors
 {
-    std::vector<std::vector<LiteralAnchorInfo>> predicate_to_infos;
+    struct OffsetInfo
+    {
+        Index<formalism::Predicate<formalism::FluentTag>> predicate;
+        uint_t start;
+        uint_t end;
+    };
+
+    std::vector<OffsetInfo> offsets;
+
+    std::vector<LiteralAnchorInfo> infos;
+
+    std::span<const LiteralAnchorInfo> operator[](const OffsetInfo& pos) const noexcept
+    {
+        assert(pos.end > pos.start && pos.end <= infos.size());
+        return std::span<const LiteralAnchorInfo>(infos.data() + pos.start, pos.end - pos.start);
+    }
 
     boost::dynamic_bitset<> bound_parameters;
     boost::dynamic_bitset<> negated_bound_parameters;

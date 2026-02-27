@@ -286,7 +286,10 @@ public:
         const auto g = builder.index.group.value;
 
         if (g >= slot.size())
+        {
+            std::cout << "Resize: " << g << std::endl;
             slot.resize(g + 1);
+        }
 
         auto& indexed_hash_set = slot[g].container;
         const auto h = indexed_hash_set.hash(builder);

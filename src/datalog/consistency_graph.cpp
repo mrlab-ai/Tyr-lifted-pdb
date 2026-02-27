@@ -941,11 +941,14 @@ auto compute_indexed_literals(View<Index<fd::ConjunctiveCondition>, fd::Reposito
 static auto compute_indexed_anchors(View<Index<fd::ConjunctiveCondition>, fd::Repository> element, size_t num_fluent_predicates)
 {
     auto result = details::IndexedAnchors {};
-    result.predicate_to_infos = std::vector<std::vector<details::LiteralAnchorInfo>>(num_fluent_predicates);
+    result.offsets = std::vector<details::IndexedAnchors::OffsetInfo> {};
+    result.infos = std::vector<details::LiteralAnchorInfo> {};
     result.bound_parameters = boost::dynamic_bitset<>(element.get_arity(), false);
     result.negated_bound_parameters = boost::dynamic_bitset<>(element.get_arity(), false);
 
     auto bound_parameters = UnorderedSet<uint_t> {};
+
+    auto map = UnorderedMap<Index<f::Predicate<f::FluentTag>>, std::vector<details::LiteralAnchorInfo>> {};
 
     for (const auto literal : element.get_literals<f::FluentTag>())
     {
@@ -980,7 +983,13 @@ static auto compute_indexed_anchors(View<Index<fd::ConjunctiveCondition>, fd::Re
                 term.get_variant());
         }
 
-        result.predicate_to_infos[uint_t(literal.get_atom().get_predicate().get_index())].push_back(std::move(info));
+        map[literal.get_atom().get_predicate().get_index()].push_back(std::move(info));
+    }
+
+    for (auto& [predicate, infos] : map)
+    {
+        result.offsets.emplace_back(predicate, result.infos.size(), result.infos.size() + infos.size());
+        result.infos.insert(result.infos.end(), infos.begin(), infos.end());
     }
 
     return result;
@@ -1108,20 +1117,19 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
     const auto& predicate_sets = delta_fact_sets.predicate.get_sets();
 
-    for (uint_t i = 0; i < predicate_sets.size(); ++i)
+    const auto& predicate_to_anchors = m_unary_overapproximation_predicate_to_anchors;
+
+    for (const auto& offset : predicate_to_anchors.offsets)
     {
-        const auto& infos = m_unary_overapproximation_predicate_to_anchors.predicate_to_infos[i];
+        const auto predicate_index = offset.predicate;
 
-        if (infos.empty())
-            continue;
-
-        for (const auto fact : predicate_sets[i].get_facts())  ///< Outter loop because |facts| > |infos|
+        for (const auto fact : predicate_sets[uint_t(predicate_index)].get_facts())  ///< Outter loop because |facts| > |infos|
         {
             const auto objects = fact.get_objects();
 
             // std::cout << fact << std::endl;
 
-            for (const auto& info : infos)
+            for (const auto& info : predicate_to_anchors[offset])
             {
                 // std::cout << fact << " " << predicate_to_anchors.size() << std::endl;
 

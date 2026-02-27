@@ -141,7 +141,7 @@ std::ostream& print(std::ostream& os, const datalog::details::IndexedAnchors& el
     {
         IndentScope scope(os);
 
-        os << print_indent << " predicate_to_infos = " << el.predicate_to_infos << "\n";
+        os << print_indent << " infos = " << el.infos << "\n";
 
         os << print_indent << " bound_parameters = " << el.bound_parameters << "\n";
     }
