@@ -30,6 +30,8 @@ int main(int argc, char** argv)
     program.add_argument("-P", "--problem-filepath").required().help("The path to the PDDL problem file.");
     program.add_argument("-O", "--plan-filepath").default_value(std::string("plan.out")).help("The path to the output plan file.");
     program.add_argument("-N", "--num-worker-threads").default_value(size_t(1)).scan<'u', size_t>().help("The number of worker threads.");
+    program.add_argument("-R", "--random-seed").default_value(uint64_t(0)).scan<'u', uint64_t>().help("The random seed.");
+    program.add_argument("-S", "--shuffle-labeled-succ-nodes").default_value(false).implicit_value(true).help("Toggle shuffling the labeled successor nodes.");
     program.add_argument("-V", "--verbosity")
         .default_value(size_t(0))
         .scan<'u', size_t>()
@@ -53,8 +55,15 @@ int main(int argc, char** argv)
         auto domain_filepath = program.get<std::string>("--domain-filepath");
         auto problem_filepath = program.get<std::string>("--problem-filepath");
         auto plan_filepath = program.get<std::string>("--plan-filepath");
-        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, program.get<std::size_t>("--num-worker-threads"));
+        auto num_worker_threads = program.get<std::size_t>("--num-worker-threads");
+        auto control = oneapi::tbb::global_control(oneapi::tbb::global_control::max_allowed_parallelism, num_worker_threads);
+        auto random_seed = program.get<uint64_t>("--random-seed");
+        auto shuffle_labeled_succ_nodes = program.get<bool>("--shuffle-labeled-succ-nodes");
         auto verbosity = program.get<size_t>("--verbosity");
+
+        std::cout << "[INPUT] Num worker threads: " << num_worker_threads << std::endl;
+        std::cout << "[INPUT] Random seed: " << random_seed << std::endl;
+        std::cout << "[INPUT] Shuffle labeled successor nodes: " << shuffle_labeled_succ_nodes << std::endl;
 
         auto parser_options = loki::ParserOptions();
         // parser_options.strict = true;
@@ -74,6 +83,8 @@ int main(int argc, char** argv)
         auto options = planning::astar_eager::Options<planning::LiftedTask>();
         options.start_node = successor_generator.get_initial_node();
         options.event_handler = planning::astar_eager::DefaultEventHandler<planning::LiftedTask>::create(verbosity);
+        options.random_seed = random_seed;
+        options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
         auto patterns = planning::PatternGenerator<planning::LiftedTask>(*lifted_task).generate();
         // print(std::cout, patterns);

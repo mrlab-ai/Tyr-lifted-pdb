@@ -128,6 +128,9 @@ public:
         return std::apply([](auto&&... queues) { return (queues.get().size() + ...); }, m_queues);
     }
 
+    auto& get_weights() noexcept { return m_weights; }
+    const auto& get_weights() const noexcept { return m_weights; }
+
 private:
     std::tuple<std::reference_wrapper<Os>...> m_queues;
 
