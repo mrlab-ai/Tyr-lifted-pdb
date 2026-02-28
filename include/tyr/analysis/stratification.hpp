@@ -36,11 +36,6 @@ struct RuleStrata
     std::vector<RuleStratum> data;
 };
 
-/// @brief Compute the rule stratification for the rules in the given program.
-/// An implementation of Algorithm 1 by Thiébaux-et-al-ijcai2003
-/// Source: https://users.cecs.anu.edu.au/~thiebaux/papers/ijcai03.pdf
-/// @param program is the program
-/// @return is the RuleStrata
 extern RuleStrata compute_rule_stratification(View<Index<formalism::datalog::Program>, formalism::datalog::Repository> program);
 }
 
