@@ -25,7 +25,10 @@
 #include "tyr/formalism/datalog/repository.hpp"  // for Repository
 #include "tyr/formalism/datalog/views.hpp"
 
-#include <algorithm>      // for all_of, any_of
+#include <algorithm>  // for all_of, any_of
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/strong_components.hpp>
+#include <boost/graph/topological_sort.hpp>
 #include <gtl/phmap.hpp>  // for flat_hash_map
 #include <stdexcept>      // for runtime_error
 #include <utility>        // for move
@@ -38,140 +41,169 @@ namespace tyr::analysis
 
 namespace details
 {
-enum class StratumStatus
+enum class EdgeKind : uint8_t
 {
-    UNCONSTRAINED = 0,
-    LOWER = 1,
-    STRICTLY_LOWER = 2,
+    NonStrict = 0,
+    Strict = 1
 };
 
-struct PredicateStrata
+struct EdgeProps
 {
-    std::vector<UnorderedSet<Index<f::Predicate<f::FluentTag>>>> strata;
+    EdgeKind kind = EdgeKind::NonStrict;
 };
 
-static PredicateStrata compute_predicate_stratification(View<Index<fd::Program>, fd::Repository> program)
+// Graph of derived atom dependencies
+using DepGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, EdgeProps>;
+
+using DepV = boost::graph_traits<DepGraph>::vertex_descriptor;
+using DepE = boost::graph_traits<DepGraph>::edge_descriptor;
+
+// Directed acyclic graph of strongly connected components of the dependency graph
+using Dag = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, boost::no_property, EdgeProps>;
+
+using DagV = boost::graph_traits<Dag>::vertex_descriptor;
+using DagE = boost::graph_traits<Dag>::edge_descriptor;
+
+// Build dependency graph: nodes = fluent predicates
+static DepGraph build_dependency_graph(View<Index<fd::Program>, fd::Repository> program, size_t num_predicates)
 {
-    auto R = UnorderedMap<Index<f::Predicate<f::FluentTag>>, UnorderedMap<Index<f::Predicate<f::FluentTag>>, StratumStatus>> {};
+    DepGraph graph(num_predicates);
 
-    const auto& predicates = program.get_predicates<f::FluentTag>().get_data();
-
-    // lines 2-4
-    for (const auto predicate_1 : predicates)
-    {
-        for (const auto predicate_2 : predicates)
-        {
-            R[predicate_1][predicate_2] = StratumStatus::UNCONSTRAINED;
-        }
-    }
-
-    // lines 5-10
     for (const auto rule : program.get_rules())
     {
-        const auto head_predicate = rule.get_head().get_predicate().get_index();
+        const auto h_predicate = rule.get_head().get_predicate().get_index();
 
         for (const auto literal : rule.get_body().get_literals<f::FluentTag>())
         {
-            const auto body_predicate = literal.get_atom().get_predicate().get_index();
+            const auto b_predicate = literal.get_atom().get_predicate().get_index();
 
-            if (!literal.get_polarity())
-            {
-                R[body_predicate][head_predicate] = StratumStatus::STRICTLY_LOWER;
-            }
-            else
-            {
-                R[body_predicate][head_predicate] = StratumStatus::LOWER;
-            }
+            EdgeProps ep;
+            ep.kind = literal.get_polarity() ? EdgeKind::NonStrict : EdgeKind::Strict;
+            boost::add_edge(b_predicate.value, h_predicate.value, ep, graph);
         }
     }
 
-    // lines 11-15
-    for (const auto& predicate_1 : predicates)
+    return graph;
+}
+
+// Run SCCs, check stratifiability, return component id per vertex and #components
+static std::pair<std::vector<uint_t>, uint_t> compute_scc_and_check(const DepGraph& g)
+{
+    auto comp = std::vector<uint_t>(boost::num_vertices(g), std::numeric_limits<uint_t>::max());
+    const auto num = boost::strong_components(g, boost::make_iterator_property_map(comp.begin(), boost::get(boost::vertex_index, g)));
+
+    // Stratifiable iff no STRICT edge stays within the same SCC
+    for (auto e_it = boost::edges(g); e_it.first != e_it.second; ++e_it.first)
     {
-        for (const auto& predicate_2 : predicates)
-        {
-            for (const auto& predicate_3 : predicates)
-            {
-                if (std::min(static_cast<int>(R.at(predicate_2).at(predicate_1)), static_cast<int>(R.at(predicate_1).at(predicate_3))) > 0)
-                {
-                    R.at(predicate_2).at(predicate_3) = static_cast<StratumStatus>(std::max({ static_cast<int>(R.at(predicate_2).at(predicate_1)),
-                                                                                              static_cast<int>(R.at(predicate_1).at(predicate_3)),
-                                                                                              static_cast<int>(R.at(predicate_2).at(predicate_3)) }));
-                }
-            }
-        }
+        DepE e = *e_it.first;
+        if (g[e].kind != EdgeKind::Strict)
+            continue;
+
+        const auto u = boost::source(e, g);
+        const auto v = boost::target(e, g);
+        if (comp[u] == comp[v])
+            throw std::runtime_error("Set of ground axioms is not stratifiable (negative cycle within SCC).");
     }
 
-    // lines 16-27
-    if (std::any_of(predicates.begin(),
-                    predicates.end(),
-                    [&R](const auto& predicate) { return R.at(predicate).at(predicate) == StratumStatus::STRICTLY_LOWER; }))
+    return { comp, num };
+}
+
+// Build condensed DAG of SCCs, with edge weight inc=1 if any strict edge exists between SCCs
+static Dag build_condensation_dag(const DepGraph& g, const std::vector<uint_t>& comp, uint_t num_comps)
+{
+    Dag dag(num_comps);
+
+    auto best = UnorderedMap<std::pair<uint_t, uint_t>, EdgeKind> {};
+    best.reserve(boost::num_edges(g));
+
+    for (auto e_it = boost::edges(g); e_it.first != e_it.second; ++e_it.first)
     {
-        throw std::runtime_error("Set of rules is not stratifiable.");
+        const auto e = *e_it.first;
+        const auto u = boost::source(e, g);
+        const auto v = boost::target(e, g);
+
+        const auto cu = comp[u];
+        const auto cv = comp[v];
+        if (cu == cv)
+            continue;
+
+        const auto k = std::make_pair(cu, cv);
+        auto& slot = best[k];
+        if (slot != EdgeKind::Strict && g[e].kind == EdgeKind::Strict)
+            slot = EdgeKind::Strict;
     }
 
-    auto predicate_strata = PredicateStrata {};
-    auto remaining = UnorderedSet<Index<f::Predicate<f::FluentTag>>>(predicates.begin(), predicates.end());
-    while (!remaining.empty())
+    for (const auto& [k, inc] : best)
     {
-        auto stratum = UnorderedSet<Index<f::Predicate<f::FluentTag>>> {};
-        for (const auto& predicate_1 : remaining)
-        {
-            if (std::all_of(remaining.begin(),
-                            remaining.end(),
-                            [&R, &predicate_1](const auto& predicate_2) { return R.at(predicate_2).at(predicate_1) != StratumStatus::STRICTLY_LOWER; }))
-            {
-                stratum.insert(predicate_1);
-            }
-        }
-
-        for (const auto& predicate : stratum)
-        {
-            remaining.erase(predicate);
-        }
-
-        predicate_strata.strata.push_back(std::move(stratum));
+        const auto cu = k.first;
+        const auto cv = k.second;
+        EdgeProps ep;
+        ep.kind = inc;
+        boost::add_edge(cu, cv, ep, dag);
     }
 
-    return predicate_strata;
+    return dag;
+}
+
+// Compute minimal strata on SCC DAG: s[dst] = max(s[dst], s[src] + inc)
+static std::vector<uint_t> compute_component_strata(const Dag& dag)
+{
+    auto topo = std::vector<DagV> {};
+    topo.reserve(boost::num_vertices(dag));
+    boost::topological_sort(dag, std::back_inserter(topo));  // reverse topological order
+
+    std::reverse(topo.begin(), topo.end());
+
+    auto s = std::vector<uint_t>(boost::num_vertices(dag), 0);
+
+    for (const auto u : topo)
+    {
+        for (auto oe = boost::out_edges(u, dag); oe.first != oe.second; ++oe.first)
+        {
+            const auto e = *oe.first;
+            const auto v = boost::target(e, dag);
+            s[v] = std::max(s[v], s[u] + (dag[e].kind == EdgeKind::Strict ? 1u : 0u));
+        }
+    }
+    return s;
 }
 }
 
-/// @brief Compute the rule stratification for the rules in the given program.
-/// An implementation of Algorithm 1 by Thiébaux-et-al-ijcai2003
-/// Source: https://users.cecs.anu.edu.au/~thiebaux/papers/ijcai03.pdf
-/// @param program is the program
-/// @return is the RuleStrata
 RuleStrata compute_rule_stratification(View<Index<fd::Program>, fd::Repository> program)
 {
-    const auto predicate_stratification = details::compute_predicate_stratification(program);
+    const auto num_predicates = program.get_predicates<f::FluentTag>().size();
 
-    auto rule_strata = RuleStrata {};
+    // 1) dependency graph
+    const auto dep = details::build_dependency_graph(program, num_predicates);
 
-    auto remaining_rules = UnorderedSet<Index<fd::Rule>>(program.get_rules().get_data().begin(), program.get_rules().get_data().end());
+    // 2) SCC + check
+    const auto [comp, num_comps] = details::compute_scc_and_check(dep);
 
-    for (const auto& predicate_stratum : predicate_stratification.strata)
-    {
-        auto stratum = UnorderedSet<Index<fd::Rule>> {};
+    // 3) Condensed DAG
+    const auto dag = details::build_condensation_dag(dep, comp, num_comps);
 
-        for (const auto rule : remaining_rules)
-        {
-            if (predicate_stratum.count(make_view(rule, program.get_context()).get_head().get_predicate().get_index()))
-            {
-                stratum.insert(rule);
-            }
-        }
+    // 4) Component strata
+    const auto comp_stratum = details::compute_component_strata(dag);
 
-        for (const auto rule : stratum)
-        {
-            remaining_rules.erase(rule);
-        }
+    // 5) Assign each fluent predicate to a stratum
+    auto predicate_stratum = std::vector<uint_t>(num_predicates, 0);
+    for (uint_t i = 0; i < num_predicates; ++i)
+        predicate_stratum[i] = comp_stratum[comp[i]];
 
-        rule_strata.data.push_back(RuleStratum(stratum.begin(), stratum.end()));
-    }
+    // 6) Bucket axioms by head stratum
+    auto max_s = uint_t(0);
+    for (auto s : comp_stratum)
+        max_s = std::max(max_s, s);
 
-    // std::cout << rule_strata.data << std::endl;
+    auto buckets = std::vector<IndexList<fd::Rule>>(max_s + 1);
+    for (const auto rule : program.get_rules())
+        buckets[predicate_stratum[uint_t(rule.get_head().get_predicate().get_index())]].push_back(rule.get_index());
 
-    return rule_strata;
+    auto out = RuleStrata {};
+    out.data.reserve(buckets.size());
+    for (auto& b : buckets)
+        out.data.emplace_back(RuleStratum(std::move(b)));
+
+    return out;
 }
 }

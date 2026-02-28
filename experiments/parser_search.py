@@ -20,6 +20,10 @@ def add_total_time(content, props):
     if "total_time_ms" in props:
         props["total_time"] = props["total_time_ms"] / 1000
 
+def add_preprocessing_time(content, props):
+    if "total_time" in props and "search_time" in props:
+        props["preprocessing_time"] = max(0., props["total_time"] - props["search_time"])
+
 def add_search_time_us_per_expanded(context, props):
     if "search_time_ns" in props:
         if props["num_expanded"] == 0:
@@ -87,6 +91,7 @@ class SearchParser(Parser):
         self.add_function(process_unsolvable)
         self.add_function(add_search_time)
         self.add_function(add_total_time)
+        self.add_function(add_preprocessing_time)
         self.add_function(add_search_time_us_per_expanded)
         self.add_function(add_memory)
         self.add_function(add_coverage)
@@ -106,5 +111,6 @@ class SearchParser(Parser):
             "num_generated",
             Attribute("search_time_us_per_expanded", function=geometric_mean),
             Attribute("total_time", function=geometric_mean),
+            Attribute("preprocessing_time", function=geometric_mean),
             "memory",
         ]
