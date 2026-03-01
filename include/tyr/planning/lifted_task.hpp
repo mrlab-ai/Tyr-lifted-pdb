@@ -45,7 +45,7 @@ public:
                View<Index<formalism::planning::Task>, formalism::planning::Repository> task,
                std::shared_ptr<formalism::planning::BinaryFDRContext> fdr_context);
 
-    GroundTaskPtr get_ground_task();
+    GroundTaskPtr instantiate_ground_task();
 
     /**
      * Getters

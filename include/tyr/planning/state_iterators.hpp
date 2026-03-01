@@ -51,7 +51,7 @@ public:
     value_type operator*() const noexcept
     {
         assert(m_data);
-        return Index<formalism::planning::GroundAtom<Tag>> { m_i };
+        return Index<formalism::planning::GroundAtom<Tag>> { static_cast<uint_t>(m_i) };
     }
 
     AtomIterator& operator++() noexcept
@@ -128,7 +128,7 @@ public:
     value_type operator*() const noexcept
     {
         assert(m_data);
-        return { Index<formalism::planning::GroundFunctionTerm<Tag>> { m_i }, (*m_data)[m_i] };
+        return { Index<formalism::planning::GroundFunctionTerm<Tag>> { static_cast<uint_t>(m_i) }, (*m_data)[m_i] };
     }
 
     FunctionTermValueIterator& operator++() noexcept

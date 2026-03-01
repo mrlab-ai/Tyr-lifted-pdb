@@ -40,7 +40,7 @@ public:
     State(const GroundTask& task, SharedObjectPoolPtr<UnpackedState<GroundTask>> unpacked) noexcept;
 
     /**
-     * StateConcept
+     * IndexableStateConcept
      */
 
     StateIndex get_index() const;
@@ -54,7 +54,7 @@ public:
     bool test(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> index) const;
 
     /**
-     * Iterators
+     * IterableStateConcept
      */
 
     AtomRange<formalism::StaticTag> get_static_atoms() const noexcept;
@@ -69,10 +69,6 @@ public:
 
     const GroundTask& get_task() const noexcept;
     const UnpackedState<GroundTask>& get_unpacked_state() const noexcept;
-
-    /**
-     * For GroundTask
-     */
 
     template<formalism::FactKind T>
     const boost::dynamic_bitset<>& get_atoms() const noexcept;

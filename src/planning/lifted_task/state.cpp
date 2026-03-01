@@ -80,6 +80,7 @@ FunctionTermValueRange<formalism::FluentTag> State<LiftedTask>::get_fluent_fterm
     return FunctionTermValueRange<formalism::FluentTag>(get_numeric_variables<formalism::FluentTag>());
 }
 
-static_assert(StateConcept<State<LiftedTask>, LiftedTask>);
+static_assert(IterableStateConcept<State<LiftedTask>>);
+static_assert(IndexableStateConcept<State<LiftedTask>, LiftedTask>);
 
 }

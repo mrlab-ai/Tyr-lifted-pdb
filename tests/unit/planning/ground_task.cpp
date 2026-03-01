@@ -30,7 +30,7 @@ static p::GroundTaskPtr compute_ground_task(const fs::path& domain_filepath, con
     auto parser = p::Parser(domain_filepath);
     auto domain = parser.get_domain();
     auto lifted_task = parser.parse_task(problem_filepath);
-    return lifted_task->get_ground_task();
+    return lifted_task->instantiate_ground_task();
 }
 
 static fs::path absolute(const std::string& subdir) { return fs::path(std::string(DATA_DIR)) / subdir; }

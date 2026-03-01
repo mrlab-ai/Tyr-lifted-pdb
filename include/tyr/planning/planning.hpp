@@ -31,6 +31,7 @@
 #include "tyr/planning/ground_task/axiom_evaluator.hpp"
 #include "tyr/planning/ground_task/node.hpp"
 #include "tyr/planning/ground_task/state.hpp"
+#include "tyr/planning/ground_task/state_iterators.hpp"
 #include "tyr/planning/ground_task/state_repository.hpp"
 #include "tyr/planning/ground_task/successor_generator.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
@@ -43,6 +44,7 @@
 #include "tyr/planning/lifted_task/heuristics/max.hpp"
 #include "tyr/planning/lifted_task/node.hpp"
 #include "tyr/planning/lifted_task/state.hpp"
+#include "tyr/planning/lifted_task/state_iterators.hpp"
 #include "tyr/planning/lifted_task/state_repository.hpp"
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
@@ -54,6 +56,7 @@
 #include "tyr/planning/programs/ground.hpp"
 #include "tyr/planning/search_node.hpp"
 #include "tyr/planning/state_index.hpp"
+#include "tyr/planning/state_iterators.hpp"
 #include "tyr/planning/state_repository.hpp"
 
 #endif

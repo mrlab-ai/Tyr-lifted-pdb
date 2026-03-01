@@ -49,13 +49,22 @@ concept FunctionTermValueRangeConcept =
     std::ranges::input_range<R>
     && std::same_as<std::remove_cvref_t<std::ranges::range_value_t<R>>, std::pair<Index<formalism::planning::GroundFunctionTerm<Tag>>, float_t>>;
 
+template<typename T>
+concept IterableStateConcept = requires(const T& cs) {
+    requires AtomRangeConcept<decltype(cs.get_static_atoms()), formalism::StaticTag>;
+    requires FactRangeConcept<decltype(cs.get_fluent_facts()), formalism::FluentTag>;
+    requires AtomRangeConcept<decltype(cs.get_derived_atoms()), formalism::DerivedTag>;
+    requires FunctionTermValueRangeConcept<decltype(cs.get_static_fterm_values()), formalism::StaticTag>;
+    requires FunctionTermValueRangeConcept<decltype(cs.get_fluent_fterm_values()), formalism::FluentTag>;
+};
+
 template<typename T, typename Task>
-concept StateConcept = requires(const T& cs,
-                                Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
-                                Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> static_fterm,
-                                Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> fluent_fterm,
-                                Index<formalism::planning::GroundAtom<formalism::StaticTag>> static_atom,
-                                Index<formalism::planning::GroundAtom<formalism::DerivedTag>> derived_atom) {
+concept IndexableStateConcept = requires(const T& cs,
+                                         Index<formalism::planning::FDRVariable<formalism::FluentTag>> variable,
+                                         Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> static_fterm,
+                                         Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> fluent_fterm,
+                                         Index<formalism::planning::GroundAtom<formalism::StaticTag>> static_atom,
+                                         Index<formalism::planning::GroundAtom<formalism::DerivedTag>> derived_atom) {
     requires std::same_as<typename T::TaskType, Task>;
     { cs.get_index() } -> std::same_as<StateIndex>;
     { cs.get(variable) } -> std::same_as<formalism::planning::FDRValue>;
@@ -64,12 +73,6 @@ concept StateConcept = requires(const T& cs,
     { cs.test(static_atom) } -> std::same_as<bool>;
     { cs.test(derived_atom) } -> std::same_as<bool>;
     { cs.get_task() } -> std::same_as<const Task&>;
-
-    requires AtomRangeConcept<decltype(cs.get_static_atoms()), formalism::StaticTag>;
-    requires FactRangeConcept<decltype(cs.get_fluent_facts()), formalism::FluentTag>;
-    requires AtomRangeConcept<decltype(cs.get_derived_atoms()), formalism::DerivedTag>;
-    requires FunctionTermValueRangeConcept<decltype(cs.get_static_fterm_values()), formalism::StaticTag>;
-    requires FunctionTermValueRangeConcept<decltype(cs.get_fluent_fterm_values()), formalism::FluentTag>;
 };
 
 template<typename Task>

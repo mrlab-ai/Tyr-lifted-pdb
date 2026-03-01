@@ -52,7 +52,7 @@ public:
     value_type operator*() const noexcept
     {
         assert(m_data);
-        return Data<formalism::planning::FDRFact<Tag>> { Index<formalism::planning::FDRVariable<Tag>> { m_i }, (*m_data)[m_i] };
+        return Data<formalism::planning::FDRFact<Tag>> { Index<formalism::planning::FDRVariable<Tag>> { static_cast<uint_t>(m_i) }, (*m_data)[m_i] };
     }
 
     FDRFactIterator& operator++() noexcept

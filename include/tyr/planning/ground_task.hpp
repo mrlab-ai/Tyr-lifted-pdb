@@ -60,7 +60,6 @@ public:
 
     auto get_task() const noexcept { return m_fdr_task; }
 
-    auto& get_repository() noexcept { return m_overlay_repository; }
     const auto& get_repository() const noexcept { return m_overlay_repository; }
 
     const auto& get_action_match_tree() const noexcept { return m_action_match_tree; }

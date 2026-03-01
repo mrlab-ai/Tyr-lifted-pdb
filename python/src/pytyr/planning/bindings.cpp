@@ -17,6 +17,9 @@
 
 #include "../init_declarations.hpp"
 
+namespace f = tyr::formalism;
+namespace fp = tyr::formalism::planning;
+
 namespace tyr::planning
 {
 
@@ -26,19 +29,136 @@ void bind_module_definitions(nb::module_& m)
      * Domain
      */
 
-    nb::class_<Domain>(m, "Domain");
+    nb::class_<Domain>(m, "Domain")  //
+        .def("get_repository", &Domain::get_repository)
+        .def("get_domain", &Domain::get_domain);
 
     /**
      * GroundTask
      */
 
-    nb::class_<GroundTask>(m, "GroundTask");
+    nb::class_<GroundTask>(m, "GroundTask")  //
+        .def("get_repository", &GroundTask::get_repository)
+        .def("get_task", &GroundTask::get_task);
 
     /**
      * LiftedTask
      */
 
-    nb::class_<LiftedTask>(m, "LiftedTask");
+    nb::class_<LiftedTask>(m, "LiftedTask")  //
+        .def("get_repository", &LiftedTask::get_repository)
+        .def("get_task", &LiftedTask::get_task)
+        .def("instantiate_ground_task", &LiftedTask::instantiate_ground_task);
+
+    /**
+     * State<GroundTask>
+     */
+
+    nb::class_<State<GroundTask>>(m, "GroundState")  //
+        .def("get_index", &State<GroundTask>::get_index)
+        .def("get_task", &State<GroundTask>::get_task, nb::rv_policy::reference_internal)
+        // AccessibleStateConcept
+        .def("test", nb::overload_cast<Index<fp::GroundAtom<f::StaticTag>>>(&State<GroundTask>::test, nb::const_), "index"_a)
+        .def("test", nb::overload_cast<Index<fp::GroundAtom<f::DerivedTag>>>(&State<GroundTask>::test, nb::const_), "index"_a)
+        .def("get", nb::overload_cast<Index<fp::GroundFunctionTerm<f::StaticTag>>>(&State<GroundTask>::get, nb::const_), "index"_a)
+        .def("get", nb::overload_cast<Index<fp::FDRVariable<f::FluentTag>>>(&State<GroundTask>::get, nb::const_), "index"_a)
+        .def("get", nb::overload_cast<Index<fp::GroundFunctionTerm<f::FluentTag>>>(&State<GroundTask>::get, nb::const_), "index"_a)
+        // IterableStateConcept
+        .def(
+            "static_atoms",
+            [](const State<GroundTask>& s)
+            {
+                auto r = s.get_static_atoms();
+                return nb::make_iterator(nb::type<AtomRange<f::StaticTag>>(), "static atom iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>())
+        .def(
+            "fluent_facts",
+            [](const State<GroundTask>& s)
+            {
+                auto r = s.get_fluent_facts();
+                return nb::make_iterator(nb::type<FDRFactRange<GroundTask, f::FluentTag>>(), "fluent fact iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>())
+        .def(
+            "derived_atoms",
+            [](const State<GroundTask>& s)
+            {
+                auto r = s.get_derived_atoms();
+                return nb::make_iterator(nb::type<AtomRange<f::DerivedTag>>(), "derived atom iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>())
+        .def(
+            "static_fterm_values",
+            [](const State<GroundTask>& s)
+            {
+                auto r = s.get_static_fterm_values();
+                return nb::make_iterator(nb::type<FunctionTermValueRange<f::StaticTag>>(), "static function term value iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>())
+        .def(
+            "fluent_fterm_values",
+            [](const State<GroundTask>& s)
+            {
+                auto r = s.get_fluent_fterm_values();
+                return nb::make_iterator(nb::type<FunctionTermValueRange<f::FluentTag>>(), "fluent function term value iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>());
+
+    /**
+     * State<LiftedTask>
+     */
+
+    nb::class_<State<LiftedTask>>(m, "LiftedState")  //
+        .def("get_index", &State<LiftedTask>::get_index)
+        .def("get_task", &State<LiftedTask>::get_task, nb::rv_policy::reference_internal)
+        // AccessibleStateConcept
+        .def("test", nb::overload_cast<Index<fp::GroundAtom<f::StaticTag>>>(&State<LiftedTask>::test, nb::const_), "index"_a)
+        .def("test", nb::overload_cast<Index<fp::GroundAtom<f::DerivedTag>>>(&State<LiftedTask>::test, nb::const_), "index"_a)
+        .def("get", nb::overload_cast<Index<fp::GroundFunctionTerm<f::StaticTag>>>(&State<LiftedTask>::get, nb::const_), "index"_a)
+        .def("get", nb::overload_cast<Index<fp::FDRVariable<f::FluentTag>>>(&State<LiftedTask>::get, nb::const_), "index"_a)
+        .def("get", nb::overload_cast<Index<fp::GroundFunctionTerm<f::FluentTag>>>(&State<LiftedTask>::get, nb::const_), "index"_a)
+        // IterableStateConcept
+        .def(
+            "static_atoms",
+            [](const State<LiftedTask>& s)
+            {
+                auto r = s.get_static_atoms();
+                return nb::make_iterator(nb::type<AtomRange<f::StaticTag>>(), "static atom iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>())
+        .def(
+            "fluent_facts",
+            [](const State<LiftedTask>& s)
+            {
+                auto r = s.get_fluent_facts();
+                return nb::make_iterator(nb::type<FDRFactRange<LiftedTask, f::FluentTag>>(), "fluent fact iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>())
+        .def(
+            "derived_atoms",
+            [](const State<LiftedTask>& s)
+            {
+                auto r = s.get_derived_atoms();
+                return nb::make_iterator(nb::type<AtomRange<f::DerivedTag>>(), "derived atom iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>())
+        .def(
+            "static_fterm_values",
+            [](const State<LiftedTask>& s)
+            {
+                auto r = s.get_static_fterm_values();
+                return nb::make_iterator(nb::type<FunctionTermValueRange<f::StaticTag>>(), "static function term value iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>())
+        .def(
+            "fluent_fterm_values",
+            [](const State<LiftedTask>& s)
+            {
+                auto r = s.get_fluent_fterm_values();
+                return nb::make_iterator(nb::type<FunctionTermValueRange<f::FluentTag>>(), "fluent function term value iterator", std::begin(r), std::end(r));
+            },
+            nb::keep_alive<0, 1>());
 
     /**
      * Parser

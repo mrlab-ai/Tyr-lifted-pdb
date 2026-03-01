@@ -427,12 +427,6 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
     canonicalize(ground_actions);
     canonicalize(ground_axioms);
 
-    std::cout << "Num fluent atoms: " << fluent_atoms.size() << std::endl;
-    std::cout << "Num derived atoms: " << derived_atoms.size() << std::endl;
-    std::cout << "Num fluent fterms: " << fluent_fterms.size() << std::endl;
-    std::cout << "Num ground actions: " << ground_actions.size() << std::endl;
-    std::cout << "Num ground axioms: " << ground_axioms.size() << std::endl;
-
     return create_fdr_task(lifted_task.get_domain(), lifted_task.get_task(), fluent_atoms, derived_atoms, fluent_fterms, ground_actions, ground_axioms);
 }
 

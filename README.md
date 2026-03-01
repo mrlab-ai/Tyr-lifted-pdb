@@ -86,7 +86,7 @@ auto parser = tyr::formalism::Parser("domain.pddl");
 auto task = parser.parse_task("problem.pddl");
 
 // Ground the task
-auto ground_task = task.get_ground_task();
+auto ground_task = task.instantiate_ground_task();
 auto successor_generator = SuccessorGenerator<tyr::planning::GroundTask>(ground_task);
 
 // Get the initial node (state + metric value)
