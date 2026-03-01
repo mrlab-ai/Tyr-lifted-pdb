@@ -12,28 +12,26 @@ def process_invalid(content, props):
 def process_unsolvable(content, props):
     props["unsolvable"] = int("unsolvable" in props)
 
-def add_search_time(content, props):
-    if "search_time_ms" in props:
-        props["search_time"] = props["search_time_ms"] / 1000
-
-def add_total_time(content, props):
-    if "total_time_ms" in props:
-        props["total_time"] = props["total_time_ms"] / 1000
-
-def add_preprocessing_time(content, props):
-    if "total_time" in props and "search_time" in props:
-        props["preprocessing_time"] = max(0., props["total_time"] - props["search_time"])
-
-def add_search_time_us_per_expanded(context, props):
+def add_search_time_s(content, props):
     if "search_time_ns" in props:
-        if props["num_expanded"] == 0:
-            props["search_time_us_per_expanded"] = 1
-        else:
-            props["search_time_us_per_expanded"] = props["search_time_ns"] / 1000 / props["num_expanded"]
+        props["search_time_s"] = props["search_time_ns"] / 1_000_000_000
 
-def add_memory(content, props):
+def add_total_time_s(content, props):
+    if "total_time_ns" in props:
+        props["total_time_s"] = props["total_time_ns"] / 1_000_000_000
+
+def add_preprocessing_time_s(content, props):
+    if "total_time_ns" in props and "search_time_ns" in props:
+        props["preprocessing_time_s"] = (props["total_time_ns"] - props["search_time_ns"]) / 1_000_000_000
+
+def add_search_time_ms_per_expanded(context, props):
+    if "search_time_ns" in props and "num_expanded" in props:
+        if props["num_expanded"] > 0:
+            props["search_time_ms_per_expanded"] = props["search_time_ns"] / 1_000_000 / props["num_expanded"]
+
+def add_memory_mb(content, props):
     if "peak_memory_usage_bytes" in props:
-        props["memory"] = props["peak_memory_usage_bytes"] / 1000000
+        props["memory_mb"] = props["peak_memory_usage_bytes"] / 1_000_000
 
 def add_coverage(content, props):
     if "length" in props or props.get("unsolvable", 0):
@@ -72,14 +70,15 @@ class SearchParser(Parser):
         super().__init__()
         self.add_pattern("cost", r"\[GBFS\] Plan cost: (\d+)", type=int)
         self.add_pattern("length", r"\[GBFS\] Plan length: (\d+)", type=int)
-        
         self.add_pattern("initial_h_value", r"\[GBFS\] Start node h_value: (\d+)", type=int)
+
         self.add_pattern("search_time_ms", r"\[Search\] Search time: (\d+) ms", type=int)
         self.add_pattern("search_time_ns", r"\[Search\] Search time: \d+ ms \((\d+) ns\)", type=int)
         self.add_pattern("num_expanded", r"\[Search\] Number of expanded states: (\d+)", type=int)
         self.add_pattern("num_generated", r"\[Search\] Number of generated states: (\d+)", type=int)
 
         self.add_pattern("total_time_ms", r"\[Total\] Total time: (\d+) ms", type=int)
+        self.add_pattern("total_time_ns", r"\[Total\] Total time: \d+ ms \((\d+) ns\)", type=int)
         self.add_pattern("peak_memory_usage_bytes", r"\[Total\] Peak memory usage: (\d+) bytes", type=int)
 
         self.add_pattern("unsolvable", r"(Task is unsolvable!)", type=str)
@@ -89,11 +88,11 @@ class SearchParser(Parser):
         
         self.add_function(process_invalid)
         self.add_function(process_unsolvable)
-        self.add_function(add_search_time)
-        self.add_function(add_total_time)
-        self.add_function(add_preprocessing_time)
-        self.add_function(add_search_time_us_per_expanded)
-        self.add_function(add_memory)
+        self.add_function(add_search_time_s)
+        self.add_function(add_total_time_s)
+        self.add_function(add_preprocessing_time_s)
+        self.add_function(add_search_time_ms_per_expanded)
+        self.add_function(add_memory_mb)
         self.add_function(add_coverage)
 
     @staticmethod
@@ -106,11 +105,11 @@ class SearchParser(Parser):
             "unsolvable",
             "invalid",
             "initial_h_value",
-            Attribute("search_time", function=geometric_mean),
+            Attribute("search_time_s", function=geometric_mean, digits=2),
             "num_expanded",
             "num_generated",
-            Attribute("search_time_us_per_expanded", function=geometric_mean),
-            Attribute("total_time", function=geometric_mean),
-            Attribute("preprocessing_time", function=geometric_mean),
-            "memory",
+            Attribute("search_time_ms_per_expanded", function=geometric_mean, digits=2),
+            Attribute("total_time_s", function=geometric_mean, digits=2),
+            Attribute("preprocessing_time_s", function=geometric_mean, digits=2),
+            Attribute("memory_mb", function=geometric_mean),
         ]
