@@ -18,17 +18,13 @@
 #include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 
 #include "tyr/common/declarations.hpp"
-<<<<<<< HEAD
 #include "tyr/common/itertools.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"
-    =======
-#include "tyr/formalism/overlay_repository.hpp"
-#include "tyr/formalism/planning/builder.hpp"
-    >>>>>>> 75f7e95 (work on task projection)
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/variable_dependency_graph.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
@@ -42,7 +38,7 @@
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
-    namespace f = tyr::formalism;
+namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
@@ -228,13 +224,8 @@ ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const Pat
 static auto project_state(const State<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
 {
     auto uastate = state_repository.get_unregistered_state();
-    auto bitset = element.get_atoms<f::FluentTag>();
-    for (auto bit = bitset.find_first(); bit != boost::dynamic_bitset<>::npos; bit = bitset.find_next(bit))
+    for (const auto& fact : element.get_fluent_facts())
     {
-        const auto var = Index<fp::FDRVariable<f::FluentTag>> { bit };
-        const auto val = element.get(var);
-        const auto fact = Data<fp::FDRFact<f::FluentTag>>(var, val);
-
         if (!pattern.facts.contains(fact))
             continue;
 
@@ -256,6 +247,12 @@ void ProjectionGenerator<LiftedTask>::generate()
         // TODO: make sure the projected task is correct
         std::cout << projected_task.get_domain() << std::endl;
         std::cout << projected_task << std::endl;
+
+        for (const auto action : projected_task.get_domain().get_actions())
+        {
+            auto vdg = fp::VariableDependencyGraph(action);
+            std::cout << vdg << std::endl;
+        }
 
         // Step 2: Create the lifted projected task
         auto projected_lifted_task = std::make_shared<LiftedTask>(m_task.get_domain(), repository, projected_task, m_task.get_fdr_context());

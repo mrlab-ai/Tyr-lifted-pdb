@@ -19,7 +19,6 @@
 #define TYR_PLANNING_LIFTED_TASK_ABSTRACTIONS_PROJECTION_GENERATOR_HPP_
 
 #include "tyr/common/declarations.hpp"
-#include "tyr/formalism/overlay_repository.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
