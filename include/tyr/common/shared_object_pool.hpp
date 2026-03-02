@@ -401,8 +401,8 @@ public:
     SharedObjectPool() noexcept = default;
     SharedObjectPool(const SharedObjectPool& other) = delete;
     SharedObjectPool& operator=(const SharedObjectPool& other) = delete;
-    SharedObjectPool(SharedObjectPool&& other) noexcept = delete;
-    SharedObjectPool& operator=(SharedObjectPool&& other) noexcept = delete;
+    SharedObjectPool(SharedObjectPool&& other) noexcept = default;
+    SharedObjectPool& operator=(SharedObjectPool&& other) noexcept = default;
 
     [[nodiscard]] SharedObjectPoolPtr<T, true> get_or_allocate()
     {
@@ -467,8 +467,8 @@ public:
     SharedObjectPool() noexcept = default;
     SharedObjectPool(const SharedObjectPool& other) = delete;
     SharedObjectPool& operator=(const SharedObjectPool& other) = delete;
-    SharedObjectPool(SharedObjectPool&& other) noexcept = delete;
-    SharedObjectPool& operator=(SharedObjectPool&& other) noexcept = delete;
+    SharedObjectPool(SharedObjectPool&& other) noexcept = default;
+    SharedObjectPool& operator=(SharedObjectPool&& other) noexcept = default;
 
     [[nodiscard]] SharedObjectPoolPtr<T, false> get_or_allocate()
     {

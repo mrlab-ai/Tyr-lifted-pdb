@@ -43,6 +43,8 @@ public:
 
     State<GroundTask> get_state(StateIndex state_index);
 
+    const auto& get_state_repository() const noexcept { return m_state_repository; }
+
 private:
     std::shared_ptr<GroundTask> m_task;
 

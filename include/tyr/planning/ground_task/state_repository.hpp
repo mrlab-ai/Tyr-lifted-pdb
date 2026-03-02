@@ -53,6 +53,8 @@ public:
 
     State<GroundTask> register_state(SharedObjectPoolPtr<UnpackedState<GroundTask>> state);
 
+    const auto& get_axiom_evaluator() const noexcept { return m_axiom_evaluator; }
+
 private:
     std::shared_ptr<GroundTask> m_task;
     BitPackedArrayLayout<uint_t> m_fluent_layout;

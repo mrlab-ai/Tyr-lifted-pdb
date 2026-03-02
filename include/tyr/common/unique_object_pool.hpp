@@ -147,8 +147,8 @@ public:
     UniqueObjectPool() noexcept = default;
     UniqueObjectPool(const UniqueObjectPool& other) = delete;
     UniqueObjectPool& operator=(const UniqueObjectPool& other) = delete;
-    UniqueObjectPool(UniqueObjectPool&& other) noexcept = delete;
-    UniqueObjectPool& operator=(UniqueObjectPool&& other) noexcept = delete;
+    UniqueObjectPool(UniqueObjectPool&& other) noexcept = default;
+    UniqueObjectPool& operator=(UniqueObjectPool&& other) noexcept = default;
 
     [[nodiscard]] UniqueObjectPoolPtr<T, true> get_or_allocate()
     {
@@ -211,8 +211,8 @@ public:
     UniqueObjectPool() noexcept = default;
     UniqueObjectPool(const UniqueObjectPool& other) = delete;
     UniqueObjectPool& operator=(const UniqueObjectPool& other) = delete;
-    UniqueObjectPool(UniqueObjectPool&& other) noexcept = delete;
-    UniqueObjectPool& operator=(UniqueObjectPool&& other) noexcept = delete;
+    UniqueObjectPool(UniqueObjectPool&& other) noexcept = default;
+    UniqueObjectPool& operator=(UniqueObjectPool&& other) noexcept = default;
 
     [[nodiscard]] UniqueObjectPoolPtr<T, false> get_or_allocate()
     {
