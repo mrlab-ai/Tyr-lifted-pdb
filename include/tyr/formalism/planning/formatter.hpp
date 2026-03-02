@@ -23,6 +23,7 @@
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/variable_dependency_graph.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
 #include <fmt/core.h>
@@ -1252,6 +1253,37 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::plannin
     return os;
 }
 
+inline std::ostream& print(std::ostream& os, const formalism::planning::VariableDependencyGraph& el)
+{
+    os << "graph {\n";
+
+    const auto k = el.k();
+
+    for (uint_t i = 0; i < k; ++i)
+    {
+        fmt::print(os, "n{} [label=\"V{}\"];\n", i, i);
+    }
+
+    for (uint_t i = 0; i < k; ++i)
+    {
+        for (uint_t j = i + 1; j < k; ++j)
+        {
+            if (el.has_dependency<formalism::StaticTag>(i, j))
+            {
+                fmt::print(os, "n{} -- n{} [color=blue, key=1];\n", i, j);
+            }
+            if (el.has_dependency<formalism::FluentTag>(i, j))
+            {
+                fmt::print(os, "n{} -- n{} [color=red, key=2];\n", i, j);
+            }
+        }
+    }
+
+    os << "}\n";
+
+    return os;
+}
+
 namespace formalism::planning
 {
 template<OpKind Op, typename T>
@@ -1619,6 +1651,8 @@ inline std::ostream& operator<<(std::ostream& os, const View<Index<FDRTask>, C>&
 {
     return tyr::print(os, el);
 }
+
+inline std::ostream& operator<<(std::ostream& os, const VariableDependencyGraph& el) { return tyr::print(os, el); }
 
 }
 }
