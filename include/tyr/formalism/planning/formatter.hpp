@@ -627,6 +627,37 @@ std::ostream& print(std::ostream& os, const formalism::planning::PlanningTask& e
 
 std::ostream& print(std::ostream& os, const formalism::planning::PlanningFDRTask& el);
 
+inline std::ostream& print(std::ostream& os, const formalism::planning::VariableDependencyGraph& el)
+{
+    os << "graph {\n";
+
+    const auto k = el.k();
+
+    for (uint_t i = 0; i < k; ++i)
+    {
+        fmt::print(os, "n{} [label=\"V{}\"];\n", i, i);
+    }
+
+    for (uint_t i = 0; i < k; ++i)
+    {
+        for (uint_t j = i + 1; j < k; ++j)
+        {
+            if (el.has_dependency<formalism::StaticTag>(i, j))
+            {
+                fmt::print(os, "n{} -- n{} [color=blue, key=1];\n", i, j);
+            }
+            if (el.has_dependency<formalism::FluentTag>(i, j))
+            {
+                fmt::print(os, "n{} -- n{} [color=red, key=2];\n", i, j);
+            }
+        }
+    }
+
+    os << "}\n";
+
+    return os;
+}
+
 namespace formalism::planning
 {
 template<OpKind Op, typename T>
@@ -918,6 +949,8 @@ std::ostream& operator<<(std::ostream& os, const FDRFactView<T>& el)
 {
     return tyr::print(os, el);
 }
+
+inline std::ostream& operator<<(std::ostream& os, const VariableDependencyGraph& el) { return tyr::print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const Data<ConjunctiveCondition>& el);
 
