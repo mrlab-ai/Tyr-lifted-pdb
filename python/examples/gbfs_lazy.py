@@ -37,6 +37,10 @@ def main():
     ground_init_node = ground_succ_gen.get_initial_node()
     print(ground_init_node)
     ground_labeled_succ_nodes = ground_succ_gen.get_labeled_successor_nodes(ground_init_node)
+
+    ground_blind = p.ground.BlindHeuristic()
+    ground_astar_eager_options = p.ground.astar_eager.Options()
+    p.ground.astar_eager.find_solution(ground_task, ground_succ_gen, ground_blind, ground_astar_eager_options)
     
 
 
