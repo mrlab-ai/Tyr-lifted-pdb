@@ -7,29 +7,7 @@ from pytyr.pytyr.planning import (
     StateIndex,
 )
 
-from pytyr.pytyr.planning import (
-    LiftedTask,
-    LiftedState,    
-    LiftedNode,    
-    LiftedLabeledNode,
-    LiftedStateRepository,
-    LiftedSuccessorGenerator,
-    LiftedHeuristic,
-    LiftedBlindHeuristic,
-    LiftedMaxHeuristic,
-    LiftedAddHeuristic,
-    LiftedFFHeuristic,
+from . import (
+    ground as ground,
+    lifted as lifted,
 )
-
-from pytyr.pytyr.planning import (
-    GroundTask,
-    GroundState,
-    GroundNode,
-    GroundLabeledNode,
-    GroundStateRepository,
-    GroundSuccessorGenerator,
-    GroundHeuristic,
-    GroundBlindHeuristic,
-    
-)
-

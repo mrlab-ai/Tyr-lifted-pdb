@@ -28,6 +28,10 @@ set(MODULES
     pytyr.formalism
     pytyr.formalism.planning
     pytyr.planning
+    pytyr.planning.ground
+    pytyr.planning.ground.astar_eager
+    pytyr.planning.lifted
+    pytyr.planning.lifted.astar_eager
 )
 
 foreach(mod IN LISTS MODULES)

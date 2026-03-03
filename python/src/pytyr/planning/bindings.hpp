@@ -141,6 +141,16 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
 }
 
 template<typename Task>
+void bind_search_result(nb::module_& m, const std::string& name)
+{
+    nb::class_<SearchResult<Task>>(m, name.c_str())
+        .def(nb::init<>())
+        .def_rw("status", &SearchResult<Task>::status)
+        .def_rw("plan", &SearchResult<Task>::plan)
+        .def_rw("goal_node", &SearchResult<Task>::goal_node);
+}
+
+template<typename Task>
 void bind_heuristic(nb::module_& m, const std::string& name)
 {
     nb::class_<Heuristic<Task>>(m, name.c_str())  //
@@ -174,6 +184,44 @@ void bind_ff_heuristic(nb::module_& m, const std::string& name)
 {
     nb::class_<FFHeuristic<Task>, Heuristic<Task>>(m, name.c_str())  //
         .def(nb::new_([](std::shared_ptr<Task> task) { return FFHeuristic<Task>::create(std::move(task)); }), "task"_a);
+}
+
+namespace astar_eager
+{
+template<typename Task>
+void bind_options(nb::module_& m, const std::string& name)
+{
+    nb::class_<Options<Task>>(m, name.c_str())
+        .def(nb::init<>())
+        .def_rw("start_node", &Options<Task>::start_node)
+        .def_rw("event_handler", &Options<Task>::event_handler)
+        .def_rw("pruning_strategy", &Options<Task>::pruning_strategy)
+        .def_rw("goal_strategy", &Options<Task>::goal_strategy)
+        .def_rw("max_num_states", &Options<Task>::max_num_states)
+        .def_rw("max_time", &Options<Task>::max_time)
+        .def_rw("stop_if_goal", &Options<Task>::stop_if_goal)
+        .def_rw("random_seed", &Options<Task>::random_seed)
+        .def_rw("shuffle_labeled_succ_nodes", &Options<Task>::shuffle_labeled_succ_nodes);
+}
+
+template<typename Task>
+void bind_find_solution(nb::module_& m, const std::string& py_name)
+{
+    m.def(
+        py_name.c_str(),
+        [](Task& task, SuccessorGenerator<Task>& successor_generator, Heuristic<Task>& heuristic, const Options<Task>& options)
+        { return find_solution(task, successor_generator, heuristic, options); },
+        nb::arg("task"),
+        nb::arg("successor_generator"),
+        nb::arg("heuristic"),
+        nb::arg("options"));
+}
+
+template<typename Task>
+void bind_event_handler(nb::module_& m, const std::string& name)
+{
+    nb::class_<EventHandler<Task>>(m, name.c_str());
+}
 }
 
 }
