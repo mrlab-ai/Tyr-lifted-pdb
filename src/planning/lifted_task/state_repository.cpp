@@ -76,7 +76,7 @@ State<LiftedTask> StateRepository<LiftedTask>::get_registered_state(StateIndex s
     fill_atoms(packed_state.template get_atoms<f::DerivedTag>(), m_uint_nodes, m_nodes_buffer, unpacked_state->template get_atoms<f::DerivedTag>());
     fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, m_nodes_buffer, unpacked_state->get_numeric_variables());
 
-    return State<LiftedTask>(*m_task, std::move(unpacked_state));
+    return State<LiftedTask>(shared_from_this(), std::move(unpacked_state));
 }
 
 SharedObjectPoolPtr<UnpackedState<LiftedTask>> StateRepository<LiftedTask>::get_unregistered_state()
@@ -97,7 +97,7 @@ State<LiftedTask> StateRepository<LiftedTask>::register_state(SharedObjectPoolPt
 
     state->set(m_packed_states.insert(PackedState<LiftedTask>(StateIndex(m_packed_states.size()), fluent_atoms, derived_atoms, numeric_variables)));
 
-    return State<LiftedTask>(*m_task, std::move(state));
+    return State<LiftedTask>(shared_from_this(), std::move(state));
 }
 
 static_assert(StateRepositoryConcept<StateRepository<LiftedTask>, LiftedTask>);

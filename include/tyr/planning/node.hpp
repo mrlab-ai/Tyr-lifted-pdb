@@ -53,7 +53,6 @@ using LabeledNodeList = std::vector<LabeledNode<Task>>;
 template<typename T, typename Task>
 concept NodeConcept = requires(const T& cn) {
     { cn.get_state() } -> std::same_as<const State<Task>&>;
-    { cn.get_task() } -> std::same_as<const Task&>;
     { cn.get_metric() } -> std::same_as<float_t>;
 };
 }

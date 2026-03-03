@@ -39,7 +39,7 @@ class State<LiftedTask>
 public:
     using TaskType = LiftedTask;
 
-    State(const LiftedTask& task, SharedObjectPoolPtr<UnpackedState<LiftedTask>> unpacked) noexcept;
+    State(std::shared_ptr<StateRepository<LiftedTask>> owner, SharedObjectPoolPtr<UnpackedState<LiftedTask>> unpacked) noexcept;
 
     /**
      * IndexableStateConcept
@@ -69,7 +69,7 @@ public:
      * Getters
      */
 
-    const LiftedTask& get_task() const noexcept;
+    const std::shared_ptr<StateRepository<LiftedTask>>& get_state_repository() const noexcept;
     const UnpackedState<LiftedTask>& get_unpacked_state() const noexcept;
 
     template<formalism::FactKind T>
@@ -79,17 +79,17 @@ public:
     const std::vector<float_t>& get_numeric_variables() const noexcept;
 
 private:
+    std::shared_ptr<StateRepository<LiftedTask>> m_state_repository;
     SharedObjectPoolPtr<UnpackedState<LiftedTask>> m_unpacked;
-    const LiftedTask* m_task;
 };
 
 /**
  * Implementations
  */
 
-inline State<LiftedTask>::State(const LiftedTask& task, SharedObjectPoolPtr<UnpackedState<LiftedTask>> unpacked) noexcept :
-    m_unpacked(std::move(unpacked)),
-    m_task(&task)
+inline State<LiftedTask>::State(std::shared_ptr<StateRepository<LiftedTask>> owner, SharedObjectPoolPtr<UnpackedState<LiftedTask>> unpacked) noexcept :
+    m_state_repository(std::move(owner)),
+    m_unpacked(std::move(unpacked))
 {
 }
 
@@ -104,7 +104,7 @@ inline float_t State<LiftedTask>::get(Index<formalism::planning::GroundFunctionT
 
 inline bool State<LiftedTask>::test(Index<formalism::planning::GroundAtom<formalism::DerivedTag>> index) const { return m_unpacked->test(index); }
 
-inline const LiftedTask& State<LiftedTask>::get_task() const noexcept { return *m_task; }
+inline const std::shared_ptr<StateRepository<LiftedTask>>& State<LiftedTask>::get_state_repository() const noexcept { return m_state_repository; }
 
 inline const UnpackedState<LiftedTask>& State<LiftedTask>::get_unpacked_state() const noexcept { return *m_unpacked; }
 }

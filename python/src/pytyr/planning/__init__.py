@@ -11,7 +11,6 @@ from pytyr.pytyr.planning import (
     LiftedState,    
     LiftedNode,    
     LiftedLabeledNode,
-    LiftedLabeledNodeList,
     LiftedStateRepository,
     LiftedSuccessorGenerator
 )
@@ -21,7 +20,6 @@ from pytyr.pytyr.planning import (
     GroundState,
     GroundNode,
     GroundLabeledNode,
-    GroundLabeledNodeList,
     GroundStateRepository,
     GroundSuccessorGenerator,
     

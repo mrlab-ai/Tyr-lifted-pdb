@@ -35,10 +35,12 @@
 #include "tyr/planning/ground_task.hpp"        // for GroundTask
 #include "tyr/planning/ground_task/node.hpp"   // for Node
 #include "tyr/planning/ground_task/state.hpp"  // for State
+#include "tyr/planning/ground_task/state_repository.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 #include "tyr/planning/lifted_task.hpp"        // for LiftedTask
 #include "tyr/planning/lifted_task/node.hpp"   // for Node
 #include "tyr/planning/lifted_task/state.hpp"  // for State
+#include "tyr/planning/lifted_task/state_repository.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
 #include <boost/dynamic_bitset.hpp>  // for dynamic_bitset
@@ -93,7 +95,7 @@ std::ostream& print(std::ostream& os, const planning::UnpackedState<planning::Li
 
 std::ostream& print(std::ostream& os, const planning::State<planning::LiftedTask>& el)
 {
-    const auto& context = *el.get_task().get_repository();
+    const auto& context = *el.get_state_repository()->get_task()->get_repository();
 
     const auto& static_atoms_bitset = el.template get_atoms<formalism::StaticTag>();
     const auto& fluent_atoms_bitset = el.template get_atoms<formalism::FluentTag>();
@@ -170,7 +172,7 @@ std::ostream& print(std::ostream& os, const planning::UnpackedState<planning::Gr
 
 std::ostream& print(std::ostream& os, const planning::State<planning::GroundTask>& el)
 {
-    const auto& context = *el.get_task().get_repository();
+    const auto& context = *el.get_state_repository()->get_task()->get_repository();
 
     const auto& static_atoms_bitset = el.template get_atoms<formalism::StaticTag>();
     const auto& fluent_values = el.get_fluent_values();
