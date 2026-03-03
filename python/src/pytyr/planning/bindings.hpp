@@ -104,7 +104,7 @@ void bind_node(nb::module_& m, const std::string& name)
 {
     nb::class_<Node<Task>>(m, name.c_str())
         .def("__str__", [](const Node<Task>& self) { return to_string(self); })
-        .def("get_state", &Node<Task>::get_state, nb::rv_policy::copy)
+        .def("get_state", &Node<Task>::get_state, nb::rv_policy::reference_internal)
         .def("get_metric", &Node<Task>::get_metric, nb::rv_policy::copy);
 }
 
@@ -121,7 +121,7 @@ void bind_state_repository(nb::module_& m, const std::string& name)
 {
     nb::class_<StateRepository<Task>>(m, name.c_str())  //
         .def(nb::new_([](std::shared_ptr<Task> task) { return StateRepository<Task>::create(std::move(task)); }), "task"_a)
-        .def("get_initial_state", &StateRepository<Task>::get_initial_state, nb::rv_policy::copy)
+        .def("get_initial_state", &StateRepository<Task>::get_initial_state, nb::rv_policy::move)
         .def("get_registered_state", &StateRepository<Task>::get_registered_state, nb::rv_policy::move, "state_index"_a)
         .def("get_axiom_evaluator", &StateRepository<Task>::get_axiom_evaluator, nb::rv_policy::copy);
 }
