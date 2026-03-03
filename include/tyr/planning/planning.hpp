@@ -24,6 +24,8 @@
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy/event_handler.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
+#include "tyr/planning/algorithms/strategies/goal.hpp"
+#include "tyr/planning/algorithms/strategies/pruning.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"
 #include "tyr/planning/formatter.hpp"

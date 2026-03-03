@@ -42,40 +42,10 @@ void bind_module_definitions(nb::module_& m)
     bind_index<StateIndex>(m, "StateIndex");
 
     /**
-     * GroundTask
+     * Statistics
      */
 
-    nb::class_<GroundTask>(m, "GroundTask")  //
-        .def("get_repository", &GroundTask::get_repository)
-        .def("get_task", &GroundTask::get_task);
-
-    bind_state<GroundTask>(m, "GroundState");
-    bind_node<GroundTask>(m, "GroundNode");
-    bind_labeled_node<GroundTask>(m, "GroundLabeledNode");
-    bind_state_repository<GroundTask>(m, "GroundStateRepository");
-    bind_successor_generator<GroundTask>(m, "GroundSuccessorGenerator");
-    bind_heuristic<GroundTask>(m, "GroundHeuristic");
-    bind_blind_heuristic<GroundTask>(m, "GroundBlindHeuristic");
-
-    /**
-     * LiftedTask
-     */
-
-    nb::class_<LiftedTask>(m, "LiftedTask")  //
-        .def("get_repository", &LiftedTask::get_repository)
-        .def("get_task", &LiftedTask::get_task)
-        .def("instantiate_ground_task", &LiftedTask::instantiate_ground_task);
-
-    bind_state<LiftedTask>(m, "LiftedState");
-    bind_node<LiftedTask>(m, "LiftedNode");
-    bind_labeled_node<LiftedTask>(m, "LiftedLabeledNode");
-    bind_state_repository<LiftedTask>(m, "LiftedStateRepository");
-    bind_successor_generator<LiftedTask>(m, "LiftedSuccessorGenerator");
-    bind_heuristic<LiftedTask>(m, "LiftedHeuristic");
-    bind_blind_heuristic<LiftedTask>(m, "LiftedBlindHeuristic");
-    bind_max_heuristic<LiftedTask>(m, "LiftedMaxHeuristic");
-    bind_add_heuristic<LiftedTask>(m, "LiftedAddHeuristic");
-    bind_ff_heuristic<LiftedTask>(m, "LiftedFFHeuristic");
+    nb::class_<Statistics>(m, "Statistics");
 
     /**
      * Parser
@@ -96,6 +66,59 @@ void bind_module_definitions(nb::module_& m)
              "task_filepath"_a,
              "parser_options"_a)
         .def("get_domain", &Parser::get_domain);
+}
+
+void bind_ground_module_definitions(nb::module_& m)
+{
+    nb::class_<GroundTask>(m, "Task")  //
+        .def("get_repository", &GroundTask::get_repository)
+        .def("get_task", &GroundTask::get_task);
+
+    bind_state<GroundTask>(m, "State");
+    bind_node<GroundTask>(m, "Node");
+    bind_labeled_node<GroundTask>(m, "LabeledNode");
+    bind_state_repository<GroundTask>(m, "StateRepository");
+    bind_successor_generator<GroundTask>(m, "SuccessorGenerator");
+    bind_search_result<GroundTask>(m, "SearchResult");
+    bind_heuristic<GroundTask>(m, "Heuristic");
+    bind_blind_heuristic<GroundTask>(m, "BlindHeuristic");
+}
+
+void bind_lifted_module_definitions(nb::module_& m)
+{
+    nb::class_<LiftedTask>(m, "Task")  //
+        .def("get_repository", &LiftedTask::get_repository)
+        .def("get_task", &LiftedTask::get_task)
+        .def("instantiate_ground_task", &LiftedTask::instantiate_ground_task);
+
+    bind_state<LiftedTask>(m, "State");
+    bind_node<LiftedTask>(m, "Node");
+    bind_labeled_node<LiftedTask>(m, "LabeledNode");
+    bind_state_repository<LiftedTask>(m, "StateRepository");
+    bind_successor_generator<LiftedTask>(m, "SuccessorGenerator");
+    bind_search_result<LiftedTask>(m, "SearchResult");
+    bind_heuristic<LiftedTask>(m, "Heuristic");
+    bind_blind_heuristic<LiftedTask>(m, "BlindHeuristic");
+    bind_max_heuristic<LiftedTask>(m, "MaxHeuristic");
+    bind_add_heuristic<LiftedTask>(m, "AddHeuristic");
+    bind_ff_heuristic<LiftedTask>(m, "FFHeuristic");
+}
+
+namespace astar_eager
+{
+void bind_ground_module_definitions(nb::module_& m)
+{
+    bind_options<GroundTask>(m, "Options");
+    bind_find_solution<GroundTask>(m, "find_solution");
+    bind_event_handler<GroundTask>(m, "EventHandler");
+}
+
+void bind_lifted_module_definitions(nb::module_& m)
+{
+    bind_options<LiftedTask>(m, "Options");
+    bind_find_solution<LiftedTask>(m, "find_solution");
+    bind_event_handler<LiftedTask>(m, "EventHandler");
+}
 }
 
 }

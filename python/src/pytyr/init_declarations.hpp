@@ -73,6 +73,17 @@ extern void bind_module_definitions(nb::module_& m);
 namespace planning
 {
 extern void bind_module_definitions(nb::module_& m);
+
+extern void bind_ground_module_definitions(nb::module_& m);
+
+extern void bind_lifted_module_definitions(nb::module_& m);
+
+namespace astar_eager
+{
+extern void bind_ground_module_definitions(nb::module_& m);
+
+extern void bind_lifted_module_definitions(nb::module_& m);
+}
 }
 }
 
