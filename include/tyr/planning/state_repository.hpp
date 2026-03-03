@@ -22,6 +22,7 @@
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state.hpp"
 #include "tyr/planning/state_index.hpp"
+#include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/unpacked_state.hpp"
 
 #include <concepts>
@@ -41,6 +42,7 @@ concept StateRepositoryConcept = requires(T& r, StateIndex index, SharedObjectPo
     { r.get_registered_state(index) } -> std::same_as<State<Task>>;
     { r.get_unregistered_state() } -> std::same_as<SharedObjectPoolPtr<UnpackedState<Task>>>;
     { r.register_state(unregistered_state) } -> std::same_as<State<Task>>;
+    { r.get_task() } -> std::same_as<const std::shared_ptr<Task>&>;
 };
 
 }

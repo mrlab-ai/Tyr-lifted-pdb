@@ -18,19 +18,23 @@
 #include "tyr/planning/lifted_task/state.hpp"
 
 #include "tyr/planning/lifted_task.hpp"
+#include "tyr/planning/lifted_task/state_repository.hpp"
 
 namespace tyr::planning
 {
 
-bool State<LiftedTask>::test(Index<formalism::planning::GroundAtom<formalism::StaticTag>> index) const { return m_task->test(index); }
+bool State<LiftedTask>::test(Index<formalism::planning::GroundAtom<formalism::StaticTag>> index) const { return m_state_repository->get_task()->test(index); }
 
-float_t State<LiftedTask>::get(Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> index) const { return m_task->get(index); }
+float_t State<LiftedTask>::get(Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> index) const
+{
+    return m_state_repository->get_task()->get(index);
+}
 
 template<formalism::FactKind T>
 const boost::dynamic_bitset<>& State<LiftedTask>::get_atoms() const noexcept
 {
     if constexpr (std::is_same_v<T, formalism::StaticTag>)
-        return m_task->get_static_atoms_bitset();
+        return m_state_repository->get_task()->get_static_atoms_bitset();
     else if constexpr (std::is_same_v<T, formalism::FluentTag> || std::is_same_v<T, formalism::DerivedTag>)
         return m_unpacked->template get_atoms<T>();
     else
@@ -45,7 +49,7 @@ template<formalism::FactKind T>
 const std::vector<float_t>& State<LiftedTask>::get_numeric_variables() const noexcept
 {
     if constexpr (std::is_same_v<T, formalism::StaticTag>)
-        return m_task->get_static_numeric_variables();
+        return m_state_repository->get_task()->get_static_numeric_variables();
     else if constexpr (std::is_same_v<T, formalism::FluentTag>)
         return m_unpacked->get_numeric_variables();
     else
@@ -57,7 +61,7 @@ template const std::vector<float_t>& State<LiftedTask>::get_numeric_variables<fo
 
 AtomRange<formalism::StaticTag> State<LiftedTask>::get_static_atoms() const noexcept
 {
-    return AtomRange<formalism::StaticTag>(m_task->get_static_atoms_bitset());
+    return AtomRange<formalism::StaticTag>(m_state_repository->get_task()->get_static_atoms_bitset());
 }
 
 FDRFactRange<LiftedTask, formalism::FluentTag> State<LiftedTask>::get_fluent_facts() const noexcept
@@ -72,7 +76,7 @@ AtomRange<formalism::DerivedTag> State<LiftedTask>::get_derived_atoms() const no
 
 FunctionTermValueRange<formalism::StaticTag> State<LiftedTask>::get_static_fterm_values() const noexcept
 {
-    return FunctionTermValueRange<formalism::StaticTag>(m_task->get_static_numeric_variables());
+    return FunctionTermValueRange<formalism::StaticTag>(m_state_repository->get_task()->get_static_numeric_variables());
 }
 
 FunctionTermValueRange<formalism::FluentTag> State<LiftedTask>::get_fluent_fterm_values() const noexcept

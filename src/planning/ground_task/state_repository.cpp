@@ -116,7 +116,7 @@ State<GroundTask> StateRepository<GroundTask>::get_registered_state(StateIndex s
 
     fill_numeric_variables(packed_state.get_numeric_variables(), m_uint_nodes, m_float_nodes, m_nodes_buffer, unpacked_state->get_numeric_variables());
 
-    return State<GroundTask>(*m_task, std::move(unpacked_state));
+    return State<GroundTask>(shared_from_this(), std::move(unpacked_state));
 }
 
 SharedObjectPoolPtr<UnpackedState<GroundTask>> StateRepository<GroundTask>::get_unregistered_state()
@@ -152,7 +152,7 @@ State<GroundTask> StateRepository<GroundTask>::register_state(SharedObjectPoolPt
     state->set(
         m_packed_states.insert(PackedState<GroundTask>(StateIndex(m_packed_states.size()), fluent_facts_index, derived_atoms_index, numeric_variables_slot)));
 
-    return State<GroundTask>(*m_task, std::move(state));
+    return State<GroundTask>(shared_from_this(), std::move(state));
 }
 
 static_assert(StateRepositoryConcept<StateRepository<GroundTask>, GroundTask>);

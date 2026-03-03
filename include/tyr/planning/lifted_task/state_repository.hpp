@@ -36,7 +36,7 @@ namespace tyr::planning
 {
 
 template<>
-class StateRepository<LiftedTask>
+class StateRepository<LiftedTask> : public std::enable_shared_from_this<StateRepository<LiftedTask>>
 {
 public:
     explicit StateRepository(std::shared_ptr<LiftedTask> task);
@@ -51,6 +51,7 @@ public:
 
     State<LiftedTask> register_state(SharedObjectPoolPtr<UnpackedState<LiftedTask>> state);
 
+    const auto& get_task() const noexcept { return m_task; }
     const auto& get_axiom_evaluator() const noexcept { return m_axiom_evaluator; }
 
 private:

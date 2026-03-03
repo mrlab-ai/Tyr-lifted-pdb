@@ -38,7 +38,6 @@ public:
     Node(State<LiftedTask> state, float_t metric) noexcept : m_state(std::move(state)), m_metric(metric) {}
 
     const State<LiftedTask>& get_state() const noexcept { return m_state; }
-    const LiftedTask& get_task() const noexcept { return m_state.get_task(); }
     float_t get_metric() const noexcept { return m_metric; }
 
     auto identifying_members() const noexcept { return std::make_tuple(m_state.get_index(), m_metric); }
