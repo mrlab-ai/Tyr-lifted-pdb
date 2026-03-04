@@ -26,6 +26,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/variable_dependency_graph.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
 #include "tyr/planning/applicability.hpp"
@@ -280,18 +281,22 @@ void ProjectionGenerator<LiftedTask>::generate()
                 pattern.size());
         }
 
-        auto adj_matrix = std::vector<std::vector<std::vector<View<Index<formalism::planning::GroundAction>, formalism::planning::Repository>>>>(
-            astates.size(),
-            std::vector<std::vector<View<Index<formalism::planning::GroundAction>, formalism::planning::Repository>>>(astates.size()));
+        auto transitions = TransitionList {};
+        auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
+        auto goal_vertices = UnorderedSet<uint_t> {};
+
         {
             for (const auto& astate : astates)
             {
-                auto& adj_row = adj_matrix[uint_t(astate.get_index())];
+                auto& adj_row = adj_lists[uint_t(astate.get_index())];
 
                 auto anode = Node<LiftedTask>(astate, float_t { 0 });
 
                 const auto state_context = StateContext { m_task, astate.get_unpacked_state(), float_t { 0 } };
                 const auto is_goal = is_dynamically_applicable(projected_task.get_goal(), state_context);
+
+                if (is_goal)
+                    goal_vertices.insert(uint_t(astate.get_index()));
 
                 successor_generator.get_labeled_successor_nodes(anode, labeled_succ_nodes);
 
@@ -303,16 +308,35 @@ void ProjectionGenerator<LiftedTask>::generate()
 
                     assert(uint_t(pastate.get_index()) < astates.size());
 
-                    auto& adj_cell = adj_row[uint_t(pastate.get_index())];
+                    const auto t = transitions.size();
+                    transitions.emplace_back(labeled_succ_node.label, uint_t(astate.get_index()), uint_t(pastate.get_index()));
 
-                    adj_cell.push_back(labeled_succ_node.label);
+                    adj_row.push_back(t);
                 }
             }
         }
 
-        auto projection = ExplicitProjection<LiftedTask>(std::move(astates), std::move(adj_matrix));
+        auto projection = ExplicitProjection<LiftedTask>(std::move(astates), std::move(transitions), std::move(adj_lists));
+
+        auto weights = std::vector<float_t>(projection.num_edges(), float_t { 1 });
 
         std::cout << projection << std::endl;
+
+        auto backward_projection = BackwardExplicitProjection<LiftedTask>(projection);
+
+        const auto [predecessors, distances] = dijkstra_shortest_paths(backward_projection, weights, goal_vertices.begin(), goal_vertices.end());
+
+        std::cout << "goal_vertices: " << std::endl;
+        print(std::cout, goal_vertices);
+        std::cout << std::endl;
+
+        std::cout << "predecessors: " << std::endl;
+        print(std::cout, predecessors);
+        std::cout << std::endl;
+
+        std::cout << "distances: " << std::endl;
+        print(std::cout, distances);
+        std::cout << std::endl;
     }
 }
 }
