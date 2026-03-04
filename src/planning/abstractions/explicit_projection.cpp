@@ -15,21 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_ABSTRACTIONS_PROJECTION_GENERATOR_HPP_
-#define TYR_PLANNING_ABSTRACTIONS_PROJECTION_GENERATOR_HPP_
+#include "tyr/planning/abstractions/explicit_projection.hpp"
 
-#include "tyr/common/declarations.hpp"
-#include "tyr/planning/state.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/ground_task/state.hpp"
+#include "tyr/planning/lifted_task/state.hpp"
 
 namespace tyr::planning
 {
+static_assert(graphs::VertexListGraph<ExplicitProjection<LiftedTask>>);
+static_assert(graphs::VertexListGraph<ExplicitProjection<GroundTask>>);
 
-template<typename Task>
-class ProjectionGenerator
-{
-    static_assert(dependent_false<Task>::value, "PatternGenerator is not defined for type T.");
-};
+static_assert(graphs::IncidenceGraph<ExplicitProjection<LiftedTask>>);
+static_assert(graphs::IncidenceGraph<ExplicitProjection<GroundTask>>);
 
+static_assert(graphs::ContiguousIndexingMode<ExplicitProjection<LiftedTask>>);
+static_assert(graphs::ContiguousIndexingMode<ExplicitProjection<GroundTask>>);
 }
-
-#endif
