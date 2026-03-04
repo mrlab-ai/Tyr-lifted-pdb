@@ -78,6 +78,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/state_storage/tree_compression/numeric.cpp
 
     planning/heuristics/goal_count.cpp
+    planning/abstractions/explicit_projection.cpp
 
     planning/ground_task/state_storage/hash_set/atom.cpp
     planning/ground_task/state_storage/hash_set/fact.cpp
