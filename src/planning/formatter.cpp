@@ -29,7 +29,7 @@
 #include "tyr/formalism/planning/formatter.hpp"      // for operator<<
 #include "tyr/formalism/planning/repository.hpp"     // for Repository
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/abstractions/projection_generator.hpp"
+#include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"  // for Statistics
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/domain.hpp"             // for Domain
@@ -261,26 +261,26 @@ std::ostream& print(std::ostream& os, const planning::ExplicitProjection<Task>& 
 {
     os << "digraph {\n";
 
-    const auto& astates = el.astates();
-    const auto& adj_matrix = el.adj_matrix();
+    const auto& vertices = el.vertices();
+    const auto& transitions = el.transitions();
+    const auto& adj_lists = el.adj_lists();
 
-    for (const auto& astate : astates)
-        fmt::print(os, "n{} [label=\"{}\"];\n", to_string(astate.get_index()), to_string(astate));
+    for (const auto& vertex : vertices)
+        fmt::print(os, "n{} [label=\"{}\"];\n", to_string(vertex.get_index()), to_string(vertex));
 
-    for (uint_t vi = 0; vi < astates.size(); ++vi)
+    for (uint_t vi = 0; vi < vertices.size(); ++vi)
     {
-        for (uint_t vj = 0; vj < astates.size(); ++vj)
+        // group by target
+        auto grouped_labels = std::vector<std::vector<std::string>>(vertices.size());
+
+        for (const auto& t : adj_lists[vi])
         {
-            const auto labels = adj_matrix[vi][vj];
-            if (labels.empty())
-                continue;
-
-            auto label_strings = std::vector<std::string> {};
-            for (const auto& label : labels)
-                label_strings.push_back(to_string(std::make_pair(label, formalism::planning::PlanFormatting())));
-
-            fmt::print(os, "n{} -> n{} [label=\"{}\\l\"];\n", vi, vj, fmt::join(label_strings, "\\l"));
+            const auto& transition = transitions[t];
+            grouped_labels[transition.dst].push_back(to_string(std::make_pair(transition.label, formalism::planning::PlanFormatting())));
         }
+
+        for (uint_t vj = 0; vj < vertices.size(); ++vj)
+            fmt::print(os, "n{} -> n{} [label=\"{}\\l\"];\n", vi, vj, fmt::join(grouped_labels[vj], "\\l"));
     }
 
     os << "}\n";

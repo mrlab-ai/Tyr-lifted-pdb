@@ -18,41 +18,52 @@
 #ifndef TYR_GRAPHS_CONCEPTS_HPP_
 #define TYR_GRAPHS_CONCEPTS_HPP_
 
+#include "tyr/common/config.hpp"
+
 #include <concepts>
+#include <cstddef>
 
 namespace tyr::graphs
 {
 template<typename T>
-concept Descriptor = std::convertible_to<size_t>;
+concept Descriptor = std::convertible_to<T, uint_t>;
 
 template<typename T>
 concept DescriptorRange = std::ranges::input_range<T> && Descriptor<std::remove_cvref_t<std::ranges::range_value_t<T>>>;
 
 template<typename T>
-concept VertexListGraph = requires(const T& g, size_t vertex) {
-    { get_vertex_indices(a) } -> DescriptorRange;
-    { get_num_vertices(a) } -> std::convertible_to<size_t>;
+concept VertexListGraph = requires(const T& g) {
+    { vertices(g) };
+    { num_vertices(g) } -> std::convertible_to<size_t>;
 };
 
 template<typename T>
-concept EdgeListGraph = requires(const T& g) {
-    { get_edges(g) } -> DescriptorRange;
-    { get_num_edges(g) } -> std::convertible_to<size_t>;
+concept EdgeListGraph = requires(const T& g, uint_t e) {
+    { edges(g) };
+    { num_edges(g) } -> std::convertible_to<size_t>;
+    { source(e, g) } -> Descriptor;
+    { target(e, g) } -> Descriptor;
 };
 
 template<typename T>
-concept IncidenceGraph = requires(const T& g, size_t vertex, size_t edge) {
-    { get_source(g, edge) } -> Descriptor;
-    { get_target(g, edge) } -> Descriptor;
-    { get_adjacent_eges(g, vertex) } -> DescriptorRange;
-    { get_degree(g, vertex) } -> Descriptor;
+concept IncidenceGraph = requires(const T& g, uint_t v, uint_t e) {
+    { out_edges(v, g) };
+    { source(e, g) } -> Descriptor;
+    { target(e, g) } -> Descriptor;
+    { out_degree(v, g) } -> Descriptor;
 };
 
 template<typename T>
-concept AdjacencyGraph = requires(T g, size_t vertex) {
-    { get_adjacent_vertices(g, vertex) } -> DescriptorRange;
-    { get_adjacent_vertices(g, vertex) } -> DescriptorRange;
+concept AdjacencyGraph = requires(T g, uint_t v) {
+    { adjacent_vertices(v, g) } -> DescriptorRange;
 };
+
+struct ContiguousIndexingTag
+{
+};
+
+template<typename T>
+concept ContiguousIndexingMode = requires(const T& g) { requires std::same_as<typename T::IndexingMode, ContiguousIndexingTag>; };
 }
 
 #endif
