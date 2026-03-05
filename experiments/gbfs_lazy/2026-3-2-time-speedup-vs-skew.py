@@ -54,9 +54,8 @@ def main():
 
 
             speedup = run_1["total_time_ns"] / run_8["total_time_ns"]
-            skew = run_1["ff_rule_t_tot_ms"] / (run_1["ff_rule_t_avg_us"] / 1000)
 
-            per_domain_items[task[0]].add((skew, speedup))
+            per_domain_items[task[0]].add((run_8["ff_rule_skew_tot"], speedup))
 
         for domain, items in per_domain_items.items():
             print(domain)
