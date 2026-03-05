@@ -54,8 +54,8 @@ public:
 
         for (const auto fact : goal.get_facts<formalism::FluentTag>())
         {
-            if (fact.get_value() != formalism::planning::FDRValue::none())
-                m_workspace.facts.goal_fact_sets.insert(formalism::planning::merge_p2d(fact.get_atom(), merge_context).first);
+            if (fact.get_atom())
+                m_workspace.facts.goal_fact_sets.insert(formalism::planning::merge_p2d(fact.get_atom().value(), merge_context).first);
         }
     }
 

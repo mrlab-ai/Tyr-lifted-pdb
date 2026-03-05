@@ -124,6 +124,8 @@ from pytyr.pytyr.formalism.planning import (
     GroundAxiom,
 
     # Tasks
+    Minimize,
+    Maximize,
     Metric,
     Domain,
     LiftedTask,

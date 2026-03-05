@@ -23,7 +23,7 @@ def main():
     print(lifted_init_node)
     lifted_labeled_succ_nodes = lifted_succ_gen.get_labeled_successor_nodes(lifted_init_node)
 
-    lifted_task.get_task()
+    print(lifted_task.get_task().get_domain().get_actions()[0].get_condition().get_static_literals())
 
     lifted_ff = p.lifted.FFHeuristic(lifted_task)
     lifted_astar_eager_options = p.lifted.astar_eager.Options()

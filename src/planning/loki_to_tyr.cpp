@@ -383,7 +383,7 @@ LiftedTaskPtr LokiToTyrTranslator::translate(const loki::Problem& element, fp::B
                 if constexpr (std::is_same_v<T, Index<fp::GroundLiteral<f::StaticTag>>>)
                     static_atoms.push_back(make_view(arg, *task_context).get_atom().get_index());
                 else if constexpr (std::is_same_v<T, Data<fp::FDRFact<f::FluentTag>>>)
-                    fluent_atoms.push_back(make_view(arg, *task_context).get_atom().get_index());  // we know it must have a value
+                    fluent_atoms.push_back(make_view(arg, *task_context).get_atom().value().get_index());  // we know it must have a value
                 else if constexpr (std::is_same_v<T, Index<fp::GroundLiteral<f::DerivedTag>>>)
                     throw std::runtime_error("Derived ground atoms are not allowed to be defined in the initial section.");
                 else
