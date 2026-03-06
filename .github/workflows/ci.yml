@@ -1,9 +1,11 @@
-name: Release
+name: CI
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build_sdist:
@@ -26,15 +28,10 @@ jobs:
       - name: Build source distribution
         run: python -m build --sdist
 
-      - name: Upload sdist artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sdist
-          path: dist/*.tar.gz
-
   build_wheels_linux:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         architecture: ["x86_64"]
         python-version: ["cp38", "cp39", "cp310", "cp311", "cp312", "cp313"]
@@ -61,15 +58,10 @@ jobs:
           CIBW_ARCHS: "${{ matrix.architecture }}"
           CIBW_BUILD_VERBOSITY: "1"
 
-      - name: Upload Linux wheels artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-linux-${{ matrix.python-version }}-${{ matrix.architecture }}
-          path: wheelhouse/*.whl
-
   build_wheels_macos:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["cp39", "cp310", "cp311", "cp312", "cp313"]
 
@@ -94,52 +86,3 @@ jobs:
           CIBW_BUILD: "${{ matrix.python-version }}-*"
           CIBW_ARCHS: arm64
           CIBW_BUILD_VERBOSITY: "1"
-
-      - name: Upload macOS wheels artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-macos-${{ matrix.python-version }}-arm64
-          path: wheelhouse/*.whl
-
-  publish:
-    needs:
-      - build_sdist
-      - build_wheels_linux
-      - build_wheels_macos
-    runs-on: ubuntu-latest
-
-    if: github.repository_owner == 'drexlerd'
-
-    permissions:
-      id-token: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Check version matches tag
-        run: |
-          VERSION=$(python setup.py --version)
-          TAG=${GITHUB_REF#refs/tags/v}
-
-          echo "Package version: $VERSION"
-          echo "Git tag: $TAG"
-
-          if [ "$VERSION" != "$TAG" ]; then
-            echo "❌ Version mismatch: setup.py=$VERSION tag=$TAG"
-            exit 1
-          fi
-          
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: Inspect distributions
-        run: find dist -maxdepth 1 -type f
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: dist
