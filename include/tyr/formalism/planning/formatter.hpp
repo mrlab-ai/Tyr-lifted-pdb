@@ -26,6 +26,8 @@
 #include "tyr/formalism/planning/planning_fdr_task.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/variable_dependency_graph.hpp"
+#include "tyr/formalism/planning/views.hpp"
 
 #include <fmt/core.h>
 #include <fmt/ostream.h>
