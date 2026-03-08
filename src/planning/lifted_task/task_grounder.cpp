@@ -322,7 +322,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task, ExecutionContext& execution_c
 
                 const auto ground_action = fp::ground(action,
                                                       grounder_context,
-                                                      lifted_task.get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
+                                                      lifted_task.get_parameter_domains_per_cond_effect_per_action().at(action_index),
                                                       fluent_assign,
                                                       iter_workspace,
                                                       *lifted_task.get_fdr_context())
