@@ -2,7 +2,7 @@
 Parse and traverse planning formalism structures. 
 
 This example demonstrates how to inspect the planning formalism and highlights
-some high-level design concepts. The provided type hints make it easy to
+some high-level design choices. The provided type hints make it easy to
 navigate and explore all structures.
 
 Example usage (run from the repository root):
@@ -17,14 +17,12 @@ Author: Dominik Drexler (dominik.drexler@liu.se)
 import argparse
 
 from pathlib import Path
-from functools import singledispatchmethod
 
-from pytyr.formalism.planning import GroundConjunctiveCondition, GroundAction
 from pytyr.planning import ParserOptions, Parser
 
 
 def main():
-    arg_parser = argparse.ArgumentParser(description="A* Eager Search.")
+    arg_parser = argparse.ArgumentParser(description="Parse and traverse planning formalism structures.")
     arg_parser.add_argument("-d", "--domain-filepath", type=Path, required=True, help="Path to a PDDL domain file.")
     arg_parser.add_argument("-p", "--task-filepath", type=Path, required=True, help="Path to PDDL task file.")
     args = arg_parser.parse_args()
@@ -62,7 +60,7 @@ def main():
     print("\nAuxiliary function:")
     print(formalism_domain.get_auxiliary_function())
 
-    print("Constants:")
+    print("\nConstants:")
     for object in formalism_domain.get_constants():
         print(object.get_name())
 
@@ -71,7 +69,7 @@ def main():
     planning_task = parser.parse_task(task_filepath, parser_options)
     formalism_task = planning_task.get_task()
 
-    # TODO: Thiscurrently fails because repository returns index and not views with the repo attached where it was found...
+    # Ensure that the task is defined over the given input domain
     assert(formalism_task.get_domain() == formalism_domain)
 
     # The separation from above induces a parallel separation for atom, literal, ground atom, and ground literal.
@@ -82,6 +80,15 @@ def main():
     for ground_atom in formalism_task.get_fluent_atoms():
         print(ground_atom.get_predicate(), ground_atom.get_objects())
 
+    # The task may contain task-specific derived predicates, e.g., miconic-fulladl, 
+    # resulting from the translation of complicated goal, i.e., non-conjunctions of literals.
+    print("\nTask-specific derived predicates:")
+    for predicate in formalism_task.get_derived_predicates():
+        print(predicate.get_name(), predicate.get_arity())
+    # Similarly, the translation of complicated goals will also introduce task-specific axioms.
+    print("\nTask-specific axioms:")
+    for axiom in formalism_task.get_axioms():
+        print(axiom)
 
 
 if __name__ == "__main__":

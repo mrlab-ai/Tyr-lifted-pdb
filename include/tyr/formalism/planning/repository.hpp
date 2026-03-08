@@ -261,6 +261,21 @@ public:
         m_arena.clear();
         clear_entries();
     }
+
+    // Get the canonical repository which is repository whose container stores the data of the element corresponding to the given index.
+    template<typename T>
+    const Repository& get_canonical_context(Index<T> index) const noexcept
+    {
+        const auto& entry = std::get<RepositoryEntry<T>>(m_repository);
+
+        if (index.value < entry.slot.parent_size)
+        {
+            assert(m_parent && "Element not found in the repository chain.");
+            return m_parent->get_canonical_context(index);
+        }
+
+        return *this;
+    }
 };
 
 static_assert(RepositoryConcept<Repository>);
