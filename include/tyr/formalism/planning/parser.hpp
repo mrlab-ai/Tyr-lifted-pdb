@@ -15,15 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_PARSER_HPP_
-#define TYR_PLANNING_PARSER_HPP_
+#ifndef TYR_FORMALISM_PLANNING_PARSER_HPP_
+#define TYR_FORMALISM_PLANNING_PARSER_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/planning_domain.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/planning/declarations.hpp"
 
 #include <loki/loki.hpp>
 
-namespace tyr::planning
+namespace tyr::formalism::planning
 {
 class Parser
 {
@@ -31,17 +33,16 @@ public:
     Parser(const fs::path& domain_filepath, const loki::ParserOptions& options = loki::ParserOptions());
     Parser(const std::string& domain_description, const fs::path& domain_filepath, const loki::ParserOptions& options = loki::ParserOptions());
 
-    LiftedTaskPtr parse_task(const fs::path& task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
-    LiftedTaskPtr parse_task(const std::string& task_description, const fs::path& task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
+    PlanningTask parse_task(const fs::path& task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
+    PlanningTask parse_task(const std::string& task_description, const fs::path& task_filepath, const loki::ParserOptions& options = loki::ParserOptions());
 
-    DomainPtr get_domain() const;
+    PlanningDomain get_domain() const;
 
 private:
     loki::Parser m_loki_parser;
     loki::DomainTranslationResult m_loki_domain_translation_result;
 
-    formalism::planning::RepositoryPtr m_domain_repository;
-    DomainPtr m_domain;
+    PlanningDomain m_domain;
 };
 }
 

@@ -25,6 +25,48 @@ namespace tyr::formalism::planning
 void bind_module_definitions(nb::module_& m)
 {
     {
+        nb::class_<PlanningDomain>(m, "PlanningDomain")  //
+            .def("get_repository", &PlanningDomain::get_repository)
+            .def("get_domain", &PlanningDomain::get_domain);
+    }
+
+    {
+        nb::class_<PlanningTask>(m, "PlanningTask")  //
+            .def("get_repository", &PlanningTask::get_repository)
+            .def("get_domain", &PlanningTask::get_domain)
+            .def("get_task", &PlanningTask::get_task)
+            .def("get_fdr_context", nb::overload_cast<>(&PlanningTask::get_fdr_context, nb::const_));
+    }
+
+    {
+        nb::class_<PlanningFDRTask>(m, "PlanningFDRTask")  //
+            .def("get_repository", &PlanningFDRTask::get_repository)
+            .def("get_domain", &PlanningFDRTask::get_domain)
+            .def("get_task", &PlanningFDRTask::get_task)
+            .def("get_fdr_context", &PlanningFDRTask::get_fdr_context);
+    }
+
+    {
+        nb::class_<loki::ParserOptions>(m, "ParserOptions")
+            .def(nb::init<>())
+            .def_rw("strict", &loki::ParserOptions::strict, "Enable strict mode")
+            .def_rw("verbose", &loki::ParserOptions::verbose, "Enable verbose output");
+    }
+
+    {
+        nb::class_<Parser>(m, "Parser")
+            .def(nb::init<const fs::path&, const loki::ParserOptions&>(), "domain_filepath"_a, "parser_options"_a)
+            .def(nb::init<const std::string&, const fs::path&, const loki::ParserOptions&>(), "domain_description"_a, "domain_filepath"_a, "parser_options"_a)
+            .def("parse_task", nb::overload_cast<const fs::path&, const loki::ParserOptions&>(&Parser::parse_task), "task_filepath"_a, "parser_options"_a)
+            .def("parse_task",
+                 nb::overload_cast<const std::string&, const fs::path&, const loki::ParserOptions&>(&Parser::parse_task),
+                 "task_description"_a,
+                 "task_filepath"_a,
+                 "parser_options"_a)
+            .def("get_domain", &Parser::get_domain);
+    }
+
+    {
         using V = View<Index<Object>, Repository>;
 
         nb::class_<V>(m, "Object")  //

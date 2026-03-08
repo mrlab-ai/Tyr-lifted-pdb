@@ -1,0 +1,58 @@
+/*
+ * Copyright (C) 2025 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
+#define TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
+
+#include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/planning_domain.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/task_view.hpp"
+
+namespace tyr::formalism::planning
+{
+
+class PlanningTask
+{
+public:
+    PlanningTask(View<Index<Task>, Repository> task, BinaryFDRContext fdr_context, std::shared_ptr<Repository> repository, PlanningDomain domain) :
+        m_repository(std::move(repository)),
+        m_task(task),
+        m_fdr_context(std::move(fdr_context)),
+        m_domain(std::move(domain))
+    {
+        if (&m_task.get_context() != m_repository.get())
+            throw std::invalid_argument("Task context does not match the given Repository.");
+    }
+
+    const auto& get_repository() const noexcept { return m_repository; }
+    auto get_task() const noexcept { return m_task; }
+    auto& get_fdr_context() noexcept { return m_fdr_context; }
+    const auto& get_fdr_context() const noexcept { return m_fdr_context; }
+    const auto& get_domain() const noexcept { return m_domain; }
+
+private:
+    std::shared_ptr<Repository> m_repository;
+    View<Index<Task>, Repository> m_task;
+    BinaryFDRContext m_fdr_context;
+    PlanningDomain m_domain;
+};
+
+}
+
+#endif

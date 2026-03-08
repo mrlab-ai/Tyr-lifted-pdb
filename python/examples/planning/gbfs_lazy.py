@@ -21,7 +21,8 @@ from queue import PriorityQueue
 from dataclasses import dataclass
 from enum import Enum
 
-from pytyr.planning import ParserOptions, Parser, SearchStatus, StateIndex
+from pytyr.formalism.planning import ParserOptions, Parser
+from pytyr.planning import SearchStatus, StateIndex
 from pytyr.planning.lifted import SearchResult, SuccessorGenerator, Heuristic, FFHeuristic, PruningStrategy, GoalStrategy, TaskGoalStrategy, State, Node, LabeledNode, Plan, Task
 
 
@@ -172,8 +173,7 @@ def main():
 
     parser_options = ParserOptions()
     parser = Parser(domain_filepath, parser_options)
-    lifted_task = parser.parse_task(task_filepath, parser_options)
-
+    lifted_task = Task(parser.parse_task(task_filepath, parser_options))
     heuristic = FFHeuristic(lifted_task)
 
     search_result = find_solution(lifted_task, heuristic)

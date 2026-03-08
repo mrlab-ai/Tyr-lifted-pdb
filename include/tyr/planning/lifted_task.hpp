@@ -23,6 +23,7 @@
 #include "tyr/common/vector.hpp"                    // for get
 #include "tyr/formalism/planning/declarations.hpp"  // for OverlayRepos...
 #include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/views.hpp"  // for View
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/programs/action.hpp"
@@ -40,10 +41,9 @@ namespace tyr::planning
 class LiftedTask
 {
 public:
-    LiftedTask(DomainPtr domain,
-               formalism::planning::RepositoryPtr overlay_repository,
-               View<Index<formalism::planning::Task>, formalism::planning::Repository> task,
-               formalism::planning::BinaryFDRContext fdr_context);
+    explicit LiftedTask(formalism::planning::PlanningTask task);
+
+    static std::shared_ptr<LiftedTask> create(formalism::planning::PlanningTask task);
 
     GroundTaskPtr instantiate_ground_task();
 
@@ -51,14 +51,12 @@ public:
      * Getters
      */
 
-    const auto& get_domain() const noexcept { return m_domain; }
-
-    auto get_task() const noexcept { return m_task; }
-
-    auto& get_fdr_context() noexcept { return m_fdr_context; }
-    const auto& get_fdr_context() const noexcept { return m_fdr_context; }
-
-    const auto& get_repository() const noexcept { return m_overlay_repository; }
+    const auto& get_formalism_task() const noexcept { return m_task; }
+    const auto& get_domain() const noexcept { return m_task.get_domain(); }
+    auto get_task() const noexcept { return m_task.get_task(); }
+    auto& get_fdr_context() noexcept { return m_task.get_fdr_context(); }
+    const auto& get_fdr_context() const noexcept { return m_task.get_fdr_context(); }
+    const auto& get_repository() const noexcept { return m_task.get_repository(); }
 
     auto& get_axiom_program() noexcept { return m_axiom_program; }
     const auto& get_axiom_program() const noexcept { return m_axiom_program; }
@@ -77,10 +75,8 @@ public:
     }
 
 private:
-    DomainPtr m_domain;
-    formalism::planning::RepositoryPtr m_overlay_repository;
-    View<Index<formalism::planning::Task>, formalism::planning::Repository> m_task;
-    formalism::planning::BinaryFDRContext m_fdr_context;
+    formalism::planning::PlanningTask m_task;
+
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
 

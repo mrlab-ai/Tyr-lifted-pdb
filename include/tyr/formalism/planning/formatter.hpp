@@ -23,6 +23,9 @@
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/planning_domain.hpp"
+#include "tyr/formalism/planning/planning_fdr_task.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/views.hpp"
 
 #include <fmt/core.h>
@@ -1252,6 +1255,24 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::plannin
     return os;
 }
 
+inline std::ostream& print(std::ostream& os, const formalism::planning::PlanningDomain& el)
+{
+    fmt::print(os, "{}", to_string(el.get_domain()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::planning::PlanningTask& el)
+{
+    fmt::print(os, "{}", to_string(el.get_task()));
+    return os;
+}
+
+inline std::ostream& print(std::ostream& os, const formalism::planning::PlanningFDRTask& el)
+{
+    fmt::print(os, "{}", to_string(el.get_task()));
+    return os;
+}
+
 namespace formalism::planning
 {
 template<OpKind Op, typename T>
@@ -1619,6 +1640,12 @@ inline std::ostream& operator<<(std::ostream& os, const View<Index<FDRTask>, C>&
 {
     return tyr::print(os, el);
 }
+
+inline std::ostream& operator<<(std::ostream& os, const PlanningDomain& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const PlanningTask& el) { return tyr::print(os, el); }
+
+inline std::ostream& operator<<(std::ostream& os, const PlanningFDRTask& el) { return tyr::print(os, el); }
 
 }
 }

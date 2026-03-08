@@ -31,7 +31,6 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"  // for Statistics
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/domain.hpp"             // for Domain
 #include "tyr/planning/ground_task.hpp"        // for GroundTask
 #include "tyr/planning/ground_task/node.hpp"   // for Node
 #include "tyr/planning/ground_task/state.hpp"  // for State
@@ -56,11 +55,6 @@
 
 namespace tyr
 {
-std::ostream& print(std::ostream& os, const planning::Domain& el)
-{
-    fmt::print(os, "{}", to_string(el.get_domain()));
-    return os;
-}
 
 std::ostream& print(std::ostream& os, const planning::LiftedTask& el)
 {
@@ -257,7 +251,6 @@ template std::ostream& print(std::ostream& os, const planning::Plan<planning::Gr
 
 namespace planning
 {
-std::ostream& operator<<(std::ostream& os, const Domain& el) { return tyr::print(os, el); }
 
 std::ostream& operator<<(std::ostream& os, const LiftedTask& el) { return tyr::print(os, el); }
 

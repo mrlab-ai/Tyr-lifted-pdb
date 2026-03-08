@@ -20,15 +20,14 @@
 #include <tyr/planning/planning.hpp>
 
 namespace p = tyr::planning;
+namespace fp = tyr::formalism::planning;
 
 namespace tyr::tests
 {
 
 static p::LiftedTaskPtr compute_lifted_task(const fs::path& domain_filepath, const fs::path& problem_filepath)
 {
-    auto parser = p::Parser(domain_filepath);
-    auto domain = parser.get_domain();
-    return parser.parse_task(problem_filepath);
+    return p::LiftedTask::create(fp::Parser(domain_filepath).parse_task(problem_filepath));
 }
 
 static fs::path absolute(const std::string& subdir) { return fs::path(std::string(DATA_DIR)) / subdir; }

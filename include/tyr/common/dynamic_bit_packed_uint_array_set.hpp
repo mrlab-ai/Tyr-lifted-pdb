@@ -10,26 +10,27 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *
+ *<
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/domain.hpp"
+#ifndef TYR_COMMON_DYNAMIC_BIT_PACKED_UINT_ARRAY_SET_HPP_
+#define TYR_COMMON_DYNAMIC_BIT_PACKED_UINT_ARRAY_SET_HPP_
 
-#include <utility>
+#include "tyr/common/dynamic_bit_packed_uint_array_pool.hpp"
 
-namespace tyr::planning
+#include <concepts>
+
+namespace tyr
 {
-
-Domain::Domain(std::shared_ptr<formalism::planning::Repository> repository, View<Index<formalism::planning::Domain>, formalism::planning::Repository> domain) :
-    m_repository(std::move(repository)),
-    m_domain(domain)
+template<std::unsigned_integral Block>
+class DynamicBitPackedUintArraySet
 {
+public:
+private:
+    DynamicBitPackedUintArrayPool<Block> m_pool;
+};
 }
 
-const std::shared_ptr<formalism::planning::Repository>& Domain::get_repository() const noexcept { return m_repository; }
-
-View<Index<formalism::planning::Domain>, formalism::planning::Repository> Domain::get_domain() const noexcept { return m_domain; }
-
-}
+#endif

@@ -43,14 +43,6 @@ void bind_module_definitions(nb::module_& m)
         .export_values();
 
     /**
-     * Domain
-     */
-
-    nb::class_<Domain>(m, "Domain")  //
-        .def("get_repository", &Domain::get_repository)
-        .def("get_domain", &Domain::get_domain);
-
-    /**
      * StateIndex
      */
 
@@ -61,31 +53,12 @@ void bind_module_definitions(nb::module_& m)
      */
 
     nb::class_<Statistics>(m, "Statistics");
-
-    /**
-     * Parser
-     */
-
-    nb::class_<loki::ParserOptions>(m, "ParserOptions")
-        .def(nb::init<>())
-        .def_rw("strict", &loki::ParserOptions::strict, "Enable strict mode")
-        .def_rw("verbose", &loki::ParserOptions::verbose, "Enable verbose output");
-
-    nb::class_<Parser>(m, "Parser")
-        .def(nb::init<const fs::path&, const loki::ParserOptions&>(), "domain_filepath"_a, "parser_options"_a)
-        .def(nb::init<const std::string&, const fs::path&, const loki::ParserOptions&>(), "domain_description"_a, "domain_filepath"_a, "parser_options"_a)
-        .def("parse_task", nb::overload_cast<const fs::path&, const loki::ParserOptions&>(&Parser::parse_task), "task_filepath"_a, "parser_options"_a)
-        .def("parse_task",
-             nb::overload_cast<const std::string&, const fs::path&, const loki::ParserOptions&>(&Parser::parse_task),
-             "task_description"_a,
-             "task_filepath"_a,
-             "parser_options"_a)
-        .def("get_domain", &Parser::get_domain);
 }
 
 void bind_ground_module_definitions(nb::module_& m)
 {
     nb::class_<GroundTask>(m, "Task")  //
+        .def("get_formalism_task", &GroundTask::get_formalism_task)
         .def("get_repository", &GroundTask::get_repository)
         .def("get_task", &GroundTask::get_task)
         .def("get_fdr_context", &GroundTask::get_fdr_context);
@@ -108,6 +81,23 @@ void bind_ground_module_definitions(nb::module_& m)
 void bind_lifted_module_definitions(nb::module_& m)
 {
     nb::class_<LiftedTask>(m, "Task")  //
+        .def(nb::new_([](formalism::planning::PlanningTask&& task) { return LiftedTask::create(std::move(task)); }),
+             "formalism_task"_a,
+             R"doc(
+Create a planning task from a formalism task.
+
+Parameters
+----------
+formalism_task : formalism.planning.Task
+    The formalism-level task used to construct the planning task.
+
+Notes
+-----
+The `formalism_task` is **moved** into the planning task. After calling this
+constructor, the original formalism task should be considered consumed and
+should not be used further.
+        )doc")
+        .def("get_formalism_task", &LiftedTask::get_formalism_task)
         .def("get_repository", &LiftedTask::get_repository)
         .def("get_task", &LiftedTask::get_task)
         .def("get_fdr_context", nb::overload_cast<>(&LiftedTask::get_fdr_context, nb::const_))

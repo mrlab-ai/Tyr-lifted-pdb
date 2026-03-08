@@ -66,15 +66,15 @@ int main(int argc, char** argv)
 
         auto parser_options = loki::ParserOptions();
         // parser_options.strict = true;
-        auto parser = planning::Parser(domain_filepath, parser_options);
+        auto parser = formalism::planning::Parser(domain_filepath, parser_options);
         auto domain = parser.get_domain();
 
-        auto lifted_task = parser.parse_task(problem_filepath);
+        auto lifted_task = planning::LiftedTask::create(parser.parse_task(problem_filepath));
 
         std::cout << "Num objects: " << lifted_task->get_task().get_objects().size() << std::endl;
 
         if (verbosity > 0)
-            std::cout << *domain << std::endl;
+            std::cout << domain << std::endl;
 
         if (verbosity > 0)
             std::cout << *lifted_task << std::endl;

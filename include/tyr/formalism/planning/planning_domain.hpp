@@ -15,27 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_DOMAIN_HPP_
-#define TYR_PLANNING_DOMAIN_HPP_
+#ifndef TYR_FORMALISM_PLANNING_PLANNING_DOMAIN_HPP_
+#define TYR_FORMALISM_PLANNING_PLANNING_DOMAIN_HPP_
 
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/domain_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
 
-namespace tyr::planning
+namespace tyr::formalism::planning
 {
 
-class Domain
+class PlanningDomain
 {
 public:
-    Domain(std::shared_ptr<formalism::planning::Repository> repository, View<Index<formalism::planning::Domain>, formalism::planning::Repository> domain);
+    PlanningDomain(View<Index<Domain>, Repository> domain, std::shared_ptr<Repository> repository) : m_repository(std::move(repository)), m_domain(domain)
+    {
+        if (&m_domain.get_context() != m_repository.get())
+            throw std::invalid_argument("Domain context does not match the given Repository.");
+    }
 
-    const std::shared_ptr<formalism::planning::Repository>& get_repository() const noexcept;
-    View<Index<formalism::planning::Domain>, formalism::planning::Repository> get_domain() const noexcept;
+    auto get_domain() const noexcept { return m_domain; }
+    const auto& get_repository() const noexcept { return m_repository; }
 
 private:
-    std::shared_ptr<formalism::planning::Repository> m_repository;
-    View<Index<formalism::planning::Domain>, formalism::planning::Repository> m_domain;
+    std::shared_ptr<Repository> m_repository;
+    View<Index<Domain>, Repository> m_domain;
 };
 
 }

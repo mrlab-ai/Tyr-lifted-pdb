@@ -22,7 +22,6 @@
 #include "tyr/common/vector.hpp"          // for View, set
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/views.hpp"  // for View
-#include "tyr/planning/domain.hpp"
 #include "tyr/planning/lifted_task/task_grounder.hpp"
 #include "tyr/planning/task_utils.hpp"
 
@@ -35,27 +34,23 @@ namespace fp = tyr::formalism::planning;
 namespace tyr::planning
 {
 
-LiftedTask::LiftedTask(DomainPtr domain, fp::RepositoryPtr overlay_repository, View<Index<fp::Task>, fp::Repository> task, fp::BinaryFDRContext fdr_context) :
-    m_domain(std::move(domain)),
-    m_overlay_repository(std::move(overlay_repository)),
-    m_task(task),
-    m_fdr_context(std::move(fdr_context)),
+LiftedTask::LiftedTask(formalism::planning::PlanningTask task) :
+    m_task(std::move(task)),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
-    m_axiom_program(m_task),
-    m_action_program(m_task),
-    m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(m_task)),
-    m_rpg_program(m_task)
+    m_axiom_program(get_task()),
+    m_action_program(get_task()),
+    m_parameter_domains_per_cond_effect_per_action(compute_parameter_domains_per_cond_effect_per_action(get_task())),
+    m_rpg_program(get_task())
 {
-    // std::cout << m_domain->get_domain() << std::endl;
-    // std::cout << m_task << std::endl;
-
-    for (const auto atom : m_task.template get_atoms<f::StaticTag>())
+    for (const auto atom : get_task().template get_atoms<f::StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);
 
-    for (const auto fterm_value : m_task.template get_fterm_values<f::StaticTag>())
+    for (const auto fterm_value : get_task().template get_fterm_values<f::StaticTag>())
         set(uint_t(fterm_value.get_fterm().get_index()), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
 }
+
+std::shared_ptr<LiftedTask> LiftedTask::create(formalism::planning::PlanningTask task) { return std::make_shared<LiftedTask>(std::move(task)); }
 
 GroundTaskPtr LiftedTask::instantiate_ground_task() { return ground_task(*this); }
 

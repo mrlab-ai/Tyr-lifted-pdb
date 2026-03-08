@@ -134,6 +134,13 @@ from pytyr.pytyr.formalism.planning import (
     Domain,
     LiftedTask,
     GroundTask,
+    PlanningDomain,
+    PlanningTask,
+    PlanningFDRTask,
+
+    # Parser
+    ParserOptions,
+    Parser,
 
     # Repository,
     Repository,

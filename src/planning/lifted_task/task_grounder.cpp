@@ -34,7 +34,6 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/domain.hpp"
 #include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/programs/ground.hpp"
@@ -172,20 +171,21 @@ static auto create_mutex_groups(View<IndexList<fp::GroundAtom<f::FluentTag>>, fp
     return mutex_groups;
 }
 
-static auto create_task(View<Index<fp::Task>, fp::Repository> task,
-                        View<IndexList<fp::GroundAtom<f::FluentTag>>, fp::Repository> fluent_atoms,
-                        View<IndexList<fp::GroundAtom<f::DerivedTag>>, fp::Repository> derived_atoms,
-                        View<IndexList<fp::GroundFunctionTerm<f::FluentTag>>, fp::Repository> fluent_fterms,
-                        View<IndexList<fp::GroundAction>, fp::Repository> actions,
-                        View<IndexList<fp::GroundAxiom>, fp::Repository> axioms,
-                        fp::Repository& repository)
+static auto create_fdr_task(const fp::PlanningTask& planning_task,
+                            View<IndexList<fp::GroundAtom<f::FluentTag>>, fp::Repository> fluent_atoms,
+                            View<IndexList<fp::GroundAtom<f::DerivedTag>>, fp::Repository> derived_atoms,
+                            View<IndexList<fp::GroundFunctionTerm<f::FluentTag>>, fp::Repository> fluent_fterms,
+                            View<IndexList<fp::GroundAction>, fp::Repository> actions,
+                            View<IndexList<fp::GroundAxiom>, fp::Repository> axioms)
 {
+    auto task = planning_task.get_task();
+    auto repository = std::make_shared<fp::Repository>(planning_task.get_domain().get_repository().get());
     auto builder = fp::Builder();
     auto fdr_task_ptr = builder.get_builder<fp::FDRTask>();
     auto& fdr_task = *fdr_task_ptr;
     fdr_task.clear();
 
-    auto merge_context = fp::MergeContext { builder, repository };
+    auto merge_context = fp::MergeContext { builder, *repository };
 
     fdr_task.name = task.get_name();
     fdr_task.domain = task.get_domain().get_index();
@@ -216,7 +216,7 @@ static auto create_task(View<Index<fp::Task>, fp::Repository> task,
 
     /// --- Create FDR context
     auto mutex_groups = create_mutex_groups(fluent_atoms, merge_context);
-    auto fdr_context = fp::GeneralFDRContext(mutex_groups, repository);
+    auto fdr_context = fp::GeneralFDRContext(mutex_groups, *repository);
 
     /// --- Create FDR variables
     for (const auto variable : fdr_context.get_variables())
@@ -237,28 +237,23 @@ static auto create_task(View<Index<fp::Task>, fp::Repository> task,
 
     canonicalize(fdr_task);
 
-    return std::make_pair(repository.get_or_create(fdr_task, builder.get_buffer()).first, std::move(fdr_context));
+    return std::make_shared<GroundTask>(
+        fp::PlanningFDRTask(repository->get_or_create(fdr_task, builder.get_buffer()).first, std::move(fdr_context), repository, planning_task.get_domain()));
 }
 
-static auto create_fdr_task(DomainPtr domain,
-                            View<Index<fp::Task>, fp::Repository> task,
+static auto create_fdr_task(const fp::PlanningTask& task,
                             IndexList<fp::GroundAtom<f::FluentTag>> fluent_atoms,
                             IndexList<fp::GroundAtom<f::DerivedTag>> derived_atoms,
                             IndexList<fp::GroundFunctionTerm<f::FluentTag>> fluent_fterms,
                             IndexList<fp::GroundAction> actions,
                             IndexList<fp::GroundAxiom> axioms)
 {
-    auto task_repository = std::make_shared<fp::Repository>(domain->get_repository().get());
-
-    const auto [fdr_task, fdr_context] = create_task(task,
-                                                     make_view(fluent_atoms, task.get_context()),
-                                                     make_view(derived_atoms, task.get_context()),
-                                                     make_view(fluent_fterms, task.get_context()),
-                                                     make_view(actions, task.get_context()),
-                                                     make_view(axioms, task.get_context()),
-                                                     *task_repository);
-
-    return std::make_shared<GroundTask>(domain, task_repository, fdr_task, fdr_context);
+    return create_fdr_task(task,
+                           make_view(fluent_atoms, *task.get_repository()),
+                           make_view(derived_atoms, *task.get_repository()),
+                           make_view(fluent_fterms, *task.get_repository()),
+                           make_view(actions, *task.get_repository()),
+                           make_view(axioms, *task.get_repository()));
 }
 
 GroundTaskPtr ground_task(LiftedTask& lifted_task)
@@ -423,7 +418,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
     canonicalize(ground_actions);
     canonicalize(ground_axioms);
 
-    return create_fdr_task(lifted_task.get_domain(), lifted_task.get_task(), fluent_atoms, derived_atoms, fluent_fterms, ground_actions, ground_axioms);
+    return create_fdr_task(lifted_task.get_formalism_task(), fluent_atoms, derived_atoms, fluent_fterms, ground_actions, ground_axioms);
 }
 
 }

@@ -36,8 +36,6 @@
 namespace tyr
 {
 
-extern std::ostream& print(std::ostream& os, const planning::Domain& el);
-
 extern std::ostream& print(std::ostream& os, const planning::LiftedTask& el);
 
 extern std::ostream& print(std::ostream& os, const planning::GroundTask& el);
@@ -65,7 +63,6 @@ std::ostream& print(std::ostream& os, const planning::Plan<Task>& el);
 
 namespace planning
 {
-extern std::ostream& operator<<(std::ostream& os, const Domain& el);
 
 extern std::ostream& operator<<(std::ostream& os, const LiftedTask& el);
 

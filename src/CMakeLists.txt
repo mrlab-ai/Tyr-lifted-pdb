@@ -27,6 +27,9 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
 
     formalism/datalog/variable_dependency_graph.cpp
 
+    formalism/planning/loki_to_tyr.cpp
+    formalism/planning/parser.cpp
+
     datalog/workspaces/d2p.cpp
     datalog/workspaces/facts.cpp
     datalog/workspaces/program.cpp
@@ -65,12 +68,9 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/algorithms/gbfs_lazy/event_handler.cpp
 
     planning/action_executor.cpp
-    planning/domain.cpp
     planning/formatter.cpp
     planning/ground_task.cpp
     planning/lifted_task.cpp
-    planning/loki_to_tyr.cpp
-    planning/parser.cpp
     planning/task_utils.cpp
 )
 set_target_properties(core PROPERTIES OUTPUT_NAME tyr_core)
