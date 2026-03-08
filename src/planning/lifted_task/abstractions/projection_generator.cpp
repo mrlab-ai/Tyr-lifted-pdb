@@ -29,6 +29,7 @@
 #include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
@@ -52,7 +53,7 @@ static void append_projected_atom(View<Index<fp::GroundAtom<T>>, fp::Repository>
                                   fp::MergeContext& context)
 {
     if (pattern.predicates.contains(element.get_predicate().get_index()))
-        ref_projected_atoms.push_back(fp::merge_p2p(element, context).first);
+        ref_projected_atoms.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
@@ -62,7 +63,7 @@ static void append_projected_literal(View<Index<fp::GroundLiteral<T>>, fp::Repos
                                      fp::MergeContext& context)
 {
     if (pattern.predicates.contains(element.get_atom().get_predicate().get_index()))
-        ref_projected_literal.push_back(fp::merge_p2p(element, context).first);
+        ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
@@ -72,7 +73,7 @@ static void append_projected_literal(View<Index<fp::Literal<T>>, fp::Repository>
                                      fp::MergeContext& context)
 {
     if (pattern.predicates.contains(element.get_atom().get_predicate().get_index()))
-        ref_projected_literal.push_back(fp::merge_p2p(element, context).first);
+        ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
@@ -92,7 +93,7 @@ static auto create_projected_goal(View<Index<fp::GroundConjunctiveCondition>, fp
     conj_cond.clear();
 
     for (const auto literal : element.template get_facts<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2p(literal, context).first);  // always useful to have
+        conj_cond.static_literals.push_back(merge_p2p(literal, context).first.get_index());  // always useful to have
     for (const auto fact : element.template get_facts<f::FluentTag>())
         append_projected_fact(fact, pattern, conj_cond.fluent_facts, context);
 
@@ -108,9 +109,9 @@ create_projected_conjunctive_condition(View<Index<fp::ConjunctiveCondition>, fp:
     conj_cond.clear();
 
     for (const auto variable : element.get_variables())
-        conj_cond.variables.push_back(merge_p2p(variable, context).first);
+        conj_cond.variables.push_back(merge_p2p(variable, context).first.get_index());
     for (const auto literal : element.template get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2p(literal, context).first);
+        conj_cond.static_literals.push_back(merge_p2p(literal, context).first.get_index());
     for (const auto literal : element.template get_literals<f::FluentTag>())
         append_projected_literal(literal, pattern, conj_cond.fluent_literals, context);
 
@@ -141,12 +142,12 @@ static void append_projected_conditional_effect(View<Index<fp::ConditionalEffect
     cond_effect.clear();
 
     for (const auto variable : element.get_variables())
-        cond_effect.variables.push_back(merge_p2p(variable, context).first);
-    cond_effect.condition = create_projected_conjunctive_condition(element.get_condition(), context, pattern).first;
-    cond_effect.effect = create_projected_conjunctive_effect(element.get_effect(), context, pattern).first;
+        cond_effect.variables.push_back(merge_p2p(variable, context).first.get_index());
+    cond_effect.condition = create_projected_conjunctive_condition(element.get_condition(), context, pattern).first.get_index();
+    cond_effect.effect = create_projected_conjunctive_effect(element.get_effect(), context, pattern).first.get_index();
 
     canonicalize(cond_effect);
-    ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect, context.builder.get_buffer()).first);
+    ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect, context.builder.get_buffer()).first.get_index());
 }
 
 static void append_projected_action(View<Index<fp::Action>, fp::Repository> element,
@@ -161,16 +162,20 @@ static void append_projected_action(View<Index<fp::Action>, fp::Repository> elem
     action.name = element.get_name();
     action.original_arity = element.get_original_arity();
     for (const auto variable : element.get_variables())
-        action.variables.push_back(merge_p2p(variable, context).first);
-    action.condition = create_projected_conjunctive_condition(element.get_condition(), context, pattern).first;
+        action.variables.push_back(merge_p2p(variable, context).first.get_index());
+    action.condition = create_projected_conjunctive_condition(element.get_condition(), context, pattern).first.get_index();
     for (const auto effect : element.get_effects())
         append_projected_conditional_effect(effect, context, action.effects, pattern);
 
     canonicalize(action);
-    ref_projected_actions.push_back(context.destination.get_or_create(action, context.builder.get_buffer()).first);
+    ref_projected_actions.push_back(context.destination.get_or_create(action, context.builder.get_buffer()).first.get_index());
 }
 
-static auto create_projected_domain(View<Index<fp::Domain>, fp::Repository> element, fp::MergeContext& context, const Pattern& pattern)
+static auto create_projected_fdr_context(fp::Repository& destination, const Pattern& pattern) {
+    auto fdr_context = fp::BinaryFDRContext(*destination);
+}
+
+static auto create_projected_domain(View<Index<fp::Domain>, fp::Repository> element, std::shared_ptr<fp::Repository> destination, fp::MergeContext& context, const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
     auto& domain = *domain_ptr;
@@ -178,46 +183,51 @@ static auto create_projected_domain(View<Index<fp::Domain>, fp::Repository> elem
 
     domain.name = element.get_name();
     for (const auto predicate : element.get_predicates<f::StaticTag>())
-        domain.static_predicates.push_back(fp::merge_p2p(predicate, context).first);
+        domain.static_predicates.push_back(fp::merge_p2p(predicate, context).first.get_index());
     for (const auto predicate : element.get_predicates<f::FluentTag>())
-        domain.fluent_predicates.push_back(fp::merge_p2p(predicate, context).first);
+        domain.fluent_predicates.push_back(fp::merge_p2p(predicate, context).first.get_index());
     for (const auto object : element.get_constants())
-        domain.constants.push_back(fp::merge_p2p(object, context).first);
+        domain.constants.push_back(fp::merge_p2p(object, context).first.get_index());
 
     for (const auto action : element.get_actions())
         append_projected_action(action, context, domain.actions, pattern);
 
     canonicalize(domain);
-    return context.destination.get_or_create(domain, context.builder.get_buffer());
+    return fp::PlanningDomain(context.destination.get_or_create(domain, context.builder.get_buffer()).first, std::move(destination));
 }
 
-static Index<fp::Task> create_projected_task(View<Index<fp::Task>, fp::Repository> element, fp::Repository& destination, const Pattern& pattern)
+static auto create_projected_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
 {
+    auto destination = std::make_shared<fp::Repository>(planning_task.get_repository().get());
     auto builder = fp::Builder();
-    auto context = fp::MergeContext(builder, destination);
+    auto fdr_context = fp::BinaryFDRContext(*destination);
+    auto context = fp::MergeContext(builder, *destination);
+
+    const auto project_domain = create_projected_domain(planning_task.get_domain().get_domain(), destination, context, pattern);
+
     auto task_ptr = builder.get_builder<fp::Task>();
     auto& task = *task_ptr;
     task.clear();
 
-    task.name = element.get_name();
-    task.domain = create_projected_domain(element.get_domain(), context, pattern).first;
+    task.name = planning_task.get_task().get_name();
+    task.domain = project_domain.get_domain().get_index();
 
-    for (const auto predicate : element.get_derived_predicates())
-        task.derived_predicates.push_back(fp::merge_p2p(predicate, context).first);
+    for (const auto predicate : planning_task.get_task().get_derived_predicates())
+        task.derived_predicates.push_back(fp::merge_p2p(predicate, context).first.get_index());
 
-    for (const auto object : element.get_objects())
-        task.objects.push_back(fp::merge_p2p(object, context).first);
+    for (const auto object : planning_task.get_task().get_objects())
+        task.objects.push_back(fp::merge_p2p(object, context).first.get_index());
 
-    for (const auto atom : element.get_atoms<f::StaticTag>())
-        task.static_atoms.push_back(fp::merge_p2p(atom, context).first);  // always useful to have
+    for (const auto atom : planning_task.get_task().get_atoms<f::StaticTag>())
+        task.static_atoms.push_back(fp::merge_p2p(atom, context).first.get_index());  // always useful to have
 
-    for (const auto atom : element.get_atoms<f::FluentTag>())
+    for (const auto atom : planning_task.get_task().get_atoms<f::FluentTag>())
         append_projected_atom(atom, pattern, task.fluent_atoms, context);
 
-    task.goal = create_projected_goal(element.get_goal(), pattern, context).first;
+    task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context).first.get_index();
 
     canonicalize(task);
-    return destination.get_or_create(task, builder.get_buffer()).first;
+    return LiftedTask::create(fp::PlanningTask(destination->get_or_create(task, builder.get_buffer()).first, std::move(fdr_context), destination, project_domain));
 }
 
 ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
@@ -241,24 +251,20 @@ void ProjectionGenerator<LiftedTask>::generate()
     for (const auto& pattern : m_patterns)
     {
         // Step 1: Create the projected task
-        auto repository = std::make_shared<fp::Repository>(m_task.get_repository().get());
-        auto projected_task_index = create_projected_task(m_task.get_task(), *repository, pattern);
-        auto projected_task = make_view(projected_task_index, *repository);
+        
+        auto projected_task = create_projected_task(m_task.get_formalism_task(), pattern);
 
         // TODO: make sure the projected task is correct
-        std::cout << projected_task.get_domain() << std::endl;
-        std::cout << projected_task << std::endl;
+        // std::cout << projected_task->get_domain() << std::endl;
+        // std::cout << projected_task->get_t << std::endl;
 
-        for (const auto action : projected_task.get_domain().get_actions())
+        for (const auto action : projected_task->get_domain().get_domain().get_actions())
         {
             auto vdg = fp::VariableDependencyGraph(action);
             std::cout << vdg << std::endl;
         }
 
-        // Step 2: Create the lifted projected task
-        auto projected_lifted_task = std::make_shared<LiftedTask>(m_task.get_domain(), repository, projected_task, m_task.get_fdr_context());
-
-        auto successor_generator = SuccessorGenerator<LiftedTask>(projected_lifted_task);
+        auto successor_generator = SuccessorGenerator<LiftedTask>(projected_task);
         auto& state_repository = successor_generator.get_state_repository();
         auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
 
@@ -293,7 +299,7 @@ void ProjectionGenerator<LiftedTask>::generate()
                 auto anode = Node<LiftedTask>(astate, float_t { 0 });
 
                 const auto state_context = StateContext { m_task, astate.get_unpacked_state(), float_t { 0 } };
-                const auto is_goal = is_dynamically_applicable(projected_task.get_goal(), state_context);
+                const auto is_goal = is_dynamically_applicable(projected_task->get_task().get_goal(), state_context);
 
                 if (is_goal)
                     goal_vertices.insert(uint_t(astate.get_index()));
