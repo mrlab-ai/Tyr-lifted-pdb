@@ -318,7 +318,7 @@ DomainPtr LokiToTyrTranslator::translate(const loki::Domain& element, fp::Builde
     domain.axioms = translate_lifted(element->get_axioms(), builder, *context);
 
     canonicalize(domain);
-    return std::make_shared<Domain>(context, make_view(context->get_or_create(domain, builder.get_buffer()).first.get_index(), *context));
+    return std::make_shared<Domain>(context, context->get_or_create(domain, builder.get_buffer()).first);
 }
 
 LiftedTaskPtr LokiToTyrTranslator::translate(const loki::Problem& element, fp::Builder& builder, DomainPtr domain, fp::RepositoryPtr domain_context)
