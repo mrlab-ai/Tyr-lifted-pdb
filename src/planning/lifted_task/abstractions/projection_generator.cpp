@@ -171,10 +171,6 @@ static void append_projected_action(View<Index<fp::Action>, fp::Repository> elem
     ref_projected_actions.push_back(context.destination.get_or_create(action, context.builder.get_buffer()).first.get_index());
 }
 
-static auto create_projected_fdr_context(fp::Repository& destination, const Pattern& pattern) {
-    auto fdr_context = fp::BinaryFDRContext(*destination);
-}
-
 static auto create_projected_domain(View<Index<fp::Domain>, fp::Repository> element, std::shared_ptr<fp::Repository> destination, fp::MergeContext& context, const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
@@ -200,7 +196,8 @@ static auto create_projected_task(const fp::PlanningTask& planning_task, const P
 {
     auto destination = std::make_shared<fp::Repository>(planning_task.get_repository().get());
     auto builder = fp::Builder();
-    auto fdr_context = fp::BinaryFDRContext(*destination);
+    // Note: we have to copy the FDRContext to avoid polluting the parent tasks FDRContext with non-existing atoms.
+    auto fdr_context = fp::BinaryFDRContext(planning_task.get_fdr_context(), builder, *destination);
     auto context = fp::MergeContext(builder, *destination);
 
     const auto project_domain = create_projected_domain(planning_task.get_domain().get_domain(), destination, context, pattern);
@@ -227,7 +224,7 @@ static auto create_projected_task(const fp::PlanningTask& planning_task, const P
     task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context).first.get_index();
 
     canonicalize(task);
-    return LiftedTask::create(fp::PlanningTask(destination->get_or_create(task, builder.get_buffer()).first, std::move(fdr_context), destination, project_domain));
+    return fp::PlanningTask(destination->get_or_create(task, builder.get_buffer()).first, std::move(fdr_context), destination, project_domain);
 }
 
 ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
@@ -252,7 +249,7 @@ void ProjectionGenerator<LiftedTask>::generate()
     {
         // Step 1: Create the projected task
         
-        auto projected_task = create_projected_task(m_task.get_formalism_task(), pattern);
+        auto projected_task = LiftedTask::create(create_projected_task(m_task.get_formalism_task(), pattern));
 
         // TODO: make sure the projected task is correct
         // std::cout << projected_task->get_domain() << std::endl;
