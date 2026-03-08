@@ -143,7 +143,7 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
     const auto& in = wrctx.in();
     auto& out = wrctx.out();
 
-    create_general_binding(clique, in.cws_rule().static_consistency_graph, out.ground_context_solve().binding);
+    create_general_binding(clique, in.cws_rule().get_static_consistency_graph(), out.ground_context_solve().binding);
 
     assert(ensure_novel_binding(out.ground_context_solve().binding, out.seen_bindings_dbg()));
 

@@ -433,7 +433,7 @@ public:
         if (it == entry.slot.end())
         {
             assert(m_parent && "Element not found in the repository chain.");
-            return m_parent->get_canonical_context(index);
+            return m_parent ? m_parent->get_canonical_context(index) : *this;
         }
 
         const auto& slot = it->second;

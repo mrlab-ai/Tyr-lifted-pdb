@@ -151,30 +151,13 @@ private:
 
             if (is_applicable(ground_action, state_context, m_effect_families))
                 m_preferred_actions.insert(ground_action_index);
-
-            /*
-        for (const auto cond_effect : ground_action.get_effects())
-        {
-            if (!cond_effect.get_condition().get_facts<formalism::FluentTag>().empty())
-                continue;
-
-            for (const auto fact : cond_effect.get_effect().get_facts())
-            {
-                if (!fact.has_value())
-                    continue;
-
-                const auto merged_atom = formalism::planning::merge_p2d(fact.get_atom(), merge_context).first;
-
-                mark_atom(merged_atom);
-            }
-        }
-            */
         }
 
         // Divide case: recursively call for preconditions.
         for (const auto literal : witness.get_witness_condition().get_literals<formalism::FluentTag>())
         {
-            extract_relaxed_plan_and_preferred_actions(literal.get_atom().get_index(), state_context, grounder_context);
+            // The atoms itself is part of the program, hence, literal.get_data().atom
+            extract_relaxed_plan_and_preferred_actions(literal.get_data().atom, state_context, grounder_context);
         }
     }
 

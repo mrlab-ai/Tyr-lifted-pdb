@@ -172,7 +172,7 @@ struct RuleExecutionContext
     {
         // std::cout << cws_rule.get_rule() << std::endl;
 
-        ws_rule.common.initialize_iteration(cws_rule.static_consistency_graph,
+        ws_rule.common.initialize_iteration(cws_rule.get_static_consistency_graph(),
                                             ctx.ctx.ws.facts.delta_fact_sets,
                                             AssignmentSets { ctx.ctx.cws.facts.assignment_sets, ctx.ctx.ws.facts.assignment_sets });
     }

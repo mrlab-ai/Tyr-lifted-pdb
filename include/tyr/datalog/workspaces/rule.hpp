@@ -253,32 +253,33 @@ struct RuleWorkspace
 
 struct ConstRuleWorkspace
 {
-    Index<formalism::datalog::Rule> rule;
-    const formalism::datalog::Repository& repository;
+public:
+    auto get_rule() const noexcept { return rule; }
+    auto get_witness_condition() const noexcept { return witness_condition; }
+    auto get_nullary_condition() const noexcept { return nullary_condition; }
+    auto get_unary_overapproximation_condition() const noexcept { return unary_overapproximation_condition; }
+    auto get_binary_overapproximation_condition() const noexcept { return binary_overapproximation_condition; }
+    auto get_static_binary_overapproximation_condition() const noexcept { return static_binary_overapproximation_condition; }
+    auto get_conflicting_overapproximation_condition() const noexcept { return conflicting_overapproximation_condition; }
+    const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
-    Index<formalism::datalog::ConjunctiveCondition> witness_condition;
-    Index<formalism::datalog::GroundConjunctiveCondition> nullary_condition;
-    Index<formalism::datalog::ConjunctiveCondition> unary_overapproximation_condition;
-    Index<formalism::datalog::ConjunctiveCondition> binary_overapproximation_condition;
-    Index<formalism::datalog::ConjunctiveCondition> static_binary_overapproximation_condition;
-    Index<formalism::datalog::ConjunctiveCondition> conflicting_overapproximation_condition;
-
-    StaticConsistencyGraph static_consistency_graph;
-
-    auto get_rule() const noexcept { return make_view(rule, repository); }
-    auto get_witness_condition() const noexcept { return make_view(witness_condition, repository); }
-    auto get_nullary_condition() const noexcept { return make_view(nullary_condition, repository); }
-    auto get_unary_overapproximation_condition() const noexcept { return make_view(unary_overapproximation_condition, repository); }
-    auto get_binary_overapproximation_condition() const noexcept { return make_view(binary_overapproximation_condition, repository); }
-    auto get_static_binary_overapproximation_condition() const noexcept { return make_view(static_binary_overapproximation_condition, repository); }
-    auto get_conflicting_overapproximation_condition() const noexcept { return make_view(conflicting_overapproximation_condition, repository); }
-
-    ConstRuleWorkspace(Index<formalism::datalog::Rule> rule,
+    ConstRuleWorkspace(View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule,
                        formalism::datalog::Repository& repository,
                        const analysis::DomainListList& parameter_domains,
                        size_t num_objects,
                        size_t num_fluent_predicates,
                        const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
+
+private:
+    View<Index<formalism::datalog::Rule>, formalism::datalog::Repository> rule;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> witness_condition;
+    View<Index<formalism::datalog::GroundConjunctiveCondition>, formalism::datalog::Repository> nullary_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> unary_overapproximation_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> binary_overapproximation_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> static_binary_overapproximation_condition;
+    View<Index<formalism::datalog::ConjunctiveCondition>, formalism::datalog::Repository> conflicting_overapproximation_condition;
+
+    StaticConsistencyGraph static_consistency_graph;
 };
 
 /**
@@ -357,7 +358,7 @@ void RuleWorkspace<AndAP>::Worker::clear() noexcept
 
 template<typename AndAP>
 RuleWorkspace<AndAP>::RuleWorkspace(const formalism::datalog::Repository& program_repository, const ConstRuleWorkspace& cws, const AndAP& and_ap) :
-    common(program_repository, cws.static_consistency_graph),
+    common(program_repository, cws.get_static_consistency_graph()),
     worker([this, and_ap] { return Worker(this->common, and_ap); })
 {
 }

@@ -54,21 +54,20 @@ static auto create_witness_condition(View<Index<fd::ConjunctiveCondition>, fd::R
     return context.get_or_create(conj_cond, builder.get_buffer());
 }
 
-ConstRuleWorkspace::ConstRuleWorkspace(Index<formalism::datalog::Rule> rule,
-                                       formalism::datalog::Repository& repository,
+ConstRuleWorkspace::ConstRuleWorkspace(View<Index<fd::Rule>, fd::Repository> rule,
+                                       fd::Repository& repository,
                                        const analysis::DomainListList& parameter_domains,
                                        size_t num_objects,
                                        size_t num_fluent_predicates,
                                        const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets) :
     rule(rule),
-    repository(repository),
-    witness_condition(create_witness_condition(get_rule().get_body(), repository).first.get_index()),
-    nullary_condition(create_ground_nullary_condition(get_rule().get_body(), repository).first.get_index()),
-    unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), repository).first.get_index()),
-    binary_overapproximation_condition(create_overapproximation_conjunctive_condition(2, get_rule().get_body(), repository).first.get_index()),
-    static_binary_overapproximation_condition(create_static_overapproximation_conjunctive_condition(2, get_rule().get_body(), repository).first.get_index()),
+    witness_condition(create_witness_condition(get_rule().get_body(), repository).first),
+    nullary_condition(create_ground_nullary_condition(get_rule().get_body(), repository).first),
+    unary_overapproximation_condition(create_overapproximation_conjunctive_condition(1, get_rule().get_body(), repository).first),
+    binary_overapproximation_condition(create_overapproximation_conjunctive_condition(2, get_rule().get_body(), repository).first),
+    static_binary_overapproximation_condition(create_static_overapproximation_conjunctive_condition(2, get_rule().get_body(), repository).first),
     conflicting_overapproximation_condition(
-        create_overapproximation_conflicting_conjunctive_condition(get_rule().get_arity() == 1 ? 1 : 2, get_rule().get_body(), repository).first.get_index()),
+        create_overapproximation_conflicting_conjunctive_condition(get_rule().get_arity() == 1 ? 1 : 2, get_rule().get_body(), repository).first),
     static_consistency_graph(get_rule(),
                              get_rule().get_body(),
                              get_unary_overapproximation_condition(),
