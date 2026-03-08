@@ -32,6 +32,11 @@ struct Index<formalism::datalog::Atom<T>> : IndexMixin<Index<formalism::datalog:
     using Base::Base;
 };
 
+namespace formalism::datalog
+{
+template<formalism::FactKind T>
+using AtomIndex = Index<Atom<T>>;
+}
 }
 
 #endif

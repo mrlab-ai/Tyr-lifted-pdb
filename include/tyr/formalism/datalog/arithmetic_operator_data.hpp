@@ -48,6 +48,12 @@ struct Data<formalism::datalog::ArithmeticOperator<T>>
     auto cista_members() const noexcept { return std::tie(value); }
     auto identifying_members() const noexcept { return std::tie(value); }
 };
+
+namespace formalism::datalog
+{
+using ArithmeticOperatorData = Data<ArithmeticOperator<Data<FunctionExpression>>>;
+using GroundArithmeticOperatorData = Data<ArithmeticOperator<Data<GroundFunctionExpression>>>;
+}
 }
 
 #endif

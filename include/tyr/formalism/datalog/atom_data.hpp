@@ -56,6 +56,12 @@ struct Data<formalism::datalog::Atom<T>>
     auto cista_members() const noexcept { return std::tie(index, predicate, terms); }
     auto identifying_members() const noexcept { return std::tie(predicate, terms); }
 };
+
+namespace formalism::datalog
+{
+template<formalism::FactKind T>
+using AtomData = Data<Atom<T>>;
+}
 }
 
 #endif
