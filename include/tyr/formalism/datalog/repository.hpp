@@ -448,7 +448,6 @@ public:
 };
 
 static_assert(RepositoryConcept<Repository>);
-
 static_assert(Context<Repository>);
 
 }

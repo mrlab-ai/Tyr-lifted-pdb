@@ -263,6 +263,7 @@ class Builder;
 
 template<typename Repo, typename Tag>
 concept RepositoryAccess = requires(const Repo& r, Index<Tag> idx) {
+    requires CanonicalizableContext<Index<Tag>, Repo>;
     { r[idx] } -> std::same_as<const Data<Tag>&>;
 };
 
