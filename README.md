@@ -87,7 +87,6 @@ The C++ interface for implementing search algorithms is:
 // Recommended namespace aliases.
 namespace tfp = tyr::formalism::planning;
 namespace tp = tyr::planning;
-namespace tpl = tyr::planning;
 
 // Parse and translate a task over a domain.
 auto parser = tfp::Parser("domain.pddl");
@@ -95,7 +94,7 @@ auto parser = tfp::Parser("domain.pddl");
 auto task = tp::LiftedTask::create(parser.parse_task("problem.pddl"));
 
 // Instantiate a lifted successor generator.
-auto successor_generator = tpl::SuccessorGenerator<tp::LiftedTask>(task);
+auto successor_generator = tp::SuccessorGenerator<tp::LiftedTask>(task);
 
 // Get the initial node (state + metric value).
 auto initial_node = successor_generator.get_initial_node();
@@ -113,7 +112,6 @@ auto labeled_successor_nodes = successor_generator.get_labeled_successor_nodes(i
 // Recommended namespace aliases.
 namespace tfp = tyr::formalism;
 namespace tp = tyr::planning;
-namespace tpg = tyr::planning;
 
 // Parse and translate a task over a domain.
 auto parser = tfp::Parser("domain.pddl");
@@ -121,7 +119,7 @@ auto parser = tfp::Parser("domain.pddl");
 auto task = tp::LiftedTask::create(parser.parse_task("problem.pddl")).instantiate_ground_task();
 
 // Instantiate a ground successor generator.
-auto successor_generator = tpg::SuccessorGenerator<tp::GroundTask>(ground_task);
+auto successor_generator = tp::SuccessorGenerator<tp::GroundTask>(ground_task);
 
 // Get the initial node (state + metric value).
 auto initial_node = successor_generator.get_initial_node();
