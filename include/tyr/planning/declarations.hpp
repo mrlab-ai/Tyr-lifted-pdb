@@ -93,7 +93,7 @@ using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Task>>;
 }
 
 template<typename Task>
-class ExplicitProjection;
+class ProjectionAbstraction;
 }
 
 #endif
