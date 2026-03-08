@@ -157,7 +157,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
 
                 const auto ground_action = fp::ground(action,
                                                       grounder_context,
-                                                      m_task->get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
+                                                      m_task->get_parameter_domains_per_cond_effect_per_action().at(action_index),
                                                       fluent_assign,
                                                       iter_workspace,
                                                       *m_task->get_fdr_context())
