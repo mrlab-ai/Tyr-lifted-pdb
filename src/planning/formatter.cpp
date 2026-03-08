@@ -199,7 +199,7 @@ template std::ostream& print(std::ostream& os, const planning::Plan<planning::Li
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::GroundTag>& el);
 
 template<typename Task>
-std::ostream& print(std::ostream& os, const planning::ExplicitProjection<Task>& el)
+std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Task>& el)
 {
     os << "digraph {\n";
 
@@ -230,8 +230,8 @@ std::ostream& print(std::ostream& os, const planning::ExplicitProjection<Task>& 
     return os;
 }
 
-template std::ostream& print(std::ostream& os, const planning::ExplicitProjection<planning::LiftedTask>& el);
-template std::ostream& print(std::ostream& os, const planning::ExplicitProjection<planning::GroundTask>& el);
+template std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<planning::LiftedTask>& el);
+template std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<planning::GroundTask>& el);
 
 namespace planning
 {
@@ -280,13 +280,13 @@ template std::ostream& operator<<(std::ostream& os, const Plan<LiftedTag>& el);
 template std::ostream& operator<<(std::ostream& os, const Plan<GroundTag>& el);
 
 template<typename Task>
-std::ostream& operator<<(std::ostream& os, const ExplicitProjection<Task>& el)
+std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<Task>& el)
 {
     return tyr::print(os, el);
 }
 
-template std::ostream& operator<<(std::ostream& os, const ExplicitProjection<LiftedTask>& el);
-template std::ostream& operator<<(std::ostream& os, const ExplicitProjection<GroundTask>& el);
+template std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<LiftedTask>& el);
+template std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<GroundTask>& el);
 
 }
 }

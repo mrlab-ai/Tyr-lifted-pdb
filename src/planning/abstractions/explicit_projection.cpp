@@ -24,12 +24,12 @@
 
 namespace tyr::planning
 {
-static_assert(graphs::VertexListGraph<ExplicitProjection<LiftedTask>>);
-static_assert(graphs::VertexListGraph<ExplicitProjection<GroundTask>>);
+static_assert(graphs::VertexListGraph<ProjectionAbstraction<LiftedTask>>);
+static_assert(graphs::VertexListGraph<ProjectionAbstraction<GroundTask>>);
 
-static_assert(graphs::IncidenceGraph<ExplicitProjection<LiftedTask>>);
-static_assert(graphs::IncidenceGraph<ExplicitProjection<GroundTask>>);
+static_assert(graphs::IncidenceGraph<ProjectionAbstraction<LiftedTask>>);
+static_assert(graphs::IncidenceGraph<ProjectionAbstraction<GroundTask>>);
 
-static_assert(graphs::ContiguousIndexingMode<ExplicitProjection<LiftedTask>>);
-static_assert(graphs::ContiguousIndexingMode<ExplicitProjection<GroundTask>>);
+static_assert(graphs::ContiguousIndexingMode<ProjectionAbstraction<LiftedTask>>);
+static_assert(graphs::ContiguousIndexingMode<ProjectionAbstraction<GroundTask>>);
 }
