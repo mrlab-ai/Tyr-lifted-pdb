@@ -23,13 +23,14 @@
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/variable_dependency_graph.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/graphs/bgl_algorithms.hpp"
 #include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
-#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/formatter.hpp"
@@ -171,7 +172,10 @@ static void append_projected_action(View<Index<fp::Action>, fp::Repository> elem
     ref_projected_actions.push_back(context.destination.get_or_create(action, context.builder.get_buffer()).first.get_index());
 }
 
-static auto create_projected_domain(View<Index<fp::Domain>, fp::Repository> element, std::shared_ptr<fp::Repository> destination, fp::MergeContext& context, const Pattern& pattern)
+static auto create_projected_formalism_domain(View<Index<fp::Domain>, fp::Repository> element,
+                                              std::shared_ptr<fp::Repository> destination,
+                                              fp::MergeContext& context,
+                                              const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
     auto& domain = *domain_ptr;
@@ -192,7 +196,7 @@ static auto create_projected_domain(View<Index<fp::Domain>, fp::Repository> elem
     return fp::PlanningDomain(context.destination.get_or_create(domain, context.builder.get_buffer()).first, std::move(destination));
 }
 
-static auto create_projected_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
+static auto create_projected_formalism_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
 {
     auto destination = std::make_shared<fp::Repository>(planning_task.get_repository().get());
     auto builder = fp::Builder();
@@ -200,7 +204,7 @@ static auto create_projected_task(const fp::PlanningTask& planning_task, const P
     auto fdr_context = fp::BinaryFDRContext(planning_task.get_fdr_context(), builder, *destination);
     auto context = fp::MergeContext(builder, *destination);
 
-    const auto project_domain = create_projected_domain(planning_task.get_domain().get_domain(), destination, context, pattern);
+    const auto project_domain = create_projected_formalism_domain(planning_task.get_domain().get_domain(), destination, context, pattern);
 
     auto task_ptr = builder.get_builder<fp::Task>();
     auto& task = *task_ptr;
@@ -248,12 +252,11 @@ void ProjectionGenerator<LiftedTask>::generate()
     for (const auto& pattern : m_patterns)
     {
         // Step 1: Create the projected task
-        
-        auto projected_task = LiftedTask::create(create_projected_task(m_task.get_formalism_task(), pattern));
 
-        // TODO: make sure the projected task is correct
-        // std::cout << projected_task->get_domain() << std::endl;
-        // std::cout << projected_task->get_t << std::endl;
+        auto projected_task = LiftedTask::create(create_projected_formalism_task(m_task.get_formalism_task(), pattern));
+
+        std::cout << projected_task->get_domain().get_domain() << std::endl;
+        std::cout << projected_task->get_task() << std::endl;
 
         for (const auto action : projected_task->get_domain().get_domain().get_actions())
         {
@@ -286,7 +289,7 @@ void ProjectionGenerator<LiftedTask>::generate()
 
         auto transitions = TransitionList {};
         auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
-        auto goal_vertices = UnorderedSet<uint_t> {};
+        auto goal_vertices = std::vector<uint_t> {};
 
         {
             for (const auto& astate : astates)
@@ -299,7 +302,7 @@ void ProjectionGenerator<LiftedTask>::generate()
                 const auto is_goal = is_dynamically_applicable(projected_task->get_task().get_goal(), state_context);
 
                 if (is_goal)
-                    goal_vertices.insert(uint_t(astate.get_index()));
+                    goal_vertices.push_back(uint_t(astate.get_index()));
 
                 successor_generator.get_labeled_successor_nodes(anode, labeled_succ_nodes);
 
@@ -319,18 +322,21 @@ void ProjectionGenerator<LiftedTask>::generate()
             }
         }
 
-        auto projection = ExplicitProjection<LiftedTask>(std::move(astates), std::move(transitions), std::move(adj_lists));
+        auto projection = ProjectionAbstraction<LiftedTask>(std::move(astates), std::move(transitions), std::move(adj_lists), std::move(goal_vertices));
 
         auto weights = std::vector<float_t>(projection.num_edges(), float_t { 1 });
 
         std::cout << projection << std::endl;
 
-        auto backward_projection = BackwardExplicitProjection<LiftedTask>(projection);
+        auto backward_projection = BackwardProjectionAbstraction<LiftedTask>(projection);
 
-        const auto [predecessors, distances] = dijkstra_shortest_paths(backward_projection, weights, goal_vertices.begin(), goal_vertices.end());
+        const auto [predecessors, distances] = graphs::dijkstra_shortest_paths(backward_projection,
+                                                                               weights,
+                                                                               backward_projection.goal_vertices().begin(),
+                                                                               backward_projection.goal_vertices().end());
 
         std::cout << "goal_vertices: " << std::endl;
-        print(std::cout, goal_vertices);
+        print(std::cout, backward_projection.goal_vertices());
         std::cout << std::endl;
 
         std::cout << "predecessors: " << std::endl;
