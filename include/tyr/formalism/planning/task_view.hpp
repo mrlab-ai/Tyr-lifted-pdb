@@ -73,6 +73,11 @@ public:
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
+
+namespace formalism::planning
+{
+using TaskView = View<Index<Task>, Repository>;
+}
 }
 
 #endif

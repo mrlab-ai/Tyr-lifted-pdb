@@ -70,6 +70,11 @@ struct Data<formalism::planning::Action>
     auto cista_members() const noexcept { return std::tie(index, name, variables, original_arity, condition, effects); }
     auto identifying_members() const noexcept { return std::tie(name, variables, original_arity, condition, effects); }
 };
+
+namespace formalism::planning
+{
+using ActionData = Data<Action>;
+}
 }
 
 #endif

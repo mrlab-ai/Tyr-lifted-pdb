@@ -42,6 +42,12 @@ public:
     auto get_variant() const noexcept { return make_view(m_handle.value, *m_context); }
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
+
+namespace formalism::planning
+{
+using BooleanOperatorView = View<Data<BooleanOperator<Data<FunctionExpression>>>, Repository>;
+using GroundBooleanOperatorView = View<Data<BooleanOperator<Data<GroundFunctionExpression>>>, Repository>;
+}
 }
 
 #endif

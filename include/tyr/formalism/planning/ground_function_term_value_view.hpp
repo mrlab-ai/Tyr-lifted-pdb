@@ -23,6 +23,9 @@
 #include "tyr/formalism/planning/ground_function_term_value_index.hpp"
 #include "tyr/formalism/planning/ground_function_term_view.hpp"
 
+#include <utility>
+#include <vector>
+
 namespace tyr
 {
 template<formalism::FactKind T, formalism::planning::Context C>
@@ -45,6 +48,17 @@ public:
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
+
+namespace formalism::planning
+{
+template<FactKind T>
+using GroundFunctionTermValueView = View<Index<GroundFunctionTermValue<T>>, Repository>;
+
+template<FactKind T>
+using GroundFunctionTermViewValuePair = std::pair<View<Index<GroundFunctionTerm<T>>, Repository>, float_t>;
+template<FactKind T>
+using GroundFunctionTermViewValuePairList = std::vector<GroundFunctionTermViewValuePair<T>>;
+}
 }
 
 #endif

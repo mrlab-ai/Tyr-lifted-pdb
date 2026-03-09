@@ -32,6 +32,10 @@ struct Index<formalism::planning::Action> : IndexMixin<Index<formalism::planning
     using Base::Base;
 };
 
+namespace formalism::planning
+{
+using ActionIndex = Index<Action>;
+}
 }
 
 #endif

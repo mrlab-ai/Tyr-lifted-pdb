@@ -45,6 +45,12 @@ struct Data<formalism::datalog::BooleanOperator<T>>
     auto cista_members() const noexcept { return std::tie(value); }
     auto identifying_members() const noexcept { return std::tie(value); }
 };
+
+namespace formalism::datalog
+{
+using BooleanOperatorData = Data<BooleanOperator<Data<FunctionExpression>>>;
+using GroundBooleanOperatorData = Data<BooleanOperator<Data<GroundFunctionExpression>>>;
+}
 }
 
 #endif

@@ -52,6 +52,11 @@ public:
 
     auto identifying_members() const noexcept { return std::tie(m_context, m_handle); }
 };
+
+namespace formalism::planning
+{
+using GroundActionView = View<Index<GroundAction>, Repository>;
+}
 }
 
 #endif
