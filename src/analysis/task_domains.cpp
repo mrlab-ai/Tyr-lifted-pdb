@@ -73,7 +73,8 @@ DomainListList to_list(const DomainSetList& element)
     return result;
 }
 
-std::vector<std::pair<DomainListList, DomainListListList>> to_list(const std::vector<std::pair<DomainSetList, DomainSetListList>>& element)
+template<typename T>
+UnorderedMap<Index<T>, DomainListList> to_list(const UnorderedMap<Index<T>, DomainSetList>& element)
 {
     auto result = UnorderedMap<Index<T>, DomainListList>();
 
