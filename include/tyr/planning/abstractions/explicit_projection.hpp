@@ -36,7 +36,7 @@ namespace tyr::planning
 struct Transition
 {
     // TODO: get rid of actions.
-    View<Index<formalism::planning::GroundAction>, formalism::planning::Repository> label;
+    formalism::planning::GroundActionView label;
     uint_t src;
     uint_t dst;
 };
