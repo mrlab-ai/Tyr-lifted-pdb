@@ -22,16 +22,16 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
-#include "tyr/formalism/planning/fdr_fact_data.hpp"
-#include "tyr/formalism/predicate_index.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/declarations.hpp"
 
 namespace tyr::planning
 {
 struct Pattern
 {
-    UnorderedSet<Data<formalism::planning::FDRFact<formalism::FluentTag>>> facts;
-    UnorderedSet<Index<formalism::Predicate<formalism::FluentTag>>> predicates;
+    UnorderedSet<formalism::planning::FDRFactView<formalism::FluentTag>> facts;
+    UnorderedSet<formalism::planning::PredicateView<formalism::FluentTag>> predicates;
 
     auto size() const noexcept { return facts.size(); }
 };
