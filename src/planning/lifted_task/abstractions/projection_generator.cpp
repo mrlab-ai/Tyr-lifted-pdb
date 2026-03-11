@@ -48,46 +48,39 @@ namespace tyr::planning
 {
 
 template<f::FactKind T>
-static void append_projected_atom(View<Index<fp::GroundAtom<T>>, fp::Repository> element,
-                                  const Pattern& pattern,
-                                  IndexList<fp::GroundAtom<T>>& ref_projected_atoms,
-                                  fp::MergeContext& context)
+static void
+append_projected_atom(fp::GroundAtomView<T> element, const Pattern& pattern, IndexList<fp::GroundAtom<T>>& ref_projected_atoms, fp::MergeContext& context)
 {
-    if (pattern.predicates.contains(element.get_predicate().get_index()))
+    if (pattern.predicates.contains(element.get_predicate()))
         ref_projected_atoms.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
-static void append_projected_literal(View<Index<fp::GroundLiteral<T>>, fp::Repository> element,
+static void append_projected_literal(fp::GroundLiteralView<T> element,
                                      const Pattern& pattern,
                                      IndexList<fp::GroundLiteral<T>>& ref_projected_literal,
                                      fp::MergeContext& context)
 {
-    if (pattern.predicates.contains(element.get_atom().get_predicate().get_index()))
+    if (pattern.predicates.contains(element.get_atom().get_predicate()))
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
-static void append_projected_literal(View<Index<fp::Literal<T>>, fp::Repository> element,
-                                     const Pattern& pattern,
-                                     IndexList<fp::Literal<T>>& ref_projected_literal,
-                                     fp::MergeContext& context)
+static void
+append_projected_literal(fp::LiteralView<T> element, const Pattern& pattern, IndexList<fp::Literal<T>>& ref_projected_literal, fp::MergeContext& context)
 {
-    if (pattern.predicates.contains(element.get_atom().get_predicate().get_index()))
+    if (pattern.predicates.contains(element.get_atom().get_predicate()))
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
-static void append_projected_fact(View<Data<fp::FDRFact<T>>, fp::Repository> element,
-                                  const Pattern& pattern,
-                                  DataList<fp::FDRFact<T>>& ref_projected_facts,
-                                  fp::MergeContext& context)
+static void append_projected_fact(fp::FDRFactView<T> element, const Pattern& pattern, DataList<fp::FDRFact<T>>& ref_projected_facts, fp::MergeContext& context)
 {
-    if (pattern.facts.contains(element.get_data()))
+    if (pattern.facts.contains(element))
         ref_projected_facts.push_back(fp::merge_p2p(element, context));
 }
 
-static auto create_projected_goal(View<Index<fp::GroundConjunctiveCondition>, fp::Repository> element, const Pattern& pattern, fp::MergeContext& context)
+static auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pattern& pattern, fp::MergeContext& context)
 {
     auto conj_cond_ptr = context.builder.template get_builder<fp::GroundConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -102,8 +95,7 @@ static auto create_projected_goal(View<Index<fp::GroundConjunctiveCondition>, fp
     return context.destination.get_or_create(conj_cond, context.builder.get_buffer());
 }
 
-static auto
-create_projected_conjunctive_condition(View<Index<fp::ConjunctiveCondition>, fp::Repository> element, fp::MergeContext& context, const Pattern& pattern)
+static auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element, fp::MergeContext& context, const Pattern& pattern)
 {
     auto conj_cond_ptr = context.builder.template get_builder<fp::ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -120,7 +112,7 @@ create_projected_conjunctive_condition(View<Index<fp::ConjunctiveCondition>, fp:
     return context.destination.get_or_create(conj_cond, context.builder.get_buffer());
 }
 
-static auto create_projected_conjunctive_effect(View<Index<fp::ConjunctiveEffect>, fp::Repository> element, fp::MergeContext& context, const Pattern& pattern)
+static auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element, fp::MergeContext& context, const Pattern& pattern)
 {
     auto conj_effect_ptr = context.builder.template get_builder<fp::ConjunctiveEffect>();
     auto& conj_eff = *conj_effect_ptr;
@@ -133,7 +125,7 @@ static auto create_projected_conjunctive_effect(View<Index<fp::ConjunctiveEffect
     return context.destination.get_or_create(conj_eff, context.builder.get_buffer());
 }
 
-static void append_projected_conditional_effect(View<Index<fp::ConditionalEffect>, fp::Repository> element,
+static void append_projected_conditional_effect(fp::ConditionalEffectView element,
                                                 fp::MergeContext& context,
                                                 IndexList<fp::ConditionalEffect>& ref_projected_cond_effect,
                                                 const Pattern& pattern)
@@ -151,10 +143,7 @@ static void append_projected_conditional_effect(View<Index<fp::ConditionalEffect
     ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect, context.builder.get_buffer()).first.get_index());
 }
 
-static void append_projected_action(View<Index<fp::Action>, fp::Repository> element,
-                                    fp::MergeContext& context,
-                                    IndexList<fp::Action>& ref_projected_actions,
-                                    const Pattern& pattern)
+static void append_projected_action(fp::ActionView element, fp::MergeContext& context, IndexList<fp::Action>& ref_projected_actions, const Pattern& pattern)
 {
     auto action_ptr = context.builder.template get_builder<fp::Action>();
     auto& action = *action_ptr;
@@ -172,10 +161,8 @@ static void append_projected_action(View<Index<fp::Action>, fp::Repository> elem
     ref_projected_actions.push_back(context.destination.get_or_create(action, context.builder.get_buffer()).first.get_index());
 }
 
-static auto create_projected_formalism_domain(View<Index<fp::Domain>, fp::Repository> element,
-                                              std::shared_ptr<fp::Repository> destination,
-                                              fp::MergeContext& context,
-                                              const Pattern& pattern)
+static auto
+create_projected_formalism_domain(fp::DomainView element, std::shared_ptr<fp::Repository> destination, fp::MergeContext& context, const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
     auto& domain = *domain_ptr;
@@ -236,12 +223,12 @@ ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const Pat
 static auto project_state(const State<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
 {
     auto uastate = state_repository.get_unregistered_state();
-    for (const auto& fact : element.get_fluent_facts())
+    for (const auto& fact : element.get_fluent_facts_view())
     {
         if (!pattern.facts.contains(fact))
             continue;
 
-        uastate->set(fact);
+        uastate->set(fact.get_data());
     }
 
     return state_repository.register_state(uastate);
@@ -267,10 +254,9 @@ void ProjectionGenerator<LiftedTask>::generate()
         auto successor_generator = SuccessorGenerator<LiftedTask>(projected_task);
         auto& state_repository = successor_generator.get_state_repository();
         auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
-
-        auto facts_vec = DataList<fp::FDRFact<f::FluentTag>>(pattern.facts.begin(), pattern.facts.end());
-
+        auto facts_vec = std::vector<fp::FDRFactView<f::FluentTag>>(pattern.facts.begin(), pattern.facts.end());
         auto astates = std::vector<State<LiftedTask>> {};
+
         {
             itertools::for_each_boolean_vector(
                 [&](auto&& vec)
@@ -280,7 +266,7 @@ void ProjectionGenerator<LiftedTask>::generate()
 
                     for (uint_t i = 0; i < vec.size(); ++i)
                         if (vec[i])
-                            uastate->set(facts_vec[i]);
+                            uastate->set(facts_vec[i].get_data());
 
                     astates.push_back(state_repository->register_state(uastate));
                 },
