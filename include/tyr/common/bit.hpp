@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_COMMON_BITS_HPP_
-#define TYR_COMMON_BITS_HPP_
+#ifndef TYR_COMMON_BIT_HPP_
+#define TYR_COMMON_BIT_HPP_
 
 #include <array>
 #include <bit>
@@ -26,15 +26,12 @@
 #include <cstdint>
 #include <limits>
 
-namespace tyr
+namespace tyr::bit
 {
 
 /**
  * Partially taken from https://github.com/simongog/sdsl-lite/blob/master/include/sdsl/bits.hpp
  */
-
-namespace bits
-{
 
 template<std::unsigned_integral T>
 constexpr bool is_power_of_two(T x)
@@ -138,7 +135,7 @@ struct ForwardingBlockCoder
 
 static_assert(BlockCoder<ForwardingBlockCoder<uint32_t>, uint32_t>);
 
-template<std::unsigned_integral Block, typename Coder = bits::ForwardingBlockCoder<Block>>
+template<std::unsigned_integral Block, typename Coder = bit::ForwardingBlockCoder<Block>>
     requires BlockCoder<Coder, Block>
 class int_reference
 {
@@ -149,20 +146,20 @@ public:
 
     constexpr int_reference& operator=(const value_type& value)
     {
-        bits::write_int(m_word, Coder::encode(value), m_offset, m_len);
+        bit::write_int(m_word, Coder::encode(value), m_offset, m_len);
         return *this;
     }
 
     constexpr int_reference& operator=(const int_reference& other) { return (*this = static_cast<value_type>(other)); }
 
-    constexpr operator value_type() const { return Coder::decode(bits::read_int(m_word, m_offset, m_len)); }
+    constexpr operator value_type() const { return Coder::decode(bit::read_int(m_word, m_offset, m_len)); }
 
 private:
     Block* m_word;
     uint8_t m_offset;
     uint8_t m_len;
 };
-}
+
 }
 
 #endif
