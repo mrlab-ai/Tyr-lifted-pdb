@@ -174,7 +174,7 @@ private:
 };
 
 template<typename T>
-const T& get(size_t pos, const std::vector<T>& vec, const T& default_value) noexcept
+T get(size_t pos, const std::vector<T>& vec, const T& default_value) noexcept
 {
     if (pos >= vec.size())
         return default_value;

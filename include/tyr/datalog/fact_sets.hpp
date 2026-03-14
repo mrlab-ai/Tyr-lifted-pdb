@@ -115,37 +115,33 @@ template<formalism::FactKind T>
 class FunctionFactSet
 {
 private:
-    Index<formalism::Function<T>> m_function;
+    formalism::datalog::FunctionView<T> m_function;
 
-    const formalism::datalog::Repository& m_context;
-
-    IndexList<formalism::datalog::GroundFunctionTerm<T>> m_indices;
-    UnorderedSet<Index<formalism::datalog::GroundFunctionTerm<T>>> m_unique;
-
+    std::vector<uint_t> m_remap;
+    std::vector<formalism::datalog::FunctionBindingView<T>> m_bindings;
     std::vector<float_t> m_values;
 
 public:
     explicit FunctionFactSet(formalism::datalog::FunctionView<T> function);
 
-    void insert(const FunctionFactSet& other) { insert(other.get_fterms(), other.get_values()); }
+    void insert(const FunctionFactSet& other) { insert(other.get_bindings(), other.get_values()); }
 
     void reset();
 
-    void insert(formalism::datalog::GroundFunctionTermView<T> function_term, float_t value);
+    void insert(formalism::datalog::FunctionBindingView<T> binding, float_t value);
 
-    void insert(formalism::datalog::GroundFunctionTermListView<T> function_terms, const std::vector<float_t>& values);
+    void insert(formalism::datalog::GroundFunctionTermView<T> fterm, float_t value);
+
+    void insert(const std::vector<formalism::datalog::FunctionBindingView<T>>& bindings, const std::vector<float_t>& values);
 
     void insert(formalism::datalog::GroundFunctionTermValueView<T> fterm_value);
 
     void insert(formalism::datalog::GroundFunctionTermValueListView<T> fterm_values);
 
-    bool contains(Index<formalism::datalog::GroundFunctionTerm<T>> fterm) const noexcept;
+    float_t operator[](formalism::datalog::GroundFunctionTermView<T> fterm) const noexcept;
 
-    bool contains(formalism::datalog::GroundFunctionTermView<T> fterm) const noexcept;
-
-    float_t operator[](Index<formalism::datalog::GroundFunctionTerm<T>> fterm) const noexcept;
-
-    formalism::datalog::GroundFunctionTermListView<T> get_fterms() const noexcept;
+    const std::vector<uint_t>& get_remap() const noexcept;
+    const std::vector<formalism::datalog::FunctionBindingView<T>>& get_bindings() const noexcept;
     const std::vector<float_t>& get_values() const noexcept;
 };
 
@@ -175,7 +171,6 @@ public:
 
     void insert(const FunctionFactSets& other)
     {
-        std::cout << m_sets.size() << " " << other.m_sets.size() << std::endl;
         assert(m_sets.size() == other.m_sets.size());
 
         for (uint_t i = 0; i < m_sets.size(); ++i)
@@ -206,15 +201,7 @@ public:
             insert(fterm_value);
     }
 
-    bool contains(formalism::datalog::GroundFunctionTermView<T> fterm) const noexcept
-    {
-        return m_sets[uint_t(fterm.get_function().get_index())].contains(fterm.get_index());
-    }
-
-    float_t operator[](formalism::datalog::GroundFunctionTermView<T> fterm) const noexcept
-    {
-        return m_sets[uint_t(fterm.get_function().get_index())][fterm.get_index()];
-    }
+    float_t operator[](formalism::datalog::GroundFunctionTermView<T> fterm) const noexcept { return m_sets[uint_t(fterm.get_function().get_index())][fterm]; }
 
     const std::vector<FunctionFactSet<T>>& get_sets() const noexcept { return m_sets; }
 };

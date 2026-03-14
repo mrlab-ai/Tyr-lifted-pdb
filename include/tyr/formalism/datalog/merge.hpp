@@ -198,7 +198,7 @@ inline auto merge_d2d(AtomView<T> element, MergeContext& context)
 }
 
 template<FactKind T>
-inline auto merge_d2d(PredicateView<T> predicate, PredicateBinding<T> element, MergeContext& context)
+inline auto merge_d2d(PredicateView<T> predicate, PredicateBindingView<T> element, MergeContext& context)
 {
     auto binding_ptr = context.builder.template get_builder<Binding>();
     auto& binding = *binding_ptr;
@@ -285,7 +285,7 @@ inline auto merge_d2d(FunctionTermView<T> element, MergeContext& context)
 }
 
 template<FactKind T>
-inline auto merge_d2d(FunctionView<T> function, FunctionBinding<T> element, MergeContext& context)
+inline auto merge_d2d(FunctionView<T> function, FunctionBindingView<T> element, MergeContext& context)
 {
     auto binding_ptr = context.builder.template get_builder<Binding>();
     auto& binding = *binding_ptr;

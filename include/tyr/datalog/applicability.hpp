@@ -101,8 +101,6 @@ template<formalism::FactKind T>
     requires(!std::is_same_v<T, formalism::AuxiliaryTag>)
 inline float_t evaluate(formalism::datalog::GroundFunctionTermView<T> element, const FactSets& fact_sets)
 {
-    if (!fact_sets.template get<T>().function.contains(element))
-        return std::numeric_limits<float_t>::quiet_NaN();
     return fact_sets.template get<T>().function[element];
 }
 

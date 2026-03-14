@@ -55,7 +55,7 @@ struct Data<formalism::datalog::GroundFunctionTerm<T>>
         tyr::clear(row);
     }
 
-    auto cista_members() const noexcept { return std::tie(index, function); }
+    auto cista_members() const noexcept { return std::tie(index, function, row); }
     auto identifying_members() const noexcept { return std::tie(function, row); }
 };
 }

@@ -258,19 +258,17 @@ public:
 
     void reset() noexcept { std::fill(m_set.begin(), m_set.end(), ClosedInterval<float_t>()); }
 
-    void insert(formalism::datalog::GroundFunctionTermView<T> function_term, float_t value)
+    void insert(formalism::datalog::FunctionBindingView<T> binding, float_t value)
     {
-        const auto arity = function_term.get_function().get_arity();
-        const auto arguments = function_term.get_row().get_objects();
-
-        assert(function_term.get_function().get_index() == m_function);
+        const auto objects = binding.get_objects();
+        const auto arity = objects.size();
 
         auto& empty_assignment_bound = m_set[EmptyAssignment::rank];
         empty_assignment_bound = hull(empty_assignment_bound, ClosedInterval<float_t>(value, value));
 
         for (uint_t first_index = 0; first_index < arity; ++first_index)
         {
-            const auto first_object = arguments[first_index];
+            const auto first_object = objects[first_index];
 
             // Complete vertex.
             auto& single_assignment_bound = m_set[m_hash.get_rank<false>(VertexAssignment(formalism::ParameterIndex(first_index), first_object.get_index()))];
@@ -278,7 +276,7 @@ public:
 
             for (uint_t second_index = first_index + 1; second_index < arity; ++second_index)
             {
-                const auto second_object = arguments[second_index];
+                const auto second_object = objects[second_index];
 
                 // Ordered complete edge.
                 auto& double_assignment_bound = m_set[m_hash.get_rank<false>(EdgeAssignment(formalism::ParameterIndex(first_index),
@@ -290,7 +288,7 @@ public:
         }
     }
 
-    void insert(formalism::datalog::GroundFunctionTermValueView<T> fterm_value) { insert(fterm_value.get_fterm(), fterm_value.get_value()); }
+    void insert(formalism::datalog::GroundFunctionTermValueView<T> fterm_value) { insert(fterm_value.get_fterm().get_row(), fterm_value.get_value()); }
 
     ClosedInterval<float_t> operator[](const EmptyAssignment& assignment) const noexcept { return m_set[EmptyAssignment::rank]; }
     ClosedInterval<float_t> operator[](const VertexAssignment& assignment) const noexcept { return m_set[m_hash.template get_rank<false>(assignment)]; }
@@ -333,7 +331,7 @@ public:
 
     void insert(formalism::datalog::GroundFunctionTermView<T> function_term, float_t value)
     {
-        m_sets[function_term.get_function().get_index().get_value()].insert(function_term, value);
+        m_sets[function_term.get_function().get_index().get_value()].insert(function_term.get_row(), value);
     }
 
     void insert(formalism::datalog::GroundFunctionTermListView<T> function_terms, const std::vector<float_t>& values)
@@ -349,6 +347,8 @@ public:
     }
 
     const FunctionAssignmentSet<T>& get_set(Index<formalism::Function<T>> index) const noexcept { return m_sets[index.get_value()]; }
+    auto& get_sets() noexcept { return m_sets; }
+    const auto& get_sets() const noexcept { return m_sets; }
 
     size_t size() const noexcept
     {
@@ -389,8 +389,24 @@ struct TaggedAssignmentSets
     {
         for (const auto& set : fact_sets.predicate.get_sets())
             predicate.insert(set.get_facts());
-        for (const auto& set : fact_sets.function.get_sets())
-            function.insert(set.get_fterms(), set.get_values());
+
+        for (uint_t i = 0; i < fact_sets.function.get_sets().size(); ++i)
+        {
+            auto& self = function.get_sets()[i];
+            const auto& other = fact_sets.function.get_sets()[i];
+
+            const auto& remap = other.get_remap();
+            const auto& bindings = other.get_bindings();
+            const auto& values = other.get_values();
+            for (uint_t j = 0; j < remap.size(); ++j)
+            {
+                if (remap[j] == std::numeric_limits<int>::max())
+                    continue;
+
+                const auto pos = remap[j];
+                self.insert(bindings[pos], values[pos]);
+            }
+        }
     }
 
     void reset()

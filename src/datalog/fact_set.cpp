@@ -16,6 +16,7 @@
  */
 
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 
 #include <boost/dynamic_bitset.hpp>
@@ -119,50 +120,52 @@ template class PredicateFactSet<f::FluentTag>;
  */
 
 template<f::FactKind T>
-FunctionFactSet<T>::FunctionFactSet(fd::FunctionView<T> function) : m_function(function.get_index()), m_context(function.get_context()), m_indices(), m_unique()
+FunctionFactSet<T>::FunctionFactSet(fd::FunctionView<T> function) : m_function(function), m_bindings(), m_values()
 {
 }
 
 template<f::FactKind T>
 void FunctionFactSet<T>::reset()
 {
-    m_indices.clear();
-    m_unique.clear();
+    m_remap.clear();
+    m_bindings.clear();
     m_values.clear();
 }
 
 template<f::FactKind T>
-void FunctionFactSet<T>::insert(fd::GroundFunctionTermView<T> function_term, float_t value)
+void FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, float_t value)
 {
-    const auto fterm_index = function_term.get_index();
+    const auto i = uint_t(binding.get_index().second);
 
-    if (m_unique.contains(fterm_index))
+    if (i < m_bindings.size())
         throw std::runtime_error("Multiple value assignments to a ground function term.");
 
-    m_indices.push_back(fterm_index);
-    m_unique.insert(fterm_index);
-    if (fterm_index.get_value() >= m_values.size())
-        m_values.resize(fterm_index.get_value() + 1, std::numeric_limits<float_t>::quiet_NaN());
-    m_values[fterm_index.get_value()] = value;
+    const auto pos = uint_t(m_bindings.size());
+    tyr::set(i, pos, m_remap, std::numeric_limits<uint_t>::max());
 
-    std::cout << "Insert: " << fterm_index.get_value() << " " << value << std::endl;
+    m_bindings.push_back(binding);
+    m_values.push_back(value);
 }
 
 template<f::FactKind T>
-void FunctionFactSet<T>::insert(fd::GroundFunctionTermListView<T> function_terms, const std::vector<float_t>& values)
+void FunctionFactSet<T>::insert(fd::GroundFunctionTermView<T> fterm, float_t value)
 {
-    std::cout << function_terms.size() << " " << values.size() << std::endl;
+    insert(fterm.get_row(), value);
+}
 
-    assert(function_terms.size() == values.size());
+template<f::FactKind T>
+void FunctionFactSet<T>::insert(const std::vector<formalism::datalog::FunctionBindingView<T>>& bindings, const std::vector<float_t>& values)
+{
+    assert(bindings.size() == values.size());
 
-    for (uint_t i = 0; i < function_terms.size(); ++i)
-        insert(function_terms[i], values[i]);
+    for (uint_t i = 0; i < bindings.size(); ++i)
+        insert(bindings[i], values[i]);
 }
 
 template<f::FactKind T>
 void FunctionFactSet<T>::insert(fd::GroundFunctionTermValueView<T> fterm_value)
 {
-    insert(fterm_value.get_fterm(), fterm_value.get_value());
+    insert(fterm_value.get_fterm().get_row(), fterm_value.get_value());
 }
 
 template<f::FactKind T>
@@ -173,27 +176,27 @@ void FunctionFactSet<T>::insert(fd::GroundFunctionTermValueListView<T> fterm_val
 }
 
 template<f::FactKind T>
-bool FunctionFactSet<T>::contains(Index<fd::GroundFunctionTerm<T>> fterm) const noexcept
+float_t FunctionFactSet<T>::operator[](fd::GroundFunctionTermView<T> fterm) const noexcept
 {
-    return m_unique.contains(fterm);
+    const auto row = fterm.get_row().get_index();
+    const auto i = uint_t(row.second);
+
+    if (i >= m_remap.size())
+        return std::numeric_limits<float_t>::quiet_NaN();
+
+    return tyr::get(m_remap[i], m_values, std::numeric_limits<float_t>::quiet_NaN());
 }
 
 template<f::FactKind T>
-bool FunctionFactSet<T>::contains(fd::GroundFunctionTermView<T> fterm) const noexcept
+const std::vector<uint_t>& FunctionFactSet<T>::get_remap() const noexcept
 {
-    return contains(fterm.get_index());
+    return m_remap;
 }
 
 template<f::FactKind T>
-float_t FunctionFactSet<T>::operator[](Index<fd::GroundFunctionTerm<T>> fterm) const noexcept
+const std::vector<formalism::datalog::FunctionBindingView<T>>& FunctionFactSet<T>::get_bindings() const noexcept
 {
-    return m_values[fterm.get_value()];
-}
-
-template<f::FactKind T>
-fd::GroundFunctionTermListView<T> FunctionFactSet<T>::get_fterms() const noexcept
-{
-    return make_view(m_indices, m_context);
+    return m_bindings;
 }
 
 template<f::FactKind T>
