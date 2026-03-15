@@ -67,11 +67,11 @@ else()
 
         # Release: enable LTO but cap parallelism to reduce RAM spikes
         set(CMAKE_CXX_FLAGS_RELEASE
-            "${CMAKE_CXX_FLAGS_RELEASE} -flto=4")
+            "${CMAKE_CXX_FLAGS_RELEASE} -flto=2")
         set(CMAKE_EXE_LINKER_FLAGS_RELEASE
-            "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto=4")
+            "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -flto=2")
         set(CMAKE_SHARED_LINKER_FLAGS_RELEASE
-            "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -flto=4")
+            "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -flto=2")
 
         # RelWithDebInfo: make debug info cheap (big compile-time/RAM win)
         set(CMAKE_CXX_FLAGS_RELWITHDEBINFO
@@ -89,14 +89,14 @@ else()
             "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
         if(APPLE)
             set(CMAKE_EXE_LINKER_FLAGS_RELEASE
-                "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=4")
+                "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=2")
             set(CMAKE_SHARED_LINKER_FLAGS_RELEASE
-                "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=4")
+                "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,-mllvm,-threads=2")
         else()
             set(CMAKE_EXE_LINKER_FLAGS_RELEASE
-                "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=4")
+                "${CMAKE_EXE_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=2")
             set(CMAKE_SHARED_LINKER_FLAGS_RELEASE
-                "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=4")
+                "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} -Wl,--thinlto-jobs=2")
         endif()
 
         # RelWithDebInfo: cheap debug info

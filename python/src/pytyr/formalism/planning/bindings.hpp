@@ -61,7 +61,7 @@ void bind_ground_atom(nb::module_& m, const std::string& name)
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
         .def("get_predicate", &V::get_predicate)
-        .def("get_objects", &V::get_objects);
+        .def("get_objects", [](const V& self) { return self.get_row().get_objects(); });
 }
 
 template<FactKind T>
@@ -159,7 +159,7 @@ void bind_ground_function_term(nb::module_& m, const std::string& name)
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
         .def("get_function", &V::get_function)
-        .def("get_objects", &V::get_objects);
+        .def("get_objects", [](const V& self) { return self.get_row().get_objects(); });
 }
 
 template<FactKind T>

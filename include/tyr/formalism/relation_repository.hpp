@@ -120,7 +120,8 @@ public:
      */
 
     template<typename T>
-    std::optional<Index<Binding>> find_with_hash(Index<T> g, const IndexList<Object>& builder, size_t h) const noexcept
+    std::optional<View<std::pair<Index<T>, Index<Binding>>, RelationRepository>>
+    find_with_hash(Index<T> g, const IndexList<Object>& builder, size_t h) const noexcept
     {
         const auto& entry = std::get<Entry<T>>(m_repository);
 
@@ -134,13 +135,13 @@ public:
             return m_parent ? m_parent->template find_with_hash<T>(g, builder, h) : std::nullopt;
 
         if (auto row_or_nullopt = slot.container->find_with_hash(builder, h))  /// container exists here
-            return Index<Binding>(slot.parent_size + *row_or_nullopt);
+            return View<std::pair<Index<T>, Index<Binding>>, RelationRepository>(std::make_pair(g, Index<Binding>(slot.parent_size + *row_or_nullopt)), *this);
 
         return m_parent ? m_parent->template find_with_hash<T>(g, builder, h) : std::nullopt;
     }
 
     template<typename T>
-    std::optional<Index<Binding>> find(Index<T> g, const IndexList<Object>& builder) const noexcept
+    std::optional<View<std::pair<Index<T>, Index<Binding>>, RelationRepository>> find(Index<T> g, const IndexList<Object>& builder) const noexcept
     {
         const auto& entry = std::get<Entry<T>>(m_repository);
         const auto& slots = entry.slots;
@@ -158,7 +159,8 @@ public:
     }
 
     template<typename T>
-    std::pair<Index<Binding>, bool> get_or_create(Index<T> g, size_t arity, uint8_t width, const IndexList<Object>& builder)
+    std::pair<View<std::pair<Index<T>, Index<Binding>>, RelationRepository>, bool>
+    get_or_create(Index<T> g, size_t arity, uint8_t width, const IndexList<Object>& builder)
     {
         auto& slot = get_or_create_slot(g);
 
@@ -170,7 +172,7 @@ public:
         const auto h = container.hash(builder);
 
         const auto [row, success] = container.insert_with_hash(h, builder);
-        return { Index<Binding>(slot.parent_size + row), success };
+        return { View<std::pair<Index<T>, Index<Binding>>, RelationRepository>(std::make_pair(g, Index<Binding>(slot.parent_size + row)), *this), success };
     }
 
     template<typename T>

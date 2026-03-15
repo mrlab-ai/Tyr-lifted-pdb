@@ -351,7 +351,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
             .def("get_action", &V::get_action)
-            .def("get_binding", &V::get_binding)
+            .def("get_objects", [](const V& self) { return self.get_row().get_objects(); })
             .def("get_condition", &V::get_condition)
             .def("get_effects", &V::get_effects);
     }
@@ -365,7 +365,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
             .def("get_axiom", &V::get_axiom)
-            .def("get_binding", &V::get_binding)
+            .def("get_objects", [](const V& self) { return self.get_row().get_objects(); })
             .def("get_body", &V::get_body)
             .def("get_head", &V::get_head);
     }
