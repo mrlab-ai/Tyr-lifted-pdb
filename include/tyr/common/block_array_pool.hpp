@@ -38,11 +38,11 @@ namespace tyr
 {
 
 /**
- * BlockArrayView
+ * BasicBlockArrayView
  */
 
 template<typename Block, typename Coder>
-class BlockArrayView
+class BasicBlockArrayView
 {
 public:
     using block_type = std::remove_const_t<Block>;
@@ -54,19 +54,19 @@ private:
     void ensure_fits(std::span<const value_type> elements) const
     {
         if (elements.size() != m_length)
-            throw std::invalid_argument("BlockArrayView: wrong number of elements.");
+            throw std::invalid_argument("BasicBlockArrayView: wrong number of elements.");
     }
 
 public:
     template<typename View>
     class BasicIterator;
 
-    using iterator = BasicIterator<BlockArrayView<Block, Coder>>;
-    using const_iterator = BasicIterator<const BlockArrayView<Block, Coder>>;
+    using iterator = BasicIterator<BasicBlockArrayView<Block, Coder>>;
+    using const_iterator = BasicIterator<const BasicBlockArrayView<Block, Coder>>;
 
-    BlockArrayView(Block* data, size_t length) : m_data(data), m_length(length) {}
+    BasicBlockArrayView(Block* data, size_t length) : m_data(data), m_length(length) {}
 
-    BlockArrayView& operator=(std::span<const value_type> elements)
+    BasicBlockArrayView& operator=(std::span<const value_type> elements)
         requires(!std::is_const_v<Block>)
     {
         ensure_fits(elements);
@@ -77,11 +77,11 @@ public:
         return *this;
     }
 
-    friend bool operator==(const BlockArrayView& lhs, const BlockArrayView& rhs) { return std::ranges::equal(lhs, rhs); }
+    friend bool operator==(const BasicBlockArrayView& lhs, const BasicBlockArrayView& rhs) { return std::ranges::equal(lhs, rhs); }
 
-    friend bool operator==(const BlockArrayView& lhs, std::span<const value_type> rhs) { return std::ranges::equal(lhs, rhs); }
+    friend bool operator==(const BasicBlockArrayView& lhs, std::span<const value_type> rhs) { return std::ranges::equal(lhs, rhs); }
 
-    friend bool operator==(std::span<const value_type> lhs, const BlockArrayView& rhs) { return rhs == lhs; }
+    friend bool operator==(std::span<const value_type> lhs, const BasicBlockArrayView& rhs) { return rhs == lhs; }
 
     template<typename View>
     class BasicIterator
@@ -184,8 +184,8 @@ class BlockArrayPool
 public:
     using block_type = std::remove_const_t<Block>;
     using value_type = typename Coder::value_type;
-    using ArrayView = BlockArrayView<Block, Coder>;
-    using ConstArrayView = BlockArrayView<const Block, Coder>;
+    using ArrayView = BasicBlockArrayView<Block, Coder>;
+    using ConstArrayView = BasicBlockArrayView<const Block, Coder>;
 
 private:
     static constexpr size_t seg_shift = std::countr_zero(FirstSegmentSize);

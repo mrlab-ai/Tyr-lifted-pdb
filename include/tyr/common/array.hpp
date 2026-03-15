@@ -178,10 +178,10 @@ private:
 };
 
 template<std::unsigned_integral Block, typename Coder, typename C>
-class View<BlockArrayView<Block, Coder>, C>
+class View<BasicBlockArrayView<Block, Coder>, C>
 {
 public:
-    using Container = BlockArrayView<Block, Coder>;
+    using Container = BasicBlockArrayView<Block, Coder>;
     using T = typename Coder::value_type;
 
     View(const Container& handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
