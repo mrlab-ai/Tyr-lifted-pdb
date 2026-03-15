@@ -49,8 +49,6 @@ private:
         static constexpr Block encode(value_type value) noexcept { return static_cast<Block>((static_cast<uint_t>(value))); }
     };
 
-    using ConstViewType = BasicBitPackedArrayView<const uint_t, Coder<uint_t>>;
-
     struct Slot
     {
         std::optional<BitPackedArraySet<uint_t, Coder<uint_t>>> container;
@@ -113,10 +111,16 @@ private:
     }
 
 public:
+    using ConstViewType = BasicBitPackedArrayView<const uint_t, Coder<uint_t>>;
+
     RelationTableRepository(size_t num_objects, const RelationTableRepository* parent = nullptr) : m_parent(parent), m_repository(), m_num_objects(num_objects)
     {
         clear_entries();
     }
+
+    /**
+     * Global methods.
+     */
 
     template<typename T>
     std::optional<Index<Binding>> find_with_hash(Index<T> g, const IndexList<Object>& builder, size_t h) const noexcept
@@ -247,12 +251,99 @@ public:
         return *this;
     }
 
+    /**
+     * Local methods
+     */
+
+    template<typename T>
+    std::optional<Index<Binding>> find_local_with_hash(Index<T> g, const IndexList<Object>& builder, size_t h) const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto it = entry.slots.find(g);
+        if (it == entry.slots.end())
+            return std::nullopt;
+
+        const auto& slot = it->second;
+        if (!slot.container)
+            return std::nullopt;
+
+        if (auto row_or_nullopt = slot.container->find_with_hash(builder, h))
+            return Index<Binding>(slot.parent_size + *row_or_nullopt);
+
+        return std::nullopt;
+    }
+
+    template<typename T>
+    std::optional<Index<Binding>> find_local(Index<T> g, const IndexList<Object>& builder) const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto it = entry.slots.find(g);
+        if (it == entry.slots.end())
+            return std::nullopt;
+
+        const auto& slot = it->second;
+        if (!slot.container)
+            return std::nullopt;
+
+        return find_local_with_hash<T>(g, builder, slot.container->hash(builder));
+    }
+
+    template<typename T>
+    std::pair<Index<Binding>, bool> get_or_create_local(Index<T> g, size_t arity, uint8_t width, const IndexList<Object>& builder)
+    {
+        auto& slot = get_or_create_slot(g);
+        auto& container = get_or_create_container(arity, width, slot);
+        const auto h = container.hash(builder);
+
+        if (auto row_or_nullopt = container.find_with_hash(builder, h))
+            return { Index<Binding>(slot.parent_size + *row_or_nullopt), false };
+
+        const auto [row, success] = container.insert_with_hash(h, builder);
+        return { Index<Binding>(slot.parent_size + row), success };
+    }
+
+    template<typename T>
+    ConstViewType at_local(std::pair<Index<T>, Index<Binding>> index) const noexcept
+    {
+        const auto& [g, row] = index;
+
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto it = entry.slots.find(g);
+
+        assert(it != entry.slots.end());
+        const auto& slot = it->second;
+        assert(slot.container);
+        assert(row.value >= slot.parent_size);
+
+        return (*slot.container)[row.value - slot.parent_size];
+    }
+
+    template<typename T>
+    size_t local_size(Index<T> g) const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto it = entry.slots.find(g);
+        if (it == entry.slots.end() || !it->second.container)
+            return 0;
+        return it->second.container->size();
+    }
+
+    template<typename T>
+    size_t parent_size(Index<T> g) const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto it = entry.slots.find(g);
+        if (it == entry.slots.end())
+            return m_parent ? m_parent->size(g) : 0;
+        return it->second.parent_size;
+    }
+
     template<typename T>
     bool is_local(std::pair<Index<T>, Index<Binding>> index) const noexcept
     {
         const auto& [g, row] = index;
         assert(g != Index<T>::max() && "Unassigned index.");
-        assert(row != Index<T>::max() && "Unassigned index.");
+        assert(row != Index<Binding>::max() && "Unassigned index.");
 
         const auto& entry = std::get<Entry<T>>(m_repository);
 

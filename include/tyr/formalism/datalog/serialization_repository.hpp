@@ -136,21 +136,25 @@ private:
 public:
     SerializationRepository(const SerializationRepository* parent = nullptr) : m_parent(parent), m_repository(), m_arena() { clear_entries(); }
 
+    /**
+     * Global methods
+     */
+
     template<typename T>
-    std::optional<Index<T>> find_with_hash(const Data<T>& builder, size_t h) const noexcept
+    std::optional<View<Index<T>, SerializationRepository>> find_with_hash(const Data<T>& builder, size_t h) const noexcept
     {
         const auto& entry = std::get<Entry<T>>(m_repository);
         const auto& container = entry.slot.container;
         assert(h == container.hash(builder) && "The given hash does not match container internal's hash.");
 
         if (auto ptr = container.find_with_hash(builder, h))
-            return Index<T>(ptr->index);
+            return View<Index<T>, SerializationRepository>(ptr->index, *this);
 
         return m_parent ? m_parent->template find_with_hash<T>(builder, h) : std::nullopt;
     }
 
     template<typename T>
-    std::optional<Index<T>> find(const Data<T>& builder) const noexcept
+    std::optional<View<Index<T>, SerializationRepository>> find(const Data<T>& builder) const noexcept
     {
         const auto& entry = std::get<Entry<T>>(m_repository);
         const auto& container = entry.slot.container;
@@ -160,7 +164,7 @@ public:
     }
 
     template<typename T>
-    std::pair<Index<T>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
+    std::pair<View<Index<T>, SerializationRepository>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
         auto& entry = std::get<Entry<T>>(m_repository);
         auto& slot = entry.slot;
@@ -176,7 +180,7 @@ public:
 
         const auto [ptr, success] = container.insert_with_hash(h, builder, buf, m_arena);
 
-        return { Index<T>(ptr->index), success };
+        return { View<Index<T>, SerializationRepository>(ptr->index, *this), success };
     }
 
     /// @brief Access the element with the given index.
@@ -232,6 +236,94 @@ public:
     {
         m_arena.clear();
         clear_entries();
+    }
+
+    template<typename T>
+    const SerializationRepository& get_canonical_context(Index<T> index) const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto& slot = entry.slot;
+
+        if (index.value < slot.parent_size)
+        {
+            assert(m_parent && "Element not found in the repository chain.");
+            return m_parent->get_canonical_context(index);
+        }
+
+        return *this;
+    }
+
+    /**
+     * Local methods
+     */
+
+    template<typename T>
+    std::optional<Index<T>> find_local_with_hash(const Data<T>& builder, size_t h) const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto& container = entry.slot.container;
+        assert(h == container.hash(builder));
+
+        if (auto ptr = container.find_with_hash(builder, h))
+            return Index<T>(ptr->index);
+
+        return std::nullopt;
+    }
+
+    template<typename T>
+    std::optional<Index<T>> find_local(const Data<T>& builder) const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto& container = entry.slot.container;
+        return find_local_with_hash<T>(builder, container.hash(builder));
+    }
+
+    template<typename T>
+    std::pair<Index<T>, bool> get_or_create_local(Data<T>& builder, buffer::Buffer& buf)
+    {
+        auto& entry = std::get<Entry<T>>(m_repository);
+        auto& slot = entry.slot;
+        auto& container = slot.container;
+        const auto h = container.hash(builder);
+
+        if (auto ptr = container.find_with_hash(builder, h))
+            return { Index<T>(ptr->index), false };
+
+        builder.index.value = slot.parent_size + container.size();
+
+        const auto [ptr, success] = container.insert_with_hash(h, builder, buf, m_arena);
+        return { Index<T>(ptr->index), success };
+    }
+
+    template<typename T>
+    const Data<T>& at_local(Index<T> index) const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        const auto parent_size = entry.slot.parent_size;
+
+        assert(index.value >= parent_size);
+        return entry.slot.container[Index<T>(index.value - parent_size)];
+    }
+
+    template<typename T>
+    const Data<T>& front_local() const
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        return entry.slot.container.front();
+    }
+
+    template<typename T>
+    size_t local_size() const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        return entry.slot.container.size();
+    }
+
+    template<typename T>
+    size_t parent_size() const noexcept
+    {
+        const auto& entry = std::get<Entry<T>>(m_repository);
+        return entry.slot.parent_size;
     }
 
     template<typename T>

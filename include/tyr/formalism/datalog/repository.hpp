@@ -70,45 +70,63 @@ public:
     template<typename T>
     std::optional<View<Index<T>, Repository>> find_with_hash(const Data<T>& builder, size_t h) const noexcept
     {
-        const auto index_or_nullopt = m_serialization_repository.find_with_hash(builder, h);
-        if (index_or_nullopt)
-            return make_view(*index_or_nullopt, *this);
-        return std::nullopt;
+        if (auto index_or_nullopt = m_serialization_repository.find_local_with_hash(builder, h))
+            return View<Index<T>, Repository>(*index_or_nullopt, *this);
+
+        return m_parent ? m_parent->template find_with_hash<T>(builder, h) : std::nullopt;
     }
 
     template<typename T>
     std::optional<View<Index<T>, Repository>> find(const Data<T>& builder) const noexcept
     {
-        const auto index_or_nullopt = m_serialization_repository.find(builder);
-        if (index_or_nullopt)
-            return make_view(*index_or_nullopt, *this);
-        return std::nullopt;
+        if (auto index_or_nullopt = m_serialization_repository.find_local(builder))
+            return View<Index<T>, Repository>(*index_or_nullopt, *this);
+
+        return m_parent ? m_parent->template find<T>(builder) : std::nullopt;
     }
 
     template<typename T>
     std::pair<View<Index<T>, Repository>, bool> get_or_create(Data<T>& builder, buffer::Buffer& buf)
     {
-        const auto [index, success] = m_serialization_repository.get_or_create(builder, buf);
+        if (auto index_or_nullopt = m_serialization_repository.find_local(builder))
+            return { View<Index<T>, Repository>(*index_or_nullopt, *this), false };
 
-        return { make_view(index, *this), success };
+        if (m_parent)
+            if (auto ptr = m_parent->template find<T>(builder))
+                return { *ptr, false };
+
+        const auto [index, success] = m_serialization_repository.get_or_create_local(builder, buf);
+        return { View<Index<T>, Repository>(index, *this), success };
     }
 
     template<typename T>
     const Data<T>& operator[](Index<T> index) const noexcept
     {
-        return m_serialization_repository[index];
+        if (!m_serialization_repository.is_local(index))
+        {
+            assert(m_parent);
+            return (*m_parent)[index];
+        }
+
+        return m_serialization_repository.at_local(index);
     }
 
     template<typename T>
     const Data<T>& front() const
     {
-        return m_serialization_repository.template front<T>();
+        if (m_serialization_repository.template parent_size<T>() > 0)
+        {
+            assert(m_parent);
+            return m_parent->template front<T>();
+        }
+
+        return m_serialization_repository.template front_local<T>();
     }
 
     template<typename T>
     size_t size() const noexcept
     {
-        return m_serialization_repository.template size<T>();
+        return m_serialization_repository.template parent_size<T>() + m_serialization_repository.template local_size<T>();
     }
 
     void clear() noexcept
@@ -120,7 +138,7 @@ public:
     template<typename T>
     const Repository& get_canonical_context(Index<T> index) const noexcept
     {
-        if (!m_serialization_repository.template is_local(index))
+        if (!m_serialization_repository.is_local(index))
         {
             assert(m_parent && "Element not found in the repository chain.");
             return m_parent->get_canonical_context(index);
@@ -135,49 +153,64 @@ public:
     template<IndexConcept I>
     std::optional<View<std::pair<I, Index<Binding>>, Repository>> find_with_hash(I g, const IndexList<Object>& builder, size_t h) const noexcept
     {
-        const auto row_or_nullopt = m_relation_repository.find_with_hash(g, builder, h);
+        const auto row_or_nullopt = m_relation_repository.find_local_with_hash(g, builder, h);
         if (row_or_nullopt)
-            return make_view(std::make_pair(g.get_index(), *row_or_nullopt), *this);
-        return std::nullopt;
+            return View<std::pair<I, Index<Binding>>, Repository>(std::make_pair(g, *row_or_nullopt), *this);
+
+        return m_parent ? m_parent->find_with_hash(g, builder, h) : std::nullopt;
     }
 
     template<IndexConcept I>
     std::optional<View<std::pair<I, Index<Binding>>, Repository>> find(I g, const IndexList<Object>& builder) const noexcept
     {
-        const auto row_or_nullopt = m_relation_repository.find(g, builder);
+        const auto row_or_nullopt = m_relation_repository.find_local(g, builder);
         if (row_or_nullopt)
-            return make_view(std::make_pair(g.get_index(), *row_or_nullopt), *this);
-        return std::nullopt;
+            return View<std::pair<I, Index<Binding>>, Repository>(std::make_pair(g, *row_or_nullopt), *this);
+
+        return m_parent ? m_parent->find(g, builder) : std::nullopt;
     }
 
     template<IndexConcept I>
     std::pair<View<std::pair<I, Index<Binding>>, Repository>, bool> get_or_create(View<I, Repository> g, const IndexList<Object>& builder)
     {
-        const auto [row, success] =
-            m_relation_repository.get_or_create(g.get_index(), g.get_arity(), std::max<uint8_t>(1, std::bit_width(m_num_objects)), builder);
+        if (auto row_or_nullopt = m_relation_repository.find_local(g.get_index(), builder))
+            return { View<std::pair<I, Index<Binding>>, Repository>(std::make_pair(g.get_index(), *row_or_nullopt), *this), false };
 
-        return { make_view(std::make_pair(g.get_index(), row), *this), success };
+        if (m_parent)
+            if (auto ptr = m_parent->find(g.get_index(), builder))
+                return { *ptr, false };
+
+        const auto [row, success] =
+            m_relation_repository.get_or_create_local(g.get_index(), g.get_arity(), std::max<uint8_t>(1, std::bit_width(m_num_objects)), builder);
+
+        return { View<std::pair<I, Index<Binding>>, Repository>(std::make_pair(g.get_index(), row), *this), success };
     }
 
     template<IndexConcept I>
-    auto operator[](std::pair<I, Index<Binding>> index) const noexcept
+    RelationTableRepository::ConstViewType operator[](std::pair<I, Index<Binding>> index) const noexcept
     {
-        return m_relation_repository[index];
+        if (!m_relation_repository.is_local(index))
+        {
+            assert(m_parent);
+            return (*m_parent)[index];
+        }
+
+        return m_relation_repository.at_local(index);
     }
 
     template<IndexConcept I>
     size_t size(I g) const noexcept
     {
-        return m_relation_repository.size(g);
+        return m_relation_repository.parent_size(g) + m_relation_repository.local_size(g);
     }
 
     template<IndexConcept I>
     const Repository& get_canonical_context(std::pair<I, Index<Binding>> index) const noexcept
     {
-        if (!m_relation_repository.template is_local(index))
+        if (!m_relation_repository.is_local(index))
         {
             assert(m_parent && "Element not found in the repository chain.");
-            return m_parent->template get_canonical_context(index);
+            return m_parent->get_canonical_context(index);
         }
         return *this;
     }
