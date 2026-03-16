@@ -21,8 +21,8 @@
 #include "tyr/common/types.hpp"
 #include "tyr/common/variant.hpp"
 #include "tyr/common/vector.hpp"
-#include "tyr/formalism/planning/action_view.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 namespace tyr::formalism::planning
 {
