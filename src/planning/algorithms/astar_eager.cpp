@@ -338,10 +338,14 @@ SearchResult<Task> find_solution(Task& task, SuccessorGenerator<Task>& successor
     return result;
 }
 
-template SearchResult<LiftedTask>
-find_solution(LiftedTask& task, SuccessorGenerator<LiftedTask>& successor_generator, Heuristic<LiftedTask>& heuristic, const Options<LiftedTask>& options);
+template SearchResult<LiftedTask> find_solution<LiftedTask>(LiftedTask& task,
+                                                            SuccessorGenerator<LiftedTask>& successor_generator,
+                                                            Heuristic<LiftedTask>& heuristic,
+                                                            const Options<LiftedTask>& options);
 
-template SearchResult<GroundTask>
-find_solution(GroundTask& task, SuccessorGenerator<GroundTask>& successor_generator, Heuristic<GroundTask>& heuristic, const Options<GroundTask>& options);
+template SearchResult<GroundTask> find_solution<GroundTask>(GroundTask& task,
+                                                            SuccessorGenerator<GroundTask>& successor_generator,
+                                                            Heuristic<GroundTask>& heuristic,
+                                                            const Options<GroundTask>& options);
 
 }

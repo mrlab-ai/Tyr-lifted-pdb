@@ -48,6 +48,14 @@ template<typename Task>
 SearchResult<Task>
 find_solution(Task& task, SuccessorGenerator<Task>& successor_generator, Heuristic<Task>& heuristic, const Options<Task>& options = Options<Task>());
 
+/**
+ * Explicit instantiations
+ */
+
+extern template SearchResult<LiftedTask>
+find_solution<LiftedTask>(LiftedTask&, SuccessorGenerator<LiftedTask>&, Heuristic<LiftedTask>&, const Options<LiftedTask>&);
+extern template SearchResult<GroundTask>
+find_solution<GroundTask>(GroundTask&, SuccessorGenerator<GroundTask>&, Heuristic<GroundTask>&, const Options<GroundTask>&);
 }
 
 #endif

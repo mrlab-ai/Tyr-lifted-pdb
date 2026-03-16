@@ -35,25 +35,11 @@ class MaxHeuristic<LiftedTask> :
                    datalog::TerminationPolicy<datalog::MaxAggregation>>
 {
 public:
-    MaxHeuristic(std::shared_ptr<LiftedTask> task) :
-        RPGBase<MaxHeuristic<LiftedTask>,
-                datalog::OrAnnotationPolicy,
-                datalog::AndAnnotationPolicy<datalog::MaxAggregation>,
-                datalog::TerminationPolicy<datalog::MaxAggregation>>(
-            task,
-            datalog::OrAnnotationPolicy(),
-            datalog::AndAnnotationPolicy<datalog::MaxAggregation>(),
-            datalog::TerminationPolicy<datalog::MaxAggregation>(
-                task->get_rpg_program().get_program_context().get_program().get_predicates<formalism::FluentTag>().size()))
-    {
-    }
+    MaxHeuristic(std::shared_ptr<LiftedTask> task);
 
-    static std::shared_ptr<MaxHeuristic<LiftedTask>> create(std::shared_ptr<LiftedTask> task) { return std::make_shared<MaxHeuristic<LiftedTask>>(task); }
+    static std::shared_ptr<MaxHeuristic<LiftedTask>> create(std::shared_ptr<LiftedTask> task);
 
-    float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTask>& state)
-    {
-        return m_workspace.tp.get_total_cost(this->m_workspace.or_annot);
-    }
+    float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTask>& state);
 };
 
 }

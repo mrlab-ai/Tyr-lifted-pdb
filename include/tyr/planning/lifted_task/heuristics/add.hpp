@@ -35,25 +35,11 @@ class AddHeuristic<LiftedTask> :
                    datalog::TerminationPolicy<datalog::SumAggregation>>
 {
 public:
-    AddHeuristic(std::shared_ptr<LiftedTask> task) :
-        RPGBase<AddHeuristic<LiftedTask>,
-                datalog::OrAnnotationPolicy,
-                datalog::AndAnnotationPolicy<datalog::SumAggregation>,
-                datalog::TerminationPolicy<datalog::SumAggregation>>(
-            task,
-            datalog::OrAnnotationPolicy(),
-            datalog::AndAnnotationPolicy<datalog::SumAggregation>(),
-            datalog::TerminationPolicy<datalog::SumAggregation>(
-                task->get_rpg_program().get_program_context().get_program().get_predicates<formalism::FluentTag>().size()))
-    {
-    }
+    AddHeuristic(std::shared_ptr<LiftedTask> task);
 
-    static std::shared_ptr<AddHeuristic<LiftedTask>> create(std::shared_ptr<LiftedTask> task) { return std::make_shared<AddHeuristic<LiftedTask>>(task); }
+    static std::shared_ptr<AddHeuristic<LiftedTask>> create(std::shared_ptr<LiftedTask> task);
 
-    float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTask>& state)
-    {
-        return m_workspace.tp.get_total_cost(this->m_workspace.or_annot);
-    }
+    float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTask>& state);
 };
 
 }
