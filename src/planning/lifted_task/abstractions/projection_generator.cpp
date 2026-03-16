@@ -185,7 +185,9 @@ create_projected_formalism_domain(fp::DomainView element, std::shared_ptr<fp::Re
 
 static auto create_projected_formalism_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
 {
-    auto destination = std::make_shared<fp::Repository>(planning_task.get_repository().get());
+    auto destination =
+        std::make_shared<fp::Repository>(planning_task.get_domain().get_domain().get_constants().size() + planning_task.get_task().get_objects().size(),
+                                         planning_task.get_repository().get());
     auto builder = fp::Builder();
     // Note: we have to copy the FDRContext to avoid polluting the parent tasks FDRContext with non-existing atoms.
     auto fdr_context = fp::BinaryFDRContext(planning_task.get_fdr_context(), builder, *destination);
