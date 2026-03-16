@@ -81,8 +81,8 @@ public:
     {
         const auto& indexed_hash_set = std::get<RepositoryEntry<T>>(m_repository).container;
 
-        if (const auto ptr = indexed_hash_set.find(builder))
-            return ptr->index;
+        if (const auto index_or_nullopt = indexed_hash_set.find(builder))
+            return *index_or_nullopt;
 
         return std::nullopt;
     }
@@ -95,9 +95,9 @@ public:
         if constexpr (AssignIndex)
             builder.index.value = indexed_hash_set.size();
 
-        const auto [ptr, success] = indexed_hash_set.insert(builder, buf, m_arena);
+        const auto [index, success] = indexed_hash_set.insert(builder, buf, m_arena);
 
-        return std::make_pair(ptr->index, success);
+        return std::make_pair(index, success);
     }
 
     /// @brief Access the element with the given index.

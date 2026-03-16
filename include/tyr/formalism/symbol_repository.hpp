@@ -109,8 +109,8 @@ public:
         const auto& container = entry.slot.container;
         assert(h == container.hash(builder) && "The given hash does not match container internal's hash.");
 
-        if (auto ptr = container.find_with_hash(builder, h))
-            return View<Index<T>, SymbolRepository>(ptr->index, *this);
+        if (auto index_or_nullopt = container.find_with_hash(builder, h))
+            return View<Index<T>, SymbolRepository>(*index_or_nullopt, *this);
 
         return m_parent ? m_parent->template find_with_hash<T>(builder, h) : std::nullopt;
     }
@@ -129,15 +129,15 @@ public:
         auto& container = slot.container;
 
         if (m_parent)
-            if (auto ptr = m_parent->template find_with_hash<T>(builder, h))
-                return { *ptr, false };
+            if (auto index_or_nullopt = m_parent->template find_with_hash<T>(builder, h))
+                return { *index_or_nullopt, false };
 
         // Manually assign index to continue indexing.
         builder.index.value = slot.parent_size + container.size();
 
-        const auto [ptr, success] = container.insert_with_hash(h, builder, buf, m_arena);
+        const auto [index, success] = container.insert_with_hash(h, builder, buf, m_arena);
 
-        return { View<Index<T>, SymbolRepository>(ptr->index, *this), success };
+        return { View<Index<T>, SymbolRepository>(index, *this), success };
     }
 
     template<typename T>
@@ -220,8 +220,8 @@ public:
         const auto& container = entry.slot.container;
         assert(h == container.hash(builder));
 
-        if (auto ptr = container.find_with_hash(builder, h))
-            return Index<T>(ptr->index);
+        if (auto index_or_nullopt = container.find_with_hash(builder, h))
+            return *index_or_nullopt;
 
         return std::nullopt;
     }
@@ -241,13 +241,13 @@ public:
         auto& slot = entry.slot;
         auto& container = slot.container;
 
-        if (auto ptr = container.find_with_hash(builder, h))
-            return { Index<T>(ptr->index), false };
+        if (auto index_or_nullopt = container.find_with_hash(builder, h))
+            return { *index_or_nullopt, false };
 
         builder.index.value = slot.parent_size + container.size();
 
-        const auto [ptr, success] = container.insert_with_hash(h, builder, buf, m_arena);
-        return { Index<T>(ptr->index), success };
+        const auto [index, success] = container.insert_with_hash(h, builder, buf, m_arena);
+        return { index, success };
     }
 
     template<typename T>

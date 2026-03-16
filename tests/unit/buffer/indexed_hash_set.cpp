@@ -38,11 +38,12 @@ TEST(TyrTests, TyrBufferIndexedHashSet)
     builder.arity = 2;
 
     canonicalize(builder);
-    auto [predicate_0, success_0] = repository.insert(builder, buffer, arena);
+    auto [predicate_index_0, success_0] = repository.insert(builder, buffer, arena);
+    const auto& predicate_0 = repository[predicate_index_0];
 
-    EXPECT_EQ(predicate_0->index.value, 0);
-    EXPECT_EQ(predicate_0->name, builder.name);
-    EXPECT_EQ(predicate_0->arity, builder.arity);
+    EXPECT_EQ(predicate_0.index.value, 0);
+    EXPECT_EQ(predicate_0.name, builder.name);
+    EXPECT_EQ(predicate_0.arity, builder.arity);
 
     // Create a unique predicate
     builder.index.value = 1;
@@ -50,11 +51,12 @@ TEST(TyrTests, TyrBufferIndexedHashSet)
     builder.arity = 3;
 
     canonicalize(builder);
-    auto [predicate_1, success_1] = repository.insert(builder, buffer, arena);
+    auto [predicate_index_1, success_1] = repository.insert(builder, buffer, arena);
+    const auto& predicate_1 = repository[predicate_index_1];
 
-    EXPECT_EQ(predicate_1->index.value, 1);
-    EXPECT_EQ(predicate_1->name, builder.name);
-    EXPECT_EQ(predicate_1->arity, builder.arity);
+    EXPECT_EQ(predicate_1.index.value, 1);
+    EXPECT_EQ(predicate_1.name, builder.name);
+    EXPECT_EQ(predicate_1.arity, builder.arity);
 
     // Create an existing predicate
     builder.index.value = 1;
@@ -62,11 +64,12 @@ TEST(TyrTests, TyrBufferIndexedHashSet)
     builder.arity = 3;
 
     canonicalize(builder);
-    auto [predicate_2, success_2] = repository.insert(builder, buffer, arena);
+    auto [predicate_index_2, success_2] = repository.insert(builder, buffer, arena);
+    const auto& predicate_2 = repository[predicate_index_2];
 
-    EXPECT_EQ(predicate_2->index.value, 1);
-    EXPECT_EQ(predicate_2->name, builder.name);
-    EXPECT_EQ(predicate_2->arity, builder.arity);
+    EXPECT_EQ(predicate_2.index.value, 1);
+    EXPECT_EQ(predicate_2.name, builder.name);
+    EXPECT_EQ(predicate_2.arity, builder.arity);
 }
 
 }

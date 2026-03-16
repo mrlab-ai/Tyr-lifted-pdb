@@ -30,6 +30,7 @@
 
 #include <functional>
 #include <gtl/phmap.hpp>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -78,19 +79,19 @@ public:
 
     size_t hash(const Data<Tag>& element) const noexcept { return m_set.hash(make_observer(element)); }
 
-    const Data<Tag>* find_with_hash(const Data<Tag>& element, size_t h) const noexcept
+    std::optional<Index<Tag>> find_with_hash(const Data<Tag>& element, size_t h) const noexcept
     {
         assert(is_canonical(element) && "The given element is not canonical. Did you forget to call canonicalize?");
         assert(h == hash(element) && "The given hash does not match container internal's hash.");
 
         const auto it = m_set.find(make_observer(element), h);
         if (it != m_set.end())
-            return it->get();
+            return it->get()->index;
 
-        return nullptr;
+        return std::nullopt;
     }
 
-    const Data<Tag>* find(const Data<Tag>& element) const noexcept
+    std::optional<Index<Tag>> find(const Data<Tag>& element) const noexcept
     {
         assert(is_canonical(element));
 
@@ -98,7 +99,7 @@ public:
     }
 
     template<::cista::mode Mode = CISTA_MODE>
-    std::pair<const Data<Tag>*, bool> insert_with_hash(size_t h, const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf, SegmentedBuffer& arena)
+    std::pair<Index<Tag>, bool> insert_with_hash(size_t h, const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf, SegmentedBuffer& arena)
     {
         assert(is_canonical(element) && "The given element is not canonical. Did you forget to call canonicalize?");
         assert(h == hash(element) && "The given hash does not match container internal's hash.");
@@ -107,7 +108,7 @@ public:
 
         auto it = m_set.find(make_observer(element), h);
         if (it != m_set.end())
-            return std::make_pair(it->get(), false);
+            return std::make_pair(it->get()->index, false);
 
         // 2. Serialize
         buf.reset();
@@ -124,13 +125,13 @@ public:
         // 5. Insert to vec
         m_vec.push_back(it2->get());
 
-        return std::make_pair(it2->get(), true);
+        return std::make_pair(it2->get()->index, true);
     }
 
     // const T* always points to a valid instantiation of the class.
     // We return const T* here to avoid bugs when using structured bindings.
     template<::cista::mode Mode = CISTA_MODE>
-    std::pair<const Data<Tag>*, bool> insert(const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf, SegmentedBuffer& arena)
+    std::pair<Index<Tag>, bool> insert(const Data<Tag>& element, ::cista::buf<std::vector<uint8_t>>& buf, SegmentedBuffer& arena)
     {
         assert(is_canonical(element));
 

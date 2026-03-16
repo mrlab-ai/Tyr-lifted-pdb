@@ -129,13 +129,25 @@ public:
         return m_segments.at(index).at(offset);
     }
 
-    const T& back() const
+    const T& front() const noexcept
+    {
+        assert(m_size > 0);
+        return (*this)[0];
+    }
+
+    T& front() noexcept
+    {
+        assert(m_size > 0);
+        return (*this)[0];
+    }
+
+    const T& back() const noexcept
     {
         assert(m_size > 0);
         return (*this)[m_size - 1];
     }
 
-    T& back()
+    T& back() noexcept
     {
         assert(m_size > 0);
         return (*this)[m_size - 1];
