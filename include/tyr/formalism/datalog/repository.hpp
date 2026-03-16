@@ -268,6 +268,16 @@ using GroundUnaryOperatorListView = View<IndexList<UnaryOperator<Op, Data<Ground
 using VariableView = View<Index<Variable>, Repository>;
 
 using VariableListView = View<IndexList<Variable>, Repository>;
+
+}
+
+namespace tyr::formalism
+{
+/**
+ * Explicit instantiations
+ */
+
+extern template class Repository<tyr::formalism::datalog::SymbolRepository, tyr::formalism::datalog::RelationRepository>;
 }
 
 #endif

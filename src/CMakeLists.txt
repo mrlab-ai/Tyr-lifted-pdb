@@ -25,8 +25,10 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     analysis/stratification.cpp
     analysis/task_domains.cpp
 
+    formalism/datalog/repository.cpp
     formalism/datalog/variable_dependency_graph.cpp
 
+    formalism/planning/repository.cpp
     formalism/planning/loki_to_tyr.cpp
     formalism/planning/parser.cpp
 

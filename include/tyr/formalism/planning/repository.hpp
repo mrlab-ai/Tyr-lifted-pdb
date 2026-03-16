@@ -390,4 +390,13 @@ using VariableListView = View<IndexList<Variable>, Repository>;
 
 }
 
+namespace tyr::formalism
+{
+/**
+ * Explicit instantiations
+ */
+
+extern template class Repository<tyr::formalism::planning::SymbolRepository, tyr::formalism::planning::RelationRepository>;
+}
+
 #endif
