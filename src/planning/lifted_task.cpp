@@ -35,15 +35,15 @@ namespace tyr::planning
 {
 namespace
 {
-std::vector<analysis::DomainListListList> compute_parameter_domains_per_cond_effect_per_action(fp::TaskView task)
+UnorderedMap<Index<fp::Action>, analysis::DomainListListList> compute_parameter_domains_per_cond_effect_per_action(fp::TaskView task)
 {
-    auto result = std::vector<analysis::DomainListListList> {};
+    auto result = UnorderedMap<Index<fp::Action>, analysis::DomainListListList> {};
 
     const auto variable_domains = analysis::compute_variable_domains(task);
 
-    for (uint_t action_index = 0; action_index < task.get_domain().get_actions().size(); ++action_index)
+    for (const auto action : task.get_domain().get_actions())
     {
-        const auto action = task.get_domain().get_actions()[action_index];
+        const auto action_index = action.get_index();
 
         auto parameter_domains_per_cond_effect = analysis::DomainListListList {};
 
@@ -51,17 +51,17 @@ std::vector<analysis::DomainListListList> compute_parameter_domains_per_cond_eff
         {
             const auto cond_effect = action.get_effects()[cond_effect_index];
 
-            assert(variable_domains.action_domains[action_index].second[cond_effect_index].size() == action.get_arity() + cond_effect.get_arity());
+            assert(variable_domains.action_domains.at(action_index).second[cond_effect_index].size() == action.get_arity() + cond_effect.get_arity());
 
             auto parameter_domains = analysis::DomainListList {};
 
             for (uint_t i = action.get_arity(); i < action.get_arity() + cond_effect.get_arity(); ++i)
-                parameter_domains.push_back(variable_domains.action_domains[action_index].second[cond_effect_index][i]);
+                parameter_domains.push_back(variable_domains.action_domains.at(action_index).second[cond_effect_index][i]);
 
             parameter_domains_per_cond_effect.push_back(std::move(parameter_domains));
         }
 
-        result.push_back(std::move(parameter_domains_per_cond_effect));
+        result.emplace(action_index, std::move(parameter_domains_per_cond_effect));
     }
 
     return result;
