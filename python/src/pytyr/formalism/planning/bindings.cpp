@@ -66,6 +66,98 @@ void bind_module_definitions(nb::module_& m)
             .def("get_domain", &Parser::get_domain);
     }
 
+    /**
+     * Index
+     */
+
+    bind_index<Index<Object>>(m, "ObjectIndex");
+    bind_index<Index<Binding>>(m, "BindingIndex");
+    bind_index<Index<Variable>>(m, "VariableIndex");
+
+    bind_index<Index<Predicate<StaticTag>>>(m, "StaticPredicateIndex");
+    bind_index<Index<Predicate<FluentTag>>>(m, "FluentPredicateIndex");
+    bind_index<Index<Predicate<DerivedTag>>>(m, "DerivedPredicateIndex");
+
+    bind_index<Index<Atom<StaticTag>>>(m, "StaticAtomIndex");
+    bind_index<Index<Atom<FluentTag>>>(m, "FluentAtomIndex");
+    bind_index<Index<Atom<DerivedTag>>>(m, "DerivedAtomIndex");
+
+    bind_index<Index<GroundAtom<StaticTag>>>(m, "StaticGroundAtomIndex");
+    bind_index<Index<GroundAtom<FluentTag>>>(m, "FluentGroundAtomIndex");
+    bind_index<Index<GroundAtom<DerivedTag>>>(m, "DerivedGroundAtomIndex");
+
+    bind_index<Index<Literal<StaticTag>>>(m, "StaticLiteralIndex");
+    bind_index<Index<Literal<FluentTag>>>(m, "FluentLiteralIndex");
+    bind_index<Index<Literal<DerivedTag>>>(m, "DerivedLiteralIndex");
+
+    bind_index<Index<GroundLiteral<StaticTag>>>(m, "StaticGroundLiteralIndex");
+    bind_index<Index<GroundLiteral<FluentTag>>>(m, "FluentGroundLiteralIndex");
+    bind_index<Index<GroundLiteral<DerivedTag>>>(m, "DerivedGroundLiteralIndex");
+
+    bind_index<Index<FDRVariable<FluentTag>>>(m, "FluentFDRVariableIndex");
+
+    bind_index<Index<Function<StaticTag>>>(m, "StaticFunctionIndex");
+    bind_index<Index<Function<FluentTag>>>(m, "FluentFunctionIndex");
+    bind_index<Index<Function<AuxiliaryTag>>>(m, "AuxiliaryFunctionIndex");
+
+    bind_index<Index<FunctionTerm<StaticTag>>>(m, "StaticFunctionTermIndex");
+    bind_index<Index<FunctionTerm<FluentTag>>>(m, "FluentFunctionTermIndex");
+    bind_index<Index<FunctionTerm<AuxiliaryTag>>>(m, "AuxiliaryFunctionTermIndex");
+
+    bind_index<Index<GroundFunctionTerm<StaticTag>>>(m, "StaticGroundFunctionTermIndex");
+    bind_index<Index<GroundFunctionTerm<FluentTag>>>(m, "FluentGroundFunctionTermIndex");
+    bind_index<Index<GroundFunctionTerm<AuxiliaryTag>>>(m, "AuxiliaryGroundFunctionTermIndex");
+
+    bind_index<Index<GroundFunctionTermValue<StaticTag>>>(m, "StaticGroundFunctionTermValueIndex");
+    bind_index<Index<GroundFunctionTermValue<FluentTag>>>(m, "FluentGroundFunctionTermValueIndex");
+    bind_index<Index<GroundFunctionTermValue<AuxiliaryTag>>>(m, "AuxiliaryGroundFunctionTermValueIndex");
+
+    bind_index<Index<UnaryOperator<OpSub, Data<FunctionExpression>>>>(m, "UnaryOperatorSubIndex");
+    bind_index<Index<BinaryOperator<OpAdd, Data<FunctionExpression>>>>(m, "BinaryOperatorAddIndex");
+    bind_index<Index<BinaryOperator<OpSub, Data<FunctionExpression>>>>(m, "BinaryOperatorSubIndex");
+    bind_index<Index<BinaryOperator<OpMul, Data<FunctionExpression>>>>(m, "BinaryOperatorMulIndex");
+    bind_index<Index<BinaryOperator<OpDiv, Data<FunctionExpression>>>>(m, "BinaryOperatorDivIndex");
+    bind_index<Index<BinaryOperator<OpEq, Data<FunctionExpression>>>>(m, "BinaryOperatorEqIndex");
+    bind_index<Index<BinaryOperator<OpNe, Data<FunctionExpression>>>>(m, "BinaryOperatorNeIndex");
+    bind_index<Index<BinaryOperator<OpLe, Data<FunctionExpression>>>>(m, "BinaryOperatorLeIndex");
+    bind_index<Index<BinaryOperator<OpLt, Data<FunctionExpression>>>>(m, "BinaryOperatorLtIndex");
+    bind_index<Index<BinaryOperator<OpGe, Data<FunctionExpression>>>>(m, "BinaryOperatorGeIndex");
+    bind_index<Index<BinaryOperator<OpGt, Data<FunctionExpression>>>>(m, "BinaryOperatorGtIndex");
+
+    bind_index<Index<MultiOperator<OpAdd, Data<FunctionExpression>>>>(m, "MultiOperatorAddIndex");
+    bind_index<Index<MultiOperator<OpMul, Data<FunctionExpression>>>>(m, "MultiOperatorMulIndex");
+
+    bind_index<Index<GroundConjunctiveCondition>>(m, "GroundConjunctiveConditionIndex");
+
+    bind_index<Index<GroundNumericEffect<OpAssign, FluentTag>>>(m, "FluentGroundNumericEffectAssignIndex");
+    bind_index<Index<GroundNumericEffect<OpIncrease, FluentTag>>>(m, "FluentGroundNumericEffectIncreaseIndex");
+    bind_index<Index<GroundNumericEffect<OpDecrease, FluentTag>>>(m, "FluentGroundNumericEffectDecreaseIndex");
+    bind_index<Index<GroundNumericEffect<OpScaleUp, FluentTag>>>(m, "FluentGroundNumericEffectScaleUpIndex");
+    bind_index<Index<GroundNumericEffect<OpScaleDown, FluentTag>>>(m, "FluentGroundNumericEffectScaleDownIndex");
+    bind_index<Index<GroundNumericEffect<OpIncrease, AuxiliaryTag>>>(m, "AuxiliaryGroundNumericEffectIncreaseIndex");
+
+    bind_index<Index<GroundConjunctiveEffect>>(m, "GroundConjunctiveEffectIndex");
+    bind_index<Index<GroundConditionalEffect>>(m, "GroundConditionalEffectIndex");
+    bind_index<Index<GroundAction>>(m, "GroundActionIndex");
+    bind_index<Index<GroundAxiom>>(m, "GroundAxiomIndex");
+    bind_index<Index<Metric>>(m, "MetricIndex");
+    bind_index<Index<Domain>>(m, "DomainIndex");
+    bind_index<Index<Task>>(m, "LiftedTaskIndex");
+    bind_index<Index<FDRTask>>(m, "GroundTaskIndex");
+
+    /**
+     * Data
+     */
+
+    bind_binding_builder(m, "BindingBuilder");
+    bind_ground_atom_builder<StaticTag>(m, "StaticGroundAtomBuilder");
+    bind_ground_atom_builder<FluentTag>(m, "FluentGroundAtomBuilder");
+    bind_ground_atom_builder<DerivedTag>(m, "DerivedGroundAtomBuilder");
+
+    /**
+     * Views
+     */
+
     {
         using V = ObjectView;
 
@@ -74,6 +166,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_name", &V::get_name);
     }
 
@@ -85,6 +178,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_objects", &V::get_objects);
     }
 
@@ -96,6 +190,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_name", &V::get_name);
     }
 
@@ -189,6 +284,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_variables", &V::get_variables)
             .def("get_arity", &V::get_arity)
             .def("get_static_literals", &V::get_literals<StaticTag>)
@@ -215,6 +311,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_literals", &V::get_literals)
             .def("get_numeric_effects", &V::get_numeric_effects)
             .def("get_auxiliary_numeric_effect", &V::get_auxiliary_numeric_effect);
@@ -228,6 +325,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_variables", &V::get_variables)
             .def("get_arity", &V::get_arity)
             .def("get_condition", &V::get_condition)
@@ -242,6 +340,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_name", &V::get_name)
             .def("get_original_arity", &V::get_original_arity)
             .def("get_arity", &V::get_arity)
@@ -258,6 +357,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_arity", &V::get_arity)
             .def("get_variables", &V::get_variables)
             .def("get_body", &V::get_body)
@@ -301,6 +401,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_static_facts", &V::get_facts<StaticTag>)
             .def("get_fluent_facts", &V::get_facts<FluentTag>)
             .def("get_derived_facts", &V::get_facts<DerivedTag>)
@@ -325,6 +426,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_facts", &V::get_facts)
             .def("get_numeric_effects", &V::get_numeric_effects)
             .def("get_auxiliary_numeric_effect", &V::get_auxiliary_numeric_effect);
@@ -338,6 +440,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_condition", &V::get_condition)
             .def("get_effect", &V::get_effect);
     }
@@ -350,6 +453,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_action", &V::get_action)
             .def("get_objects", [](const V& self) { return self.get_row().get_objects(); })
             .def("get_condition", &V::get_condition)
@@ -364,6 +468,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_axiom", &V::get_axiom)
             .def("get_objects", [](const V& self) { return self.get_row().get_objects(); })
             .def("get_body", &V::get_body)
@@ -386,6 +491,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_objective", &V::get_objective)
             .def("get_fexpr", &V::get_fexpr);
     }
@@ -398,6 +504,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_name", &V::get_name)
             .def("get_static_predicates", &V::get_predicates<StaticTag>)
             .def("get_fluent_predicates", &V::get_predicates<FluentTag>)
@@ -418,6 +525,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_name", &V::get_name)
             .def("get_domain", &V::get_domain)
             .def("get_derived_predicates", &V::get_derived_predicates)
@@ -440,6 +548,7 @@ void bind_module_definitions(nb::module_& m)
             .def("__repr__", [](const V& self) { return to_string(self); })
             .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
             .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+            .def("get_index", &V::get_index)
             .def("get_name", &V::get_name)
             .def("get_domain", &V::get_domain)
             .def("get_derived_predicates", &V::get_derived_predicates)
@@ -462,7 +571,13 @@ void bind_module_definitions(nb::module_& m)
             .def("get_ground_axioms", &V::get_ground_axioms);
     }
 
-    nb::class_<Repository>(m, "Repository");
+    nb::class_<Repository>(m, "Repository")  //
+        .def("get_or_create_fluent_ground_atom", &Repository::get_or_create<GroundAtom<FluentTag>>)
+        .def("get_or_create_derived_ground_atom", &Repository::get_or_create<GroundAtom<DerivedTag>>)
+        .def("get_or_create_fluent_predicate_row",
+             nb::overload_cast<PredicateView<StaticTag>, const IndexList<Object>&>(&Repository::get_or_create<Index<Predicate<StaticTag>>>))
+        .def("get_or_create_derived_predicate_row",
+             nb::overload_cast<PredicateView<FluentTag>, const IndexList<Object>&>(&Repository::get_or_create<Index<Predicate<FluentTag>>>));
 
     nb::class_<BinaryFDRContext>(m, "BinaryFDRContext")  //
         .def("get_fact", nb::overload_cast<GroundAtomView<FluentTag>>(&BinaryFDRContext::get_fact_view), "atom"_a)

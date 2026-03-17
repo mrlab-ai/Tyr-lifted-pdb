@@ -22,6 +22,33 @@
 
 namespace tyr::formalism::planning
 {
+
+/**
+ * Data
+ */
+
+void bind_binding_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Binding>;
+
+    nb::class_<V>(m, name.c_str())  //
+        .def_rw("objects", &V::objects);
+}
+
+template<FactKind T>
+void bind_ground_atom_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundAtom<T>>;
+
+    nb::class_<V>(m, name.c_str())  //
+        .def_rw("predicate", &V::predicate)
+        .def_rw("row", &V::row);
+}
+
+/**
+ * Views
+ */
+
 template<FactKind T>
 void bind_predicate(nb::module_& m, const std::string& name)
 {
@@ -32,6 +59,7 @@ void bind_predicate(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_name", &V::get_name)
         .def("get_arity", &V::get_arity);
 }
@@ -46,6 +74,7 @@ void bind_atom(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_predicate", &V::get_predicate)
         .def("get_terms", &V::get_terms);
 }
@@ -60,6 +89,7 @@ void bind_ground_atom(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_predicate", &V::get_predicate)
         .def("get_objects", [](const V& self) { return self.get_row().get_objects(); });
 }
@@ -74,6 +104,7 @@ void bind_literal(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_atom", &V::get_atom)
         .def("get_polarity", &V::get_polarity);
 }
@@ -88,6 +119,7 @@ void bind_ground_literal(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_atom", &V::get_atom)
         .def("get_polarity", &V::get_polarity);
 }
@@ -102,6 +134,7 @@ void bind_fdr_variable(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_domain_size", &V::get_domain_size)
         .def("get_atoms", &V::get_atoms);
 }
@@ -130,6 +163,7 @@ void bind_function(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_name", &V::get_name)
         .def("get_arity", &V::get_arity);
 }
@@ -144,6 +178,7 @@ void bind_function_term(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_function", &V::get_function)
         .def("get_terms", &V::get_terms);
 }
@@ -158,6 +193,7 @@ void bind_ground_function_term(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_function", &V::get_function)
         .def("get_objects", [](const V& self) { return self.get_row().get_objects(); });
 }
@@ -172,6 +208,7 @@ void bind_ground_function_term_value(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_fterm", &V::get_fterm)
         .def("get_value", &V::get_value);
 }
@@ -186,6 +223,7 @@ void bind_numeric_effect(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_fterm", &V::get_fterm)
         .def("get_fexpr", &V::get_fexpr);
 }
@@ -200,6 +238,7 @@ void bind_ground_numeric_effect(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_fterm", &V::get_fterm)
         .def("get_fexpr", &V::get_fexpr);
 }
@@ -240,6 +279,7 @@ void bind_unary_operator(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_arg", &V::get_arg);
 }
 
@@ -253,6 +293,7 @@ void bind_binary_operator(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_lhs", &V::get_lhs)
         .def("get_rhs", &V::get_rhs);
 }
@@ -267,6 +308,7 @@ void bind_multi_operator(nb::module_& m, const std::string& name)
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
         .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def("get_index", &V::get_index)
         .def("get_args", &V::get_args);
 }
 
