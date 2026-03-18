@@ -32,6 +32,7 @@ void bind_object_builder(nb::module_& m, const std::string& name)
     using V = Data<Object>;
 
     nb::class_<V>(m, name.c_str())  //
+        .def(nb::init<>())
         .def_rw("name", &V::name);
 }
 
@@ -40,6 +41,7 @@ void bind_binding_builder(nb::module_& m, const std::string& name)
     using V = Data<Binding>;
 
     nb::class_<V>(m, name.c_str())  //
+        .def(nb::init<>())
         .def_rw("objects", &V::objects);
 }
 
@@ -48,6 +50,7 @@ void bind_variable_builder(nb::module_& m, const std::string& name)
     using V = Data<Variable>;
 
     nb::class_<V>(m, name.c_str())  //
+        .def(nb::init<>())
         .def_rw("name", &V::name);
 }
 
@@ -57,6 +60,7 @@ void bind_predicate_builder(nb::module_& m, const std::string& name)
     using V = Data<Predicate<T>>;
 
     nb::class_<V>(m, name.c_str())  //
+        .def(nb::init<>())
         .def_rw("name", &V::name)
         .def_rw("arity", &V::arity);
 }
@@ -67,6 +71,7 @@ void bind_ground_atom_builder(nb::module_& m, const std::string& name)
     using V = Data<GroundAtom<T>>;
 
     nb::class_<V>(m, name.c_str())  //
+        .def(nb::init<>())
         .def_rw("predicate", &V::predicate)
         .def_rw("row", &V::row);
 }
@@ -84,7 +89,9 @@ void bind_predicate_binding_index(nb::module_& m, const std::string& name)
         .def("__str__", [](const V& self) { return to_string(self); })
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
-        .def("__hash__", [](const V& self) { return Hash<V> {}(self); });
+        .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def_ro("predicate_index", &V::first)
+        .def_ro("row_index", &V::second);
 }
 
 template<FactKind T>
@@ -96,7 +103,9 @@ void bind_function_binding_index(nb::module_& m, const std::string& name)
         .def("__str__", [](const V& self) { return to_string(self); })
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
-        .def("__hash__", [](const V& self) { return Hash<V> {}(self); });
+        .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def_ro("function_index", &V::first)
+        .def_ro("row_index", &V::second);
 }
 
 void bind_action_binding_index(nb::module_& m, const std::string& name)
@@ -107,7 +116,9 @@ void bind_action_binding_index(nb::module_& m, const std::string& name)
         .def("__str__", [](const V& self) { return to_string(self); })
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
-        .def("__hash__", [](const V& self) { return Hash<V> {}(self); });
+        .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def_ro("action_index", &V::first)
+        .def_ro("row_index", &V::second);
 }
 
 void bind_axiom_binding_index(nb::module_& m, const std::string& name)
@@ -118,7 +129,9 @@ void bind_axiom_binding_index(nb::module_& m, const std::string& name)
         .def("__str__", [](const V& self) { return to_string(self); })
         .def("__repr__", [](const V& self) { return to_string(self); })
         .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
-        .def("__hash__", [](const V& self) { return Hash<V> {}(self); });
+        .def("__hash__", [](const V& self) { return Hash<V> {}(self); })
+        .def_ro("axiom_index", &V::first)
+        .def_ro("row_index", &V::second);
 }
 
 /**

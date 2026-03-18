@@ -2,7 +2,8 @@
 Create planning formalism structures. 
 
 This example demonstrates how to create planning formalism structures.
-Bindings are currently not exhaustively added.
+- Bindings are currently not exhaustively added.
+- We currently match the C++ API and work with indices.
 
 Example usage (run from the repository root):
 
@@ -32,17 +33,15 @@ def main():
     parser_options = ParserOptions()
     parser = Parser(domain_filepath, parser_options)
     
-    ### 1. Domain: a domain an be shared among arbitrarily many downstream tasks.
-
     planning_task = parser.parse_task(task_filepath, parser_options)
 
     repository = planning_task.get_repository()
 
     object_builder = ObjectBuilder()
-    fluent_predicate_builder = FluentPredicateBuilder()
-    fluent_ground_atom_builder = FluentGroundAtomBuilder()
+    predicate_builder = FluentPredicateBuilder()
+    ground_atom_builder = FluentGroundAtomBuilder()
     
-    # Re-create existing atom (at ball1 rooma)
+    # 1. Re-create existing atom (at ball1 rooma)
     object_builder.name = "ball1"
     ball1, inserted = repository.get_or_create_object(object_builder)
     assert not inserted
@@ -50,28 +49,38 @@ def main():
     rooma, inserted = repository.get_or_create_object(object_builder)
     assert not inserted 
 
-    fluent_predicate_builder.name = "at"
-    fluent_predicate_builder.arity = 2
-    at, inserted = repository.get_or_create_fluent_predicate(fluent_predicate_builder)
+    predicate_builder.name = "at"
+    predicate_builder.arity = 2
+    at, inserted = repository.get_or_create_fluent_predicate(predicate_builder)
     assert not inserted
 
-    row, inserted = repository.get_or_create_fluent_predicate_row(at, [ball1, rooma])
+    row, inserted = repository.get_or_create_fluent_predicate_row(at, [ball1.get_index(), rooma.get_index()])
     assert not inserted
 
-    fluent_ground_atom_builder.predicate = at 
-    fluent_ground_atom_builder.row = row
-    at_ball1_rooma, inserted = repository.get_or_create_fluent_ground_atom(fluent_ground_atom_builder)
+    ground_atom_builder.predicate = row.get_index().predicate_index
+    ground_atom_builder.row = row.get_index().row_index
+    at_ball1_rooma, inserted = repository.get_or_create_fluent_ground_atom(ground_atom_builder)
     assert not inserted
 
-    # Create non existing atom (at ball1 roomb)
+    # 2. Create non existing atom (at ball1 roomb)
     object_builder.name = "roomb"
     roomb, inserted = repository.get_or_create_object(object_builder)
     assert not inserted 
 
-    row, inserted = repository.get_or_create_fluent_predicate_row(at, [ball1, roomb])
+    row, inserted = repository.get_or_create_fluent_predicate_row(at, [ball1.get_index(), roomb.get_index()])
     assert inserted 
 
-    fluent_ground_atom_builder.predicate = at 
-    fluent_ground_atom_builder.row = row
-    at_ball1_roomb = repository.get_or_create_fluent_ground_atom(fluent_ground_atom_builder)
+    ground_atom_builder.predicate = row.get_index().predicate_index 
+    ground_atom_builder.row = row.get_index().row_index
+    at_ball1_roomb, inserted = repository.get_or_create_fluent_ground_atom(ground_atom_builder)
     assert inserted
+
+    # 3. Map atom to FDRFact to be passed into state repository for state creations
+    fdr_context = planning_task.get_fdr_context()
+    fact = fdr_context.get_fact(at_ball1_roomb)
+
+    print(fact)
+
+
+if __name__ == "__main__":
+    main()

@@ -35,7 +35,7 @@ void bind_module_definitions(nb::module_& m)
             .def("get_repository", &PlanningTask::get_repository)
             .def("get_domain", &PlanningTask::get_domain)
             .def("get_task", &PlanningTask::get_task)
-            .def("get_fdr_context", nb::overload_cast<>(&PlanningTask::get_fdr_context, nb::const_));
+            .def("get_fdr_context", nb::overload_cast<>(&PlanningTask::get_fdr_context, nb::const_), nb::rv_policy::reference_internal);
     }
 
     {
@@ -43,7 +43,7 @@ void bind_module_definitions(nb::module_& m)
             .def("get_repository", &PlanningFDRTask::get_repository)
             .def("get_domain", &PlanningFDRTask::get_domain)
             .def("get_task", &PlanningFDRTask::get_task)
-            .def("get_fdr_context", &PlanningFDRTask::get_fdr_context);
+            .def("get_fdr_context", &PlanningFDRTask::get_fdr_context, nb::rv_policy::reference_internal);
     }
 
     {
