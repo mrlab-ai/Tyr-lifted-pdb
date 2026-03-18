@@ -20,6 +20,7 @@
 
 #include "tyr/common/tuple.hpp"
 #include "tyr/common/unique_object_pool.hpp"
+#include "tyr/formalism/basic_builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
@@ -28,107 +29,92 @@ namespace tyr::formalism::planning
 class Builder
 {
 private:
-    /**
-     * Datalog
-     */
-
-    template<typename T>
-    struct BuilderEntry
-    {
-        using value_type = T;
-        using container_type = UniqueObjectPool<Data<T>>;
-
-        container_type container;
-
-        BuilderEntry() = default;
-    };
-
-    using BuilderStorage = std::tuple<BuilderEntry<formalism::Variable>,
-                                      BuilderEntry<formalism::Object>,
-                                      BuilderEntry<formalism::Binding>,
-                                      BuilderEntry<formalism::Predicate<StaticTag>>,
-                                      BuilderEntry<formalism::Predicate<FluentTag>>,
-                                      BuilderEntry<formalism::Predicate<DerivedTag>>,
-                                      BuilderEntry<Atom<StaticTag>>,
-                                      BuilderEntry<Atom<FluentTag>>,
-                                      BuilderEntry<Atom<DerivedTag>>,
-                                      BuilderEntry<GroundAtom<StaticTag>>,
-                                      BuilderEntry<GroundAtom<FluentTag>>,
-                                      BuilderEntry<GroundAtom<DerivedTag>>,
-                                      BuilderEntry<Literal<StaticTag>>,
-                                      BuilderEntry<Literal<FluentTag>>,
-                                      BuilderEntry<Literal<DerivedTag>>,
-                                      BuilderEntry<GroundLiteral<StaticTag>>,
-                                      BuilderEntry<GroundLiteral<FluentTag>>,
-                                      BuilderEntry<GroundLiteral<DerivedTag>>,
-                                      BuilderEntry<formalism::Function<StaticTag>>,
-                                      BuilderEntry<formalism::Function<FluentTag>>,
-                                      BuilderEntry<formalism::Function<AuxiliaryTag>>,
-                                      BuilderEntry<FunctionTerm<StaticTag>>,
-                                      BuilderEntry<FunctionTerm<FluentTag>>,
-                                      BuilderEntry<FunctionTerm<AuxiliaryTag>>,
-                                      BuilderEntry<GroundFunctionTerm<StaticTag>>,
-                                      BuilderEntry<GroundFunctionTerm<FluentTag>>,
-                                      BuilderEntry<GroundFunctionTerm<AuxiliaryTag>>,
-                                      BuilderEntry<GroundFunctionTermValue<StaticTag>>,
-                                      BuilderEntry<GroundFunctionTermValue<FluentTag>>,
-                                      BuilderEntry<GroundFunctionTermValue<AuxiliaryTag>>,
-                                      BuilderEntry<UnaryOperator<OpSub, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpAdd, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpSub, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpMul, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpDiv, Data<FunctionExpression>>>,
-                                      BuilderEntry<MultiOperator<OpAdd, Data<FunctionExpression>>>,
-                                      BuilderEntry<MultiOperator<OpMul, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpEq, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpNe, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpLe, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpLt, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpGe, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpGt, Data<FunctionExpression>>>,
-                                      BuilderEntry<UnaryOperator<OpSub, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpAdd, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpSub, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpMul, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpDiv, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<MultiOperator<OpAdd, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<MultiOperator<OpMul, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpEq, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpNe, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpLe, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpLt, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpGe, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpGt, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<NumericEffect<OpAssign, FluentTag>>,
-                                      BuilderEntry<NumericEffect<OpIncrease, FluentTag>>,
-                                      BuilderEntry<NumericEffect<OpDecrease, FluentTag>>,
-                                      BuilderEntry<NumericEffect<OpScaleUp, FluentTag>>,
-                                      BuilderEntry<NumericEffect<OpScaleDown, FluentTag>>,
-                                      BuilderEntry<NumericEffect<OpIncrease, AuxiliaryTag>>,
-                                      BuilderEntry<GroundNumericEffect<OpAssign, FluentTag>>,
-                                      BuilderEntry<GroundNumericEffect<OpIncrease, FluentTag>>,
-                                      BuilderEntry<GroundNumericEffect<OpDecrease, FluentTag>>,
-                                      BuilderEntry<GroundNumericEffect<OpScaleUp, FluentTag>>,
-                                      BuilderEntry<GroundNumericEffect<OpScaleDown, FluentTag>>,
-                                      BuilderEntry<GroundNumericEffect<OpIncrease, AuxiliaryTag>>,
-                                      BuilderEntry<ConditionalEffect>,
-                                      BuilderEntry<GroundConditionalEffect>,
-                                      BuilderEntry<ConjunctiveEffect>,
-                                      BuilderEntry<GroundConjunctiveEffect>,
-                                      BuilderEntry<Action>,
-                                      BuilderEntry<GroundAction>,
-                                      BuilderEntry<Axiom>,
-                                      BuilderEntry<GroundAxiom>,
-                                      BuilderEntry<Metric>,
-                                      BuilderEntry<Domain>,
-                                      BuilderEntry<Task>,
-                                      BuilderEntry<FDRVariable<FluentTag>>,
-                                      BuilderEntry<FDRVariable<DerivedTag>>,
-                                      BuilderEntry<FDRFact<FluentTag>>,
-                                      BuilderEntry<FDRFact<DerivedTag>>,
-                                      BuilderEntry<ConjunctiveCondition>,
-                                      BuilderEntry<GroundConjunctiveCondition>,
-                                      BuilderEntry<FDRTask>>;
+    using BuilderStorage = std::tuple<BasicBuilder<formalism::Variable>,
+                                      BasicBuilder<formalism::Object>,
+                                      BasicBuilder<formalism::Binding>,
+                                      BasicBuilder<formalism::Predicate<StaticTag>>,
+                                      BasicBuilder<formalism::Predicate<FluentTag>>,
+                                      BasicBuilder<formalism::Predicate<DerivedTag>>,
+                                      BasicBuilder<Atom<StaticTag>>,
+                                      BasicBuilder<Atom<FluentTag>>,
+                                      BasicBuilder<Atom<DerivedTag>>,
+                                      BasicBuilder<GroundAtom<StaticTag>>,
+                                      BasicBuilder<GroundAtom<FluentTag>>,
+                                      BasicBuilder<GroundAtom<DerivedTag>>,
+                                      BasicBuilder<Literal<StaticTag>>,
+                                      BasicBuilder<Literal<FluentTag>>,
+                                      BasicBuilder<Literal<DerivedTag>>,
+                                      BasicBuilder<GroundLiteral<StaticTag>>,
+                                      BasicBuilder<GroundLiteral<FluentTag>>,
+                                      BasicBuilder<GroundLiteral<DerivedTag>>,
+                                      BasicBuilder<formalism::Function<StaticTag>>,
+                                      BasicBuilder<formalism::Function<FluentTag>>,
+                                      BasicBuilder<formalism::Function<AuxiliaryTag>>,
+                                      BasicBuilder<FunctionTerm<StaticTag>>,
+                                      BasicBuilder<FunctionTerm<FluentTag>>,
+                                      BasicBuilder<FunctionTerm<AuxiliaryTag>>,
+                                      BasicBuilder<GroundFunctionTerm<StaticTag>>,
+                                      BasicBuilder<GroundFunctionTerm<FluentTag>>,
+                                      BasicBuilder<GroundFunctionTerm<AuxiliaryTag>>,
+                                      BasicBuilder<GroundFunctionTermValue<StaticTag>>,
+                                      BasicBuilder<GroundFunctionTermValue<FluentTag>>,
+                                      BasicBuilder<GroundFunctionTermValue<AuxiliaryTag>>,
+                                      BasicBuilder<UnaryOperator<OpSub, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpAdd, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpSub, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpMul, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpDiv, Data<FunctionExpression>>>,
+                                      BasicBuilder<MultiOperator<OpAdd, Data<FunctionExpression>>>,
+                                      BasicBuilder<MultiOperator<OpMul, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpEq, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpNe, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpLe, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpLt, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpGe, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpGt, Data<FunctionExpression>>>,
+                                      BasicBuilder<UnaryOperator<OpSub, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpAdd, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpSub, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpMul, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpDiv, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<MultiOperator<OpAdd, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<MultiOperator<OpMul, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpEq, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpNe, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpLe, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpLt, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpGe, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpGt, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<NumericEffect<OpAssign, FluentTag>>,
+                                      BasicBuilder<NumericEffect<OpIncrease, FluentTag>>,
+                                      BasicBuilder<NumericEffect<OpDecrease, FluentTag>>,
+                                      BasicBuilder<NumericEffect<OpScaleUp, FluentTag>>,
+                                      BasicBuilder<NumericEffect<OpScaleDown, FluentTag>>,
+                                      BasicBuilder<NumericEffect<OpIncrease, AuxiliaryTag>>,
+                                      BasicBuilder<GroundNumericEffect<OpAssign, FluentTag>>,
+                                      BasicBuilder<GroundNumericEffect<OpIncrease, FluentTag>>,
+                                      BasicBuilder<GroundNumericEffect<OpDecrease, FluentTag>>,
+                                      BasicBuilder<GroundNumericEffect<OpScaleUp, FluentTag>>,
+                                      BasicBuilder<GroundNumericEffect<OpScaleDown, FluentTag>>,
+                                      BasicBuilder<GroundNumericEffect<OpIncrease, AuxiliaryTag>>,
+                                      BasicBuilder<ConditionalEffect>,
+                                      BasicBuilder<GroundConditionalEffect>,
+                                      BasicBuilder<ConjunctiveEffect>,
+                                      BasicBuilder<GroundConjunctiveEffect>,
+                                      BasicBuilder<Action>,
+                                      BasicBuilder<GroundAction>,
+                                      BasicBuilder<Axiom>,
+                                      BasicBuilder<GroundAxiom>,
+                                      BasicBuilder<Metric>,
+                                      BasicBuilder<Domain>,
+                                      BasicBuilder<Task>,
+                                      BasicBuilder<FDRVariable<FluentTag>>,
+                                      BasicBuilder<FDRVariable<DerivedTag>>,
+                                      BasicBuilder<FDRFact<FluentTag>>,
+                                      BasicBuilder<FDRFact<DerivedTag>>,
+                                      BasicBuilder<ConjunctiveCondition>,
+                                      BasicBuilder<GroundConjunctiveCondition>,
+                                      BasicBuilder<FDRTask>>;
 
     BuilderStorage m_builder;
 
@@ -138,10 +124,131 @@ public:
     template<typename T>
     [[nodiscard]] auto get_builder()
     {
-        return std::get<BuilderEntry<T>>(m_builder).container.get_or_allocate();
+        return std::get<BasicBuilder<T>>(m_builder).get_builder();
     }
 };
+}
 
+namespace tyr::formalism
+{
+/**
+ * Explicit extern template declarations for BasicBuilder
+ */
+
+extern template class BasicBuilder<Variable>;
+extern template class BasicBuilder<Object>;
+extern template class BasicBuilder<Binding>;
+
+extern template class BasicBuilder<formalism::Predicate<StaticTag>>;
+extern template class BasicBuilder<formalism::Predicate<FluentTag>>;
+extern template class BasicBuilder<formalism::Predicate<DerivedTag>>;
+
+extern template class BasicBuilder<planning::Atom<StaticTag>>;
+extern template class BasicBuilder<planning::Atom<FluentTag>>;
+extern template class BasicBuilder<planning::Atom<DerivedTag>>;
+
+extern template class BasicBuilder<planning::GroundAtom<StaticTag>>;
+extern template class BasicBuilder<planning::GroundAtom<FluentTag>>;
+extern template class BasicBuilder<planning::GroundAtom<DerivedTag>>;
+
+extern template class BasicBuilder<planning::Literal<StaticTag>>;
+extern template class BasicBuilder<planning::Literal<FluentTag>>;
+extern template class BasicBuilder<planning::Literal<DerivedTag>>;
+
+extern template class BasicBuilder<planning::GroundLiteral<StaticTag>>;
+extern template class BasicBuilder<planning::GroundLiteral<FluentTag>>;
+extern template class BasicBuilder<planning::GroundLiteral<DerivedTag>>;
+
+extern template class BasicBuilder<Function<StaticTag>>;
+extern template class BasicBuilder<Function<FluentTag>>;
+extern template class BasicBuilder<Function<AuxiliaryTag>>;
+
+extern template class BasicBuilder<planning::FunctionTerm<StaticTag>>;
+extern template class BasicBuilder<planning::FunctionTerm<FluentTag>>;
+extern template class BasicBuilder<planning::FunctionTerm<AuxiliaryTag>>;
+
+extern template class BasicBuilder<planning::GroundFunctionTerm<StaticTag>>;
+extern template class BasicBuilder<planning::GroundFunctionTerm<FluentTag>>;
+extern template class BasicBuilder<planning::GroundFunctionTerm<AuxiliaryTag>>;
+
+extern template class BasicBuilder<planning::GroundFunctionTermValue<StaticTag>>;
+extern template class BasicBuilder<planning::GroundFunctionTermValue<FluentTag>>;
+extern template class BasicBuilder<planning::GroundFunctionTermValue<AuxiliaryTag>>;
+
+extern template class BasicBuilder<planning::UnaryOperator<OpSub, Data<planning::FunctionExpression>>>;
+
+extern template class BasicBuilder<planning::BinaryOperator<OpAdd, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpSub, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpMul, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpDiv, Data<planning::FunctionExpression>>>;
+
+extern template class BasicBuilder<planning::MultiOperator<OpAdd, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::MultiOperator<OpMul, Data<planning::FunctionExpression>>>;
+
+extern template class BasicBuilder<planning::BinaryOperator<OpEq, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpNe, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpLe, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpLt, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpGe, Data<planning::FunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpGt, Data<planning::FunctionExpression>>>;
+
+extern template class BasicBuilder<planning::UnaryOperator<OpSub, Data<planning::GroundFunctionExpression>>>;
+
+extern template class BasicBuilder<planning::BinaryOperator<OpAdd, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpSub, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpMul, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpDiv, Data<planning::GroundFunctionExpression>>>;
+
+extern template class BasicBuilder<planning::MultiOperator<OpAdd, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::MultiOperator<OpMul, Data<planning::GroundFunctionExpression>>>;
+
+extern template class BasicBuilder<planning::BinaryOperator<OpEq, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpNe, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpLe, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpLt, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpGe, Data<planning::GroundFunctionExpression>>>;
+extern template class BasicBuilder<planning::BinaryOperator<OpGt, Data<planning::GroundFunctionExpression>>>;
+
+extern template class BasicBuilder<planning::NumericEffect<planning::OpAssign, FluentTag>>;
+extern template class BasicBuilder<planning::NumericEffect<planning::OpIncrease, FluentTag>>;
+extern template class BasicBuilder<planning::NumericEffect<planning::OpDecrease, FluentTag>>;
+extern template class BasicBuilder<planning::NumericEffect<planning::OpScaleUp, FluentTag>>;
+extern template class BasicBuilder<planning::NumericEffect<planning::OpScaleDown, FluentTag>>;
+extern template class BasicBuilder<planning::NumericEffect<planning::OpIncrease, AuxiliaryTag>>;
+
+extern template class BasicBuilder<planning::GroundNumericEffect<planning::OpAssign, FluentTag>>;
+extern template class BasicBuilder<planning::GroundNumericEffect<planning::OpIncrease, FluentTag>>;
+extern template class BasicBuilder<planning::GroundNumericEffect<planning::OpDecrease, FluentTag>>;
+extern template class BasicBuilder<planning::GroundNumericEffect<planning::OpScaleUp, FluentTag>>;
+extern template class BasicBuilder<planning::GroundNumericEffect<planning::OpScaleDown, FluentTag>>;
+extern template class BasicBuilder<planning::GroundNumericEffect<planning::OpIncrease, AuxiliaryTag>>;
+
+extern template class BasicBuilder<planning::ConditionalEffect>;
+extern template class BasicBuilder<planning::GroundConditionalEffect>;
+
+extern template class BasicBuilder<planning::ConjunctiveEffect>;
+extern template class BasicBuilder<planning::GroundConjunctiveEffect>;
+
+extern template class BasicBuilder<planning::Action>;
+extern template class BasicBuilder<planning::GroundAction>;
+
+extern template class BasicBuilder<planning::Axiom>;
+extern template class BasicBuilder<planning::GroundAxiom>;
+
+extern template class BasicBuilder<planning::Metric>;
+extern template class BasicBuilder<planning::Domain>;
+extern template class BasicBuilder<planning::Task>;
+
+extern template class BasicBuilder<planning::FDRVariable<FluentTag>>;
+extern template class BasicBuilder<planning::FDRVariable<DerivedTag>>;
+
+extern template class BasicBuilder<planning::FDRFact<FluentTag>>;
+extern template class BasicBuilder<planning::FDRFact<DerivedTag>>;
+
+extern template class BasicBuilder<planning::ConjunctiveCondition>;
+extern template class BasicBuilder<planning::GroundConjunctiveCondition>;
+
+extern template class BasicBuilder<planning::FDRTask>;
 }
 
 #endif

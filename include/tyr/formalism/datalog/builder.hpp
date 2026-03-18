@@ -20,6 +20,7 @@
 
 #include "tyr/common/tuple.hpp"
 #include "tyr/common/unique_object_pool.hpp"
+#include "tyr/formalism/basic_builder.hpp"
 #include "tyr/formalism/datalog/datas.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 
@@ -28,73 +29,58 @@ namespace tyr::formalism::datalog
 class Builder
 {
 private:
-    /**
-     * Datalog
-     */
-
-    template<typename T>
-    struct BuilderEntry
-    {
-        using value_type = T;
-        using container_type = UniqueObjectPool<Data<T>>;
-
-        container_type container;
-
-        BuilderEntry() = default;
-    };
-
-    using BuilderStorage = std::tuple<BuilderEntry<formalism::Variable>,
-                                      BuilderEntry<formalism::Object>,
-                                      BuilderEntry<formalism::Binding>,
-                                      BuilderEntry<formalism::Predicate<StaticTag>>,
-                                      BuilderEntry<formalism::Predicate<FluentTag>>,
-                                      BuilderEntry<Atom<StaticTag>>,
-                                      BuilderEntry<Atom<FluentTag>>,
-                                      BuilderEntry<GroundAtom<StaticTag>>,
-                                      BuilderEntry<GroundAtom<FluentTag>>,
-                                      BuilderEntry<Literal<StaticTag>>,
-                                      BuilderEntry<Literal<FluentTag>>,
-                                      BuilderEntry<GroundLiteral<StaticTag>>,
-                                      BuilderEntry<GroundLiteral<FluentTag>>,
-                                      BuilderEntry<formalism::Function<StaticTag>>,
-                                      BuilderEntry<formalism::Function<FluentTag>>,
-                                      BuilderEntry<FunctionTerm<StaticTag>>,
-                                      BuilderEntry<FunctionTerm<FluentTag>>,
-                                      BuilderEntry<GroundFunctionTerm<StaticTag>>,
-                                      BuilderEntry<GroundFunctionTerm<FluentTag>>,
-                                      BuilderEntry<GroundFunctionTermValue<StaticTag>>,
-                                      BuilderEntry<GroundFunctionTermValue<FluentTag>>,
-                                      BuilderEntry<UnaryOperator<OpSub, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpAdd, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpSub, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpMul, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpDiv, Data<FunctionExpression>>>,
-                                      BuilderEntry<MultiOperator<OpAdd, Data<FunctionExpression>>>,
-                                      BuilderEntry<MultiOperator<OpMul, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpEq, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpNe, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpLe, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpLt, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpGe, Data<FunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpGt, Data<FunctionExpression>>>,
-                                      BuilderEntry<UnaryOperator<OpSub, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpAdd, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpSub, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpMul, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpDiv, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<MultiOperator<OpAdd, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<MultiOperator<OpMul, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpEq, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpNe, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpLe, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpLt, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpGe, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<BinaryOperator<OpGt, Data<GroundFunctionExpression>>>,
-                                      BuilderEntry<ConjunctiveCondition>,
-                                      BuilderEntry<Rule>,
-                                      BuilderEntry<GroundConjunctiveCondition>,
-                                      BuilderEntry<GroundRule>,
-                                      BuilderEntry<Program>>;
+    using BuilderStorage = std::tuple<BasicBuilder<Variable>,
+                                      BasicBuilder<Object>,
+                                      BasicBuilder<Binding>,
+                                      BasicBuilder<Predicate<StaticTag>>,
+                                      BasicBuilder<Predicate<FluentTag>>,
+                                      BasicBuilder<Atom<StaticTag>>,
+                                      BasicBuilder<Atom<FluentTag>>,
+                                      BasicBuilder<GroundAtom<StaticTag>>,
+                                      BasicBuilder<GroundAtom<FluentTag>>,
+                                      BasicBuilder<Literal<StaticTag>>,
+                                      BasicBuilder<Literal<FluentTag>>,
+                                      BasicBuilder<GroundLiteral<StaticTag>>,
+                                      BasicBuilder<GroundLiteral<FluentTag>>,
+                                      BasicBuilder<Function<StaticTag>>,
+                                      BasicBuilder<Function<FluentTag>>,
+                                      BasicBuilder<FunctionTerm<StaticTag>>,
+                                      BasicBuilder<FunctionTerm<FluentTag>>,
+                                      BasicBuilder<GroundFunctionTerm<StaticTag>>,
+                                      BasicBuilder<GroundFunctionTerm<FluentTag>>,
+                                      BasicBuilder<GroundFunctionTermValue<StaticTag>>,
+                                      BasicBuilder<GroundFunctionTermValue<FluentTag>>,
+                                      BasicBuilder<UnaryOperator<OpSub, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpAdd, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpSub, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpMul, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpDiv, Data<FunctionExpression>>>,
+                                      BasicBuilder<MultiOperator<OpAdd, Data<FunctionExpression>>>,
+                                      BasicBuilder<MultiOperator<OpMul, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpEq, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpNe, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpLe, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpLt, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpGe, Data<FunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpGt, Data<FunctionExpression>>>,
+                                      BasicBuilder<UnaryOperator<OpSub, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpAdd, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpSub, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpMul, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpDiv, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<MultiOperator<OpAdd, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<MultiOperator<OpMul, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpEq, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpNe, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpLe, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpLt, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpGe, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<BinaryOperator<OpGt, Data<GroundFunctionExpression>>>,
+                                      BasicBuilder<ConjunctiveCondition>,
+                                      BasicBuilder<Rule>,
+                                      BasicBuilder<GroundConjunctiveCondition>,
+                                      BasicBuilder<GroundRule>,
+                                      BasicBuilder<Program>>;
 
     BuilderStorage m_builder;
 
@@ -104,9 +90,85 @@ public:
     template<typename T>
     [[nodiscard]] auto get_builder()
     {
-        return std::get<BuilderEntry<T>>(m_builder).container.get_or_allocate();
+        return std::get<BasicBuilder<T>>(m_builder).get_builder();
     }
 };
+}
+
+namespace tyr::formalism
+{
+
+/**
+ * Explicit extern template declarations for BasicBuilder
+ */
+
+extern template class BasicBuilder<Variable>;
+extern template class BasicBuilder<Object>;
+extern template class BasicBuilder<Binding>;
+
+extern template class BasicBuilder<Predicate<StaticTag>>;
+extern template class BasicBuilder<Predicate<FluentTag>>;
+
+extern template class BasicBuilder<datalog::Atom<StaticTag>>;
+extern template class BasicBuilder<datalog::Atom<FluentTag>>;
+extern template class BasicBuilder<datalog::GroundAtom<StaticTag>>;
+extern template class BasicBuilder<datalog::GroundAtom<FluentTag>>;
+
+extern template class BasicBuilder<datalog::Literal<StaticTag>>;
+extern template class BasicBuilder<datalog::Literal<FluentTag>>;
+extern template class BasicBuilder<datalog::GroundLiteral<StaticTag>>;
+extern template class BasicBuilder<datalog::GroundLiteral<FluentTag>>;
+
+extern template class BasicBuilder<Function<StaticTag>>;
+extern template class BasicBuilder<Function<FluentTag>>;
+
+extern template class BasicBuilder<datalog::FunctionTerm<StaticTag>>;
+extern template class BasicBuilder<datalog::FunctionTerm<FluentTag>>;
+extern template class BasicBuilder<datalog::GroundFunctionTerm<StaticTag>>;
+extern template class BasicBuilder<datalog::GroundFunctionTerm<FluentTag>>;
+
+extern template class BasicBuilder<datalog::GroundFunctionTermValue<StaticTag>>;
+extern template class BasicBuilder<datalog::GroundFunctionTermValue<FluentTag>>;
+
+extern template class BasicBuilder<datalog::UnaryOperator<OpSub, Data<datalog::FunctionExpression>>>;
+
+extern template class BasicBuilder<datalog::BinaryOperator<OpAdd, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpSub, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpMul, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpDiv, Data<datalog::FunctionExpression>>>;
+
+extern template class BasicBuilder<datalog::MultiOperator<OpAdd, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::MultiOperator<OpMul, Data<datalog::FunctionExpression>>>;
+
+extern template class BasicBuilder<datalog::BinaryOperator<OpEq, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpNe, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpLe, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpLt, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpGe, Data<datalog::FunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpGt, Data<datalog::FunctionExpression>>>;
+
+extern template class BasicBuilder<datalog::UnaryOperator<OpSub, Data<datalog::GroundFunctionExpression>>>;
+
+extern template class BasicBuilder<datalog::BinaryOperator<OpAdd, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpSub, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpMul, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpDiv, Data<datalog::GroundFunctionExpression>>>;
+
+extern template class BasicBuilder<datalog::MultiOperator<OpAdd, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::MultiOperator<OpMul, Data<datalog::GroundFunctionExpression>>>;
+
+extern template class BasicBuilder<datalog::BinaryOperator<OpEq, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpNe, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpLe, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpLt, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpGe, Data<datalog::GroundFunctionExpression>>>;
+extern template class BasicBuilder<datalog::BinaryOperator<OpGt, Data<datalog::GroundFunctionExpression>>>;
+
+extern template class BasicBuilder<datalog::ConjunctiveCondition>;
+extern template class BasicBuilder<datalog::Rule>;
+extern template class BasicBuilder<datalog::GroundConjunctiveCondition>;
+extern template class BasicBuilder<datalog::GroundRule>;
+extern template class BasicBuilder<datalog::Program>;
 
 }
 

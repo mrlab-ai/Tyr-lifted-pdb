@@ -23,6 +23,10 @@ class CMakeExtension(Extension):
         self.sourcedir = Path(os.path.abspath(sourcedir))
 
 
+def get_num_jobs():
+    return int(os.environ.get("TYR_JOBS", multiprocessing.cpu_count()))
+
+
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
         # Must be in this form due to bug in .resolve() only fixed in Python 3.10+
@@ -56,7 +60,7 @@ class CMakeBuild(build_ext):
         )
 
         subprocess.run(
-            ["cmake", "--build", f"{str(temp_directory / 'dependencies' / 'build')}", f"-j{multiprocessing.cpu_count()}"]
+            ["cmake", "--build", f"{str(temp_directory / 'dependencies' / 'build')}", f"-j{get_num_jobs()}"]
         )
 
         subprocess.run(
@@ -78,6 +82,7 @@ class CMakeBuild(build_ext):
             "-DBUILD_TESTS=OFF",
             "-DBUILD_EXECUTABLES=OFF",
             "-DBUILD_PROFILING=OFF",
+            "-DTYR_USE_LLD=OFF"  # lld seems to prune code
         ]
 
         subprocess.run(
@@ -85,7 +90,7 @@ class CMakeBuild(build_ext):
         )
 
         subprocess.run(
-            ["cmake", "--build", f"{str(temp_directory / 'build')}", f"-j{multiprocessing.cpu_count()}"], cwd=str(temp_directory), check=True
+            ["cmake", "--build", f"{str(temp_directory / 'build')}", f"-j{get_num_jobs()}"], cwd=str(temp_directory), check=True
         )
 
         subprocess.run(
