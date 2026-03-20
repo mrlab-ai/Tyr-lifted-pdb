@@ -139,7 +139,7 @@ std::pair<GroundAtomView<T>, bool> merge_d2d(GroundAtomView<T> element, MergeCon
     atom.clear();
 
     atom.predicate = element.get_predicate().get_index();
-    atom.row = merge_d2d(element.get_predicate(), element.get_row(), context).first.get_index().second;
+    atom.row = merge_d2d(element.get_predicate(), element.get_row(), context).first.get_index().row;
 
     canonicalize(atom);
     return context.destination.get_or_create(atom);
@@ -226,7 +226,7 @@ std::pair<GroundFunctionTermView<T>, bool> merge_d2d(GroundFunctionTermView<T> e
     fterm.clear();
 
     fterm.function = element.get_function().get_index();
-    fterm.row = merge_d2d(element.get_function(), element.get_row(), context).first.get_index().second;
+    fterm.row = merge_d2d(element.get_function(), element.get_row(), context).first.get_index().row;
 
     canonicalize(fterm);
     return context.destination.get_or_create(fterm);

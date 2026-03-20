@@ -147,7 +147,7 @@ std::pair<GroundAtomView<T_DST>, bool> merge_d2p(formalism::datalog::GroundAtomV
 
     const auto predicate_view = merge_d2p<T_SRC, T_DST>(element.get_predicate(), context).first;
     atom.predicate = predicate_view.get_index();
-    atom.row = merge_d2p(predicate_view, element.get_row(), context).first.get_index().second;
+    atom.row = merge_d2p(predicate_view, element.get_row(), context).first.get_index().row;
 
     canonicalize(atom);
     return context.destination.get_or_create(atom);
@@ -235,7 +235,7 @@ std::pair<GroundFunctionTermView<T>, bool> merge_d2p(formalism::datalog::GroundF
 
     const auto function_view = merge_d2p(element.get_function(), context).first;
     fterm.function = function_view.get_index();
-    fterm.row = merge_d2p(function_view, element.get_row(), context).first.get_index().second;
+    fterm.row = merge_d2p(function_view, element.get_row(), context).first.get_index().row;
 
     canonicalize(fterm);
     return context.destination.get_or_create(fterm);

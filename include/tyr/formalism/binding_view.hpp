@@ -48,15 +48,15 @@ public:
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
 };
 
-template<IndexConcept I, typename C>
-class View<std::pair<I, Index<formalism::Binding>>, C>
+template<typename Tag, typename C>
+class View<formalism::RelationBindingIndex<Tag>, C>
 {
 private:
     const C* m_context;
-    std::pair<I, Index<formalism::Binding>> m_handle;
+    formalism::RelationBindingIndex<Tag> m_handle;
 
 public:
-    View(std::pair<I, Index<formalism::Binding>> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+    View(formalism::RelationBindingIndex<Tag> handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
 
     // This will return an ArrayView aleady
     auto get_data() const noexcept { return get_repository(*m_context)[m_handle]; }
@@ -64,10 +64,149 @@ public:
     const auto& get_handle() const noexcept { return m_handle; }
 
     auto get_index() const noexcept { return m_handle; }
-    auto get_relation() const noexcept { return make_view(m_handle.first, *m_context); }
+    auto get_relation() const noexcept { return make_view(m_handle.relation, *m_context); }
     auto get_objects() const noexcept { return make_view(get_data(), *m_context); }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }
+};
+
+template<typename Tag, typename C>
+class View<formalism::RelationBindingListHandle<Tag>, C>
+{
+public:
+    using Container = formalism::RelationBindingListHandle<Tag>;
+    using T = formalism::RelationBindingIndex<Tag>;
+    using I1 = Index<Tag>;
+    using I2 = Index<formalism::Binding>;
+
+    View(Container handle, const C& context) noexcept : m_context(&context), m_handle(handle) {}
+
+    size_t size() const noexcept { return get_data().rows.size(); }
+    bool empty() const noexcept { return get_data().rows.empty(); }
+
+    decltype(auto) operator[](size_t i) const noexcept
+    {
+        if constexpr (ViewConcept<T, C>)
+            return make_view(T { get_data().relation, get_data().rows[i] }, get_context());
+        else
+            return T { get_data().relation, get_data().rows[i] };
+    }
+
+    decltype(auto) front() const noexcept
+    {
+        if constexpr (ViewConcept<T, C>)
+            return make_view(T { get_data().relation, get_data().rows.front() }, get_context());
+        else
+            return T { get_data().relation, get_data().rows.front() };
+    }
+
+    struct const_iterator
+    {
+        const C* ctx;
+        const I2* it;
+        I1 relation;
+
+        using difference_type = std::ptrdiff_t;
+        using value_type = std::conditional_t<ViewConcept<T, C>, ::tyr::View<T, C>, T>;
+        using iterator_category = std::random_access_iterator_tag;
+        using iterator_concept = std::random_access_iterator_tag;
+
+        const_iterator() noexcept : ctx(nullptr), it(nullptr) {}
+        const_iterator(I1 relation, const I2* it, const C& ctx) noexcept : ctx(&ctx), it(it), relation(relation) {}
+
+        decltype(auto) operator*() const noexcept
+        {
+            if constexpr (ViewConcept<T, C>)
+                return make_view(T { relation, *it }, *ctx);
+            else
+                return T { relation, *it };
+        }
+
+        const_iterator& operator++() noexcept
+        {
+            ++it;
+            return *this;
+        }
+
+        const_iterator operator++(int) noexcept
+        {
+            auto tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        const_iterator& operator--() noexcept
+        {
+            --it;
+            return *this;
+        }
+
+        const_iterator operator--(int) noexcept
+        {
+            auto tmp = *this;
+            --(*this);
+            return tmp;
+        }
+
+        const_iterator& operator+=(difference_type n) noexcept
+        {
+            it += n;
+            return *this;
+        }
+
+        const_iterator& operator-=(difference_type n) noexcept
+        {
+            it -= n;
+            return *this;
+        }
+
+        friend const_iterator operator+(const_iterator it, difference_type n) noexcept
+        {
+            it += n;
+            return it;
+        }
+
+        friend const_iterator operator+(difference_type n, const_iterator it) noexcept
+        {
+            it += n;
+            return it;
+        }
+
+        friend const_iterator operator-(const_iterator it, difference_type n) noexcept
+        {
+            it -= n;
+            return it;
+        }
+
+        friend difference_type operator-(const const_iterator& lhs, const const_iterator& rhs) noexcept { return lhs.it - rhs.it; }
+
+        auto operator[](difference_type n) const noexcept
+        {
+            if constexpr (ViewConcept<T, C>)
+                return make_view(T { relation, *(it + n) }, *ctx);
+            else
+                return T { relation, *(it + n) };
+        }
+
+        friend bool operator==(const const_iterator& lhs, const const_iterator& rhs) noexcept { return lhs.it == rhs.it; }
+        friend bool operator!=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(lhs == rhs); }
+        friend bool operator<(const const_iterator& lhs, const const_iterator& rhs) noexcept { return lhs.it < rhs.it; }
+        friend bool operator>(const const_iterator& lhs, const const_iterator& rhs) noexcept { return rhs < lhs; }
+        friend bool operator<=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(rhs < lhs); }
+        friend bool operator>=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(lhs < rhs); }
+    };
+
+    const_iterator begin() const noexcept { return const_iterator { get_data().relation, get_data().rows.data(), get_context() }; }
+
+    const_iterator end() const noexcept { return const_iterator { get_data().relation, get_data().rows.data() + get_data().rows.size(), get_context() }; }
+
+    const auto& get_data() const noexcept { return m_handle; }
+    const auto& get_context() const noexcept { return *m_context; }
+    const auto& get_handle() const noexcept { return m_handle; }
+
+private:
+    const C* m_context;
+    Container m_handle;
 };
 
 }

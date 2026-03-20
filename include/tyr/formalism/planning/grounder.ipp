@@ -115,7 +115,7 @@ std::pair<GroundFunctionTermView<T>, bool> ground(FunctionTermView<T> element, G
 
     // Fill data
     fterm.function = element.get_function().get_index();
-    fterm.row = ground(element.get_terms(), element.get_function(), context).first.get_index().second;
+    fterm.row = ground(element.get_terms(), element.get_function(), context).first.get_index().row;
 
     // Canonicalize and Serialize
     canonicalize(fterm);
@@ -240,7 +240,7 @@ std::pair<GroundAtomView<T>, bool> ground(AtomView<T> element, GrounderContext& 
 
     // Fill data
     atom.predicate = element.get_predicate().get_index();
-    atom.row = ground(element.get_terms(), element.get_predicate(), context).first.get_index().second;
+    atom.row = ground(element.get_terms(), element.get_predicate(), context).first.get_index().row;
 
     // Canonicalize and Serialize
     canonicalize(atom);
@@ -407,7 +407,7 @@ TYR_INLINE_IMPL std::pair<GroundActionView, bool> ground(ActionView element,
 
     // Fill data
     action.action = element.get_index();
-    action.row = ground(element, context).first.get_index().second;
+    action.row = ground(element, context).first.get_index().row;
     action.condition = ground(element.get_condition(), context, fdr).first.get_index();
 
     auto binding_size = context.binding.size();
@@ -448,7 +448,7 @@ TYR_INLINE_IMPL std::pair<GroundAxiomView, bool> ground(AxiomView element, Groun
 
     // Fill data
     axiom.axiom = element.get_index();
-    axiom.row = context.destination.get_or_create(element, context.binding).first.get_index().second;
+    axiom.row = context.destination.get_or_create(element, context.binding).first.get_index().row;
     axiom.body = ground(element.get_body(), context, fdr).first.get_index();
     axiom.head = ground(element.get_head(), context).first.get_index();
 

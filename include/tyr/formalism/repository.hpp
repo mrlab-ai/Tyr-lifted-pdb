@@ -85,14 +85,14 @@ private:
      * RelationRepository forwarding
      */
 
-    template<IndexConcept I>
-    std::optional<View<std::pair<I, Index<Binding>>, Repository>> find_with_hash(I g, const IndexList<Object>& builder, size_t h) const noexcept
+    template<typename T>
+    std::optional<View<RelationBindingIndex<T>, Repository>> find_with_hash(Index<T> g, const IndexList<Object>& builder, size_t h) const noexcept
     {
         const Repository* current = this;
         while (current != nullptr)
         {
             if (auto row_or_nullopt = current->m_relation_repository.find_local_with_hash(g, builder, h))
-                return View<std::pair<I, Index<Binding>>, Repository>(std::make_pair(g, *row_or_nullopt), *current);
+                return View<RelationBindingIndex<T>, Repository>(RelationBindingIndex<T> { g, *row_or_nullopt }, *current);
 
             current = current->m_parent;
         }
@@ -100,21 +100,21 @@ private:
         return std::nullopt;
     }
 
-    template<IndexConcept I>
-    std::pair<View<std::pair<I, Index<Binding>>, Repository>, bool> get_or_create_with_hash(View<I, Repository> g, const IndexList<Object>& builder, size_t h)
+    template<typename T>
+    std::pair<View<RelationBindingIndex<T>, Repository>, bool> get_or_create_with_hash(View<Index<T>, Repository> g, const IndexList<Object>& builder, size_t h)
     {
         const Repository* current = this;
         while (current != nullptr)
         {
             if (auto row_or_nullopt = current->m_relation_repository.find_local_with_hash(g.get_index(), builder, h))
-                return { View<std::pair<I, Index<Binding>>, Repository>(std::make_pair(g.get_index(), *row_or_nullopt), *current), false };
+                return { View<RelationBindingIndex<T>, Repository>(RelationBindingIndex<T> { g.get_index(), *row_or_nullopt }, *current), false };
             current = current->m_parent;
         }
 
         assert(!m_relation_repository.exists_parent_mutation(g.get_index()) && "Integrity error: Parent RelationRepository modified after child branching!");
 
         const auto [row, success] = m_relation_repository.get_or_create_local_with_hash(g.get_index(), g.get_arity(), builder, h);
-        return { View<std::pair<I, Index<Binding>>, Repository>(std::make_pair(g.get_index(), row), *this), success };
+        return { View<RelationBindingIndex<T>, Repository>(RelationBindingIndex<T> { g.get_index(), row }, *this), success };
     }
 
 public:
@@ -210,20 +210,20 @@ public:
      * RelationRepository forwarding
      */
 
-    template<IndexConcept I>
-    std::optional<View<std::pair<I, Index<Binding>>, Repository>> find(I g, const IndexList<Object>& builder) const noexcept
+    template<typename T>
+    std::optional<View<RelationBindingIndex<T>, Repository>> find(Index<T> g, const IndexList<Object>& builder) const noexcept
     {
         return find_with_hash(g, builder, RelationRepo::hash(g.get_index(), builder));
     }
 
-    template<IndexConcept I>
-    std::pair<View<std::pair<I, Index<Binding>>, Repository>, bool> get_or_create(View<I, Repository> g, const IndexList<Object>& builder)
+    template<typename T>
+    std::pair<View<RelationBindingIndex<T>, Repository>, bool> get_or_create(View<Index<T>, Repository> g, const IndexList<Object>& builder)
     {
         return get_or_create_with_hash(g, builder, RelationRepo::hash(g.get_index(), builder));
     }
 
-    template<IndexConcept I>
-    auto operator[](std::pair<I, Index<Binding>> index) const noexcept
+    template<typename T>
+    auto operator[](RelationBindingIndex<T> index) const noexcept
     {
         const Repository* current = this;
         while (current != nullptr)
@@ -237,8 +237,8 @@ public:
         __builtin_unreachable();
     }
 
-    template<IndexConcept I>
-    auto front(I g) const noexcept
+    template<typename T>
+    auto front(Index<T> g) const noexcept
     {
         const Repository* current = this;
         while (current->m_parent != nullptr)
@@ -251,14 +251,14 @@ public:
         return current->m_relation_repository.front_local(g);
     }
 
-    template<IndexConcept I>
-    size_t size(I g) const noexcept
+    template<typename T>
+    size_t size(Index<T> g) const noexcept
     {
         return m_relation_repository.parent_size(g) + m_relation_repository.local_size(g);
     }
 
-    template<IndexConcept I>
-    const Repository& get_canonical_context(std::pair<I, Index<Binding>> index) const noexcept
+    template<typename T>
+    const Repository& get_canonical_context(RelationBindingIndex<T> index) const noexcept
     {
         const Repository* current = this;
         while (current != nullptr)

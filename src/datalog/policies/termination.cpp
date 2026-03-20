@@ -47,7 +47,7 @@ void TerminationPolicy<AggregationFunction>::set_goals(const PredicateFactSets<f
     {
         for (const auto& atom : set.get_facts())
         {
-            tyr::set(uint_t(atom.get_row().get_index().second), true, unsat_goals[uint_t(atom.get_predicate().get_index())]);
+            tyr::set(uint_t(atom.get_row().get_index().row), true, unsat_goals[uint_t(atom.get_predicate().get_index())]);
             ++num_unsat_goals;
             atoms.push_back(atom);
         }
@@ -57,10 +57,10 @@ void TerminationPolicy<AggregationFunction>::set_goals(const PredicateFactSets<f
 template<typename AggregationFunction>
 void TerminationPolicy<AggregationFunction>::achieve(formalism::datalog::GroundAtomView<formalism::FluentTag> atom) noexcept
 {
-    if (tyr::test(uint_t(atom.get_row().get_index().second), unsat_goals[uint_t(atom.get_predicate().get_index())]))
+    if (tyr::test(uint_t(atom.get_row().get_index().row), unsat_goals[uint_t(atom.get_predicate().get_index())]))
     {
         --num_unsat_goals;
-        tyr::set(uint_t(atom.get_row().get_index().second), false, unsat_goals[uint_t(atom.get_predicate().get_index())]);
+        tyr::set(uint_t(atom.get_row().get_index().row), false, unsat_goals[uint_t(atom.get_predicate().get_index())]);
     }
 }
 
@@ -78,8 +78,8 @@ Cost TerminationPolicy<AggregationFunction>::get_total_cost(const OrAnnotationsL
     for (const auto atom : atoms)
     {
         assert(uint_t(atom.get_predicate().get_index()) < or_annot.size());
-        assert(uint_t(atom.get_row().get_index().second) < or_annot[uint_t(atom.get_predicate().get_index())].size());
-        cost = agg(cost, or_annot[uint_t(atom.get_predicate().get_index())][uint_t(atom.get_row().get_index().second)]);
+        assert(uint_t(atom.get_row().get_index().row) < or_annot[uint_t(atom.get_predicate().get_index())].size());
+        cost = agg(cost, or_annot[uint_t(atom.get_predicate().get_index())][uint_t(atom.get_row().get_index().row)]);
     }
 
     return cost;
@@ -93,7 +93,7 @@ void TerminationPolicy<AggregationFunction>::reset() noexcept
         bitset.reset();
 
     for (const auto& atom : atoms)
-        tyr::set(uint_t(atom.get_row().get_index().second), true, unsat_goals[uint_t(atom.get_predicate().get_index())]);
+        tyr::set(uint_t(atom.get_row().get_index().row), true, unsat_goals[uint_t(atom.get_predicate().get_index())]);
 }
 
 template<typename AggregationFunction>

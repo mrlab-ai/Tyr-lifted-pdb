@@ -108,7 +108,7 @@ void FunctionFactSet<T>::reset()
 template<f::FactKind T>
 void FunctionFactSet<T>::insert(formalism::datalog::FunctionBindingView<T> binding, float_t value)
 {
-    const auto i = uint_t(binding.get_index().second);
+    const auto i = uint_t(binding.get_index().row);
 
     if (i < m_bindings.size())
         throw std::runtime_error("Multiple value assignments to a ground function term.");
@@ -152,7 +152,7 @@ template<f::FactKind T>
 float_t FunctionFactSet<T>::operator[](fd::GroundFunctionTermView<T> fterm) const noexcept
 {
     const auto row = fterm.get_row().get_index();
-    const auto i = uint_t(row.second);
+    const auto i = uint_t(row.row);
 
     if (i >= m_remap.size())
         return std::numeric_limits<float_t>::quiet_NaN();

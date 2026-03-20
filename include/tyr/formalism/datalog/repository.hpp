@@ -139,10 +139,10 @@ using GroundBinaryOperatorListView = View<IndexList<BinaryOperator<Op, Data<Grou
 
 using BindingView = View<Index<Binding>, Repository>;
 template<FactKind T>
-using PredicateBindingView = View<std::pair<Index<Predicate<T>>, Index<Binding>>, Repository>;
+using PredicateBindingView = View<RelationBindingIndex<Predicate<T>>, Repository>;
 template<FactKind T>
-using FunctionBindingView = View<std::pair<Index<Function<T>>, Index<Binding>>, Repository>;
-using RuleBindingView = View<std::pair<Index<Rule>, Index<Binding>>, Repository>;
+using FunctionBindingView = View<RelationBindingIndex<Function<T>>, Repository>;
+using RuleBindingView = View<RelationBindingIndex<Rule>, Repository>;
 
 template<typename T>
 using BooleanOperatorView = View<Data<BooleanOperator<T>>, Repository>;
@@ -460,13 +460,13 @@ extern template class View<Index<formalism::datalog::Program>, formalism::datalo
 
 extern template class View<Data<formalism::Term>, formalism::datalog::Repository>;
 
-extern template class View<std::pair<Index<formalism::Predicate<formalism::StaticTag>>, Index<formalism::Binding>>, formalism::datalog::Repository>;
-extern template class View<std::pair<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::Binding>>, formalism::datalog::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Predicate<formalism::StaticTag>>, formalism::datalog::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Predicate<formalism::FluentTag>>, formalism::datalog::Repository>;
 
-extern template class View<std::pair<Index<formalism::Function<formalism::StaticTag>>, Index<formalism::Binding>>, formalism::datalog::Repository>;
-extern template class View<std::pair<Index<formalism::Function<formalism::FluentTag>>, Index<formalism::Binding>>, formalism::datalog::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Function<formalism::StaticTag>>, formalism::datalog::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Function<formalism::FluentTag>>, formalism::datalog::Repository>;
 
-extern template class View<std::pair<Index<formalism::datalog::Rule>, Index<formalism::Binding>>, formalism::datalog::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::datalog::Rule>, formalism::datalog::Repository>;
 
 #endif
 }

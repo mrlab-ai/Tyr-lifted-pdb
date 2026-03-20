@@ -96,7 +96,7 @@ public:
     }
 
     template<typename T>
-    auto operator[](std::pair<Index<T>, Index<Binding>> index) const noexcept
+    auto operator[](RelationBindingIndex<T> index) const noexcept
     {
         return get<T>()[index];
     }
@@ -108,7 +108,7 @@ public:
     }
 
     template<typename T>
-    const BasicRelationRepository<T>& get_canonical_context(std::pair<Index<T>, Index<Binding>> index) const noexcept
+    const BasicRelationRepository<T>& get_canonical_context(RelationBindingIndex<T> index) const noexcept
     {
         return get<T>().get_canonical_context(index);
     }
@@ -138,7 +138,7 @@ public:
     }
 
     template<typename T>
-    auto at_local(std::pair<Index<T>, Index<Binding>> index) const noexcept
+    auto at_local(RelationBindingIndex<T> index) const noexcept
     {
         return get<T>().at_local(index);
     }
@@ -162,7 +162,7 @@ public:
     }
 
     template<typename T>
-    bool is_local(std::pair<Index<T>, Index<Binding>> index) const noexcept
+    bool is_local(RelationBindingIndex<T> index) const noexcept
     {
         return get<T>().is_local(index);
     }

@@ -96,9 +96,9 @@ const UnorderedSet<formalism::planning::GroundActionView>& FFHeuristic<LiftedTas
 
 bool FFHeuristic<LiftedTask>::mark_atom(formalism::datalog::GroundAtomView<formalism::FluentTag> atom)
 {
-    const auto row = atom.get_row().get_index();
-    const auto g = uint_t(row.first);
-    const auto i = uint_t(row.second);
+    const auto binding = atom.get_row().get_index();
+    const auto g = uint_t(binding.relation);
+    const auto i = uint_t(binding.row);
 
     assert(g < m_markings.size());
     if (tyr::test(i, m_markings[g]))

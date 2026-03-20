@@ -1103,7 +1103,7 @@ private:
             atom.predicate = predicate_index;
             atom.row = to_binding(make_view(predicate_index, context), this->translate_grounded(element->get_terms(), builder, context), context)
                            .first.get_index()
-                           .second;
+                           .row;
             canonicalize(atom);
             return context.get_or_create(atom).first.get_index();
         };
@@ -1305,9 +1305,8 @@ private:
             auto& fterm = *fterm_ptr;
             fterm.clear();
             fterm.function = function_index;
-            fterm.row = to_binding(make_view(function_index, context), this->translate_grounded(element->get_terms(), builder, context), context)
-                            .first.get_index()
-                            .second;
+            fterm.row =
+                to_binding(make_view(function_index, context), this->translate_grounded(element->get_terms(), builder, context), context).first.get_index().row;
             canonicalize(fterm);
             return context.get_or_create(fterm).first.get_index();
         };

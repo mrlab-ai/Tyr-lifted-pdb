@@ -23,6 +23,7 @@
 #include "tyr/common/hash.hpp"
 #include "tyr/common/tuple.hpp"
 #include "tyr/common/types.hpp"
+#include "tyr/formalism/binding_index.hpp"
 #include "tyr/formalism/declarations.hpp"
 #include "tyr/formalism/object_index.hpp"
 
@@ -35,6 +36,7 @@
 
 namespace tyr::formalism
 {
+
 template<typename T>
 class BasicRelationRepository
 {
@@ -175,7 +177,7 @@ public:
         return get_or_create_local_with_hash(g, arity, builder, BasicRelationRepository::hash(builder));
     }
 
-    ConstViewType at_local(std::pair<Index<T>, Index<Binding>> index) const noexcept
+    ConstViewType at_local(RelationBindingIndex<T> index) const noexcept
     {
         const auto& [g, row] = index;
 
@@ -214,7 +216,7 @@ public:
         return slot ? slot->parent_size : (m_parent ? m_parent->size(g) : 0);
     }
 
-    bool is_local(std::pair<Index<T>, Index<Binding>> index) const noexcept
+    bool is_local(RelationBindingIndex<T> index) const noexcept
     {
         const auto& [g, row] = index;
         assert(g != Index<T>::max() && "Unassigned index.");

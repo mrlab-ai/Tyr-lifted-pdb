@@ -82,17 +82,14 @@ void bind_module_definitions(nb::module_& m)
     bind_index<Index<Binding>>(m, "BindingIndex");
     bind_index<Index<Variable>>(m, "VariableIndex");
 
-    bind_predicate_binding_index<StaticTag>(m, "StaticPredicateBindingIndex");
-    bind_predicate_binding_index<FluentTag>(m, "FluentPredicateBindingIndex");
-    bind_predicate_binding_index<DerivedTag>(m, "DerivedPredicateBindingIndex");
-
-    bind_function_binding_index<StaticTag>(m, "StaticFunctionBindingIndex");
-    bind_function_binding_index<FluentTag>(m, "FluentFunctionBindingIndex");
-    bind_function_binding_index<AuxiliaryTag>(m, "AuxiliaryFunctionBindingIndex");
-
-    bind_action_binding_index(m, "ActionBindingIndex");
-
-    bind_axiom_binding_index(m, "AxiomBindingIndex");
+    bind_relation_binding_index<Predicate<StaticTag>>(m, "StaticPredicateBindingIndex");
+    bind_relation_binding_index<Predicate<FluentTag>>(m, "FluentPredicateBindingIndex");
+    bind_relation_binding_index<Predicate<DerivedTag>>(m, "DerivedPredicateBindingIndex");
+    bind_relation_binding_index<Function<StaticTag>>(m, "StaticFunctionBindingIndex");
+    bind_relation_binding_index<Function<FluentTag>>(m, "FluentFunctionBindingIndex");
+    bind_relation_binding_index<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBindingIndex");
+    bind_relation_binding_index<Action>(m, "ActionBindingIndex");
+    bind_relation_binding_index<Axiom>(m, "AxiomBindingIndex");
 
     bind_index<Index<Predicate<StaticTag>>>(m, "StaticPredicateIndex");
     bind_index<Index<Predicate<FluentTag>>>(m, "FluentPredicateIndex");
@@ -220,17 +217,14 @@ void bind_module_definitions(nb::module_& m)
     bind_fixed_uint<ParameterIndex>(m, "ParameterIndex");
     bind_term(m, "Term");
 
-    bind_predicate_binding<StaticTag>(m, "StaticPredicateBinding");
-    bind_predicate_binding<FluentTag>(m, "FluentPredicateBinding");
-    bind_predicate_binding<DerivedTag>(m, "DerivedPredicateBinding");
-
-    bind_function_binding<StaticTag>(m, "StaticFunctionBinding");
-    bind_function_binding<FluentTag>(m, "FluentFunctionBinding");
-    bind_function_binding<AuxiliaryTag>(m, "AuxiliaryFunctionBinding");
-
-    bind_action_binding(m, "ActionBinding");
-
-    bind_axiom_binding(m, "AxiomBinding");
+    bind_relation_binding<Predicate<StaticTag>>(m, "StaticPredicateBinding");
+    bind_relation_binding<Predicate<FluentTag>>(m, "FluentPredicateBinding");
+    bind_relation_binding<Predicate<DerivedTag>>(m, "DerivedPredicateBinding");
+    bind_relation_binding<Function<StaticTag>>(m, "StaticFunctionBinding");
+    bind_relation_binding<Function<FluentTag>>(m, "FluentFunctionBinding");
+    bind_relation_binding<Function<AuxiliaryTag>>(m, "AuxiliaryFunctionBinding");
+    bind_relation_binding<Action>(m, "ActionBinding");
+    bind_relation_binding<Axiom>(m, "AxiomBinding");
 
     bind_predicate<StaticTag>(m, "StaticPredicate");
     bind_predicate<FluentTag>(m, "FluentPredicate");
@@ -354,23 +348,29 @@ void bind_module_definitions(nb::module_& m)
      */
 
     nb::class_<Repository>(m, "Repository")  //
-        .def("get_or_create_object", &Repository::get_or_create<Object>, "builder"_a)
-        .def("get_or_create_static_predicate", &Repository::get_or_create<Predicate<StaticTag>>, "builder"_a)
-        .def("get_or_create_fluent_predicate", &Repository::get_or_create<Predicate<FluentTag>>, "builder"_a)
-        .def("get_or_create_derived_predicate", &Repository::get_or_create<Predicate<DerivedTag>>, "builder"_a)
-        .def("get_or_create_static_ground_atom", &Repository::get_or_create<GroundAtom<StaticTag>>, "builder"_a)
-        .def("get_or_create_fluent_ground_atom", &Repository::get_or_create<GroundAtom<FluentTag>>, "builder"_a)
-        .def("get_or_create_derived_ground_atom", &Repository::get_or_create<GroundAtom<DerivedTag>>, "builder"_a)
+        .def("get_or_create_object", nb::overload_cast<Data<Object>&>(&Repository::get_or_create<Object>), "builder"_a)
+        .def("get_or_create_static_predicate", nb::overload_cast<Data<Predicate<StaticTag>>&>(&Repository::get_or_create<Predicate<StaticTag>>), "builder"_a)
+        .def("get_or_create_fluent_predicate", nb::overload_cast<Data<Predicate<FluentTag>>&>(&Repository::get_or_create<Predicate<FluentTag>>), "builder"_a)
+        .def("get_or_create_derived_predicate", nb::overload_cast<Data<Predicate<DerivedTag>>&>(&Repository::get_or_create<Predicate<DerivedTag>>), "builder"_a)
+        .def("get_or_create_static_ground_atom",
+             nb::overload_cast<Data<GroundAtom<StaticTag>>&>(&Repository::get_or_create<GroundAtom<StaticTag>>),
+             "builder"_a)
+        .def("get_or_create_fluent_ground_atom",
+             nb::overload_cast<Data<GroundAtom<FluentTag>>&>(&Repository::get_or_create<GroundAtom<FluentTag>>),
+             "builder"_a)
+        .def("get_or_create_derived_ground_atom",
+             nb::overload_cast<Data<GroundAtom<DerivedTag>>&>(&Repository::get_or_create<GroundAtom<DerivedTag>>),
+             "builder"_a)
         .def("get_or_create_static_predicate_row",
-             nb::overload_cast<PredicateView<StaticTag>, const IndexList<Object>&>(&Repository::get_or_create<Index<Predicate<StaticTag>>>),
+             nb::overload_cast<PredicateView<StaticTag>, const IndexList<Object>&>(&Repository::get_or_create<Predicate<StaticTag>>),
              "predicate"_a,
              "object_indices"_a)
         .def("get_or_create_fluent_predicate_row",
-             nb::overload_cast<PredicateView<FluentTag>, const IndexList<Object>&>(&Repository::get_or_create<Index<Predicate<FluentTag>>>),
+             nb::overload_cast<PredicateView<FluentTag>, const IndexList<Object>&>(&Repository::get_or_create<Predicate<FluentTag>>),
              "predicate"_a,
              "object_indices"_a)
         .def("get_or_create_derived_predicate_row",
-             nb::overload_cast<PredicateView<DerivedTag>, const IndexList<Object>&>(&Repository::get_or_create<Index<Predicate<DerivedTag>>>),
+             nb::overload_cast<PredicateView<DerivedTag>, const IndexList<Object>&>(&Repository::get_or_create<Predicate<DerivedTag>>),
              "predicate"_a,
              "object_indices"_a);
 

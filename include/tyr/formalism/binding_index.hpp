@@ -31,6 +31,25 @@ struct Index<formalism::Binding> : IndexMixin<Index<formalism::Binding>>
     using Base = IndexMixin<Index<formalism::Binding>>;
     using Base::Base;
 };
+
+namespace formalism
+{
+template<typename Tag>
+struct RelationBindingIndex
+{
+    Index<Tag> relation;
+    Index<Binding> row;
+
+    auto identifying_members() const noexcept { return std::tie(relation, row); }
+};
+
+template<typename Tag>
+struct RelationBindingListHandle
+{
+    const Index<Tag>& relation;
+    const IndexList<Binding>& rows;
+};
+}
 }
 
 #endif

@@ -50,19 +50,6 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
-/**
- * Opague types are exceptions to auto stl bindings
- */
-
-NB_MAKE_OPAQUE(std::pair<tyr::Index<tyr::formalism::Predicate<tyr::formalism::StaticTag>>, tyr::Index<tyr::formalism::Binding>>);
-NB_MAKE_OPAQUE(std::pair<tyr::Index<tyr::formalism::Predicate<tyr::formalism::FluentTag>>, tyr::Index<tyr::formalism::Binding>>);
-NB_MAKE_OPAQUE(std::pair<tyr::Index<tyr::formalism::Predicate<tyr::formalism::DerivedTag>>, tyr::Index<tyr::formalism::Binding>>);
-NB_MAKE_OPAQUE(std::pair<tyr::Index<tyr::formalism::Function<tyr::formalism::StaticTag>>, tyr::Index<tyr::formalism::Binding>>);
-NB_MAKE_OPAQUE(std::pair<tyr::Index<tyr::formalism::Function<tyr::formalism::FluentTag>>, tyr::Index<tyr::formalism::Binding>>);
-NB_MAKE_OPAQUE(std::pair<tyr::Index<tyr::formalism::Function<tyr::formalism::AuxiliaryTag>>, tyr::Index<tyr::formalism::Binding>>);
-NB_MAKE_OPAQUE(std::pair<tyr::Index<tyr::formalism::planning::Action>, tyr::Index<tyr::formalism::Binding>>);
-NB_MAKE_OPAQUE(std::pair<tyr::Index<tyr::formalism::planning::Axiom>, tyr::Index<tyr::formalism::Binding>>);
-
 namespace tyr
 {
 

@@ -119,13 +119,13 @@ template class View<Index<formalism::datalog::Program>, formalism::datalog::Repo
 
 template class View<Data<formalism::Term>, formalism::datalog::Repository>;
 
-template class View<std::pair<Index<formalism::Predicate<formalism::StaticTag>>, Index<formalism::Binding>>, formalism::datalog::Repository>;
-template class View<std::pair<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::Binding>>, formalism::datalog::Repository>;
+template class View<formalism::RelationBindingIndex<formalism::Predicate<formalism::StaticTag>>, formalism::datalog::Repository>;
+template class View<formalism::RelationBindingIndex<formalism::Predicate<formalism::FluentTag>>, formalism::datalog::Repository>;
 
-template class View<std::pair<Index<formalism::Function<formalism::StaticTag>>, Index<formalism::Binding>>, formalism::datalog::Repository>;
-template class View<std::pair<Index<formalism::Function<formalism::FluentTag>>, Index<formalism::Binding>>, formalism::datalog::Repository>;
+template class View<formalism::RelationBindingIndex<formalism::Function<formalism::StaticTag>>, formalism::datalog::Repository>;
+template class View<formalism::RelationBindingIndex<formalism::Function<formalism::FluentTag>>, formalism::datalog::Repository>;
 
-template class View<std::pair<Index<formalism::datalog::Rule>, Index<formalism::Binding>>, formalism::datalog::Repository>;
+template class View<formalism::RelationBindingIndex<formalism::datalog::Rule>, formalism::datalog::Repository>;
 
 }
 

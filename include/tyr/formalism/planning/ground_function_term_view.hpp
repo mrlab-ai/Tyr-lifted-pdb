@@ -47,7 +47,7 @@ public:
     auto get_row() const noexcept
     {
         const auto& data = get_data();
-        return make_view(std::make_pair(data.function, data.row), *m_context);
+        return make_view(formalism::RelationBindingIndex { data.function, data.row }, *m_context);
     }
 
     auto identifying_members() const noexcept { return std::tie(m_handle, m_context->get_index()); }

@@ -79,11 +79,11 @@ inline std::ostream& operator<<(std::ostream& os, const Data<Binding>& el);
 template<typename C>
 inline std::ostream& operator<<(std::ostream& os, const View<Index<Binding>, C>& el);
 
-template<FactKind T, typename C>
-inline std::ostream& operator<<(std::ostream& os, const View<std::pair<Index<Predicate<T>>, Index<Binding>>, C>& el);
+template<typename T, typename C>
+inline std::ostream& operator<<(std::ostream& os, const View<RelationBindingIndex<T>, C>& el);
 
-template<FactKind T, typename C>
-inline std::ostream& operator<<(std::ostream& os, const View<std::pair<Index<Function<T>>, Index<Binding>>, C>& el);
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const formalism::RelationBindingIndex<T>& el);
 
 inline std::ostream& operator<<(std::ostream& os, const Data<Term>& el);
 
@@ -213,15 +213,15 @@ inline std::ostream& print(std::ostream& os, const View<Index<formalism::Binding
     return os;
 }
 
-template<formalism::FactKind T, typename C>
-inline std::ostream& print(std::ostream& os, const View<std::pair<Index<formalism::Predicate<T>>, Index<formalism::Binding>>, C>& el)
+template<typename T>
+inline std::ostream& print(std::ostream& os, const formalism::RelationBindingIndex<T>& el)
 {
-    fmt::print(os, "{}", fmt::join(to_strings(el.get_objects()), " "));
+    fmt::print(os, "<{},{}>", to_string(el.relation), to_string(el.row));
     return os;
 }
 
-template<formalism::FactKind T, typename C>
-inline std::ostream& print(std::ostream& os, const View<std::pair<Index<formalism::Function<T>>, Index<formalism::Binding>>, C>& el)
+template<typename T, typename C>
+inline std::ostream& print(std::ostream& os, const View<formalism::RelationBindingIndex<T>, C>& el)
 {
     fmt::print(os, "{}", fmt::join(to_strings(el.get_objects()), " "));
     return os;
@@ -316,14 +316,14 @@ inline std::ostream& operator<<(std::ostream& os, const View<Index<Binding>, C>&
     return tyr::print(os, el);
 }
 
-template<FactKind T, typename C>
-inline std::ostream& operator<<(std::ostream& os, const View<std::pair<Index<Predicate<T>>, Index<Binding>>, C>& el)
+template<typename T, typename C>
+inline std::ostream& operator<<(std::ostream& os, const View<RelationBindingIndex<T>, C>& el)
 {
     return tyr::print(os, el);
 }
 
-template<FactKind T, typename C>
-inline std::ostream& operator<<(std::ostream& os, const View<std::pair<Index<Function<T>>, Index<Binding>>, C>& el)
+template<typename T>
+inline std::ostream& operator<<(std::ostream& os, const formalism::RelationBindingIndex<T>& el)
 {
     return tyr::print(os, el);
 }

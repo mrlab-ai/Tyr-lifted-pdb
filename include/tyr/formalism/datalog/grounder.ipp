@@ -115,7 +115,7 @@ std::pair<GroundFunctionTermView<T>, bool> ground(FunctionTermView<T> element, G
 
     // Fill data
     fterm.function = element.get_function().get_index();
-    fterm.row = ground(element.get_terms(), element.get_function(), context).first.get_index().second;
+    fterm.row = ground(element.get_terms(), element.get_function(), context).first.get_index().row;
 
     // Canonicalize and Serialize
     canonicalize(fterm);
@@ -240,7 +240,7 @@ std::pair<GroundAtomView<T>, bool> ground(AtomView<T> element, GrounderContext& 
 
     // Fill data
     atom.predicate = element.get_predicate().get_index();
-    atom.row = ground(element.get_terms(), element.get_predicate(), context).first.get_index().second;
+    atom.row = ground(element.get_terms(), element.get_predicate(), context).first.get_index().row;
 
     // Canonicalize and Serialize
     canonicalize(atom);
@@ -293,7 +293,7 @@ TYR_INLINE_IMPL std::pair<GroundRuleView, bool> ground(RuleView element, Grounde
 
     // Fill data
     rule.rule = element.get_index();
-    rule.row = context.destination.get_or_create(element, context.binding).first.get_index().second;
+    rule.row = context.destination.get_or_create(element, context.binding).first.get_index().row;
     rule.body = ground(element.get_body(), context).first.get_index();
     rule.head = ground(element.get_head(), context).first.get_index();
 

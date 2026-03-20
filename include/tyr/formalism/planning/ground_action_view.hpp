@@ -50,7 +50,7 @@ public:
     auto get_row() const noexcept
     {
         const auto& data = get_data();
-        return make_view(std::make_pair(data.action, data.row), *m_context);
+        return make_view(formalism::RelationBindingIndex { data.action, data.row }, *m_context);
     }
     auto get_condition() const noexcept { return make_view(get_data().condition, *m_context); }
     auto get_effects() const noexcept { return make_view(get_data().effects, *m_context); }

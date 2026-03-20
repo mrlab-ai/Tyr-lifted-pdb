@@ -108,48 +108,14 @@ void bind_ground_atom_builder(nb::module_& m, const std::string& name)
  * Index
  */
 
-template<FactKind T>
-void bind_predicate_binding_index(nb::module_& m, const std::string& name)
+template<typename Tag>
+void bind_relation_binding_index(nb::module_& m, const std::string& name)
 {
-    using V = std::pair<Index<Predicate<T>>, Index<Binding>>;
+    using V = RelationBindingIndex<Tag>;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def_ro("predicate_index", &V::first)
-                   .def_ro("row_index", &V::second);
-    add_print(cls);
-    add_hash(cls);
-}
-
-template<FactKind T>
-void bind_function_binding_index(nb::module_& m, const std::string& name)
-{
-    using V = std::pair<Index<Function<T>>, Index<Binding>>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def_ro("function_index", &V::first)
-                   .def_ro("row_index", &V::second);
-    add_print(cls);
-    add_hash(cls);
-}
-
-void bind_action_binding_index(nb::module_& m, const std::string& name)
-{
-    using V = std::pair<Index<Action>, Index<Binding>>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def_ro("action_index", &V::first)
-                   .def_ro("row_index", &V::second);
-    add_print(cls);
-    add_hash(cls);
-}
-
-void bind_axiom_binding_index(nb::module_& m, const std::string& name)
-{
-    using V = std::pair<Index<Axiom>, Index<Binding>>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def_ro("axiom_index", &V::first)
-                   .def_ro("row_index", &V::second);
+                   .def_ro("relation_index", &V::relation)
+                   .def_ro("row_index", &V::row);
     add_print(cls);
     add_hash(cls);
 }
@@ -201,44 +167,10 @@ void bind_term(nb::module_& m, const std::string& name)
     add_hash(cls);
 }
 
-template<FactKind T>
-void bind_predicate_binding(nb::module_& m, const std::string& name)
+template<typename T>
+void bind_relation_binding(nb::module_& m, const std::string& name)
 {
-    using V = PredicateBindingView<T>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def("get_index", &V::get_index)
-                   .def("get_objects", &V::get_objects);
-    add_print(cls);
-    add_hash(cls);
-}
-
-template<FactKind T>
-void bind_function_binding(nb::module_& m, const std::string& name)
-{
-    using V = FunctionBindingView<T>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def("get_index", &V::get_index)
-                   .def("get_objects", &V::get_objects);
-    add_print(cls);
-    add_hash(cls);
-}
-
-void bind_action_binding(nb::module_& m, const std::string& name)
-{
-    using V = ActionBindingView;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def("get_index", &V::get_index)
-                   .def("get_objects", &V::get_objects);
-    add_print(cls);
-    add_hash(cls);
-}
-
-void bind_axiom_binding(nb::module_& m, const std::string& name)
-{
-    using V = AxiomBindingView;
+    using V = View<RelationBindingIndex<T>, Repository>;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def("get_index", &V::get_index)

@@ -186,11 +186,11 @@ using GroundBinaryOperatorListView = View<IndexList<BinaryOperator<Op, Data<Grou
 using BindingView = View<Index<Binding>, Repository>;
 using BindingListView = View<IndexList<Binding>, Repository>;
 template<FactKind T>
-using PredicateBindingView = View<std::pair<Index<Predicate<T>>, Index<Binding>>, Repository>;
+using PredicateBindingView = View<RelationBindingIndex<Predicate<T>>, Repository>;
 template<FactKind T>
-using FunctionBindingView = View<std::pair<Index<Function<T>>, Index<Binding>>, Repository>;
-using ActionBindingView = View<std::pair<Index<Action>, Index<Binding>>, Repository>;
-using AxiomBindingView = View<std::pair<Index<Axiom>, Index<Binding>>, Repository>;
+using FunctionBindingView = View<RelationBindingIndex<Function<T>>, Repository>;
+using ActionBindingView = View<RelationBindingIndex<Action>, Repository>;
+using AxiomBindingView = View<RelationBindingIndex<Axiom>, Repository>;
 
 template<typename T>
 using BooleanOperatorView = View<Data<BooleanOperator<T>>, Repository>;
@@ -661,16 +661,16 @@ extern template class View<Data<formalism::planning::FDRFact<formalism::FluentTa
 extern template class View<Data<formalism::planning::FDRFact<formalism::DerivedTag>>, formalism::planning::Repository>;
 
 // Pair views
-extern template class View<std::pair<Index<formalism::Predicate<formalism::StaticTag>>, Index<formalism::Binding>>, formalism::planning::Repository>;
-extern template class View<std::pair<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::Binding>>, formalism::planning::Repository>;
-extern template class View<std::pair<Index<formalism::Predicate<formalism::DerivedTag>>, Index<formalism::Binding>>, formalism::planning::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Predicate<formalism::StaticTag>>, formalism::planning::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Predicate<formalism::FluentTag>>, formalism::planning::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Predicate<formalism::DerivedTag>>, formalism::planning::Repository>;
 
-extern template class View<std::pair<Index<formalism::Function<formalism::StaticTag>>, Index<formalism::Binding>>, formalism::planning::Repository>;
-extern template class View<std::pair<Index<formalism::Function<formalism::FluentTag>>, Index<formalism::Binding>>, formalism::planning::Repository>;
-extern template class View<std::pair<Index<formalism::Function<formalism::AuxiliaryTag>>, Index<formalism::Binding>>, formalism::planning::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Function<formalism::StaticTag>>, formalism::planning::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Function<formalism::FluentTag>>, formalism::planning::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::Function<formalism::AuxiliaryTag>>, formalism::planning::Repository>;
 
-extern template class View<std::pair<Index<formalism::planning::Action>, Index<formalism::Binding>>, formalism::planning::Repository>;
-extern template class View<std::pair<Index<formalism::planning::Axiom>, Index<formalism::Binding>>, formalism::planning::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::planning::Action>, formalism::planning::Repository>;
+extern template class View<formalism::RelationBindingIndex<formalism::planning::Axiom>, formalism::planning::Repository>;
 
 #endif
 }

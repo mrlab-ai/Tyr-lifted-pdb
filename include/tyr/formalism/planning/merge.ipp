@@ -178,7 +178,7 @@ std::pair<GroundAtomView<T>, bool> merge_p2p(GroundAtomView<T> element, MergeCon
     atom.clear();
 
     atom.predicate = merge_p2p(element.get_predicate(), context).first.get_index();
-    atom.row = merge_p2p(element.get_predicate(), element.get_row(), context).first.get_index().second;
+    atom.row = merge_p2p(element.get_predicate(), element.get_row(), context).first.get_index().row;
 
     canonicalize(atom);
     return context.destination.get_or_create(atom);
@@ -270,7 +270,7 @@ std::pair<GroundFunctionTermView<T>, bool> merge_p2p(GroundFunctionTermView<T> e
     fterm.clear();
 
     fterm.function = element.get_function().get_index();
-    fterm.row = merge_p2p(element.get_function(), element.get_row(), context).first.get_index().second;
+    fterm.row = merge_p2p(element.get_function(), element.get_row(), context).first.get_index().row;
 
     canonicalize(fterm);
     return context.destination.get_or_create(fterm);

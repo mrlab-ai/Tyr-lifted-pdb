@@ -72,8 +72,8 @@ void resize_or_annot_to_fit(formalism::datalog::GroundAtomView<formalism::Fluent
     assert(uint_t(program_head.get_predicate().get_index()) < or_annot.size());
 
     auto& vec = or_annot[uint_t(program_head.get_predicate().get_index())];
-    if (uint_t(program_head.get_row().get_index().second) >= vec.size())
-        vec.resize(uint_t(program_head.get_row().get_index().second) + 1, std::numeric_limits<Cost>::max());
+    if (uint_t(program_head.get_row().get_index().row) >= vec.size())
+        vec.resize(uint_t(program_head.get_row().get_index().row) + 1, std::numeric_limits<Cost>::max());
 }
 }
 
@@ -81,7 +81,7 @@ void OrAnnotationPolicy::initialize_annotation(formalism::datalog::GroundAtomVie
 {
     resize_or_annot_to_fit(program_head, or_annot);
 
-    or_annot[uint_t(program_head.get_predicate().get_index())][uint_t(program_head.get_row().get_index().second)] = Cost(0);
+    or_annot[uint_t(program_head.get_predicate().get_index())][uint_t(program_head.get_row().get_index().row)] = Cost(0);
 }
 
 CostUpdate OrAnnotationPolicy::update_annotation(formalism::datalog::GroundAtomView<formalism::FluentTag> program_head,
@@ -93,7 +93,7 @@ CostUpdate OrAnnotationPolicy::update_annotation(formalism::datalog::GroundAtomV
     resize_or_annot_to_fit(program_head, or_annot);
 
     // Fast path 1: already optimal
-    auto& or_cost = or_annot[uint_t(program_head.get_predicate().get_index())][uint_t(program_head.get_row().get_index().second)];
+    auto& or_cost = or_annot[uint_t(program_head.get_predicate().get_index())][uint_t(program_head.get_row().get_index().row)];
     if (or_cost == Cost(0))
         return CostUpdate(or_cost, or_cost);
 
@@ -132,7 +132,7 @@ uint_t fetch_current_best_cost(Index<formalism::datalog::GroundAtom<formalism::F
 
 uint_t fetch_atom_cost(formalism::datalog::GroundAtomView<formalism::FluentTag> atom, const OrAnnotationsList& or_annot)
 {
-    return tyr::get(uint_t(atom.get_row().get_index().second), or_annot[uint_t(atom.get_predicate().get_index())], std::numeric_limits<uint_t>::max());
+    return tyr::get(uint_t(atom.get_row().get_index().row), or_annot[uint_t(atom.get_predicate().get_index())], std::numeric_limits<uint_t>::max());
 }
 
 template<typename AggregationFunction>
