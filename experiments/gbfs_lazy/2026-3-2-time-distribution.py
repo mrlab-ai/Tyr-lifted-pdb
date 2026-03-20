@@ -37,21 +37,21 @@ def main():
         sum_ff_t_par = 0
         sum_ff_t_tot = 0
 
-        sum_runs_le_0_5 = 0
-        sum_total_le_0_5 = 0
-        sum_preprocessing_le_0_5 = 0
-        sum_axiom_rule_t_par_le_0_5 = 0
-        sum_axiom_rule_t_tot_le_0_5 = 0
-        sum_axiom_t_par_le_0_5 = 0
-        sum_axiom_t_tot_le_0_5 = 0
-        sum_succgen_rule_t_par_le_0_5 = 0
-        sum_succgen_rule_t_tot_le_0_5 = 0
-        sum_succgen_t_par_le_0_5 = 0
-        sum_succgen_t_tot_le_0_5 = 0
-        sum_ff_rule_t_par_le_0_5 = 0
-        sum_ff_rule_t_tot_le_0_5 = 0
-        sum_ff_t_par_le_0_5 = 0
-        sum_ff_t_tot_le_0_5 = 0
+        sum_runs_lt_0_5 = 0
+        sum_total_lt_0_5 = 0
+        sum_preprocessing_lt_0_5 = 0
+        sum_axiom_rule_t_par_lt_0_5 = 0
+        sum_axiom_rule_t_tot_lt_0_5 = 0
+        sum_axiom_t_par_lt_0_5 = 0
+        sum_axiom_t_tot_lt_0_5 = 0
+        sum_succgen_rule_t_par_lt_0_5 = 0
+        sum_succgen_rule_t_tot_lt_0_5 = 0
+        sum_succgen_t_par_lt_0_5 = 0
+        sum_succgen_t_tot_lt_0_5 = 0
+        sum_ff_rule_t_par_lt_0_5 = 0
+        sum_ff_rule_t_tot_lt_0_5 = 0
+        sum_ff_t_par_lt_0_5 = 0
+        sum_ff_t_tot_lt_0_5 = 0
 
         sum_runs_ge_0_5 = 0
         sum_total_ge_0_5 = 0
@@ -117,21 +117,21 @@ def main():
                 dfs.append(df)
 
                 if df < 0.5:
-                    sum_runs_le_0_5 += 1
-                    sum_total_le_0_5 += total_time_ms
-                    sum_preprocessing_le_0_5 += preprocessing_time_ms
-                    sum_axiom_rule_t_par_le_0_5 += axiom_rule_t_par_ms
-                    sum_axiom_rule_t_tot_le_0_5 += axiom_rule_t_tot_ms
-                    sum_axiom_t_par_le_0_5 += axiom_prog_t_par_ms
-                    sum_axiom_t_tot_le_0_5 += axiom_prog_t_tot_ms
-                    sum_succgen_rule_t_par_le_0_5 += succgen_rule_t_par_ms
-                    sum_succgen_rule_t_tot_le_0_5 += succgen_rule_t_tot_ms
-                    sum_succgen_t_par_le_0_5 += succgen_prog_t_par_ms
-                    sum_succgen_t_tot_le_0_5 += succgen_prog_t_tot_ms
-                    sum_ff_rule_t_par_le_0_5 += ff_rule_t_par_ms
-                    sum_ff_rule_t_tot_le_0_5 += ff_rule_t_tot_ms
-                    sum_ff_t_par_le_0_5 += ff_prog_t_par_ms
-                    sum_ff_t_tot_le_0_5 += ff_prog_t_tot_ms
+                    sum_runs_lt_0_5 += 1
+                    sum_total_lt_0_5 += total_time_ms
+                    sum_preprocessing_lt_0_5 += preprocessing_time_ms
+                    sum_axiom_rule_t_par_lt_0_5 += axiom_rule_t_par_ms
+                    sum_axiom_rule_t_tot_lt_0_5 += axiom_rule_t_tot_ms
+                    sum_axiom_t_par_lt_0_5 += axiom_prog_t_par_ms
+                    sum_axiom_t_tot_lt_0_5 += axiom_prog_t_tot_ms
+                    sum_succgen_rule_t_par_lt_0_5 += succgen_rule_t_par_ms
+                    sum_succgen_rule_t_tot_lt_0_5 += succgen_rule_t_tot_ms
+                    sum_succgen_t_par_lt_0_5 += succgen_prog_t_par_ms
+                    sum_succgen_t_tot_lt_0_5 += succgen_prog_t_tot_ms
+                    sum_ff_rule_t_par_lt_0_5 += ff_rule_t_par_ms
+                    sum_ff_rule_t_tot_lt_0_5 += ff_rule_t_tot_ms
+                    sum_ff_t_par_lt_0_5 += ff_prog_t_par_ms
+                    sum_ff_t_tot_lt_0_5 += ff_prog_t_tot_ms
                 else:
                     sum_runs_ge_0_5 += 1
                     sum_total_ge_0_5 += total_time_ms
@@ -150,62 +150,67 @@ def main():
                     sum_ff_t_tot_ge_0_5 += ff_prog_t_tot_ms
 
 
+        sum_other_t_tot_lt_0_5 = sum_total_lt_0_5 - (sum_preprocessing_lt_0_5 + sum_axiom_t_tot_lt_0_5 + sum_succgen_t_tot_lt_0_5 + sum_ff_t_tot_lt_0_5)
+
+        print("sum_runs_lt_0_5:", sum_runs_lt_0_5)
+        print("sum_total_lt_0_5:", sum_total_lt_0_5)
+        # print("sum_preprocessing_lt_0_5:", sum_preprocessing_lt_0_5, "fraction:", sum_preprocessing_lt_0_5 / sum_total_lt_0_5)
+        # print("sum_axiom_rule_t_par_lt_0_5:", sum_axiom_rule_t_par_lt_0_5, "fraction:", sum_axiom_rule_t_par_lt_0_5 / sum_axiom_rule_t_tot_lt_0_5)
+        # print("sum_axiom_rule_t_tot_lt_0_5:", sum_axiom_rule_t_tot_lt_0_5)
+        # print("sum_axiom_t_par_lt_0_5:", sum_axiom_t_par_lt_0_5, "fraction:", sum_axiom_t_par_lt_0_5 / sum_axiom_t_tot_lt_0_5)
+        # print("sum_axiom_t_tot_lt_0_5:", sum_axiom_t_tot_lt_0_5, "fraction:", sum_axiom_t_tot_lt_0_5 / sum_total_lt_0_5)
+        print("sum_succgen_t_tot_lt_0_5:", sum_succgen_t_tot_lt_0_5, "fraction:", sum_succgen_t_tot_lt_0_5 / sum_total_lt_0_5)
+        print("sum_succgen_t_par_lt_0_5:", sum_succgen_t_par_lt_0_5, "fraction:", sum_succgen_t_par_lt_0_5 / sum_succgen_t_tot_lt_0_5)
+        print("sum_succgen_rule_t_par_lt_0_5:", sum_succgen_rule_t_par_lt_0_5, "fraction:", sum_succgen_rule_t_par_lt_0_5 / sum_succgen_rule_t_tot_lt_0_5)
+        # print("sum_succgen_rule_t_tot_lt_0_5:", sum_succgen_rule_t_tot_lt_0_5)
+        print("sum_ff_t_tot_lt_0_5:", sum_ff_t_tot_lt_0_5, "fraction:", sum_ff_t_tot_lt_0_5 / sum_total_lt_0_5)
+        print("sum_ff_t_par_lt_0_5:", sum_ff_t_par_lt_0_5, "fraction:", sum_ff_t_par_lt_0_5 / sum_ff_t_tot_lt_0_5)
+        print("sum_ff_rule_t_par_lt_0_5:", sum_ff_rule_t_par_lt_0_5, "fraction:", sum_ff_rule_t_par_lt_0_5 / sum_ff_rule_t_tot_lt_0_5)
+        # print("sum_ff_rule_t_tot_lt_0_5:", sum_ff_rule_t_tot_lt_0_5)
+
+        # print("sum_other_t_tot_lt_0_5:", sum_other_t_tot_lt_0_5, "fraction:", sum_other_t_tot_lt_0_5 / sum_total_lt_0_5)
+        print() 
+
+        sum_other_t_tot_ge_0_5 = sum_total_ge_0_5 - (sum_preprocessing_ge_0_5 + sum_axiom_t_tot_ge_0_5 + sum_succgen_t_tot_ge_0_5 + sum_ff_t_tot_ge_0_5)
+
+        print("sum_runs_ge_0_5:", sum_runs_ge_0_5)
+        print("sum_total_ge_0_5:", sum_total_ge_0_5)
+        # print("sum_preprocessing_ge_0_5:", sum_preprocessing_ge_0_5, "fraction:", sum_preprocessing_ge_0_5 / sum_total_ge_0_5)
+        # print("sum_axiom_rule_t_par:", sum_axiom_rule_t_par_ge_0_5, "fraction:", sum_axiom_rule_t_par_ge_0_5 / sum_axiom_rule_t_tot_ge_0_5)
+        # print("sum_axiom_rule_t_tot:", sum_axiom_rule_t_tot_ge_0_5)
+        # print("sum_axiom_t_par_ge_0_5:", sum_axiom_t_par_ge_0_5, "fraction:", sum_axiom_t_par_ge_0_5 / sum_axiom_t_tot_ge_0_5)
+        # print("sum_axiom_t_tot_ge_0_5:", sum_axiom_t_tot_ge_0_5, "fraction:", sum_axiom_t_tot_ge_0_5 / sum_total_ge_0_5)
+        print("sum_succgen_t_tot_ge_0_5:", sum_succgen_t_tot_ge_0_5, "fraction:", sum_succgen_t_tot_ge_0_5 / sum_total_ge_0_5)
+        print("sum_succgen_t_par_ge_0_5:", sum_succgen_t_par_ge_0_5, "fraction:", sum_succgen_t_par_ge_0_5 / sum_succgen_t_tot_ge_0_5) 
+        print("sum_succgen_rule_t_par_ge_0_5:", sum_succgen_rule_t_par_ge_0_5, "fraction:", sum_succgen_rule_t_par_ge_0_5 / sum_succgen_rule_t_tot_ge_0_5)
+        # print("sum_succgen_rule_t_tot_ge_0_5:", sum_succgen_rule_t_tot_ge_0_5)
+        print("sum_ff_t_tot_ge_0_5:", sum_ff_t_tot_ge_0_5, "fraction:", sum_ff_t_tot_ge_0_5 / sum_total_ge_0_5)  
+        print("sum_ff_t_par_ge_0_5:", sum_ff_t_par_ge_0_5, "fraction:", sum_ff_t_par_ge_0_5 / sum_ff_t_tot_ge_0_5)         
+        print("sum_ff_rule_t_par_ge_0_5:", sum_ff_rule_t_par_ge_0_5, "fraction:", sum_ff_rule_t_par_ge_0_5 / sum_ff_rule_t_tot_ge_0_5)
+        # print("sum_ff_rule_t_tot_ge_0_5:", sum_ff_rule_t_tot_ge_0_5)  
+        # print("sum_other_t_tot_ge_0_5:", sum_other_t_tot_ge_0_5, "fraction:", sum_other_t_tot_ge_0_5 / sum_total_ge_0_5)
+        print()
+
         sum_other_t_tot = sum_total - (sum_preprocessing + sum_axiom_t_tot + sum_succgen_t_tot + sum_ff_t_tot)
 
         print("sum_runs:", sum_runs)
         print("sum_total:", sum_total)
-        print("sum_preprocessing:", sum_preprocessing, "fraction:", sum_preprocessing / sum_total)
+        # print("sum_preprocessing:", sum_preprocessing, "fraction:", sum_preprocessing / sum_total)
         # print("sum_axiom_rule_t_par:", sum_axiom_rule_t_par, "fraction:", sum_axiom_rule_t_par / sum_axiom_rule_t_tot)
         # print("sum_axiom_rule_t_tot:", sum_axiom_rule_t_tot)
-        print("sum_axiom_t_par:", sum_axiom_t_par, "fraction:", sum_axiom_t_par / sum_axiom_t_tot)
-        print("sum_axiom_t_tot:", sum_axiom_t_tot, "fraction:", sum_axiom_t_tot / sum_total)
-        print("sum_succgen_rule_t_par:", sum_succgen_rule_t_par, "fraction:", sum_succgen_rule_t_par / sum_succgen_rule_t_tot)
-        print("sum_succgen_rule_t_tot:", sum_succgen_rule_t_tot)
-        print("sum_succgen_t_par:", sum_succgen_t_par, "fraction:", sum_succgen_t_par / sum_succgen_t_tot)
+        # print("sum_axiom_t_par:", sum_axiom_t_par, "fraction:", sum_axiom_t_par / sum_axiom_t_tot)
+        # print("sum_axiom_t_tot:", sum_axiom_t_tot, "fraction:", sum_axiom_t_tot / sum_total)
         print("sum_succgen_t_tot:", sum_succgen_t_tot, "fraction:", sum_succgen_t_tot / sum_total)
-        print("sum_ff_rule_t_par:", sum_ff_rule_t_par, "fraction:", sum_ff_rule_t_par / sum_ff_rule_t_tot)
-        print("sum_ff_rule_t_tot:", sum_ff_rule_t_tot)
-        print("sum_ff_t_par:", sum_ff_t_par, "fraction:", sum_ff_t_par / sum_ff_t_tot)
-        print("sum_ff_t_tot:", sum_ff_t_tot, "fraction:", sum_ff_t_tot / sum_total)
-        print("sum_other_t_tot:", sum_other_t_tot, "fraction:", sum_other_t_tot / sum_total)
-
-        sum_other_t_tot_le_0_5 = sum_total_le_0_5 - (sum_preprocessing_le_0_5 + sum_axiom_t_tot_le_0_5 + sum_succgen_t_tot_le_0_5 + sum_ff_t_tot_le_0_5)
-
-        print("sum_runs_le_0_5:", sum_runs_le_0_5)
-        print("sum_total_le_0_5:", sum_total_le_0_5)
-        print("sum_preprocessing_le_0_5:", sum_preprocessing_le_0_5, "fraction:", sum_preprocessing_le_0_5 / sum_total_le_0_5)
-        # print("sum_axiom_rule_t_par_le_0_5:", sum_axiom_rule_t_par_le_0_5, "fraction:", sum_axiom_rule_t_par_le_0_5 / sum_axiom_rule_t_tot_le_0_5)
-        # print("sum_axiom_rule_t_tot_le_0_5:", sum_axiom_rule_t_tot_le_0_5)
-        print("sum_axiom_t_par_le_0_5:", sum_axiom_t_par_le_0_5, "fraction:", sum_axiom_t_par_le_0_5 / sum_axiom_t_tot_le_0_5)
-        print("sum_axiom_t_tot_le_0_5:", sum_axiom_t_tot_le_0_5, "fraction:", sum_axiom_t_tot_le_0_5 / sum_total_le_0_5)
-        print("sum_succgen_rule_t_par_le_0_5:", sum_succgen_rule_t_par_le_0_5, "fraction:", sum_succgen_rule_t_par_le_0_5 / sum_succgen_rule_t_tot_le_0_5)
-        print("sum_succgen_rule_t_tot_le_0_5:", sum_succgen_rule_t_tot_le_0_5)
-        print("sum_succgen_t_par_le_0_5:", sum_succgen_t_par_le_0_5, "fraction:", sum_succgen_t_par_le_0_5 / sum_succgen_t_tot_le_0_5)
-        print("sum_succgen_t_tot_le_0_5:", sum_succgen_t_tot_le_0_5, "fraction:", sum_succgen_t_tot_le_0_5 / sum_total_le_0_5)
-        print("sum_ff_rule_t_par_le_0_5:", sum_ff_rule_t_par_le_0_5, "fraction:", sum_ff_rule_t_par_le_0_5 / sum_ff_rule_t_tot_le_0_5)
-        print("sum_ff_rule_t_tot_le_0_5:", sum_ff_rule_t_tot_le_0_5)
-        print("sum_ff_t_par_le_0_5:", sum_ff_t_par_le_0_5, "fraction:", sum_ff_t_par_le_0_5 / sum_ff_t_tot_le_0_5)
-        print("sum_ff_t_tot_le_0_5:", sum_ff_t_tot_le_0_5, "fraction:", sum_ff_t_tot_le_0_5 / sum_total_le_0_5)
-        print("sum_other_t_tot_le_0_5:", sum_other_t_tot_le_0_5, "fraction:", sum_other_t_tot_le_0_5 / sum_total_le_0_5)
-
-        sum_other_t_tot_ge_0_5 = sum_total_ge_0_5 - (sum_preprocessing_ge_0_5 + sum_axiom_t_tot_ge_0_5 + sum_succgen_t_tot_ge_0_5 + sum_ff_t_tot_ge_0_5)
-
-        print("sum_runs:", sum_runs_ge_0_5)
-        print("sum_total:", sum_total_ge_0_5)
-        print("sum_preprocessing:", sum_preprocessing_ge_0_5, "fraction:", sum_preprocessing_ge_0_5 / sum_total_ge_0_5)
-        # print("sum_axiom_rule_t_par:", sum_axiom_rule_t_par_ge_0_5, "fraction:", sum_axiom_rule_t_par_ge_0_5 / sum_axiom_rule_t_tot_ge_0_5)
-        # print("sum_axiom_rule_t_tot:", sum_axiom_rule_t_tot_ge_0_5)
-        print("sum_axiom_t_par:", sum_axiom_t_par_ge_0_5, "fraction:", sum_axiom_t_par_ge_0_5 / sum_axiom_t_tot_ge_0_5)
-        print("sum_axiom_t_tot:", sum_axiom_t_tot_ge_0_5, "fraction:", sum_axiom_t_tot_ge_0_5 / sum_total_ge_0_5)
-        print("sum_succgen_rule_t_par:", sum_succgen_rule_t_par_ge_0_5, "fraction:", sum_succgen_rule_t_par_ge_0_5 / sum_succgen_rule_t_tot_ge_0_5)
-        print("sum_succgen_rule_t_tot:", sum_succgen_rule_t_tot_ge_0_5)
-        print("sum_succgen_t_par:", sum_succgen_t_par_ge_0_5, "fraction:", sum_succgen_t_par_ge_0_5 / sum_succgen_t_tot_ge_0_5)
-        print("sum_succgen_t_tot:", sum_succgen_t_tot_ge_0_5, "fraction:", sum_succgen_t_tot_ge_0_5 / sum_total_ge_0_5)
-        print("sum_ff_rule_t_par:", sum_ff_rule_t_par_ge_0_5, "fraction:", sum_ff_rule_t_par_ge_0_5 / sum_ff_rule_t_tot_ge_0_5)
-        print("sum_ff_rule_t_tot:", sum_ff_rule_t_tot_ge_0_5)
-        print("sum_ff_t_par:", sum_ff_t_par_ge_0_5, "fraction:", sum_ff_t_par_ge_0_5 / sum_ff_t_tot_ge_0_5)
-        print("sum_ff_t_tot:", sum_ff_t_tot_ge_0_5, "fraction:", sum_ff_t_tot_ge_0_5 / sum_total_ge_0_5)
-        print("sum_other_t_tot:", sum_other_t_tot_ge_0_5, "fraction:", sum_other_t_tot_ge_0_5 / sum_total_ge_0_5)
+        print("sum_succgen_t_par:", sum_succgen_t_par, "fraction:", sum_succgen_t_par / sum_succgen_t_tot) 
+        print("sum_succgen_rule_t_par:", sum_succgen_rule_t_par, "fraction:", sum_succgen_rule_t_par / sum_succgen_rule_t_tot) 
+        # print("sum_succgen_rule_t_tot:", sum_succgen_rule_t_tot)
+        
+        print("sum_ff_t_tot:", sum_ff_t_tot, "fraction:", sum_ff_t_tot / sum_total)    
+        print("sum_ff_t_par:", sum_ff_t_par, "fraction:", sum_ff_t_par / sum_ff_t_tot) 
+        print("sum_ff_rule_t_par:", sum_ff_rule_t_par, "fraction:", sum_ff_rule_t_par / sum_ff_rule_t_tot)      
+        # print("sum_ff_rule_t_tot:", sum_ff_rule_t_tot)     
+        # print("sum_other_t_tot:", sum_other_t_tot, "fraction:", sum_other_t_tot / sum_total)
+        print()
 
         bins = np.linspace(0, 1, 21)
         plt.figure()
