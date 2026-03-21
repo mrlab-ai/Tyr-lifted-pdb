@@ -37,7 +37,8 @@ class AxiomEvaluatorProgram
 {
 public:
     // Mapping from program fluent predicate to task derived predicate
-    using PredicateToPredicateMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::Predicate<formalism::DerivedTag>>>;
+    using PredicateToPredicateMapping =
+        UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::PredicateView<formalism::DerivedTag>>;
 
     explicit AxiomEvaluatorProgram(formalism::planning::TaskView task);
 

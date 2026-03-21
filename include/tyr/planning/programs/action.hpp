@@ -34,8 +34,8 @@ namespace tyr::planning
 class ApplicableActionProgram
 {
 public:
-    // Mapping from program rule to task action; there may be multiple actions
-    using AppPredicateToActionsMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::planning::Action>>;
+    // Mapping from program predicate to task action
+    using AppPredicateToActionsMapping = UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView>;
 
     explicit ApplicableActionProgram(formalism::planning::TaskView task);
 

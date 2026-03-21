@@ -256,12 +256,12 @@ static void translate_action_to_delete_free_rules(fp::ActionView action,
                                                   fp::MergeDatalogContext& context,
                                                   GroundTaskProgram::AppPredicateToActionsMapping& predicate_to_actions)
 {
-    const auto applicability_predicate = create_applicability_predicate(action, context).first.get_index();
+    const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
-    [[maybe_unused]] const auto [it, inserted] = predicate_to_actions.emplace(applicability_predicate, action.get_index());
+    [[maybe_unused]] const auto [it, inserted] = predicate_to_actions.emplace(applicability_predicate, action);
     assert(inserted);
 
-    program.fluent_predicates.push_back(applicability_predicate);
+    program.fluent_predicates.push_back(applicability_predicate.get_index());
 
     const auto applicability_rule = create_applicability_rule(action, context).first.get_index();
 
@@ -284,11 +284,11 @@ static void translate_axiom_to_delete_free_axiom_rules(fp::AxiomView axiom,
                                                        fp::MergeDatalogContext& context,
                                                        GroundTaskProgram::AppPredicateToAxiomsMapping& predicate_to_axioms)
 {
-    const auto applicability_predicate = create_applicability_predicate(axiom, context).first.get_index();
+    const auto applicability_predicate = create_applicability_predicate(axiom, context).first;
 
-    program.fluent_predicates.push_back(applicability_predicate);
+    program.fluent_predicates.push_back(applicability_predicate.get_index());
 
-    [[maybe_unused]] const auto [it, inserted] = predicate_to_axioms.emplace(applicability_predicate, axiom.get_index());
+    [[maybe_unused]] const auto [it, inserted] = predicate_to_axioms.emplace(applicability_predicate, axiom);
     assert(inserted);
 
     const auto applicability_rule = create_applicability_rule(axiom, context).first.get_index();

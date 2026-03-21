@@ -94,22 +94,22 @@ static auto create_program(fp::TaskView task, AxiomEvaluatorProgram::PredicateTo
 
     for (const auto predicate : task.get_domain().get_predicates<f::DerivedTag>())
     {
-        const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::FluentTag>(predicate, context).first.get_index();
+        const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::FluentTag>(predicate, context).first;
 
-        [[maybe_unused]] const auto [it, inserted] = predicate_to_predicate.emplace(new_predicate, predicate.get_index());
+        [[maybe_unused]] const auto [it, inserted] = predicate_to_predicate.emplace(new_predicate, predicate);
         assert(inserted);
 
-        program.fluent_predicates.push_back(new_predicate);
+        program.fluent_predicates.push_back(new_predicate.get_index());
     }
 
     for (const auto predicate : task.get_derived_predicates())
     {
-        const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::FluentTag>(predicate, context).first.get_index();
+        const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::FluentTag>(predicate, context).first;
 
-        [[maybe_unused]] const auto [it, inserted] = predicate_to_predicate.emplace(new_predicate, predicate.get_index());
+        [[maybe_unused]] const auto [it, inserted] = predicate_to_predicate.emplace(new_predicate, predicate);
         assert(inserted);
 
-        program.fluent_predicates.push_back(new_predicate);
+        program.fluent_predicates.push_back(new_predicate.get_index());
     }
 
     for (const auto function : task.get_domain().get_functions<f::StaticTag>())

@@ -66,12 +66,11 @@ static void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram&
                                                     fp::MergePlanningContext& merge_context,
                                                     d::TaggedFactSets<f::FluentTag>& fact_sets)
 {
-    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_predicate_mapping, then facts of the predicate
     for (const auto& set : fact_sets.predicate.get_sets())
     {
         for (const auto& binding : set.get_bindings())
         {
-            if (axiom_program.get_predicate_to_predicate_mapping().contains(binding.get_index().relation))
+            if (axiom_program.get_predicate_to_predicate_mapping().contains(binding.get_relation()))
             {
                 const auto ground_atom = fp::merge_d2p<f::FluentTag, f::DerivedTag>(binding, merge_context).first.get_index();
 

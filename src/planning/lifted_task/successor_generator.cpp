@@ -117,20 +117,17 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
     auto fluent_assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
     auto iter_workspace = itertools::cartesian_set::Workspace<Index<f::Object>> {};
 
-    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over predicate_to_actions_mapping, then facts of the predicate
     for (const auto& set : m_workspace.facts.fact_sets.predicate.get_sets())
     {
         for (const auto& binding : set.get_bindings())
         {
             const auto& mapping = m_task->get_action_program().get_predicate_to_actions_mapping();
 
-            if (const auto it = mapping.find(binding.get_index().relation); it != mapping.end())
+            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
             {
-                const auto action_index = it->second;
+                const auto action = it->second;
 
                 auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.d2p.binding };
-
-                const auto action = make_view(action_index, grounder_context.destination);
 
                 m_workspace.d2p.binding.clear();
                 for (const auto object : binding.get_objects())
@@ -138,7 +135,7 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
 
                 const auto ground_action = fp::ground(action,
                                                       grounder_context,
-                                                      m_task->get_parameter_domains_per_cond_effect_per_action()[action_index.get_value()],
+                                                      m_task->get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
                                                       fluent_assign,
                                                       iter_workspace,
                                                       m_task->get_fdr_context())

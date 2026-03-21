@@ -109,12 +109,12 @@ static auto create_program(fp::TaskView task, ApplicableActionProgram::AppPredic
 
     for (const auto action : task.get_domain().get_actions())
     {
-        const auto applicability_predicate = create_applicability_predicate(action, context).first.get_index();
+        const auto applicability_predicate = create_applicability_predicate(action, context).first;
 
-        [[maybe_unused]] const auto [it, inserted] = predicate_to_actions.emplace(applicability_predicate, action.get_index());
+        [[maybe_unused]] const auto [it, inserted] = predicate_to_actions.emplace(applicability_predicate, action);
         assert(inserted);
 
-        program.fluent_predicates.push_back(applicability_predicate);
+        program.fluent_predicates.push_back(applicability_predicate.get_index());
 
         auto rule_ptr = builder.get_builder<fd::Rule>();
         auto& rule = *rule_ptr;

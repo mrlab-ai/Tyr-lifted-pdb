@@ -91,10 +91,10 @@ static void translate_action_to_delete_free_rules(fp::ActionView action,
             if (!literal.get_polarity())
                 continue;  /// ignore delete effects
 
-            const auto rule = create_cond_effect_rule(action, cond_eff, literal.get_atom(), context).first.get_index();
+            const auto rule = create_cond_effect_rule(action, cond_eff, literal.get_atom(), context).first;
 
-            program.rules.push_back(rule);
-            rule_to_action.emplace(rule, action.get_index());
+            program.rules.push_back(rule.get_index());
+            rule_to_action.emplace(rule, action);
         }
     }
 }

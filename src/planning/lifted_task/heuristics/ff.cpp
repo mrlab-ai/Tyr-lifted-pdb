@@ -126,7 +126,7 @@ void FFHeuristic<LiftedTask>::extract_relaxed_plan_and_preferred_actions(formali
     const auto rule = rule_row.get_relation();
     const auto row = rule_row.get_objects();
 
-    if (const auto it = mapping.find(rule.get_index()); it != mapping.end())
+    if (const auto it = mapping.find(rule); it != mapping.end())
     {
         const auto action = it->second;
 
@@ -134,9 +134,9 @@ void FFHeuristic<LiftedTask>::extract_relaxed_plan_and_preferred_actions(formali
         for (const auto object : row)
             grounder_context.binding.push_back(object.get_index());
 
-        const auto ground_action = formalism::planning::ground(make_view(action, grounder_context.destination),
+        const auto ground_action = formalism::planning::ground(action,
                                                                grounder_context,
-                                                               m_task->get_parameter_domains_per_cond_effect_per_action()[uint_t(action)],
+                                                               m_task->get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
                                                                m_assign,
                                                                m_iter_workspace,
                                                                m_task->get_fdr_context())

@@ -35,9 +35,9 @@ class GroundTaskProgram
 {
 public:
     // Mapping from program predicate to task action; there may be multiple actions
-    using AppPredicateToActionsMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::planning::Action>>;
+    using AppPredicateToActionsMapping = UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::ActionView>;
 
-    using AppPredicateToAxiomsMapping = UnorderedMap<Index<formalism::Predicate<formalism::FluentTag>>, Index<formalism::planning::Axiom>>;
+    using AppPredicateToAxiomsMapping = UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::AxiomView>;
 
     explicit GroundTaskProgram(formalism::planning::TaskView task);
 

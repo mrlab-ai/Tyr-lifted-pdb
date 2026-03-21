@@ -312,9 +312,9 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
         {
             const auto& mapping = ground_program.get_predicate_to_actions_mapping();
 
-            if (const auto it = mapping.find(binding.get_index().relation); it != mapping.end())
+            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
             {
-                const auto action_index = it->second;
+                const auto action = it->second;
 
                 workspace.d2p.binding.clear();
                 for (const auto object : binding.get_objects())
@@ -322,11 +322,9 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
                 auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
 
-                const auto action = make_view(action_index, grounder_context.destination);
-
                 const auto ground_action = fp::ground(action,
                                                       grounder_context,
-                                                      lifted_task.get_parameter_domains_per_cond_effect_per_action()[action_index.get_value()],
+                                                      lifted_task.get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
                                                       fluent_assign,
                                                       iter_workspace,
                                                       lifted_task.get_fdr_context())
@@ -367,24 +365,21 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
     auto ground_axioms_set = UnorderedSet<Index<fp::GroundAxiom>> {};
 
-    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_axioms_mapping, then facts of the predicate
     for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
     {
         for (const auto& binding : set.get_bindings())
         {
             const auto& mapping = ground_program.get_predicate_to_axioms_mapping();
 
-            if (const auto it = mapping.find(binding.get_index().relation); it != mapping.end())
+            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
             {
-                const auto axiom_index = it->second;
+                const auto axiom = it->second;
 
                 workspace.d2p.binding.clear();
                 for (const auto object : binding.get_objects())
                     workspace.d2p.binding.push_back(object.get_index());
 
                 auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
-
-                const auto axiom = make_view(axiom_index, grounder_context.destination);
 
                 const auto ground_axiom = fp::ground(axiom, grounder_context, lifted_task.get_fdr_context()).first;
 

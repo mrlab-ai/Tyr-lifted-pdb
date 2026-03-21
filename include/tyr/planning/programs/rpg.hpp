@@ -34,7 +34,7 @@ namespace tyr::planning
 class RPGProgram
 {
 public:
-    using RuleToActionMapping = UnorderedMap<Index<formalism::datalog::Rule>, Index<formalism::planning::Action>>;
+    using RuleToActionMapping = UnorderedMap<formalism::datalog::RuleView, formalism::planning::ActionView>;
 
     explicit RPGProgram(formalism::planning::TaskView task);
 
