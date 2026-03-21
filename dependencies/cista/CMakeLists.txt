@@ -25,8 +25,8 @@ if (NOT cista_FOUND)
     endforeach()
     ExternalProject_Add(
         cista
-        GIT_REPOSITORY https://github.com/felixguendling/cista.git
-        GIT_TAG ff0ba5bafc34fb399c71d27ee2f220d8bb95fae1
+        GIT_REPOSITORY git@github.com:drexlerd/cista.git
+        GIT_TAG db34b0a1bbef1f5166bbf360c05fbbd79fe0596e
         PREFIX ${CMAKE_BINARY_DIR}/cista
         CMAKE_ARGS ${CMAKE_ARGS}
     )

@@ -56,17 +56,6 @@ void bind_object_builder(nb::module_& m, const std::string& name)
         .def_rw("name", &V::name);
 }
 
-void bind_binding_builder(nb::module_& m, const std::string& name)
-{
-    using V = Data<Binding>;
-
-    auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def(nb::init<>())
-                   .def_rw("objects", &V::objects);
-    add_print(cls);
-    add_hash(cls);
-}
-
 void bind_variable_builder(nb::module_& m, const std::string& name)
 {
     using V = Data<Variable>;
@@ -74,6 +63,28 @@ void bind_variable_builder(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<>())
                    .def_rw("name", &V::name);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_term_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Term>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("value", &V::value);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_binding_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Binding>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("objects", &V::objects);
     add_print(cls);
     add_hash(cls);
 }
@@ -92,6 +103,19 @@ void bind_predicate_builder(nb::module_& m, const std::string& name)
 }
 
 template<FactKind T>
+void bind_atom_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Atom<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("predicate", &V::predicate)
+                   .def_rw("terms", &V::terms);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
 void bind_ground_atom_builder(nb::module_& m, const std::string& name)
 {
     using V = Data<GroundAtom<T>>;
@@ -100,6 +124,463 @@ void bind_ground_atom_builder(nb::module_& m, const std::string& name)
                    .def(nb::init<>())
                    .def_rw("predicate", &V::predicate)
                    .def_rw("row", &V::row);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_literal_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Literal<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("atom", &V::atom)
+                   .def_rw("polarity", &V::polarity);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_ground_literal_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundLiteral<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("atom", &V::atom)
+                   .def_rw("polarity", &V::polarity);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_fdr_variable_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<FDRVariable<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("domain_size", &V::domain_size)
+                   .def_rw("atoms", &V::atoms);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_fdr_fact_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<FDRFact<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("value", &V::value)
+                   .def_rw("variable", &V::variable);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_function_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Function<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("name", &V::name)
+                   .def_rw("arity", &V::arity);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_function_term_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<FunctionTerm<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("function", &V::function)
+                   .def_rw("terms", &V::terms);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_ground_function_term_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundFunctionTerm<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("function", &V::function)
+                   .def_rw("row", &V::row);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_ground_function_term_value_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundFunctionTermValue<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("fterm", &V::fterm)
+                   .def_rw("value", &V::value);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<NumericEffectOpKind Op, FactKind T>
+void bind_numeric_effect_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<NumericEffect<Op, T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("fterm", &V::fterm)
+                   .def_rw("fexpr", &V::fexpr);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<NumericEffectOpKind Op, FactKind T>
+void bind_ground_numeric_effect_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundNumericEffect<Op, T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("fterm", &V::fterm)
+                   .def_rw("fexpr", &V::fexpr);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_numeric_effect_operator_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<NumericEffectOperator<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("value", &V::value);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<FactKind T>
+void bind_ground_numeric_effect_operator_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundNumericEffectOperator<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("value", &V::value);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_function_expression_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<FunctionExpression>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("value", &V::value);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_conjunctive_condition_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<ConjunctiveCondition>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("variables", &V::variables)
+                   .def_rw("static_literals", &V::static_literals)
+                   .def_rw("fluent_literals", &V::fluent_literals)
+                   .def_rw("derived_literals", &V::derived_literals)
+                   .def_rw("numeric_constraints", &V::numeric_constraints);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_conjunctive_effect_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<ConjunctiveEffect>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("literals", &V::literals)
+                   .def_rw("numeric_effects", &V::numeric_effects)
+                   .def_rw("auxiliary_numeric_effect", &V::auxiliary_numeric_effect);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_conditional_effect_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<ConditionalEffect>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("variables", &V::variables)
+                   .def_rw("condition", &V::condition)
+                   .def_rw("effect", &V::effect);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_action_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Action>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("name", &V::name)
+                   .def_rw("original_arity", &V::original_arity)
+                   .def_rw("variables", &V::variables)
+                   .def_rw("condition", &V::condition)
+                   .def_rw("effects", &V::effects);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_axiom_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Axiom>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("variables", &V::variables)
+                   .def_rw("body", &V::body)
+                   .def_rw("head", &V::head);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_ground_function_expression_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundFunctionExpression>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("value", &V::value);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_ground_conjunctive_condition_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundConjunctiveCondition>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("static_facts", &V::static_literals)
+                   .def_rw("fluent_facts", &V::fluent_facts)
+                   .def_rw("derived_facts", &V::derived_literals)
+                   .def_rw("numeric_constraints", &V::numeric_constraints);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_ground_conjunctive_effect_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundConjunctiveEffect>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("facts", &V::facts)
+                   .def_rw("numeric_effects", &V::numeric_effects)
+                   .def_rw("auxiliary_numeric_effect", &V::auxiliary_numeric_effect);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_ground_conditional_effect_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundConditionalEffect>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("condition", &V::condition)
+                   .def_rw("effect", &V::effect);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_ground_action_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundAction>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("action", &V::action)
+                   .def_rw("row", &V::row)
+                   .def_rw("condition", &V::condition)
+                   .def_rw("effects", &V::effects);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_ground_axiom_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<GroundAxiom>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("axiom", &V::axiom)
+                   .def_rw("row", &V::row)
+                   .def_rw("body", &V::body)
+                   .def_rw("head", &V::head);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_metric_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Metric>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("objective", &V::objective)
+                   .def_rw("fexpr", &V::fexpr);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_domain_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Domain>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("name", &V::name)
+                   .def_rw("static_predicates", &V::static_predicates)
+                   .def_rw("fluent_predicates", &V::fluent_predicates)
+                   .def_rw("derived_predicates", &V::derived_predicates)
+                   .def_rw("static_functions", &V::static_functions)
+                   .def_rw("fluent_functions", &V::fluent_functions)
+                   .def_rw("auxiliary_function", &V::auxiliary_function)
+                   .def_rw("constants", &V::constants)
+                   .def_rw("actions", &V::actions)
+                   .def_rw("axioms", &V::axioms);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_lifted_task_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<Task>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("name", &V::name)
+                   .def_rw("domain", &V::domain)
+                   .def_rw("derived_predicates", &V::derived_predicates)
+                   .def_rw("objects", &V::objects)
+                   .def_rw("static_atoms", &V::static_atoms)
+                   .def_rw("fluent_atoms", &V::fluent_atoms)
+                   .def_rw("static_fterm_values", &V::static_fterm_values)
+                   .def_rw("fluent_fterm_values", &V::fluent_fterm_values)
+                   .def_rw("auxiliary_fterm_value", &V::auxiliary_fterm_value)
+                   .def_rw("goal", &V::goal)
+                   .def_rw("metric", &V::metric)
+                   .def_rw("axioms", &V::axioms);
+    add_print(cls);
+    add_hash(cls);
+}
+
+void bind_ground_task_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<FDRTask>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("name", &V::name)
+                   .def_rw("domain", &V::domain)
+                   .def_rw("derived_predicates", &V::derived_predicates)
+                   .def_rw("objects", &V::objects)
+                   .def_rw("static_atoms", &V::static_atoms)
+                   .def_rw("fluent_atoms", &V::fluent_atoms)
+                   .def_rw("derived_atoms", &V::derived_atoms)
+                   .def_rw("static_fterm", &V::static_fterms)
+                   .def_rw("fluent_fterm", &V::fluent_fterms)
+                   .def_rw("auxiliary_fterm", &V::auxiliary_fterm)
+                   .def_rw("static_fterm_values", &V::static_fterm_values)
+                   .def_rw("fluent_fterm_values", &V::fluent_fterm_values)
+                   .def_rw("auxiliary_fterm_value", &V::auxiliary_fterm_value)
+                   .def_rw("goal", &V::goal)
+                   .def_rw("metric", &V::metric)
+                   .def_rw("axioms", &V::axioms)
+                   .def_rw("fluent_variables", &V::fluent_variables)
+                   .def_rw("fluent_facts", &V::fluent_facts)
+                   .def_rw("ground_actions", &V::ground_actions)
+                   .def_rw("ground_axioms", &V::ground_axioms);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<OpKind Op, typename T>
+void bind_unary_operator_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<UnaryOperator<Op, T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("arg", &V::arg);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<OpKind Op, typename T>
+void bind_binary_operator_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<BinaryOperator<Op, T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("lhs", &V::lhs)
+                   .def_rw("rhs", &V::rhs);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<OpKind Op, typename T>
+void bind_multi_operator_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<MultiOperator<Op, T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("args", &V::args);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<typename T>
+void bind_arithmethic_operator_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<ArithmeticOperator<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("value", &V::value);
+    add_print(cls);
+    add_hash(cls);
+}
+
+template<typename T>
+void bind_boolean_operator_builder(nb::module_& m, const std::string& name)
+{
+    using V = Data<BooleanOperator<T>>;
+
+    auto cls = nb::class_<V>(m, name.c_str())  //
+                   .def(nb::init<>())
+                   .def_rw("value", &V::value);
     add_print(cls);
     add_hash(cls);
 }
