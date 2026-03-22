@@ -18,24 +18,12 @@ import argparse
 
 from pathlib import Path
 
-from pytyr.formalism.planning import ParserOptions, Parser, ObjectBuilder, FluentPredicateBuilder, FluentGroundAtomBuilder
+from pytyr.formalism.planning import RepositoryFactory, Repository, FDRContext, ObjectBuilder, FluentPredicateBuilder, FluentGroundAtomBuilder, GroundConjunctiveConditionBuilder, DomainBuilder, LiftedTaskBuilder
 
 
 def main():
-    arg_parser = argparse.ArgumentParser(description="Create planning formalism structures.")
-    arg_parser.add_argument("-d", "--domain-filepath", type=Path, required=True, help="Path to a PDDL domain file.")
-    arg_parser.add_argument("-p", "--task-filepath", type=Path, required=True, help="Path to PDDL task file.")
-    args = arg_parser.parse_args()
-
-    domain_filepath : Path = args.domain_filepath
-    task_filepath : Path = args.task_filepath
-
-    parser_options = ParserOptions()
-    parser = Parser(domain_filepath, parser_options)
-    
-    planning_task = parser.parse_task(task_filepath, parser_options)
-
-    repository = planning_task.get_repository()
+    factory = RepositoryFactory()
+    repository = factory.create_repository()  # We can also create object directly into the repository of a task.
 
     object_builder = ObjectBuilder()
     predicate_builder = FluentPredicateBuilder()
@@ -44,28 +32,28 @@ def main():
     # 1. Re-create existing atom (at ball1 rooma)
     object_builder.name = "ball1"
     ball1, inserted = repository.get_or_create(object_builder)
-    assert not inserted
+    assert inserted
     object_builder.name = "rooma"
     rooma, inserted = repository.get_or_create(object_builder)
-    assert not inserted 
+    assert inserted 
 
     predicate_builder.name = "at"
     predicate_builder.arity = 2
     at, inserted = repository.get_or_create(predicate_builder)
-    assert not inserted
+    assert inserted
 
     row, inserted = repository.get_or_create(at, [ball1.get_index(), rooma.get_index()])
-    assert not inserted
+    assert inserted
 
     ground_atom_builder.predicate = row.get_index().relation_index
     ground_atom_builder.row = row.get_index().row_index
     at_ball1_rooma, inserted = repository.get_or_create(ground_atom_builder)
-    assert not inserted
+    assert inserted
 
     # 2. Create non existing atom (at ball1 roomb)
     object_builder.name = "roomb"
     roomb, inserted = repository.get_or_create(object_builder)
-    assert not inserted 
+    assert inserted 
 
     row, inserted = repository.get_or_create(at, [ball1.get_index(), roomb.get_index()])
     assert inserted 
@@ -76,10 +64,28 @@ def main():
     assert inserted
 
     # 3. Map atom to FDRFact to be passed into state repository for state creations
-    fdr_context = planning_task.get_fdr_context()
+    fdr_context = FDRContext(repository)
     fact = fdr_context.get_fact(at_ball1_roomb)
 
-    print(fact)
+    domain_builder = DomainBuilder()
+    domain_builder.fluent_predicates.append(at.get_index())
+
+    domain, inserted = repository.get_or_create(domain_builder)
+
+    print(domain)
+
+    goal_builder = GroundConjunctiveConditionBuilder()
+    goal, inserted = repository.get_or_create(goal_builder)
+
+    task_builder = LiftedTaskBuilder()
+    task_builder.domain = domain.get_index()
+    task_builder.goal = goal.get_index()
+    task_builder.fluent_atoms.append(at_ball1_rooma.get_index())
+    task_builder.fluent_atoms.append(at_ball1_roomb.get_index())
+
+    task, inserted = repository.get_or_create(task_builder)
+
+    print(task)
 
 
 if __name__ == "__main__":

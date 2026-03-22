@@ -34,6 +34,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     formalism/datalog/variable_dependency_graph.cpp
 
     formalism/planning/builder.cpp
+    formalism/planning/fdr_context.cpp
     formalism/planning/formatter.cpp
     formalism/planning/grounder.cpp
     formalism/planning/merge_datalog.cpp

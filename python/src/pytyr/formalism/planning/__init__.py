@@ -342,6 +342,5 @@ from pytyr.pytyr.formalism.planning import (
     Repository,
 
     # FDRContext
-    BinaryFDRContext,
-    GeneralFDRContext,
+    FDRContext,
 )

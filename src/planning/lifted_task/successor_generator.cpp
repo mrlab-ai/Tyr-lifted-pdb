@@ -138,7 +138,7 @@ void SuccessorGenerator<LiftedTask>::get_labeled_successor_nodes(const Node<Lift
                                                       m_task->get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
                                                       fluent_assign,
                                                       iter_workspace,
-                                                      m_task->get_fdr_context())
+                                                      *m_task->get_fdr_context())
                                                .first;
 
                 if (m_executor.is_applicable(ground_action, state_context))

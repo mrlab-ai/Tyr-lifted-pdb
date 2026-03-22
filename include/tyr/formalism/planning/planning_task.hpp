@@ -30,7 +30,7 @@ namespace tyr::formalism::planning
 class PlanningTask
 {
 public:
-    PlanningTask(TaskView task, BinaryFDRContext fdr_context, std::shared_ptr<Repository> repository, PlanningDomain domain) :
+    PlanningTask(TaskView task, FDRContextPtr fdr_context, std::shared_ptr<Repository> repository, PlanningDomain domain) :
         m_repository(std::move(repository)),
         m_task(task),
         m_fdr_context(std::move(fdr_context)),
@@ -42,14 +42,13 @@ public:
 
     const auto& get_repository() const noexcept { return m_repository; }
     auto get_task() const noexcept { return m_task; }
-    auto& get_fdr_context() noexcept { return m_fdr_context; }
     const auto& get_fdr_context() const noexcept { return m_fdr_context; }
     const auto& get_domain() const noexcept { return m_domain; }
 
 private:
     std::shared_ptr<Repository> m_repository;
     TaskView m_task;
-    BinaryFDRContext m_fdr_context;
+    FDRContextPtr m_fdr_context;
     PlanningDomain m_domain;
 };
 

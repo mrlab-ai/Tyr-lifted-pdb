@@ -59,10 +59,6 @@ std::pair<AtomView<T>, bool> merge_p2p(AtomView<T> element, MergeContext& contex
 template<FactKind T>
 std::pair<GroundAtomView<T>, bool> merge_p2p(GroundAtomView<T> element, MergeContext& context);
 
-std::pair<FDRVariableView<FluentTag>, bool> merge_p2p(FDRVariableView<FluentTag> element, MergeContext& context);
-
-Data<FDRFact<FluentTag>> merge_p2p(FDRFactView<FluentTag> element, MergeContext& context);
-
 template<FactKind T>
 std::pair<LiteralView<T>, bool> merge_p2p(LiteralView<T> element, MergeContext& context);
 

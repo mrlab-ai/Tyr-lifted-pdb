@@ -31,7 +31,9 @@ exp.run_steps()
 
 TYR_DIR = "results_raw/tyr-2026-1-8-gbfs_lazy-combined-eval"
 PL_DIR  = "results_raw/pl-2026-1-9-lazy-gbfs-ff-pref-ff-eval"
+COMBINED_DIR  = "results-combined/2026-1-8-gbfs_lazy-tyr-pl-fd-eval"
 TYR_ALGO = "gbfs-lazy-hff-pref-ff-1"
+PL_ALGO = "powerlifted-gbfs-lazy-hff-pref-ff"
 
 def df(run) -> float:
     total_ms = run["total_time_ns"] / 1_000_000.0
@@ -43,30 +45,51 @@ def df(run) -> float:
     return (ax + sg + ff) / total_ms
 
 def task_key(run):
-    return tuple(run["id"][1:])  # (domain, problem, ...)
+    # assumes id = [algorithm, domain, problem, ...]
+    return tuple(run["id"][1:])
 
-def allowed_tasks_from_tyr(predicate) -> set:
-    props = json.load(open(Path(TYR_DIR) / "properties"))
-    allowed = set()
+def build_buckets():
+    props = json.load(open(Path(COMBINED_DIR) / "properties"))
+
+    by_task = {}
     for run in props.values():
-        if run.get("algorithm") != TYR_ALGO:
+        algo = run.get("algorithm")
+        if algo not in {TYR_ALGO, PL_ALGO}:
             continue
-        if run["coverage"] == 0:
-            allowed.add(task_key(run))
+        t = task_key(run)
+        by_task.setdefault(t, {})[algo] = run
+
+    allowed_lt_05 = set()
+    allowed_ge_05 = set()
+
+    for t, runs in by_task.items():
+        # only keep tasks that can actually contribute a scatter point
+        if TYR_ALGO not in runs or PL_ALGO not in runs:
             continue
-        if predicate(df(run)):
-            allowed.add(task_key(run))
+
+        tyr_run = runs[TYR_ALGO]
+        pl_run = runs[PL_ALGO]
+
+        # if TYR is uncovered, there will be no scatter point; skip it
+        if tyr_run["coverage"] == 0:
             continue
-    return allowed
+        if pl_run["coverage"] == 0:
+            continue
+
+        if df(tyr_run) < 0.5:
+            allowed_lt_05.add(t)
+        else:
+            allowed_ge_05.add(t)
+
+    return allowed_lt_05, allowed_ge_05
+
+# ---- choose one bucket here ----
+allowed_lt_05, allowed_ge_05 = build_buckets()
 
 def make_task_filter(allowed):
     def _f(run):
         return task_key(run) in allowed
     return _f
-
-# ---- choose one bucket here ----
-allowed_lt_05 = allowed_tasks_from_tyr(lambda x: x < 0.5)
-allowed_ge_05 = allowed_tasks_from_tyr(lambda x: x >= 0.5)
 
 
 ### df < 0.5
@@ -75,8 +98,7 @@ allowed = allowed_lt_05
 exp = Experiment("plot-search-time-ms-per-expanded-df-lt-0-5")
 task_filter = make_task_filter(allowed)
 
-exp.add_fetcher(TYR_DIR, name="fetch-tyr", filter=task_filter)
-exp.add_fetcher(PL_DIR,  name="fetch-pl",  filter=task_filter)
+exp.add_fetcher(COMBINED_DIR, name="fetch-combined", filter=task_filter)
 
 exp.add_report(
     ScatterPlotReport(
@@ -103,8 +125,7 @@ allowed = allowed_ge_05
 exp = Experiment("plot-search-time-ms-per-expanded-df-ge-0-5")
 task_filter = make_task_filter(allowed)
 
-exp.add_fetcher(TYR_DIR, name="fetch-tyr", filter=task_filter)
-exp.add_fetcher(PL_DIR,  name="fetch-pl",  filter=task_filter)
+exp.add_fetcher(COMBINED_DIR, name="fetch-combined", filter=task_filter)
 
 exp.add_report(
     ScatterPlotReport(

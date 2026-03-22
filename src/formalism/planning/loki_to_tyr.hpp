@@ -1114,7 +1114,7 @@ private:
             index_predicate_variant);
     }
 
-    IndexGroundAtomOrFactVariant translate_grounded(loki::Atom element, Builder& builder, Repository& context, BinaryFDRContext& fdr_context)
+    IndexGroundAtomOrFactVariant translate_grounded(loki::Atom element, Builder& builder, Repository& context, FDRContext& fdr_context)
     {
         auto atom_variant = translate_grounded(element, builder, context);
 
@@ -1167,7 +1167,7 @@ private:
             atom_variant);
     }
 
-    IndexGroundLiteralOrFactVariant translate_grounded(loki::Literal element, Builder& builder, Repository& context, BinaryFDRContext& fdr_context)
+    IndexGroundLiteralOrFactVariant translate_grounded(loki::Literal element, Builder& builder, Repository& context, FDRContext& fdr_context)
     {
         auto literal_variant = translate_grounded(element, builder, context);
 
@@ -1382,7 +1382,7 @@ private:
         }
     }
 
-    Index<GroundConjunctiveCondition> translate_grounded(loki::Condition element, Builder& builder, Repository& context, BinaryFDRContext& fdr_context)
+    Index<GroundConjunctiveCondition> translate_grounded(loki::Condition element, Builder& builder, Repository& context, FDRContext& fdr_context)
     {
         auto conj_condition_ptr = builder.template get_builder<GroundConjunctiveCondition>();
         auto& conj_condition = *conj_condition_ptr;

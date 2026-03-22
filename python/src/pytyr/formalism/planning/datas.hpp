@@ -15,14 +15,16 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PYTHON_FORMALISM_PLANNING_BINDINGS_HPP
-#define TYR_PYTHON_FORMALISM_PLANNING_BINDINGS_HPP
+#ifndef TYR_PYTHON_FORMALISM_PLANNING_DATAS_HPP
+#define TYR_PYTHON_FORMALISM_PLANNING_DATAS_HPP
 
 #include "../../common/bindings.hpp"
 #include "../../init_declarations.hpp"
 
 namespace tyr::formalism::planning
 {
+
+void bind_datas(nb::module_& m);
 
 }
 

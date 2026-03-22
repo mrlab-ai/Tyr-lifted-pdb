@@ -335,7 +335,7 @@ PlanningTask LokiToTyrTranslator::translate(const loki::Problem& element, Planni
     const auto& factory = domain.get_repository_factory();
     auto task_context = factory->create_shared(domain.get_repository().get());
 
-    auto fdr_context = BinaryFDRContext(*task_context);
+    auto fdr_context = std::make_shared<FDRContext>(task_context);
 
     /* Name */
     task.name = element->get_name();
@@ -396,7 +396,7 @@ PlanningTask LokiToTyrTranslator::translate(const loki::Problem& element, Planni
 
     for (const auto& literal : element->get_initial_literals())
     {
-        const auto index_atom_variant = translate_grounded(literal, builder, *task_context, fdr_context);
+        const auto index_atom_variant = translate_grounded(literal, builder, *task_context, *fdr_context);
 
         func_insert_ground_atom(index_atom_variant, task.static_atoms, task.fluent_atoms);
     }
@@ -435,7 +435,7 @@ PlanningTask LokiToTyrTranslator::translate(const loki::Problem& element, Planni
 
     if (element->get_goal_condition().has_value())
     {
-        task.goal = translate_grounded(element->get_goal_condition().value(), builder, *task_context, fdr_context);
+        task.goal = translate_grounded(element->get_goal_condition().value(), builder, *task_context, *fdr_context);
     }
     else
     {

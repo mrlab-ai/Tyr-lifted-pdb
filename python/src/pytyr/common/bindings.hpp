@@ -22,6 +22,21 @@
 
 namespace tyr
 {
+template<typename V>
+nb::class_<V>& add_print(nb::class_<V>& cls)
+{
+    return cls  //
+        .def("__str__", [](const V& self) { return to_string(self); })
+        .def("__repr__", [](const V& self) { return to_string(self); });
+}
+
+template<typename V>
+nb::class_<V>& add_hash(nb::class_<V>& cls)
+{
+    return cls  //
+        .def("__eq__", [](const V& self, const V& other) { return EqualTo<V> {}(self, other); })
+        .def("__hash__", [](const V& self) { return Hash<V> {}(self); });
+}
 
 template<typename T>
 void bind_index(nb::module_& m, const std::string& name)

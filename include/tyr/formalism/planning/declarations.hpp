@@ -301,9 +301,8 @@ concept Context = requires(const T& a) {
     { get_repository(a) } -> RepositoryConcept;
 };
 
-class BinaryFDRContext;
-
-class GeneralFDRContext;
+class FDRContext;
+using FDRContextPtr = std::shared_ptr<FDRContext>;
 
 }
 

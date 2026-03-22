@@ -45,7 +45,7 @@ namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
-static auto remap_fdr_fact(fp::FDRFactView<f::FluentTag> fact, fp::GeneralFDRContext& fdr_context, fp::MergeContext& context)
+static auto remap_fdr_fact(fp::FDRFactView<f::FluentTag> fact, fp::FDRContext& fdr_context, fp::MergeContext& context)
 {
     // Ensure that remapping is unambiguous
     assert(fact.get_variable().get_domain_size() == 2);
@@ -63,7 +63,7 @@ static auto remap_fdr_fact(fp::FDRFactView<f::FluentTag> fact, fp::GeneralFDRCon
     return new_fact;
 }
 
-static auto create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView element, fp::GeneralFDRContext& fdr_context, fp::MergeContext& context)
+static auto create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditionView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
 {
     auto fdr_conj_cond_ptr = context.builder.get_builder<fp::GroundConjunctiveCondition>();
     auto& fdr_conj_cond = *fdr_conj_cond_ptr;
@@ -85,7 +85,7 @@ static auto create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditi
     return context.destination.get_or_create(fdr_conj_cond);
 }
 
-static auto create_ground_conjunctive_effect(fp::GroundConjunctiveEffectView element, fp::GeneralFDRContext& fdr_context, fp::MergeContext& context)
+static auto create_ground_conjunctive_effect(fp::GroundConjunctiveEffectView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
 {
     auto fdr_conj_eff_ptr = context.builder.get_builder<fp::GroundConjunctiveEffect>();
     auto& fdr_conj_eff = *fdr_conj_eff_ptr;
@@ -106,7 +106,7 @@ static auto create_ground_conjunctive_effect(fp::GroundConjunctiveEffectView ele
     return context.destination.get_or_create(fdr_conj_eff);
 }
 
-static auto create_ground_conditional_effect(fp::GroundConditionalEffectView element, fp::GeneralFDRContext& fdr_context, fp::MergeContext& context)
+static auto create_ground_conditional_effect(fp::GroundConditionalEffectView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
 {
     auto fdr_cond_eff_ptr = context.builder.get_builder<fp::GroundConditionalEffect>();
     auto& fdr_cond_eff = *fdr_cond_eff_ptr;
@@ -119,7 +119,7 @@ static auto create_ground_conditional_effect(fp::GroundConditionalEffectView ele
     return context.destination.get_or_create(fdr_cond_eff);
 }
 
-static auto create_ground_action(fp::GroundActionView element, fp::GeneralFDRContext& fdr_context, fp::MergeContext& context)
+static auto create_ground_action(fp::GroundActionView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
 {
     auto fdr_action_ptr = context.builder.get_builder<fp::GroundAction>();
     auto& fdr_action = *fdr_action_ptr;
@@ -135,7 +135,7 @@ static auto create_ground_action(fp::GroundActionView element, fp::GeneralFDRCon
     return context.destination.get_or_create(fdr_action);
 }
 
-static auto create_ground_axiom(fp::GroundAxiomView element, fp::GeneralFDRContext& fdr_context, fp::MergeContext& context)
+static auto create_ground_axiom(fp::GroundAxiomView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
 {
     auto fdr_axiom_ptr = context.builder.get_builder<fp::GroundAxiom>();
     auto& fdr_axiom = *fdr_axiom_ptr;
@@ -211,24 +211,24 @@ static auto create_fdr_task(const fp::PlanningTask& planning_task,
 
     /// --- Create FDR context
     auto mutex_groups = create_mutex_groups(fluent_atoms, merge_context);
-    auto fdr_context = fp::GeneralFDRContext(mutex_groups, *repository);
+    auto fdr_context = std::make_shared<fp::FDRContext>(mutex_groups, repository);
 
     /// --- Create FDR variables
-    for (const auto variable : fdr_context.get_variables())
+    for (const auto variable : fdr_context->get_variables())
         fdr_task.fluent_variables.push_back(variable.get_index());
 
     /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<f::FluentTag>())
-        fdr_task.fluent_facts.push_back(fdr_context.get_fact(merge_p2p(atom, merge_context).first.get_index()));
+        fdr_task.fluent_facts.push_back(fdr_context->get_fact(merge_p2p(atom, merge_context).first.get_index()));
 
     /// --- Create FDR goal
-    fdr_task.goal = create_ground_fdr_conjunctive_condition(task.get_goal(), fdr_context, merge_context).first.get_index();
+    fdr_task.goal = create_ground_fdr_conjunctive_condition(task.get_goal(), *fdr_context, merge_context).first.get_index();
 
     /// --- Create FDR actions and axioms
     for (const auto action : actions)
-        fdr_task.ground_actions.push_back(create_ground_action(action, fdr_context, merge_context).first.get_index());
+        fdr_task.ground_actions.push_back(create_ground_action(action, *fdr_context, merge_context).first.get_index());
     for (const auto axiom : axioms)
-        fdr_task.ground_axioms.push_back(create_ground_axiom(axiom, fdr_context, merge_context).first.get_index());
+        fdr_task.ground_axioms.push_back(create_ground_axiom(axiom, *fdr_context, merge_context).first.get_index());
 
     canonicalize(fdr_task);
 
@@ -327,7 +327,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
                                                       lifted_task.get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
                                                       fluent_assign,
                                                       iter_workspace,
-                                                      lifted_task.get_fdr_context())
+                                                      *lifted_task.get_fdr_context())
                                                .first;
 
                 assert(is_statically_applicable(ground_action, static_atoms_bitset));
@@ -381,7 +381,7 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task)
 
                 auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
 
-                const auto ground_axiom = fp::ground(axiom, grounder_context, lifted_task.get_fdr_context()).first;
+                const auto ground_axiom = fp::ground(axiom, grounder_context, *lifted_task.get_fdr_context()).first;
 
                 assert(is_statically_applicable(ground_axiom, static_atoms_bitset));
 

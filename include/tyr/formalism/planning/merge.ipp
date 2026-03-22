@@ -170,25 +170,6 @@ std::pair<GroundAtomView<T>, bool> merge_p2p(GroundAtomView<T> element, MergeCon
     return context.destination.get_or_create(atom);
 }
 
-TYR_INLINE_IMPL std::pair<FDRVariableView<FluentTag>, bool> merge_p2p(FDRVariableView<FluentTag> element, MergeContext& context)
-{
-    auto variable_ptr = context.builder.template get_builder<FDRVariable<FluentTag>>();
-    auto& variable = *variable_ptr;
-    variable.clear();
-
-    variable.domain_size = element.get_domain_size();
-    for (const auto atom : element.get_atoms())
-        variable.atoms.push_back(merge_p2p(atom, context).first.get_index());
-
-    canonicalize(variable);
-    return context.destination.get_or_create(variable);
-}
-
-TYR_INLINE_IMPL Data<FDRFact<FluentTag>> merge_p2p(FDRFactView<FluentTag> element, MergeContext& context)
-{
-    return Data<FDRFact<FluentTag>>(merge_p2p(element.get_variable(), context).first.get_index(), element.get_value());
-}
-
 template<FactKind T>
 std::pair<LiteralView<T>, bool> merge_p2p(LiteralView<T> element, MergeContext& context)
 {

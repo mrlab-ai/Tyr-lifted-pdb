@@ -61,14 +61,14 @@ std::pair<PredicateBindingView<T>, bool> ground(TermListView terms, PredicateVie
 template<FactKind T>
 std::pair<GroundAtomView<T>, bool> ground(AtomView<T> element, GrounderContext& context);
 
-Data<FDRFact<FluentTag>> ground(AtomView<FluentTag> element, GrounderContext& context, BinaryFDRContext& fdr);
+Data<FDRFact<FluentTag>> ground(AtomView<FluentTag> element, GrounderContext& context, FDRContext& fdr);
 
 template<FactKind T>
 std::pair<GroundLiteralView<T>, bool> ground(LiteralView<T> element, GrounderContext& context);
 
-Data<FDRFact<FluentTag>> ground(LiteralView<FluentTag> element, GrounderContext& context, BinaryFDRContext& fdr);
+Data<FDRFact<FluentTag>> ground(LiteralView<FluentTag> element, GrounderContext& context, FDRContext& fdr);
 
-std::pair<GroundConjunctiveConditionView, bool> ground(ConjunctiveConditionView element, GrounderContext& context, BinaryFDRContext& fdr);
+std::pair<GroundConjunctiveConditionView, bool> ground(ConjunctiveConditionView element, GrounderContext& context, FDRContext& fdr);
 
 template<NumericEffectOpKind Op, FactKind T>
 std::pair<GroundNumericEffectView<Op, T>, bool> ground(NumericEffectView<Op, T> element, GrounderContext& context);
@@ -77,10 +77,10 @@ template<FactKind T>
 Data<GroundNumericEffectOperator<T>> ground(NumericEffectOperatorView<T> element, GrounderContext& context);
 
 std::pair<GroundConjunctiveEffectView, bool>
-ground(ConjunctiveEffectView element, GrounderContext& context, UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign, BinaryFDRContext& fdr);
+ground(ConjunctiveEffectView element, GrounderContext& context, UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign, FDRContext& fdr);
 
 std::pair<GroundConditionalEffectView, bool>
-ground(ConditionalEffectView element, GrounderContext& context, UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign, BinaryFDRContext& fdr);
+ground(ConditionalEffectView element, GrounderContext& context, UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign, FDRContext& fdr);
 
 std::pair<ActionBindingView, bool> ground(ActionView action, GrounderContext& context);
 
@@ -89,9 +89,9 @@ std::pair<GroundActionView, bool> ground(ActionView element,
                                          const analysis::DomainListListList& cond_effect_domains,
                                          UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign,
                                          itertools::cartesian_set::Workspace<Index<formalism::Object>>& iter_workspace,
-                                         BinaryFDRContext& fdr);
+                                         FDRContext& fdr);
 
-std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, BinaryFDRContext& fdr);
+std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, FDRContext& fdr);
 
 }
 

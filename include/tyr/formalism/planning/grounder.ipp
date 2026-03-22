@@ -203,7 +203,7 @@ std::pair<GroundAtomView<T>, bool> ground(AtomView<T> element, GrounderContext& 
     return context.destination.get_or_create(atom);
 }
 
-TYR_INLINE_IMPL Data<FDRFact<FluentTag>> ground(AtomView<FluentTag> element, GrounderContext& context, BinaryFDRContext& fdr)
+TYR_INLINE_IMPL Data<FDRFact<FluentTag>> ground(AtomView<FluentTag> element, GrounderContext& context, FDRContext& fdr)
 {
     return fdr.get_fact(ground(element, context).first.get_index());
 }
@@ -225,7 +225,7 @@ std::pair<GroundLiteralView<T>, bool> ground(LiteralView<T> element, GrounderCon
     return context.destination.get_or_create(ground_literal);
 }
 
-TYR_INLINE_IMPL Data<FDRFact<FluentTag>> ground(LiteralView<FluentTag> element, GrounderContext& context, BinaryFDRContext& fdr)
+TYR_INLINE_IMPL Data<FDRFact<FluentTag>> ground(LiteralView<FluentTag> element, GrounderContext& context, FDRContext& fdr)
 {
     auto fact = ground(element.get_atom(), context, fdr);
     if (!element.get_polarity())
@@ -234,7 +234,7 @@ TYR_INLINE_IMPL Data<FDRFact<FluentTag>> ground(LiteralView<FluentTag> element, 
     return fact;
 }
 
-TYR_INLINE_IMPL std::pair<GroundConjunctiveConditionView, bool> ground(ConjunctiveConditionView element, GrounderContext& context, BinaryFDRContext& fdr)
+TYR_INLINE_IMPL std::pair<GroundConjunctiveConditionView, bool> ground(ConjunctiveConditionView element, GrounderContext& context, FDRContext& fdr)
 {
     // Fetch and clear
     auto conj_cond_ptr = context.builder.template get_builder<GroundConjunctiveCondition>();
@@ -280,7 +280,7 @@ Data<GroundNumericEffectOperator<T>> ground(NumericEffectOperatorView<T> element
 }
 
 TYR_INLINE_IMPL std::pair<GroundConjunctiveEffectView, bool>
-ground(ConjunctiveEffectView element, GrounderContext& context, UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign, BinaryFDRContext& fdr)
+ground(ConjunctiveEffectView element, GrounderContext& context, UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign, FDRContext& fdr)
 {
     // Fetch and clear
     auto conj_effect_ptr = context.builder.template get_builder<GroundConjunctiveEffect>();
@@ -319,7 +319,7 @@ ground(ConjunctiveEffectView element, GrounderContext& context, UnorderedMap<Ind
 }
 
 TYR_INLINE_IMPL std::pair<GroundConditionalEffectView, bool>
-ground(ConditionalEffectView element, GrounderContext& context, UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign, BinaryFDRContext& fdr)
+ground(ConditionalEffectView element, GrounderContext& context, UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign, FDRContext& fdr)
 {
     // Fetch and clear
     auto cond_effect_ptr = context.builder.template get_builder<GroundConditionalEffect>();
@@ -354,7 +354,7 @@ TYR_INLINE_IMPL std::pair<GroundActionView, bool> ground(ActionView element,
                                                          const analysis::DomainListListList& cond_effect_domains,
                                                          UnorderedMap<Index<FDRVariable<FluentTag>>, FDRValue>& assign,
                                                          itertools::cartesian_set::Workspace<Index<formalism::Object>>& iter_workspace,
-                                                         BinaryFDRContext& fdr)
+                                                         FDRContext& fdr)
 {
     // Fetch and clear
     auto action_ptr = context.builder.template get_builder<GroundAction>();
@@ -395,7 +395,7 @@ TYR_INLINE_IMPL std::pair<GroundActionView, bool> ground(ActionView element,
     return context.destination.get_or_create(action);
 }
 
-TYR_INLINE_IMPL std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, BinaryFDRContext& fdr)
+TYR_INLINE_IMPL std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, FDRContext& fdr)
 {
     // Fetch and clear
     auto axiom_ptr = context.builder.template get_builder<GroundAxiom>();

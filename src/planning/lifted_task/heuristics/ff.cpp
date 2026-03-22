@@ -139,7 +139,7 @@ void FFHeuristic<LiftedTask>::extract_relaxed_plan_and_preferred_actions(formali
                                                                m_task->get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
                                                                m_assign,
                                                                m_iter_workspace,
-                                                               m_task->get_fdr_context())
+                                                               *m_task->get_fdr_context())
                                        .first;
 
         const auto ground_action_index = ground_action.get_index();
