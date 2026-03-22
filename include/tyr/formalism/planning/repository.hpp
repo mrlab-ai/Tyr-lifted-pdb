@@ -39,6 +39,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace tyr::formalism::planning
 {
@@ -351,6 +352,7 @@ using NumericEffectListView = View<IndexList<NumericEffect<Op, T>>, Repository>;
 using ObjectView = View<Index<Object>, Repository>;
 
 using ObjectListView = View<IndexList<Object>, Repository>;
+using ObjectViewList = std::vector<View<Index<Object>, Repository>>;
 
 template<FactKind T>
 using PredicateView = View<Index<Predicate<T>>, Repository>;
@@ -365,6 +367,7 @@ using TaskListView = View<IndexList<Task>, Repository>;
 using TermView = View<Data<Term>, Repository>;
 
 using TermListView = View<DataList<Term>, Repository>;
+using TermViewList = std::vector<View<Data<Term>, Repository>>;
 
 template<OpKind Op, typename T>
 using UnaryOperatorView = View<Index<UnaryOperator<Op, T>>, Repository>;
