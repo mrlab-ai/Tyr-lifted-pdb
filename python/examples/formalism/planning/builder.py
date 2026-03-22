@@ -18,67 +18,32 @@ import argparse
 
 from pathlib import Path
 
-from pytyr.formalism.planning import RepositoryFactory, Repository, FDRContext, ObjectBuilder, FluentPredicateBuilder, FluentGroundAtomBuilder, GroundConjunctiveConditionBuilder, DomainBuilder, LiftedTaskBuilder
+from pytyr.formalism.planning import RepositoryFactory, Repository, FDRContext, ObjectBuilder, FluentPredicateBuilder, FluentGroundAtomBuilder, FluentPredicateBindingBuilder, GroundConjunctiveConditionBuilder, DomainBuilder, LiftedTaskBuilder
 
 
 def main():
     factory = RepositoryFactory()
     repository = factory.create_repository()  # We can also create object directly into the repository of a task.
 
-    ground_atom_builder = FluentGroundAtomBuilder()
-    
-    # 1. Re-create existing atom (at ball1 rooma)
     ball1, inserted = repository.get_or_create(ObjectBuilder("ball1"))
     assert inserted
     rooma, inserted = repository.get_or_create(ObjectBuilder("rooma"))
+    assert inserted 
+    roomb, inserted = repository.get_or_create(ObjectBuilder("roomb"))
     assert inserted 
 
     at, inserted = repository.get_or_create(FluentPredicateBuilder("at", 2))
     assert inserted
 
-    row, inserted = repository.get_or_create(at, [ball1.get_index(), rooma.get_index()])
+    at_ball1_rooma_binding, inserted = repository.get_or_create(FluentPredicateBindingBuilder(at, [ball1, rooma]))
+    assert inserted
+    at_ball1_rooma, inserted = repository.get_or_create(FluentGroundAtomBuilder(at_ball1_rooma_binding))
     assert inserted
 
-    ground_atom_builder.predicate = row.get_index().relation_index
-    ground_atom_builder.row = row.get_index().row_index
-    at_ball1_rooma, inserted = repository.get_or_create(ground_atom_builder)
-    assert inserted
-
-    # 2. Create non existing atom (at ball1 roomb)
-    roomb, inserted = repository.get_or_create(ObjectBuilder("roomb"))
+    at_ball1_roomb_binding, inserted = repository.get_or_create(FluentPredicateBindingBuilder(at, [ball1, roomb]))
     assert inserted 
-
-    row, inserted = repository.get_or_create(at, [ball1.get_index(), roomb.get_index()])
-    assert inserted 
-
-    ground_atom_builder.predicate = row.get_index().relation_index 
-    ground_atom_builder.row = row.get_index().row_index
-    at_ball1_roomb, inserted = repository.get_or_create(ground_atom_builder)
+    at_ball1_roomb, inserted = repository.get_or_create(FluentGroundAtomBuilder(at_ball1_roomb_binding))
     assert inserted
-
-    # 3. Map atom to FDRFact to be passed into state repository for state creations
-    fdr_context = FDRContext(repository)
-    fact = fdr_context.get_fact(at_ball1_roomb)
-
-    domain_builder = DomainBuilder()
-    domain_builder.fluent_predicates.append(at.get_index())
-
-    domain, inserted = repository.get_or_create(domain_builder)
-
-    print(domain)
-
-    goal_builder = GroundConjunctiveConditionBuilder()
-    goal, inserted = repository.get_or_create(goal_builder)
-
-    task_builder = LiftedTaskBuilder()
-    task_builder.domain = domain.get_index()
-    task_builder.goal = goal.get_index()
-    task_builder.fluent_atoms.append(at_ball1_rooma.get_index())
-    task_builder.fluent_atoms.append(at_ball1_roomb.get_index())
-
-    task, inserted = repository.get_or_create(task_builder)
-
-    print(task)
 
 
 if __name__ == "__main__":
