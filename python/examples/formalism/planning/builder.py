@@ -35,7 +35,12 @@ from pytyr.formalism.planning import (
     FluentFDRVariableBuilder,
     FluentFDRFactBuilder,
     LiftedTaskBuilder,
+    FDRContext,
 )
+
+
+def create(repository, builder):
+    return repository.create(builder)
 
 
 def get(repository, builder):
@@ -111,12 +116,12 @@ def main():
     v_gripper = get(domain_repository, VariableBuilder("?gripper"))
 
     # Terms
-    t_from = TermBuilder(ParameterIndex(0))
-    t_to = TermBuilder(ParameterIndex(1))
+    t_from = create(domain_repository, TermBuilder(ParameterIndex(0)))
+    t_to = create(domain_repository, TermBuilder(ParameterIndex(1)))
 
-    t_obj = TermBuilder(ParameterIndex(0))
-    t_room = TermBuilder(ParameterIndex(1))
-    t_gripper = TermBuilder(ParameterIndex(2))
+    t_obj = create(domain_repository, TermBuilder(ParameterIndex(0)))
+    t_room = create(domain_repository, TermBuilder(ParameterIndex(1)))
+    t_gripper = create(domain_repository, TermBuilder(ParameterIndex(2)))
 
     # --------------------------------------------------------------------------
     # move action
@@ -342,7 +347,6 @@ def main():
         ),
     )
 
-    print("DOMAIN")
     print(domain)
     print()
 
@@ -351,6 +355,8 @@ def main():
     # --------------------------------------------------------------------------
 
     task_repository = factory.create_repository(domain_repository)
+
+    fdr_context = FDRContext(task_repository)
 
     left = get(task_repository, ObjectBuilder("left"))
     right = get(task_repository, ObjectBuilder("right"))
@@ -386,15 +392,7 @@ def main():
     at_ball1_rooma = make_fluent_ground_atom(task_repository, at, [ball1, rooma])
     at_ball1_roomb = make_fluent_ground_atom(task_repository, at, [ball1, roomb])
 
-    at_ball1_var = get(
-        task_repository,
-        FluentFDRVariableBuilder([at_ball1_rooma, at_ball1_roomb]),
-    )
-
-    goal_at_ball1_roomb = get(
-        task_repository,
-        FluentFDRFactBuilder(at_ball1_var, 1),
-    )
+    goal_at_ball1_roomb= fdr_context.get_fact(at_ball1_roomb)
 
     goal = get(
         task_repository,
@@ -424,7 +422,6 @@ def main():
         ),
     )
 
-    print("TASK")
     print(task)
 
 

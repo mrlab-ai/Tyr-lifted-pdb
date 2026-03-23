@@ -95,6 +95,50 @@ void bind_module_definitions(nb::module_& m)
      */
 
     nb::class_<Repository>(m, "Repository")  //
+        .def(
+            "create",
+            [](Repository& self, const Data<Term>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<FunctionExpression>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<GroundFunctionExpression>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<BooleanOperator<Data<FunctionExpression>>>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<BooleanOperator<Data<GroundFunctionExpression>>>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<ArithmeticOperator<Data<FunctionExpression>>>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<ArithmeticOperator<Data<GroundFunctionExpression>>>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<NumericEffectOperator<FluentTag>>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<NumericEffectOperator<AuxiliaryTag>>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<GroundNumericEffectOperator<FluentTag>>& builder) { return make_view(builder, self); },
+            "builder"_a)
+        .def(
+            "create",
+            [](Repository& self, const Data<GroundNumericEffectOperator<AuxiliaryTag>>& builder) { return make_view(builder, self); },
+            "builder"_a)
         .def("get_or_create", nb::overload_cast<Data<Object>&>(&Repository::get_or_create<Object>), "builder"_a)
         .def("get_or_create", nb::overload_cast<Data<Variable>&>(&Repository::get_or_create<Variable>), "builder"_a)
         .def("get_or_create",
