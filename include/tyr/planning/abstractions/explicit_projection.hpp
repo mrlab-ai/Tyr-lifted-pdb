@@ -23,7 +23,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/graphs/concepts.hpp"
-#include "tyr/planning/state.hpp"
+#include "tyr/planning/state_view.hpp"
 
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -48,7 +48,7 @@ class ProjectionAbstraction
 {
 private:
     // TODO: get rid of states.
-    std::vector<State<Task>> m_vertices;
+    std::vector<StateView<Task>> m_vertices;
     TransitionList m_transitions;
     std::vector<std::vector<uint_t>> m_adj_lists;
     std::vector<uint_t> m_goal_vertices;
@@ -56,7 +56,7 @@ private:
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
-    ProjectionAbstraction(std::vector<State<Task>> vertices,
+    ProjectionAbstraction(std::vector<StateView<Task>> vertices,
                           TransitionList transitions,
                           std::vector<std::vector<uint_t>> adj_lists,
                           std::vector<uint_t> goal_vertices) :

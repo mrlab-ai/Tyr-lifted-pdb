@@ -19,7 +19,6 @@
 #define TYR_PLANNING_ABSTRACTIONS_PROJECTION_GENERATOR_HPP_
 
 #include "tyr/common/declarations.hpp"
-#include "tyr/planning/state.hpp"
 
 namespace tyr::planning
 {
