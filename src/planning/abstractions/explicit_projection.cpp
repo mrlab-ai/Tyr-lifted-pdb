@@ -19,8 +19,8 @@
 
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/planning/ground_task/state.hpp"
-#include "tyr/planning/lifted_task/state.hpp"
+#include "tyr/planning/ground_task/state_view.hpp"
+#include "tyr/planning/lifted_task/state_view.hpp"
 
 namespace tyr::planning
 {
