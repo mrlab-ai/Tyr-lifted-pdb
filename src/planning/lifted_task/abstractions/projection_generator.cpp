@@ -19,6 +19,7 @@
 
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/itertools.hpp"
+#include "tyr/common/onetbb.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -37,7 +38,7 @@
 #include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/lifted_task/node.hpp"
-#include "tyr/planning/lifted_task/state.hpp"
+#include "tyr/planning/lifted_task/state_view.hpp"
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
@@ -92,7 +93,7 @@ static auto create_projected_goal(fp::GroundConjunctiveConditionView element, co
         append_projected_fact(fact, pattern, conj_cond.fluent_facts, context);
 
     canonicalize(conj_cond);
-    return context.destination.get_or_create(conj_cond, context.builder.get_buffer());
+    return context.destination.get_or_create(conj_cond);
 }
 
 static auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element, fp::MergeContext& context, const Pattern& pattern)
@@ -109,7 +110,7 @@ static auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView 
         append_projected_literal(literal, pattern, conj_cond.fluent_literals, context);
 
     canonicalize(conj_cond);
-    return context.destination.get_or_create(conj_cond, context.builder.get_buffer());
+    return context.destination.get_or_create(conj_cond);
 }
 
 static auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element, fp::MergeContext& context, const Pattern& pattern)
@@ -122,7 +123,7 @@ static auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView elemen
         append_projected_literal(literal, pattern, conj_eff.literals, context);
 
     canonicalize(conj_eff);
-    return context.destination.get_or_create(conj_eff, context.builder.get_buffer());
+    return context.destination.get_or_create(conj_eff);
 }
 
 static void append_projected_conditional_effect(fp::ConditionalEffectView element,
@@ -140,7 +141,7 @@ static void append_projected_conditional_effect(fp::ConditionalEffectView elemen
     cond_effect.effect = create_projected_conjunctive_effect(element.get_effect(), context, pattern).first.get_index();
 
     canonicalize(cond_effect);
-    ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect, context.builder.get_buffer()).first.get_index());
+    ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect).first.get_index());
 }
 
 static void append_projected_action(fp::ActionView element, fp::MergeContext& context, IndexList<fp::Action>& ref_projected_actions, const Pattern& pattern)
@@ -158,7 +159,7 @@ static void append_projected_action(fp::ActionView element, fp::MergeContext& co
         append_projected_conditional_effect(effect, context, action.effects, pattern);
 
     canonicalize(action);
-    ref_projected_actions.push_back(context.destination.get_or_create(action, context.builder.get_buffer()).first.get_index());
+    ref_projected_actions.push_back(context.destination.get_or_create(action).first.get_index());
 }
 
 static auto
@@ -180,7 +181,7 @@ create_projected_formalism_domain(fp::DomainView element, std::shared_ptr<fp::Re
         append_projected_action(action, context, domain.actions, pattern);
 
     canonicalize(domain);
-    return fp::PlanningDomain(context.destination.get_or_create(domain, context.builder.get_buffer()).first, std::move(destination));
+    return fp::PlanningDomain(context.destination.get_or_create(domain).first, std::move(destination));
 }
 
 static auto create_projected_formalism_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
@@ -190,7 +191,7 @@ static auto create_projected_formalism_task(const fp::PlanningTask& planning_tas
                                          planning_task.get_repository().get());
     auto builder = fp::Builder();
     // Note: we have to copy the FDRContext to avoid polluting the parent tasks FDRContext with non-existing atoms.
-    auto fdr_context = fp::BinaryFDRContext(planning_task.get_fdr_context(), builder, *destination);
+    auto fdr_context = std::make_shared<fp::FDRContext>(planning_task.get_fdr_context(), builder, *destination);
     auto context = fp::MergeContext(builder, *destination);
 
     const auto project_domain = create_projected_formalism_domain(planning_task.get_domain().get_domain(), destination, context, pattern);
@@ -217,12 +218,12 @@ static auto create_projected_formalism_task(const fp::PlanningTask& planning_tas
     task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context).first.get_index();
 
     canonicalize(task);
-    return fp::PlanningTask(destination->get_or_create(task, builder.get_buffer()).first, std::move(fdr_context), destination, project_domain);
+    return fp::PlanningTask(destination->get_or_create(task).first, std::move(fdr_context), destination, project_domain);
 }
 
 ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
 
-static auto project_state(const State<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
+static auto project_state(const StateView<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
 {
     auto uastate = state_repository.get_unregistered_state();
     for (const auto& fact : element.get_fluent_facts_view())
@@ -253,11 +254,12 @@ void ProjectionGenerator<LiftedTask>::generate()
             std::cout << vdg << std::endl;
         }
 
-        auto successor_generator = SuccessorGenerator<LiftedTask>(projected_task);
+        auto execution_context = ExecutionContext::create(1);
+        auto successor_generator = SuccessorGenerator<LiftedTask>(projected_task, execution_context);
         auto& state_repository = successor_generator.get_state_repository();
         auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
         auto facts_vec = std::vector<fp::FDRFactView<f::FluentTag>>(pattern.facts.begin(), pattern.facts.end());
-        auto astates = std::vector<State<LiftedTask>> {};
+        auto astates = std::vector<StateView<LiftedTask>> {};
 
         {
             itertools::for_each_boolean_vector(
