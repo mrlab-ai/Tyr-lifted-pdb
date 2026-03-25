@@ -123,6 +123,9 @@ should not be used further.
 
     bind_pattern_generator<LiftedTask>(m, "PatternGenerator");
     bind_goal_pattern_generator<LiftedTask>(m, "GoalPatternGenerator");
+    bind_projection_abstraction<LiftedTask>(m, "ProjectionAbstraction");
+    bind_vector<ProjectionAbstractionList<LiftedTask>>(m, "ProjectionAbstractionList");
+    bind_projection_generator<LiftedTask>(m, "ProjectionGenerator");
 }
 
 namespace astar_eager

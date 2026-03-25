@@ -332,23 +332,29 @@ auto create_projection(const Pattern& pattern, const std::shared_ptr<LiftedTask>
     auto [astates, goal_vertices] = create_abstract_states(pattern, *task, *state_repository);
     auto [transitions, adj_lists] = create_abstract_transitions(astates, pattern, *task, successor_generator);
 
-    return ProjectionAbstraction(ForwardProjectionAbstraction<LiftedTask>(ProjectionMapping<LiftedTask>(pattern),
-                                                                          std::move(astates),
-                                                                          std::move(transitions),
-                                                                          std::move(adj_lists),
-                                                                          std::move(goal_vertices)));
+    return ProjectionAbstraction(std::make_shared<const ForwardProjectionAbstraction<LiftedTask>>(ProjectionMapping<LiftedTask>(pattern),
+                                                                                                  std::move(astates),
+                                                                                                  std::move(transitions),
+                                                                                                  std::move(adj_lists),
+                                                                                                  std::move(goal_vertices)));
 }
 }
 
-ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
-
-void ProjectionGenerator<LiftedTask>::generate()
+ProjectionGenerator<LiftedTask>::ProjectionGenerator(std::shared_ptr<const LiftedTask> task, const PatternCollection& patterns) :
+    m_task(task),
+    m_patterns(patterns)
 {
+}
+
+ProjectionAbstractionList<LiftedTask> ProjectionGenerator<LiftedTask>::generate()
+{
+    auto projections = ProjectionAbstractionList<LiftedTask> {};
+
     for (const auto& pattern : m_patterns)
     {
         // Step 1: Create the projected task
 
-        auto projected_task = LiftedTask::create(create_projected_formalism_task(m_task.get_formalism_task(), pattern));
+        auto projected_task = LiftedTask::create(create_projected_formalism_task(m_task->get_formalism_task(), pattern));
 
         std::cout << projected_task->get_domain().get_domain() << std::endl;
         std::cout << projected_task->get_task() << std::endl;
@@ -375,6 +381,10 @@ void ProjectionGenerator<LiftedTask>::generate()
         std::cout << "distances: " << std::endl;
         print(std::cout, distances);
         std::cout << std::endl;
+
+        projections.push_back(std::move(projection));
     }
+
+    return projections;
 }
 }

@@ -362,7 +362,25 @@ void bind_goal_pattern_generator(nb::module_& m, const std::string& name)
     using T = GoalPatternGenerator<Task>;
 
     nb::class_<T, PatternGenerator<Task>>(m, name.c_str())  //
-        .def(nb::new_([](std::shared_ptr<Task> task) { return T::create(std::move(task)); }), "task"_a);
+        .def(nb::new_([](std::shared_ptr<const Task> task) { return T::create(std::move(task)); }), "task"_a);
+}
+
+template<typename Task>
+void bind_projection_abstraction(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionAbstraction<Task>;
+
+    nb::class_<T>(m, name.c_str());
+}
+
+template<typename Task>
+void bind_projection_generator(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionGenerator<Task>;
+
+    nb::class_<T>(m, name.c_str())  //
+        .def(nb::init<std::shared_ptr<const Task>, const PatternCollection&>(), "task"_a, "patterns"_a)
+        .def("generate", &T::generate);
 }
 
 namespace astar_eager
