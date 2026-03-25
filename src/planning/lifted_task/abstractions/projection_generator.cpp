@@ -29,7 +29,6 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/variable_dependency_graph.hpp"
 #include "tyr/formalism/planning/views.hpp"
-#include "tyr/graphs/bgl_algorithms.hpp"
 #include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
@@ -349,42 +348,12 @@ ProjectionGenerator<LiftedTask>::ProjectionGenerator(std::shared_ptr<const Lifte
 ProjectionAbstractionList<LiftedTask> ProjectionGenerator<LiftedTask>::generate()
 {
     auto projections = ProjectionAbstractionList<LiftedTask> {};
-
     for (const auto& pattern : m_patterns)
     {
-        // Step 1: Create the projected task
+        const auto projected_task = LiftedTask::create(create_projected_formalism_task(m_task->get_formalism_task(), pattern));
 
-        auto projected_task = LiftedTask::create(create_projected_formalism_task(m_task->get_formalism_task(), pattern));
-
-        std::cout << projected_task->get_domain().get_domain() << std::endl;
-        std::cout << projected_task->get_task() << std::endl;
-
-        auto projection = create_projection(pattern, projected_task);
-
-        auto weights = std::vector<float_t>(projection.get_forward().num_edges(), float_t { 1 });
-
-        std::cout << projection << std::endl;
-
-        const auto [predecessors, distances] = graphs::dijkstra_shortest_paths(projection.get_backward(),
-                                                                               weights,
-                                                                               projection.get_backward().goal_vertices().begin(),
-                                                                               projection.get_backward().goal_vertices().end());
-
-        std::cout << "goal_vertices: " << std::endl;
-        print(std::cout, projection.get_backward().goal_vertices());
-        std::cout << std::endl;
-
-        std::cout << "predecessors: " << std::endl;
-        print(std::cout, predecessors);
-        std::cout << std::endl;
-
-        std::cout << "distances: " << std::endl;
-        print(std::cout, distances);
-        std::cout << std::endl;
-
-        projections.push_back(std::move(projection));
+        projections.push_back(create_projection(pattern, projected_task));
     }
-
     return projections;
 }
 }

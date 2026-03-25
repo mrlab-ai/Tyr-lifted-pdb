@@ -2,6 +2,8 @@
 
 from pytyr.pytyr.planning import (
     SearchStatus,
+    Statistics,
+    Pattern,
 )
 
 from . import (
