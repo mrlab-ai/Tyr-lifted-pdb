@@ -89,7 +89,10 @@ public:
     explicit BackwardProjectionAbstraction(const ProjectionAbstraction<Task>& g) : m_g(g), m_adj_lists(g.num_vertices())
     {
         for (uint_t t = 0; t < g.num_edges(); ++t)
+        {
+            std::cout << g.transitions()[t].dst << " " << g.transitions()[t].src << std::endl;
             m_adj_lists[g.transitions()[t].dst].push_back(t);
+        }
     }
 
     auto num_vertices() const noexcept { return m_g.num_vertices(); }

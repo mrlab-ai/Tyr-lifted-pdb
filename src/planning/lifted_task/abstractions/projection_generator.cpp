@@ -48,47 +48,48 @@ namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
-
+namespace
+{
 template<f::FactKind T>
-static void
-append_projected_atom(fp::GroundAtomView<T> element, const Pattern& pattern, IndexList<fp::GroundAtom<T>>& ref_projected_atoms, fp::MergeContext& context)
+void append_projected_atom(fp::GroundAtomView<T> element, const Pattern& pattern, IndexList<fp::GroundAtom<T>>& ref_projected_atoms, fp::MergeContext& context)
 {
     if (pattern.predicates.contains(element.get_predicate()))
         ref_projected_atoms.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
-static void append_projected_literal(fp::GroundLiteralView<T> element,
-                                     const Pattern& pattern,
-                                     IndexList<fp::GroundLiteral<T>>& ref_projected_literal,
-                                     fp::MergeContext& context)
+void append_projected_literal(fp::GroundLiteralView<T> element,
+                              const Pattern& pattern,
+                              IndexList<fp::GroundLiteral<T>>& ref_projected_literal,
+                              fp::MergeContext& context)
 {
     if (pattern.predicates.contains(element.get_atom().get_predicate()))
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
-static void
-append_projected_literal(fp::LiteralView<T> element, const Pattern& pattern, IndexList<fp::Literal<T>>& ref_projected_literal, fp::MergeContext& context)
+void append_projected_literal(fp::LiteralView<T> element, const Pattern& pattern, IndexList<fp::Literal<T>>& ref_projected_literal, fp::MergeContext& context)
 {
     if (pattern.predicates.contains(element.get_atom().get_predicate()))
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
-static void append_projected_fact(fp::FDRFactView<T> element,
-                                  const Pattern& pattern,
-                                  DataList<fp::FDRFact<T>>& ref_projected_facts,
-                                  fp::MergeContext& context,
-                                  fp::FDRContext& fdr_context)
+void append_projected_fact(fp::FDRFactView<T> element,
+                           const Pattern& pattern,
+                           DataList<fp::FDRFact<T>>& ref_projected_facts,
+                           fp::MergeContext& context,
+                           fp::FDRContext& fdr_context)
 {
     if (pattern.facts.contains(element))
     {
-        ref_projected_facts.push_back(fdr_context.get_fact(fp::merge_p2p(*element.get_atom(), context).first));
+        const auto [atom, inserted] = fp::merge_p2p(*element.get_atom(), context);
+        assert(!inserted);
+        ref_projected_facts.push_back(fdr_context.get_fact(atom));
     }
 }
 
-static auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pattern& pattern, fp::MergeContext& context, fp::FDRContext& fdr_context)
+auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pattern& pattern, fp::MergeContext& context, fp::FDRContext& fdr_context)
 {
     auto conj_cond_ptr = context.builder.template get_builder<fp::GroundConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -103,7 +104,7 @@ static auto create_projected_goal(fp::GroundConjunctiveConditionView element, co
     return context.destination.get_or_create(conj_cond);
 }
 
-static auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element, fp::MergeContext& context, const Pattern& pattern)
+auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element, fp::MergeContext& context, const Pattern& pattern)
 {
     auto conj_cond_ptr = context.builder.template get_builder<fp::ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -120,7 +121,7 @@ static auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView 
     return context.destination.get_or_create(conj_cond);
 }
 
-static auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element, fp::MergeContext& context, const Pattern& pattern)
+auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element, fp::MergeContext& context, const Pattern& pattern)
 {
     auto conj_effect_ptr = context.builder.template get_builder<fp::ConjunctiveEffect>();
     auto& conj_eff = *conj_effect_ptr;
@@ -133,10 +134,10 @@ static auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView elemen
     return context.destination.get_or_create(conj_eff);
 }
 
-static void append_projected_conditional_effect(fp::ConditionalEffectView element,
-                                                fp::MergeContext& context,
-                                                IndexList<fp::ConditionalEffect>& ref_projected_cond_effect,
-                                                const Pattern& pattern)
+void append_projected_conditional_effect(fp::ConditionalEffectView element,
+                                         fp::MergeContext& context,
+                                         IndexList<fp::ConditionalEffect>& ref_projected_cond_effect,
+                                         const Pattern& pattern)
 {
     auto cond_effect_ptr = context.builder.template get_builder<fp::ConditionalEffect>();
     auto& cond_effect = *cond_effect_ptr;
@@ -151,7 +152,7 @@ static void append_projected_conditional_effect(fp::ConditionalEffectView elemen
     ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect).first.get_index());
 }
 
-static void append_projected_action(fp::ActionView element, fp::MergeContext& context, IndexList<fp::Action>& ref_projected_actions, const Pattern& pattern)
+void append_projected_action(fp::ActionView element, fp::MergeContext& context, IndexList<fp::Action>& ref_projected_actions, const Pattern& pattern)
 {
     auto action_ptr = context.builder.template get_builder<fp::Action>();
     auto& action = *action_ptr;
@@ -169,11 +170,11 @@ static void append_projected_action(fp::ActionView element, fp::MergeContext& co
     ref_projected_actions.push_back(context.destination.get_or_create(action).first.get_index());
 }
 
-static auto create_projected_formalism_domain(fp::DomainView element,
-                                              std::shared_ptr<fp::Repository> destination,
-                                              fp::MergeContext& context,
-                                              fp::RepositoryFactoryPtr factory,
-                                              const Pattern& pattern)
+auto create_projected_formalism_domain(fp::DomainView element,
+                                       std::shared_ptr<fp::Repository> destination,
+                                       fp::MergeContext& context,
+                                       fp::RepositoryFactoryPtr factory,
+                                       const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
     auto& domain = *domain_ptr;
@@ -186,7 +187,6 @@ static auto create_projected_formalism_domain(fp::DomainView element,
         domain.fluent_predicates.push_back(fp::merge_p2p(predicate, context).first.get_index());
     for (const auto object : element.get_constants())
         domain.constants.push_back(fp::merge_p2p(object, context).first.get_index());
-
     for (const auto action : element.get_actions())
         append_projected_action(action, context, domain.actions, pattern);
 
@@ -194,9 +194,18 @@ static auto create_projected_formalism_domain(fp::DomainView element,
     return fp::PlanningDomain(context.destination.get_or_create(domain).first, std::move(destination), std::move(factory));
 }
 
-static auto create_projected_formalism_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
+/// @brief Project the task to the given pattern.
+/// An atom is projected away iff the pattern does not mention the predicate
+/// A (ground) fact is projected away iff the pattern deos not contain it.
+///
+/// The FDR mappings may diverge
+/// @param planning_task
+/// @param pattern
+/// @return
+auto create_projected_formalism_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
 {
     const auto& factory = planning_task.get_domain().get_repository_factory();
+
     auto destination = factory->create_shared(planning_task.get_repository().get());
     auto builder = fp::Builder();
     // Note: we have to copy the FDRContext to avoid polluting the parent tasks FDRContext with non-existing atoms.
@@ -211,40 +220,143 @@ static auto create_projected_formalism_task(const fp::PlanningTask& planning_tas
 
     task.name = planning_task.get_task().get_name();
     task.domain = project_domain.get_domain().get_index();
-
     for (const auto predicate : planning_task.get_task().get_derived_predicates())
         task.derived_predicates.push_back(fp::merge_p2p(predicate, context).first.get_index());
-
     for (const auto object : planning_task.get_task().get_objects())
         task.objects.push_back(fp::merge_p2p(object, context).first.get_index());
-
     for (const auto atom : planning_task.get_task().get_atoms<f::StaticTag>())
         task.static_atoms.push_back(fp::merge_p2p(atom, context).first.get_index());  // always useful to have
-
     for (const auto atom : planning_task.get_task().get_atoms<f::FluentTag>())
         append_projected_atom(atom, pattern, task.fluent_atoms, context);
-
     task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context, *fdr_context).first.get_index();
+
+    std::cout << planning_task.get_fdr_context()->get_variables() << std::endl;
+    std::cout << fdr_context->get_variables() << std::endl;
 
     canonicalize(task);
     return fp::PlanningTask(destination->get_or_create(task).first, std::move(fdr_context), destination, project_domain);
 }
 
-ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
-
-static auto project_state(const StateView<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
+/// @brief Project a state into the projection.
+auto project_state(const StateView<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
 {
+    std::cout << "Pattern: " << pattern.facts << std::endl;
+    // std::cout << "Project state: " << element << std::endl;
+
+    for (const auto fact : pattern.facts)
+    {
+        std::cout << fact << " " << fact.get_data() << " " << fact.get_context().get_index() << std::endl;
+    }
+
     auto uastate = state_repository.get_unregistered_state();
     for (const auto& fact : element.get_fluent_facts_view())
     {
         if (!pattern.facts.contains(fact))
+        {
+            std::cout << "Not contained: " << fact << " " << fact.get_data() << " " << fact.get_context().get_index() << std::endl;
             continue;
+        }
+        else
+        {
+            std::cout << "Contained: " << fact << " " << fact.get_data() << " " << fact.get_context().get_index() << std::endl;
+        }
 
         uastate->set(fact.get_data());
     }
 
     return state_repository.register_state(uastate);
 }
+
+/// @brief Create all 2^|pattern| abstract states.
+/// This ignores reachability but suffices for domains without unsolvable states.
+auto create_abstract_states(const Pattern& pattern, LiftedTask& task, StateRepository<LiftedTask>& state_repository)
+{
+    auto facts = std::vector<fp::FDRFactView<f::FluentTag>>(pattern.facts.begin(), pattern.facts.end());
+    auto astates = std::vector<StateView<LiftedTask>> {};
+    auto goal_vertices = std::vector<uint_t> {};
+
+    {
+        itertools::for_each_boolean_vector(
+            [&](auto&& vec)
+            {
+                auto uastate = state_repository.get_unregistered_state();
+                uastate->clear();
+
+                for (uint_t i = 0; i < vec.size(); ++i)
+                    if (vec[i])
+                        uastate->set(facts[i].get_data());
+
+                const auto astate = state_repository.register_state(uastate);
+
+                const auto state_context = StateContext { task, astate.get_unpacked_state(), float_t { 0 } };
+                const auto is_goal = is_dynamically_applicable(task.get_task().get_goal(), state_context);
+
+                if (is_goal)
+                    goal_vertices.push_back(uint_t(astate.get_index()));
+
+                astates.push_back(astate);
+            },
+            pattern.size());
+    }
+
+    return std::make_pair(std::move(astates), std::move(goal_vertices));
+}
+
+auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astates,
+                                 const Pattern& pattern,
+                                 LiftedTask& task,
+                                 SuccessorGenerator<LiftedTask>& successor_generator)
+{
+    auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
+
+    auto transitions = TransitionList {};
+    auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
+
+    auto& state_repository = *successor_generator.get_state_repository();
+
+    for (const auto& astate : astates)
+    {
+        auto& adj_row = adj_lists[uint_t(astate.get_index())];
+
+        auto anode = Node<LiftedTask>(astate, float_t { 0 });
+
+        successor_generator.get_labeled_successor_nodes(anode, labeled_succ_nodes);
+
+        for (const auto& labeled_succ_node : labeled_succ_nodes)
+        {
+            auto pastate = project_state(labeled_succ_node.node.get_state(), pattern, state_repository);
+
+            assert(uint_t(pastate.get_index()) < astates.size());
+
+            const auto t = transitions.size();
+            const auto src = uint_t(astate.get_index());
+            const auto dst = uint_t(pastate.get_index());
+
+            std::cout << src << " -> " << dst << std::endl;
+
+            transitions.emplace_back(labeled_succ_node.label, src, dst);
+
+            adj_row.push_back(t);
+        }
+    }
+
+    return std::make_pair(transitions, adj_lists);
+}
+
+auto create_projection(const Pattern& pattern, const std::shared_ptr<LiftedTask>& task)
+{
+    auto execution_context = ExecutionContext::create(1);
+    auto successor_generator = SuccessorGenerator<LiftedTask>(task, execution_context);
+    auto& state_repository = successor_generator.get_state_repository();
+
+    auto [astates, goal_vertices] = create_abstract_states(pattern, *task, *state_repository);
+    auto [transitions, adj_lists] = create_abstract_transitions(astates, pattern, *task, successor_generator);
+
+    return ProjectionAbstraction<LiftedTask>(std::move(astates), std::move(transitions), std::move(adj_lists), std::move(goal_vertices));
+}
+}
+
+ProjectionGenerator<LiftedTask>::ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns) : m_task(task), m_patterns(patterns) {}
 
 void ProjectionGenerator<LiftedTask>::generate()
 {
@@ -257,71 +369,7 @@ void ProjectionGenerator<LiftedTask>::generate()
         std::cout << projected_task->get_domain().get_domain() << std::endl;
         std::cout << projected_task->get_task() << std::endl;
 
-        for (const auto action : projected_task->get_domain().get_domain().get_actions())
-        {
-            auto vdg = fp::VariableDependencyGraph(action);
-            std::cout << vdg << std::endl;
-        }
-
-        auto execution_context = ExecutionContext::create(1);
-        auto successor_generator = SuccessorGenerator<LiftedTask>(projected_task, execution_context);
-        auto& state_repository = successor_generator.get_state_repository();
-        auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
-        auto facts_vec = std::vector<fp::FDRFactView<f::FluentTag>>(pattern.facts.begin(), pattern.facts.end());
-        auto astates = std::vector<StateView<LiftedTask>> {};
-
-        {
-            itertools::for_each_boolean_vector(
-                [&](auto&& vec)
-                {
-                    auto uastate = state_repository->get_unregistered_state();
-                    uastate->clear();
-
-                    for (uint_t i = 0; i < vec.size(); ++i)
-                        if (vec[i])
-                            uastate->set(facts_vec[i].get_data());
-
-                    astates.push_back(state_repository->register_state(uastate));
-                },
-                pattern.size());
-        }
-
-        auto transitions = TransitionList {};
-        auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
-        auto goal_vertices = std::vector<uint_t> {};
-
-        {
-            for (const auto& astate : astates)
-            {
-                auto& adj_row = adj_lists[uint_t(astate.get_index())];
-
-                auto anode = Node<LiftedTask>(astate, float_t { 0 });
-
-                const auto state_context = StateContext { m_task, astate.get_unpacked_state(), float_t { 0 } };
-                const auto is_goal = is_dynamically_applicable(projected_task->get_task().get_goal(), state_context);
-
-                if (is_goal)
-                    goal_vertices.push_back(uint_t(astate.get_index()));
-
-                successor_generator.get_labeled_successor_nodes(anode, labeled_succ_nodes);
-
-                for (const auto& labeled_succ_node : labeled_succ_nodes)
-                {
-                    auto pastate = project_state(labeled_succ_node.node.get_state(), pattern, *state_repository);
-
-                    std::cout << pastate << std::endl;
-
-                    assert(uint_t(pastate.get_index()) < astates.size());
-
-                    const auto t = transitions.size();
-                    transitions.emplace_back(labeled_succ_node.label, uint_t(astate.get_index()), uint_t(pastate.get_index()));
-
-                    adj_row.push_back(t);
-                }
-            }
-        }
-
-        auto projection = ProjectionAbstraction<LiftedTask>(std::move(astates), std::move(transitions), std::move(adj_lists), std::move(goal_vertices));
+        auto projection = create_projection(pattern, projected_task);
 
         auto weights = std::vector<float_t>(projection.num_edges(), float_t { 1 });
 
