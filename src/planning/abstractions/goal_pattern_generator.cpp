@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/planning/lifted_task/abstractions/pattern_generator.hpp"
+#include "tyr/planning/abstractions/goal_pattern_generator.hpp"
 
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/equal_to.hpp"
@@ -25,21 +25,35 @@
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/lifted_task.hpp"
 
 namespace tyr::planning
 {
 
-PatternGenerator<LiftedTask>::PatternGenerator(LiftedTask& task) : m_task(task) {}
+template<typename Task>
+GoalPatternGenerator<Task>::GoalPatternGenerator(std::shared_ptr<const Task> task) : m_task(task)
+{
+}
 
-PatternCollection PatternGenerator<LiftedTask>::generate()
+template<typename Task>
+std::shared_ptr<GoalPatternGenerator<Task>> GoalPatternGenerator<Task>::create(std::shared_ptr<const Task> task)
+{
+    return std::make_shared<GoalPatternGenerator<Task>>(std::move(task));
+}
+
+template<typename Task>
+PatternCollection GoalPatternGenerator<Task>::generate()
 {
     auto patterns = PatternCollection {};
 
-    for (const auto fact : m_task.get_task().get_goal().get_facts<formalism::FluentTag>())
+    for (const auto fact : m_task->get_task().get_goal().template get_facts<formalism::FluentTag>())
         patterns.push_back(Pattern({ fact }));
 
     return patterns;
 }
+
+template class GoalPatternGenerator<LiftedTask>;
+template class GoalPatternGenerator<GroundTask>;
 
 }
