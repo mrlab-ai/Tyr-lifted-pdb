@@ -97,6 +97,9 @@ template<typename Task>
 class BackwardProjectionAbstraction;
 template<typename Task>
 class ProjectionAbstraction;
+
+template<typename Task>
+class GoalPatternGenerator;
 }
 
 #endif

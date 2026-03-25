@@ -26,6 +26,9 @@ from pytyr.pytyr.planning.lifted import (
     AddRPGHeuristic,
     FFRPGHeuristic,
     GoalCountHeuristic,
+
+    PatternGenerator,
+    GoalPatternGenerator,
 )
 
 from . import (
