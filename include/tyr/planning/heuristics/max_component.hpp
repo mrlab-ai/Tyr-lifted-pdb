@@ -15,14 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_HEURISTICS_PROJECTION_ABSTRACTION_HPP_
-#define TYR_PLANNING_HEURISTICS_PROJECTION_ABSTRACTION_HPP_
+#ifndef TYR_PLANNING_HEURISTICS_MAX_COMPONENT_HPP_
+#define TYR_PLANNING_HEURISTICS_MAX_COMPONENT_HPP_
 
 namespace tyr::planning
 {
 
 template<typename Task>
-class ProjectionAbstractionHeuristic;
+class MaxComponentHeuristic;
 
 }
 
