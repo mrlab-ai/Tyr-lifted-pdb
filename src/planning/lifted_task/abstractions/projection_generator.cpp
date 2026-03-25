@@ -23,6 +23,7 @@
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -75,13 +76,19 @@ append_projected_literal(fp::LiteralView<T> element, const Pattern& pattern, Ind
 }
 
 template<f::FactKind T>
-static void append_projected_fact(fp::FDRFactView<T> element, const Pattern& pattern, DataList<fp::FDRFact<T>>& ref_projected_facts, fp::MergeContext& context)
+static void append_projected_fact(fp::FDRFactView<T> element,
+                                  const Pattern& pattern,
+                                  DataList<fp::FDRFact<T>>& ref_projected_facts,
+                                  fp::MergeContext& context,
+                                  fp::FDRContext& fdr_context)
 {
     if (pattern.facts.contains(element))
-        ref_projected_facts.push_back(fp::merge_p2p(element, context));
+    {
+        ref_projected_facts.push_back(fdr_context.get_fact(fp::merge_p2p(*element.get_atom(), context).first));
+    }
 }
 
-static auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pattern& pattern, fp::MergeContext& context)
+static auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pattern& pattern, fp::MergeContext& context, fp::FDRContext& fdr_context)
 {
     auto conj_cond_ptr = context.builder.template get_builder<fp::GroundConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -90,7 +97,7 @@ static auto create_projected_goal(fp::GroundConjunctiveConditionView element, co
     for (const auto literal : element.template get_facts<f::StaticTag>())
         conj_cond.static_literals.push_back(merge_p2p(literal, context).first.get_index());  // always useful to have
     for (const auto fact : element.template get_facts<f::FluentTag>())
-        append_projected_fact(fact, pattern, conj_cond.fluent_facts, context);
+        append_projected_fact(fact, pattern, conj_cond.fluent_facts, context, fdr_context);
 
     canonicalize(conj_cond);
     return context.destination.get_or_create(conj_cond);
@@ -162,8 +169,11 @@ static void append_projected_action(fp::ActionView element, fp::MergeContext& co
     ref_projected_actions.push_back(context.destination.get_or_create(action).first.get_index());
 }
 
-static auto
-create_projected_formalism_domain(fp::DomainView element, std::shared_ptr<fp::Repository> destination, fp::MergeContext& context, const Pattern& pattern)
+static auto create_projected_formalism_domain(fp::DomainView element,
+                                              std::shared_ptr<fp::Repository> destination,
+                                              fp::MergeContext& context,
+                                              fp::RepositoryFactoryPtr factory,
+                                              const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
     auto& domain = *domain_ptr;
@@ -181,20 +191,19 @@ create_projected_formalism_domain(fp::DomainView element, std::shared_ptr<fp::Re
         append_projected_action(action, context, domain.actions, pattern);
 
     canonicalize(domain);
-    return fp::PlanningDomain(context.destination.get_or_create(domain).first, std::move(destination));
+    return fp::PlanningDomain(context.destination.get_or_create(domain).first, std::move(destination), std::move(factory));
 }
 
 static auto create_projected_formalism_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
 {
-    auto destination =
-        std::make_shared<fp::Repository>(planning_task.get_domain().get_domain().get_constants().size() + planning_task.get_task().get_objects().size(),
-                                         planning_task.get_repository().get());
+    const auto& factory = planning_task.get_domain().get_repository_factory();
+    auto destination = factory->create_shared(planning_task.get_repository().get());
     auto builder = fp::Builder();
     // Note: we have to copy the FDRContext to avoid polluting the parent tasks FDRContext with non-existing atoms.
-    auto fdr_context = std::make_shared<fp::FDRContext>(planning_task.get_fdr_context(), builder, *destination);
+    auto fdr_context = std::make_shared<fp::FDRContext>(*planning_task.get_fdr_context(), builder, destination);
     auto context = fp::MergeContext(builder, *destination);
 
-    const auto project_domain = create_projected_formalism_domain(planning_task.get_domain().get_domain(), destination, context, pattern);
+    const auto project_domain = create_projected_formalism_domain(planning_task.get_domain().get_domain(), destination, context, factory, pattern);
 
     auto task_ptr = builder.get_builder<fp::Task>();
     auto& task = *task_ptr;
@@ -215,7 +224,7 @@ static auto create_projected_formalism_task(const fp::PlanningTask& planning_tas
     for (const auto atom : planning_task.get_task().get_atoms<f::FluentTag>())
         append_projected_atom(atom, pattern, task.fluent_atoms, context);
 
-    task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context).first.get_index();
+    task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context, *fdr_context).first.get_index();
 
     canonicalize(task);
     return fp::PlanningTask(destination->get_or_create(task).first, std::move(fdr_context), destination, project_domain);
