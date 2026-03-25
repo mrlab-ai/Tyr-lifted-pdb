@@ -32,7 +32,7 @@ namespace tyr::planning
 {
 
 template<typename Task>
-GoalPatternGenerator<Task>::GoalPatternGenerator(std::shared_ptr<const Task> task) : m_task(task)
+GoalPatternGenerator<Task>::GoalPatternGenerator(std::shared_ptr<const Task> task) : m_task(std::move(task))
 {
 }
 
