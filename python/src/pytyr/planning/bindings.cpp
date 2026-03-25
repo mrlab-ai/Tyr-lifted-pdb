@@ -112,9 +112,9 @@ should not be used further.
     bind_pruning_strategy<LiftedTask>(m, "PruningStrategy");
     bind_heuristic<LiftedTask>(m, "Heuristic");
     bind_blind_heuristic<LiftedTask>(m, "BlindHeuristic");
-    bind_max_heuristic<LiftedTask>(m, "MaxHeuristic");
-    bind_add_heuristic<LiftedTask>(m, "AddHeuristic");
-    bind_ff_heuristic<LiftedTask>(m, "FFHeuristic");
+    bind_max_heuristic<LiftedTask>(m, "MaxRPGHeuristic");
+    bind_add_heuristic<LiftedTask>(m, "AddRPGHeuristic");
+    bind_ff_heuristic<LiftedTask>(m, "FFRPGHeuristic");
 }
 
 namespace astar_eager

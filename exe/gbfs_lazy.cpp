@@ -89,7 +89,7 @@ int main(int argc, char** argv)
         options.random_seed = random_seed;
         options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
-        auto ff_heuristic = planning::FFHeuristic<planning::LiftedTask>::create(lifted_task, execution_context);
+        auto ff_heuristic = planning::FFRPGHeuristic<planning::LiftedTask>::create(lifted_task, execution_context);
         ff_heuristic->set_goal(lifted_task->get_task().get_goal());
 
         auto result = planning::gbfs_lazy::find_solution(*lifted_task, successor_generator, *ff_heuristic, options);
@@ -131,7 +131,7 @@ int main(int argc, char** argv)
                 axiom_evaluator_rule_worker_statistics.push_back(worker.solve.statistics);
         std::cout << datalog::compute_aggregated_rule_worker_statistics(axiom_evaluator_rule_worker_statistics) << std::endl;
 
-        std::cout << "[FFHeuristic] Summary" << std::endl;
+        std::cout << "[FFRPGHeuristic] Summary" << std::endl;
         std::cout << ff_heuristic->get_workspace().statistics << std::endl;
         auto ff_heuristic_rule_statistics = std::vector<datalog::RuleStatistics> {};
         for (size_t i = 0; i < ff_heuristic->get_workspace().rules.size(); ++i)

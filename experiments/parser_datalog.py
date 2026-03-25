@@ -41,7 +41,7 @@ RE_RULE_WORKER_OA     = re.compile(r'^\[AggregatedRuleWorkerStatistics\]\s+OA\s*
 SECTION_MAP = {
     "Successor generator": "succgen",
     "Axiom evaluator": "axiom",
-    "FFHeuristic": "ff",
+    "FFRPGHeuristic": "ff",
 }
 
 def parse_datalog_summaries(content: str, props: dict):
@@ -190,7 +190,7 @@ class DatalogParser(Parser):
     [AggregatedRuleWorkerStatistics] N_gen  =           0 | generated rules
     [AggregatedRuleWorkerStatistics] N_pen  =           0 | pending rules
     [AggregatedRuleWorkerStatistics] OA     =        1.00 | overapproximation ratio (1 + N_pen / N_gen)
-    [FFHeuristic] Summary
+    [FFRPGHeuristic] Summary
     [ProgramStatistics] N_exec =          7    | executions
     [ProgramStatistics] T_seq  =       1478 ms | sequential time
     [ProgramStatistics] T_par  =       4296 ms | parallel time

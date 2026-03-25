@@ -18,8 +18,8 @@ from pytyr.common import ExecutionContext
 from pytyr.formalism.planning import ParserOptions, Parser, GroundConjunctiveCondition, GroundAction
 # Note: we can easily switch between lifted and ground planning by swapping the submodule, 
 # e.g., from pytyr.planning.ground import ..., and from pytyr.planning.ground.astar_eager import ...
-# However, some heuristics, like MaxHeuristic might not be available yet.
-from pytyr.planning.lifted import Task, SuccessorGenerator, Heuristic, MaxHeuristic, PruningStrategy, GoalStrategy, TaskGoalStrategy, State, Node, LabeledNode, Plan, Task
+# However, some heuristics, like MaxRPGHeuristic might not be available yet.
+from pytyr.planning.lifted import Task, SuccessorGenerator, Heuristic, MaxRPGHeuristic, PruningStrategy, GoalStrategy, TaskGoalStrategy, State, Node, LabeledNode, Plan, Task
 from pytyr.planning.lifted.astar_eager import Options, EventHandler, DefaultEventHandler, find_solution
 
 # Lazy Greedy Best-First Search (GBFS) exposes an almost identical interface,
@@ -134,7 +134,7 @@ def main():
     parser_options = ParserOptions()
     parser = Parser(domain_filepath, parser_options)
     lifted_task = Task(parser.parse_task(task_filepath, parser_options))
-    heuristic = MaxHeuristic(lifted_task, execution_context)
+    heuristic = MaxRPGHeuristic(lifted_task, execution_context)
     successor_generator = SuccessorGenerator(lifted_task, execution_context)
 
     options = Options()                               # Lifted search is parallelized but only useful on large tasks.

@@ -24,7 +24,7 @@ from enum import Enum
 from pytyr.common import ExecutionContext
 from pytyr.formalism.planning import ParserOptions, Parser
 from pytyr.planning import SearchStatus
-from pytyr.planning.lifted import StateIndex, SearchResult, SuccessorGenerator, Heuristic, FFHeuristic, PruningStrategy, GoalStrategy, TaskGoalStrategy, State, Node, LabeledNode, Plan, Task
+from pytyr.planning.lifted import StateIndex, SearchResult, SuccessorGenerator, Heuristic, FFRPGHeuristic, PruningStrategy, GoalStrategy, TaskGoalStrategy, State, Node, LabeledNode, Plan, Task
 
 
 class SearchNodeStatus(Enum):
@@ -176,7 +176,7 @@ def main():
     parser_options = ParserOptions()
     parser = Parser(domain_filepath, parser_options)
     lifted_task = Task(parser.parse_task(task_filepath, parser_options))
-    heuristic = FFHeuristic(lifted_task, execution_context)
+    heuristic = FFRPGHeuristic(lifted_task, execution_context)
     successor_generator = SuccessorGenerator(lifted_task, execution_context)
 
     search_result = find_solution(lifted_task, successor_generator, heuristic)

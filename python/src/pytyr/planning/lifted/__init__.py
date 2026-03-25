@@ -16,9 +16,9 @@ from pytyr.pytyr.planning.lifted import (
     PruningStrategy,
     Heuristic,
     BlindHeuristic,
-    MaxHeuristic,
-    AddHeuristic,
-    FFHeuristic,
+    MaxRPGHeuristic,
+    AddRPGHeuristic,
+    FFRPGHeuristic,
 )
 
 from . import (

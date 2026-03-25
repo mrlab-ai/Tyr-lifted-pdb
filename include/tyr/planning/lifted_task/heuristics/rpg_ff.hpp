@@ -26,7 +26,7 @@
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/applicability.hpp"
-#include "tyr/planning/heuristics/ff.hpp"
+#include "tyr/planning/heuristics/rpg_ff.hpp"
 #include "tyr/planning/lifted_task/heuristics/rpg.hpp"
 
 #include <boost/dynamic_bitset.hpp>
@@ -36,16 +36,16 @@ namespace tyr::planning
 {
 
 template<>
-class FFHeuristic<LiftedTask> :
-    public RPGBase<FFHeuristic<LiftedTask>,
+class FFRPGHeuristic<LiftedTask> :
+    public RPGBase<FFRPGHeuristic<LiftedTask>,
                    datalog::OrAnnotationPolicy,
                    datalog::AndAnnotationPolicy<datalog::SumAggregation>,
                    datalog::TerminationPolicy<datalog::SumAggregation>>
 {
 public:
-    FFHeuristic(std::shared_ptr<LiftedTask> task, ExecutionContextPtr execution_context);
+    FFRPGHeuristic(std::shared_ptr<LiftedTask> task, ExecutionContextPtr execution_context);
 
-    static std::shared_ptr<FFHeuristic<LiftedTask>> create(std::shared_ptr<LiftedTask> task, ExecutionContextPtr execution_context);
+    static std::shared_ptr<FFRPGHeuristic<LiftedTask>> create(std::shared_ptr<LiftedTask> task, ExecutionContextPtr execution_context);
 
     float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTask>& state);
 

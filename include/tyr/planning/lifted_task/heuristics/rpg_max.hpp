@@ -15,29 +15,29 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_TASK_HEURISTICS_ADD_HPP_
-#define TYR_PLANNING_LIFTED_TASK_HEURISTICS_ADD_HPP_
+#ifndef TYR_PLANNING_LIFTED_TASK_HEURISTICS_MAX_HPP_
+#define TYR_PLANNING_LIFTED_TASK_HEURISTICS_MAX_HPP_
 
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
-#include "tyr/planning/heuristics/add.hpp"
+#include "tyr/planning/heuristics/rpg_max.hpp"
 #include "tyr/planning/lifted_task/heuristics/rpg.hpp"
 
 namespace tyr::planning
 {
 
 template<>
-class AddHeuristic<LiftedTask> :
-    public RPGBase<AddHeuristic<LiftedTask>,
+class MaxRPGHeuristic<LiftedTask> :
+    public RPGBase<MaxRPGHeuristic<LiftedTask>,
                    datalog::OrAnnotationPolicy,
-                   datalog::AndAnnotationPolicy<datalog::SumAggregation>,
-                   datalog::TerminationPolicy<datalog::SumAggregation>>
+                   datalog::AndAnnotationPolicy<datalog::MaxAggregation>,
+                   datalog::TerminationPolicy<datalog::MaxAggregation>>
 {
 public:
-    AddHeuristic(std::shared_ptr<LiftedTask> task, ExecutionContextPtr execution_context);
+    MaxRPGHeuristic(std::shared_ptr<LiftedTask> task, ExecutionContextPtr execution_context);
 
-    static std::shared_ptr<AddHeuristic<LiftedTask>> create(std::shared_ptr<LiftedTask> task, ExecutionContextPtr execution_context);
+    static std::shared_ptr<MaxRPGHeuristic<LiftedTask>> create(std::shared_ptr<LiftedTask> task, ExecutionContextPtr execution_context);
 
     float_t extract_cost_and_set_preferred_actions_impl(const StateView<LiftedTask>& state);
 };

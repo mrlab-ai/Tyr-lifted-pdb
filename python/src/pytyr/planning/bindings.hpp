@@ -289,7 +289,7 @@ void bind_blind_heuristic(nb::module_& m, const std::string& name)
 template<typename Task>
 void bind_max_heuristic(nb::module_& m, const std::string& name)
 {
-    using T = MaxHeuristic<Task>;
+    using T = MaxRPGHeuristic<Task>;
 
     nb::class_<T, Heuristic<Task>>(m, name.c_str())  //
         .def(nb::new_([](std::shared_ptr<Task> task, std::shared_ptr<ExecutionContext> execution_context)
@@ -301,7 +301,7 @@ void bind_max_heuristic(nb::module_& m, const std::string& name)
 template<typename Task>
 void bind_add_heuristic(nb::module_& m, const std::string& name)
 {
-    using T = AddHeuristic<Task>;
+    using T = AddRPGHeuristic<Task>;
 
     nb::class_<T, Heuristic<Task>>(m, name.c_str())  //
         .def(nb::new_([](std::shared_ptr<Task> task, std::shared_ptr<ExecutionContext> execution_context)
@@ -313,7 +313,7 @@ void bind_add_heuristic(nb::module_& m, const std::string& name)
 template<typename Task>
 void bind_ff_heuristic(nb::module_& m, const std::string& name)
 {
-    using T = FFHeuristic<Task>;
+    using T = FFRPGHeuristic<Task>;
 
     nb::class_<T, Heuristic<Task>>(m, name.c_str())  //
         .def(nb::new_([](std::shared_ptr<Task> task, std::shared_ptr<ExecutionContext> execution_context)

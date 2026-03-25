@@ -15,14 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_HEURISTICS_FF_HPP_
-#define TYR_PLANNING_HEURISTICS_FF_HPP_
+#ifndef TYR_PLANNING_HEURISTICS_RPG_MAX_HPP_
+#define TYR_PLANNING_HEURISTICS_RPG_MAX_HPP_
 
 namespace tyr::planning
 {
 
 template<typename Task>
-class FFHeuristic;
+class MaxRPGHeuristic;
 
 }
 
