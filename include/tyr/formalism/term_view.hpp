@@ -53,7 +53,7 @@ auto make_view(const Data<formalism::Term>& element, const C& context) noexcept
                                                   using Alternative = std::decay_t<decltype(arg)>;
 
                                                   if constexpr (std::is_same_v<Alternative, formalism::ParameterIndex>)
-                                                      return context;
+                                                      return context.get_root();
                                                   else
                                                       return make_view(arg, context).get_context();
                                               },

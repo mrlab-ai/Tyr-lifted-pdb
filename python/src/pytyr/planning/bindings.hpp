@@ -171,7 +171,11 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              "task"_a,
              "execution_context"_a)
         .def("get_initial_node", &T::get_initial_node, nb::rv_policy::move)
-        .def("get_labeled_successor_nodes", nb::overload_cast<const Node<Task>&>(&T::get_labeled_successor_nodes), nb::rv_policy::move, "node"_a)
+        .def("get_labeled_successor_nodes",
+             nb::overload_cast<const Node<Task>&>(&T::get_labeled_successor_nodes),
+             nb::rv_policy::move,
+             "node"_a,
+             nb::call_guard<nb::gil_scoped_release>())
         .def("get_successor_node", &T::get_successor_node, "node"_a, "action"_a)
         .def("get_node", &T::get_node, nb::rv_policy::move, "state_index"_a)
         .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy);
@@ -273,7 +277,7 @@ void bind_heuristic(nb::module_& m, const std::string& name)
 
     nb::class_<T, PyHeuristic<Task>>(m, name.c_str())  //
         .def("set_goal", &T::set_goal, "goal"_a)
-        .def("evaluate", &T::evaluate, "state"_a)
+        .def("evaluate", &T::evaluate, "state"_a, nb::call_guard<nb::gil_scoped_release>())
         .def("get_preferred_actions", &T::get_preferred_action_views);
 }
 

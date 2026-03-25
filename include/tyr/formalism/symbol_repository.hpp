@@ -37,11 +37,13 @@ class SymbolRepository
 {
 private:
     const SymbolRepository* m_parent;
+    const SymbolRepository* m_root;
     std::tuple<BasicSymbolRepository<Ts>...> m_repositories;
 
 public:
     SymbolRepository(const SymbolRepository* parent = nullptr) :
         m_parent(parent),
+        m_root(m_parent ? m_parent->m_root : this),
         m_repositories(BasicSymbolRepository<Ts>(parent ? &std::get<BasicSymbolRepository<Ts>>(parent->m_repositories) : nullptr)...)
     {
     }
@@ -50,6 +52,8 @@ public:
     SymbolRepository& operator=(const SymbolRepository&) = delete;
     SymbolRepository(SymbolRepository&&) = delete;
     SymbolRepository& operator=(SymbolRepository&&) = delete;
+
+    const auto& get_root() const noexcept { return *m_root; }
 
     template<typename T>
     BasicSymbolRepository<T>& get() noexcept

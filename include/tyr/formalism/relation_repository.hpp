@@ -37,6 +37,7 @@ class RelationRepository
 {
 private:
     const RelationRepository* m_parent;
+    const RelationRepository* m_root;
     std::tuple<BasicRelationRepository<Ts>...> m_repositories;
 
 public:
@@ -45,6 +46,7 @@ public:
 
     RelationRepository(const RelationRepository* parent = nullptr) :
         m_parent(parent),
+        m_root(m_parent ? m_parent->m_root : this),
         m_repositories(BasicRelationRepository<Ts>(parent ? &std::get<BasicRelationRepository<Ts>>(parent->m_repositories) : nullptr)...)
     {
     }
@@ -53,6 +55,8 @@ public:
     RelationRepository& operator=(const RelationRepository&) = delete;
     RelationRepository(RelationRepository&&) = delete;
     RelationRepository& operator=(RelationRepository&&) = delete;
+
+    const auto& get_root() const noexcept { return *m_root; }
 
     template<typename T>
     BasicRelationRepository<T>& get() noexcept

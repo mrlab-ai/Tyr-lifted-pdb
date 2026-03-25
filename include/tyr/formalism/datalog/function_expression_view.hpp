@@ -55,7 +55,7 @@ auto make_view(const Data<formalism::datalog::FunctionExpression>& element, cons
                                                                          using Alternative = std::decay_t<decltype(arg)>;
 
                                                                          if constexpr (std::is_same_v<Alternative, float_t>)
-                                                                             return context;
+                                                                             return context.get_root();
                                                                          else
                                                                              return make_view(arg, context).get_context();
                                                                      },
