@@ -29,6 +29,9 @@ from pytyr.pytyr.planning.lifted import (
 
     PatternGenerator,
     GoalPatternGenerator,
+    ProjectionAbstraction,
+    ProjectionAbstractionList,
+    ProjectionGenerator,
 )
 
 from . import (

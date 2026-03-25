@@ -106,43 +106,46 @@ template<typename Task>
 class BackwardProjectionAbstraction
 {
 private:
-    const ForwardProjectionAbstraction<Task>& m_g;
+    std::shared_ptr<const ForwardProjectionAbstraction<Task>> m_g;
 
     std::vector<std::vector<uint_t>> m_adj_lists;
 
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
-    explicit BackwardProjectionAbstraction(const ForwardProjectionAbstraction<Task>& g) : m_g(g), m_adj_lists(g.num_vertices())
+    explicit BackwardProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Task>> g) : m_g(g), m_adj_lists(g->num_vertices())
     {
-        for (uint_t t = 0; t < g.num_edges(); ++t)
-            m_adj_lists[g.transitions()[t].dst].push_back(t);
+        for (uint_t t = 0; t < g->num_edges(); ++t)
+            m_adj_lists[g->transitions()[t].dst].push_back(t);
     }
 
-    auto num_vertices() const noexcept { return m_g.num_vertices(); }
-    auto num_edges() const noexcept { return m_g.num_edges(); }
-    const auto& vertices() const noexcept { return m_g.vertices(); }
-    const auto& transitions() const noexcept { return m_g.transitions(); }
-    const auto& goal_vertices() const noexcept { return m_g.goal_vertices(); }
+    auto num_vertices() const noexcept { return m_g->num_vertices(); }
+    auto num_edges() const noexcept { return m_g->num_edges(); }
+    const auto& vertices() const noexcept { return m_g->vertices(); }
+    const auto& transitions() const noexcept { return m_g->transitions(); }
+    const auto& goal_vertices() const noexcept { return m_g->goal_vertices(); }
     const auto& adj_lists() const noexcept { return m_adj_lists; }
-    const auto& g() const noexcept { return m_g; }
+    const auto& g() const noexcept { return *m_g; }
 };
 
 template<typename Task>
 class ProjectionAbstraction
 {
 private:
-    ForwardProjectionAbstraction<Task> m_forward;
+    std::shared_ptr<const ForwardProjectionAbstraction<Task>> m_forward;
     BackwardProjectionAbstraction<Task> m_backward;
 
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
-    explicit ProjectionAbstraction(ForwardProjectionAbstraction<Task> forward) : m_forward(std::move(forward)), m_backward(m_forward) {}
+    explicit ProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Task>> forward) : m_forward(std::move(forward)), m_backward(m_forward) {}
 
-    const auto& get_forward() const noexcept { return m_forward; }
+    const auto& get_forward() const noexcept { return *m_forward; }
     const auto& get_backward() const noexcept { return m_backward; }
 };
+
+template<typename Task>
+using ProjectionAbstractionList = std::vector<ProjectionAbstraction<Task>>;
 
 /**
  * VertexListGraph
