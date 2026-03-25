@@ -40,6 +40,8 @@
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/planning/heuristics/goal_count.hpp"
+#include "tyr/planning/heuristics/max.hpp"
+#include "tyr/planning/heuristics/projection_abstraction.hpp"
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 #include "tyr/planning/lifted_task/axiom_evaluator.hpp"
