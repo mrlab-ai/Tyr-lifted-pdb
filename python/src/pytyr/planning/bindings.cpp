@@ -441,6 +441,11 @@ should not be used further.
 
     bind_pattern_generator<LiftedTag>(m, "PatternGenerator");
     bind_goal_pattern_generator<LiftedTag>(m, "GoalPatternGenerator");
+    bind_pattern_generator<LiftedTag>(m, "PatternGenerator");
+    bind_goal_pattern_generator<LiftedTag>(m, "GoalPatternGenerator");
+    bind_projection_abstraction<LiftedTag>(m, "ProjectionAbstraction");
+    bind_vector<ProjectionAbstractionList<LiftedTag>>(m, "ProjectionAbstractionList");
+    bind_projection_generator<LiftedTag>(m, "ProjectionGenerator");
 }
 
 namespace astar_eager

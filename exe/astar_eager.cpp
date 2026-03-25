@@ -91,7 +91,7 @@ int main(int argc, char** argv)
         // print(std::cout, patterns);
         // std::cout << std::endl;
 
-        planning::ProjectionGenerator<planning::LiftedTask>(*lifted_task, patterns).generate();
+        planning::ProjectionGenerator<planning::LiftedTask>(lifted_task, patterns).generate();
         // auto canonical_heuristic = planning::CanonicalHeuristic::create(*lifted_task, projections);
         // auto scp_heuristic = planning::SaturatedCostPartitioningHeuristic::create(*lifted_task, projections);
 
