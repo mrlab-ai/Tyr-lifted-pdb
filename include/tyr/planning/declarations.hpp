@@ -93,6 +93,10 @@ using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Task>>;
 }
 
 template<typename Task>
+class ForwardProjectionAbstraction;
+template<typename Task>
+class BackwardProjectionAbstraction;
+template<typename Task>
 class ProjectionAbstraction;
 }
 

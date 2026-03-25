@@ -178,9 +178,9 @@ std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Task
 {
     os << "digraph {\n";
 
-    const auto& vertices = el.vertices();
-    const auto& transitions = el.transitions();
-    const auto& adj_lists = el.adj_lists();
+    const auto& vertices = el.get_forward().vertices();
+    const auto& transitions = el.get_forward().transitions();
+    const auto& adj_lists = el.get_forward().adj_lists();
 
     for (const auto& vertex : vertices)
         fmt::print(os, "n{} [label=\"{}\"];\n", to_string(vertex.get_index()), to_string(vertex));
