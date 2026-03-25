@@ -17,6 +17,9 @@ from pytyr.pytyr.planning.ground import (
     Heuristic,
     BlindHeuristic,
     GoalCountHeuristic,
+
+    PatternGenerator,
+    GoalPatternGenerator,
 )
 
 from . import (
