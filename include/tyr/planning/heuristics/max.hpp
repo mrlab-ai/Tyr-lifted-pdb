@@ -15,29 +15,29 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_HEURISTICS_PROJECTION_ABSTRACTION_HPP_
-#define TYR_PLANNING_HEURISTICS_PROJECTION_ABSTRACTION_HPP_
+#ifndef TYR_PLANNING_HEURISTICS_MAX_HPP_
+#define TYR_PLANNING_HEURISTICS_MAX_HPP_
 
-#include "tyr/planning/abstractions/explicit_projection.hpp"
-#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/heuristic.hpp"
+
+#include <memory>
+#include <vector>
 
 namespace tyr::planning
 {
 
 template<typename Task>
-class ProjectionAbstractionHeuristic : public Heuristic<Task>
+class MaxHeuristic : public Heuristic<Task>
 {
-public:
-    explicit ProjectionAbstractionHeuristic(const ProjectionAbstraction<Task>& projection);
+private:
+    std::vector<std::shared_ptr<Heuristic<Task>>> m_components;
 
-    static std::shared_ptr<ProjectionAbstractionHeuristic<Task>> create(const ProjectionAbstraction<Task>& projection);
+public:
+    explicit MaxHeuristic(std::vector<std::shared_ptr<Heuristic<Task>>> components);
+
+    static std::shared_ptr<MaxHeuristic<Task>> create(std::vector<std::shared_ptr<Heuristic<Task>>> components);
 
     float_t evaluate(const StateView<Task>& state) override;
-
-private:
-    std::vector<float_t> m_distances;
-    ProjectionMapping<Task> m_mapping;
 };
 
 }
