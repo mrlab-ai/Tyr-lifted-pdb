@@ -53,7 +53,10 @@ using PatternCollection = std::vector<Pattern>;
 template<typename Task>
 class PatternGenerator
 {
-    static_assert(dependent_false<Task>::value, "PatternGenerator is not defined for type T.");
+public:
+    virtual ~PatternGenerator() = default;
+
+    virtual PatternCollection generate() = 0;
 };
 
 }

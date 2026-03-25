@@ -87,7 +87,7 @@ int main(int argc, char** argv)
         options.random_seed = random_seed;
         options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
-        auto patterns = planning::PatternGenerator<planning::LiftedTask>(*lifted_task).generate();
+        auto patterns = planning::GoalPatternGenerator<planning::LiftedTask>::create(lifted_task)->generate();
         // print(std::cout, patterns);
         // std::cout << std::endl;
 

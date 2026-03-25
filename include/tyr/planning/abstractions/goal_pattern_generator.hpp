@@ -15,29 +15,30 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_TASK_ABSTRACTIONS_PATTERN_GENERATOR_HPP_
-#define TYR_PLANNING_LIFTED_TASK_ABSTRACTIONS_PATTERN_GENERATOR_HPP_
+#ifndef TYR_PLANNING_ABSTRACTIONS_GOAL_PATTERN_GENERATOR_HPP_
+#define TYR_PLANNING_ABSTRACTIONS_GOAL_PATTERN_GENERATOR_HPP_
 
 #include "tyr/common/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/declarations.hpp"
-#include "tyr/planning/lifted_task.hpp"
 
 namespace tyr::planning
 {
 
-template<>
-class PatternGenerator<LiftedTask>
+template<typename Task>
+class GoalPatternGenerator : public PatternGenerator<Task>
 {
 public:
-    explicit PatternGenerator(LiftedTask& task);
+    explicit GoalPatternGenerator(std::shared_ptr<const Task> task);
 
-    PatternCollection generate();
+    static std::shared_ptr<GoalPatternGenerator<Task>> create(std::shared_ptr<const Task> task);
+
+    PatternCollection generate() override;
 
 private:
-    LiftedTask& m_task;
+    std::shared_ptr<const Task> m_task;
 };
 
 }

@@ -64,6 +64,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
 
     planning/heuristics/goal_count.cpp
     planning/abstractions/explicit_projection.cpp
+    planning/abstractions/goal_pattern_generator.cpp
 
     planning/ground_task/axiom_evaluator.cpp
     planning/ground_task/axiom_stratification.cpp
@@ -75,7 +76,6 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/lifted_task/heuristics/rpg_add.cpp
     planning/lifted_task/heuristics/rpg_max.cpp
     planning/lifted_task/heuristics/rpg_ff.cpp
-    planning/lifted_task/abstractions/pattern_generator.cpp
     planning/lifted_task/abstractions/projection_generator.cpp
     planning/lifted_task/axiom_evaluator.cpp
     planning/lifted_task/node.cpp

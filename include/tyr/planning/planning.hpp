@@ -19,6 +19,8 @@
 #define TYR_PLANNING_PLANNING_HPP_
 
 #include "tyr/common/bit_packed_layout.hpp"
+#include "tyr/planning/abstractions/goal_pattern_generator.hpp"
+#include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/astar_eager/event_handler.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
@@ -40,7 +42,6 @@
 #include "tyr/planning/heuristics/blind.hpp"
 #include "tyr/planning/heuristics/goal_count.hpp"
 #include "tyr/planning/lifted_task.hpp"
-#include "tyr/planning/lifted_task/abstractions/pattern_generator.hpp"
 #include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 #include "tyr/planning/lifted_task/axiom_evaluator.hpp"
 #include "tyr/planning/lifted_task/heuristics/rpg_add.hpp"

@@ -335,6 +335,36 @@ void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
              "execution_context"_a);
 }
 
+template<typename Task>
+class PyPatternGenerator : public PatternGenerator<Task>
+{
+public:
+    using Base = PatternGenerator<Task>;
+
+    NB_TRAMPOLINE(Base, 1);
+
+    /* Trampoline (need one for each virtual function) */
+    PatternCollection generate() override { NB_OVERRIDE_PURE(generate); }
+};
+
+template<typename Task>
+void bind_pattern_generator(nb::module_& m, const std::string& name)
+{
+    using T = PatternGenerator<Task>;
+
+    nb::class_<T, PyPatternGenerator<Task>>(m, name.c_str())  //
+        .def("generate", &T::generate);
+}
+
+template<typename Task>
+void bind_goal_pattern_generator(nb::module_& m, const std::string& name)
+{
+    using T = GoalPatternGenerator<Task>;
+
+    nb::class_<T, PatternGenerator<Task>>(m, name.c_str())  //
+        .def(nb::new_([](std::shared_ptr<Task> task) { return T::create(std::move(task)); }), "task"_a);
+}
+
 namespace astar_eager
 {
 
