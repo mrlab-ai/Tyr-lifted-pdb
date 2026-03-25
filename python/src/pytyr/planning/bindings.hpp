@@ -336,6 +336,24 @@ void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
 }
 
 template<typename Task>
+void bind_max_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = MaxHeuristic<Task>;
+
+    nb::class_<T, Heuristic<Task>>(m, name.c_str())  //
+        .def(nb::new_([](std::vector<std::shared_ptr<Heuristic<Task>>> components) { return T::create(std::move(components)); }), "components"_a);
+}
+
+template<typename Task>
+void bind_projection_abstraction_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionAbstractionHeuristic<Task>;
+
+    nb::class_<T, Heuristic<Task>>(m, name.c_str())  //
+        .def(nb::new_([](const ProjectionAbstractionHeuristic<Task>& projection) { return T::create(projection); }), "projection"_a);
+}
+
+template<typename Task>
 class PyPatternGenerator : public PatternGenerator<Task>
 {
 public:
@@ -346,6 +364,14 @@ public:
     /* Trampoline (need one for each virtual function) */
     PatternCollection generate() override { NB_OVERRIDE_PURE(generate); }
 };
+
+inline void bind_pattern(nb::module_& m, const std::string& name)
+{
+    using T = Pattern;
+
+    nb::class_<T>(m, name.c_str())  //
+        .def(nb::init<formalism::planning::FDRFactViewList<formalism::FluentTag>>(), "facts"_a);
+}
 
 template<typename Task>
 void bind_pattern_generator(nb::module_& m, const std::string& name)
