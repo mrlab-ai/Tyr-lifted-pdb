@@ -22,6 +22,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_fact_view.hpp"
 #include "tyr/formalism/planning/repository.hpp"
+#include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
 #include "tyr/planning/declarations.hpp"
@@ -37,12 +38,12 @@ template<>
 class ProjectionGenerator<LiftedTask>
 {
 public:
-    ProjectionGenerator(LiftedTask& task, const PatternCollection& patterns);
+    ProjectionGenerator(std::shared_ptr<const LiftedTask> task, const PatternCollection& patterns);
 
-    void generate();
+    ProjectionAbstractionList<LiftedTask> generate();
 
 private:
-    LiftedTask& m_task;
+    std::shared_ptr<const LiftedTask> m_task;
     const PatternCollection& m_patterns;
 };
 
