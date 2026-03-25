@@ -136,7 +136,7 @@ void FFRPGHeuristic<LiftedTask>::extract_relaxed_plan_and_preferred_actions(form
 
         const auto ground_action = formalism::planning::ground(action,
                                                                grounder_context,
-                                                               m_task->get_parameter_domains_per_cond_effect_per_action().at(uint_t(action.get_index())),
+                                                               m_task->get_parameter_domains_per_cond_effect_per_action().at(action.get_index()),
                                                                m_assign,
                                                                m_iter_workspace,
                                                                *m_task->get_fdr_context())
