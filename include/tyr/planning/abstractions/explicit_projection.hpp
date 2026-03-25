@@ -44,7 +44,7 @@ struct Transition
 using TransitionList = std::vector<Transition>;
 
 template<typename Task>
-class ProjectionAbstraction
+class ForwardProjectionAbstraction
 {
 private:
     // TODO: get rid of states.
@@ -56,10 +56,10 @@ private:
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
-    ProjectionAbstraction(std::vector<StateView<Task>> vertices,
-                          TransitionList transitions,
-                          std::vector<std::vector<uint_t>> adj_lists,
-                          std::vector<uint_t> goal_vertices) :
+    ForwardProjectionAbstraction(std::vector<StateView<Task>> vertices,
+                                 TransitionList transitions,
+                                 std::vector<std::vector<uint_t>> adj_lists,
+                                 std::vector<uint_t> goal_vertices) :
         m_vertices(std::move(vertices)),
         m_transitions(std::move(transitions)),
         m_adj_lists(std::move(adj_lists)),
@@ -79,20 +79,17 @@ template<typename Task>
 class BackwardProjectionAbstraction
 {
 private:
-    const ProjectionAbstraction<Task>& m_g;
+    const ForwardProjectionAbstraction<Task>& m_g;
 
     std::vector<std::vector<uint_t>> m_adj_lists;
 
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
-    explicit BackwardProjectionAbstraction(const ProjectionAbstraction<Task>& g) : m_g(g), m_adj_lists(g.num_vertices())
+    explicit BackwardProjectionAbstraction(const ForwardProjectionAbstraction<Task>& g) : m_g(g), m_adj_lists(g.num_vertices())
     {
         for (uint_t t = 0; t < g.num_edges(); ++t)
-        {
-            std::cout << g.transitions()[t].dst << " " << g.transitions()[t].src << std::endl;
             m_adj_lists[g.transitions()[t].dst].push_back(t);
-        }
     }
 
     auto num_vertices() const noexcept { return m_g.num_vertices(); }
@@ -104,18 +101,34 @@ public:
     const auto& g() const noexcept { return m_g; }
 };
 
+template<typename Task>
+class ProjectionAbstraction
+{
+private:
+    ForwardProjectionAbstraction<Task> m_forward;
+    BackwardProjectionAbstraction<Task> m_backward;
+
+public:
+    using IndexingMode = graphs::ContiguousIndexingTag;
+
+    explicit ProjectionAbstraction(ForwardProjectionAbstraction<Task> forward) : m_forward(std::move(forward)), m_backward(m_forward) {}
+
+    const auto& get_forward() const noexcept { return m_forward; }
+    const auto& get_backward() const noexcept { return m_backward; }
+};
+
 /**
  * VertexListGraph
  */
 
 template<typename Task>
-auto num_vertices(const ProjectionAbstraction<Task>& g)
+auto num_vertices(const ForwardProjectionAbstraction<Task>& g)
 {
     return g.num_vertices();
 }
 
 template<typename Task>
-auto vertices(const ProjectionAbstraction<Task>& g)
+auto vertices(const ForwardProjectionAbstraction<Task>& g)
 {
     using It = boost::counting_iterator<uint_t>;
     return std::make_pair(It { 0 }, It { static_cast<uint_t>(num_vertices(g)) });
@@ -138,26 +151,26 @@ auto vertices(const BackwardProjectionAbstraction<Task>& g)
  */
 
 template<typename Task>
-auto out_edges(uint_t v, const ProjectionAbstraction<Task>& g)
+auto out_edges(uint_t v, const ForwardProjectionAbstraction<Task>& g)
 {
     const auto& r = g.adj_lists().at(v);
     return std::make_pair(r.begin(), r.end());
 }
 
 template<typename Task>
-auto source(uint_t e, const ProjectionAbstraction<Task>& g)
+auto source(uint_t e, const ForwardProjectionAbstraction<Task>& g)
 {
     return g.transitions().at(e).src;
 }
 
 template<typename Task>
-auto target(uint_t e, const ProjectionAbstraction<Task>& g)
+auto target(uint_t e, const ForwardProjectionAbstraction<Task>& g)
 {
     return g.transitions().at(e).dst;
 }
 
 template<typename Task>
-auto out_degree(uint_t v, const ProjectionAbstraction<Task>& g)
+auto out_degree(uint_t v, const ForwardProjectionAbstraction<Task>& g)
 {
     return g.adj_lists().at(v).size();
 }
@@ -195,7 +208,7 @@ namespace boost
 /// @private
 /// Traits for a graph that are needed for the boost graph library.
 template<typename Task>
-struct graph_traits<::tyr::planning::ProjectionAbstraction<Task>>
+struct graph_traits<::tyr::planning::ForwardProjectionAbstraction<Task>>
 {
     struct vertex_list_and_incidence_graph_tag : public vertex_list_graph_tag, public incidence_graph_tag
     {
