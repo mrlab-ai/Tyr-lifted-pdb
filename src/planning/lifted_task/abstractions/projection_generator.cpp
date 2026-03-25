@@ -339,9 +339,9 @@ auto create_projection(const Pattern& pattern, const std::shared_ptr<LiftedTask>
 }
 }
 
-ProjectionGenerator<LiftedTask>::ProjectionGenerator(std::shared_ptr<const LiftedTask> task, const PatternCollection& patterns) :
-    m_task(task),
-    m_patterns(patterns)
+ProjectionGenerator<LiftedTask>::ProjectionGenerator(std::shared_ptr<const LiftedTask> task, PatternCollection patterns) :
+    m_task(std::move(task)),
+    m_patterns(std::move(patterns))
 {
 }
 
