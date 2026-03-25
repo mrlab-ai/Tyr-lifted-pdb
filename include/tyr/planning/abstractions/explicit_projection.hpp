@@ -23,6 +23,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/graphs/concepts.hpp"
+#include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/state_view.hpp"
 
 #include <boost/graph/graph_concepts.hpp>
@@ -44,9 +45,33 @@ struct Transition
 using TransitionList = std::vector<Transition>;
 
 template<typename Task>
+class ProjectionMapping
+{
+private:
+    Pattern m_pattern;
+
+public:
+    explicit ProjectionMapping(Pattern pattern) : m_pattern(std::move(pattern)) {}
+
+    uint_t map_state(const StateView<Task>& state) const noexcept
+    {
+        // Mimics the indexing obtained via itertools::for_each_boolean_vector used during construction of the ForwardProjectionAbstraction.
+        const auto k = m_pattern.size();
+        auto r = uint_t(0);
+        for (uint_t i = 0; i < k; ++i)
+        {
+            if (state.contains[m_pattern.facts[i]])
+                r |= (uint_t(1) << i);
+        }
+        return r;
+    }
+};
+
+template<typename Task>
 class ForwardProjectionAbstraction
 {
 private:
+    ProjectionMapping<Task> m_mapping;
     // TODO: get rid of states.
     std::vector<StateView<Task>> m_vertices;
     TransitionList m_transitions;
@@ -56,10 +81,12 @@ private:
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
-    ForwardProjectionAbstraction(std::vector<StateView<Task>> vertices,
+    ForwardProjectionAbstraction(ProjectionMapping<Task> mapping,
+                                 std::vector<StateView<Task>> vertices,
                                  TransitionList transitions,
                                  std::vector<std::vector<uint_t>> adj_lists,
                                  std::vector<uint_t> goal_vertices) :
+        m_mapping(std::move(mapping)),
         m_vertices(std::move(vertices)),
         m_transitions(std::move(transitions)),
         m_adj_lists(std::move(adj_lists)),
