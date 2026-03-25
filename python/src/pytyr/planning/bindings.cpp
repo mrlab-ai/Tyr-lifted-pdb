@@ -390,6 +390,9 @@ void bind_ground_module_definitions(nb::module_& m)
     bind_heuristic<GroundTag>(m, "Heuristic");
     bind_blind_heuristic<GroundTag>(m, "BlindHeuristic");
     bind_goal_count_heuristic<GroundTag>(m, "GoalCountHeuristic");
+
+    bind_pattern_generator<GroundTag>(m, "PatternGenerator");
+    bind_goal_pattern_generator<GroundTag>(m, "GoalPatternGenerator");
 }
 
 void bind_lifted_module_definitions(nb::module_& m)
@@ -435,6 +438,9 @@ should not be used further.
     bind_rpg_add_heuristic<LiftedTag>(m, "AddRPGHeuristic");
     bind_rpg_ff_heuristic<LiftedTag>(m, "FFRPGHeuristic");
     bind_goal_count_heuristic<LiftedTag>(m, "GoalCountHeuristic");
+
+    bind_pattern_generator<LiftedTag>(m, "PatternGenerator");
+    bind_goal_pattern_generator<LiftedTag>(m, "GoalPatternGenerator");
 }
 
 namespace astar_eager
