@@ -53,7 +53,7 @@ namespace
 template<f::FactKind T>
 void append_projected_atom(fp::GroundAtomView<T> element, const Pattern& pattern, IndexList<fp::GroundAtom<T>>& ref_projected_atoms, fp::MergeContext& context)
 {
-    if (pattern.predicates.contains(element.get_predicate()))
+    if (pattern.predicates_set.contains(element.get_predicate()))
         ref_projected_atoms.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
@@ -63,14 +63,14 @@ void append_projected_literal(fp::GroundLiteralView<T> element,
                               IndexList<fp::GroundLiteral<T>>& ref_projected_literal,
                               fp::MergeContext& context)
 {
-    if (pattern.predicates.contains(element.get_atom().get_predicate()))
+    if (pattern.predicates_set.contains(element.get_atom().get_predicate()))
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
 void append_projected_literal(fp::LiteralView<T> element, const Pattern& pattern, IndexList<fp::Literal<T>>& ref_projected_literal, fp::MergeContext& context)
 {
-    if (pattern.predicates.contains(element.get_atom().get_predicate()))
+    if (pattern.predicates_set.contains(element.get_atom().get_predicate()))
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
@@ -81,7 +81,7 @@ void append_projected_fact(fp::FDRFactView<T> element,
                            fp::MergeContext& context,
                            fp::FDRContext& fdr_context)
 {
-    if (pattern.facts.contains(element))
+    if (pattern.facts_set.contains(element))
     {
         const auto [atom, inserted] = fp::merge_p2p(*element.get_atom(), context);
         assert(!inserted);
@@ -240,7 +240,7 @@ auto project_state(const StateView<LiftedTask>& element, const Pattern& pattern,
     auto uastate = state_repository.get_unregistered_state();
     for (const auto& fact : element.get_fluent_facts_view())
     {
-        if (!pattern.facts.contains(fact))
+        if (!pattern.facts_set.contains(fact))
             continue;
 
         uastate->set(fact.get_data());
@@ -332,8 +332,11 @@ auto create_projection(const Pattern& pattern, const std::shared_ptr<LiftedTask>
     auto [astates, goal_vertices] = create_abstract_states(pattern, *task, *state_repository);
     auto [transitions, adj_lists] = create_abstract_transitions(astates, pattern, *task, successor_generator);
 
-    return ProjectionAbstraction(
-        ForwardProjectionAbstraction<LiftedTask>(std::move(astates), std::move(transitions), std::move(adj_lists), std::move(goal_vertices)));
+    return ProjectionAbstraction(ForwardProjectionAbstraction<LiftedTask>(ProjectionMapping<LiftedTask>(pattern),
+                                                                          std::move(astates),
+                                                                          std::move(transitions),
+                                                                          std::move(adj_lists),
+                                                                          std::move(goal_vertices)));
 }
 }
 
