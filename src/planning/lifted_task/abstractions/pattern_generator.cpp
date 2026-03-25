@@ -37,15 +37,7 @@ PatternCollection PatternGenerator<LiftedTask>::generate()
     auto patterns = PatternCollection {};
 
     for (const auto fact : m_task.get_task().get_goal().get_facts<formalism::FluentTag>())
-    {
-        auto pattern = Pattern {};
-        pattern.facts.insert(fact);
-        for (const auto atom : fact.get_variable().get_atoms())
-        {
-            pattern.predicates.insert(atom.get_predicate());
-        }
-        patterns.push_back(std::move(pattern));
-    }
+        patterns.push_back(Pattern({ fact }));
 
     return patterns;
 }
