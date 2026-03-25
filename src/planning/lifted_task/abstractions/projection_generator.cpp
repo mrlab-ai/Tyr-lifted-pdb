@@ -230,9 +230,6 @@ auto create_projected_formalism_task(const fp::PlanningTask& planning_task, cons
         append_projected_atom(atom, pattern, task.fluent_atoms, context);
     task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context, *fdr_context).first.get_index();
 
-    std::cout << planning_task.get_fdr_context()->get_variables() << std::endl;
-    std::cout << fdr_context->get_variables() << std::endl;
-
     canonicalize(task);
     return fp::PlanningTask(destination->get_or_create(task).first, std::move(fdr_context), destination, project_domain);
 }
@@ -240,26 +237,11 @@ auto create_projected_formalism_task(const fp::PlanningTask& planning_task, cons
 /// @brief Project a state into the projection.
 auto project_state(const StateView<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
 {
-    std::cout << "Pattern: " << pattern.facts << std::endl;
-    // std::cout << "Project state: " << element << std::endl;
-
-    for (const auto fact : pattern.facts)
-    {
-        std::cout << fact << " " << fact.get_data() << " " << fact.get_context().get_index() << std::endl;
-    }
-
     auto uastate = state_repository.get_unregistered_state();
     for (const auto& fact : element.get_fluent_facts_view())
     {
         if (!pattern.facts.contains(fact))
-        {
-            std::cout << "Not contained: " << fact << " " << fact.get_data() << " " << fact.get_context().get_index() << std::endl;
             continue;
-        }
-        else
-        {
-            std::cout << "Contained: " << fact << " " << fact.get_data() << " " << fact.get_context().get_index() << std::endl;
-        }
 
         uastate->set(fact.get_data());
     }
@@ -332,8 +314,6 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astat
             const auto src = uint_t(astate.get_index());
             const auto dst = uint_t(pastate.get_index());
 
-            std::cout << src << " -> " << dst << std::endl;
-
             transitions.emplace_back(labeled_succ_node.label, src, dst);
 
             adj_row.push_back(t);
@@ -352,7 +332,8 @@ auto create_projection(const Pattern& pattern, const std::shared_ptr<LiftedTask>
     auto [astates, goal_vertices] = create_abstract_states(pattern, *task, *state_repository);
     auto [transitions, adj_lists] = create_abstract_transitions(astates, pattern, *task, successor_generator);
 
-    return ProjectionAbstraction<LiftedTask>(std::move(astates), std::move(transitions), std::move(adj_lists), std::move(goal_vertices));
+    return ProjectionAbstraction(
+        ForwardProjectionAbstraction<LiftedTask>(std::move(astates), std::move(transitions), std::move(adj_lists), std::move(goal_vertices)));
 }
 }
 
@@ -371,19 +352,17 @@ void ProjectionGenerator<LiftedTask>::generate()
 
         auto projection = create_projection(pattern, projected_task);
 
-        auto weights = std::vector<float_t>(projection.num_edges(), float_t { 1 });
+        auto weights = std::vector<float_t>(projection.get_forward().num_edges(), float_t { 1 });
 
         std::cout << projection << std::endl;
 
-        auto backward_projection = BackwardProjectionAbstraction<LiftedTask>(projection);
-
-        const auto [predecessors, distances] = graphs::dijkstra_shortest_paths(backward_projection,
+        const auto [predecessors, distances] = graphs::dijkstra_shortest_paths(projection.get_backward(),
                                                                                weights,
-                                                                               backward_projection.goal_vertices().begin(),
-                                                                               backward_projection.goal_vertices().end());
+                                                                               projection.get_backward().goal_vertices().begin(),
+                                                                               projection.get_backward().goal_vertices().end());
 
         std::cout << "goal_vertices: " << std::endl;
-        print(std::cout, backward_projection.goal_vertices());
+        print(std::cout, projection.get_backward().goal_vertices());
         std::cout << std::endl;
 
         std::cout << "predecessors: " << std::endl;
