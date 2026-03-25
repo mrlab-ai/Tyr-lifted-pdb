@@ -38,13 +38,13 @@ template<>
 class ProjectionGenerator<LiftedTask>
 {
 public:
-    ProjectionGenerator(std::shared_ptr<const LiftedTask> task, const PatternCollection& patterns);
+    ProjectionGenerator(std::shared_ptr<const LiftedTask> task, PatternCollection patterns);
 
     ProjectionAbstractionList<LiftedTask> generate();
 
 private:
     std::shared_ptr<const LiftedTask> m_task;
-    const PatternCollection& m_patterns;
+    PatternCollection m_patterns;
 };
 
 }
