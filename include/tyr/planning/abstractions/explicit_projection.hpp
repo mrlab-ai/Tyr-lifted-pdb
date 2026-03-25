@@ -60,7 +60,10 @@ public:
         auto r = uint_t(0);
         for (uint_t i = 0; i < k; ++i)
         {
-            if (state.contains[m_pattern.facts[i]])
+            const auto fact = m_pattern.facts[i];
+            const auto variable = fact.get_variable();
+            const auto value = fact.get_value();
+            if (state.get(variable) == value)
                 r |= (uint_t(1) << i);
         }
         return r;
@@ -94,6 +97,7 @@ public:
     {
     }
 
+    const auto& get_mapping() const noexcept { return m_mapping; }
     auto num_vertices() const noexcept { return m_vertices.size(); }
     auto num_edges() const noexcept { return m_transitions.size(); }
     const auto& vertices() const noexcept { return m_vertices; }
@@ -140,6 +144,7 @@ public:
 
     explicit ProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Task>> forward) : m_forward(std::move(forward)), m_backward(m_forward) {}
 
+    const auto& get_mapping() const noexcept { return m_forward->get_mapping(); }
     const auto& get_forward() const noexcept { return *m_forward; }
     const auto& get_backward() const noexcept { return m_backward; }
 };

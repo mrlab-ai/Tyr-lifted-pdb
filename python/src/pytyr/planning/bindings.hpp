@@ -37,6 +37,14 @@ public:
     PatternCollection generate() override { NB_OVERRIDE_PURE(generate); }
 };
 
+inline void bind_pattern(nb::module_& m, const std::string& name)
+{
+    using T = Pattern;
+
+    nb::class_<T>(m, name.c_str())  //
+        .def(nb::init<formalism::planning::FDRFactViewList<formalism::FluentTag>>(), "facts"_a);
+}
+
 template<typename Task>
 void bind_pattern_generator(nb::module_& m, const std::string& name)
 {
