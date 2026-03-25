@@ -350,7 +350,7 @@ void bind_projection_abstraction_heuristic(nb::module_& m, const std::string& na
     using T = ProjectionAbstractionHeuristic<Task>;
 
     nb::class_<T, Heuristic<Task>>(m, name.c_str())  //
-        .def(nb::new_([](const ProjectionAbstractionHeuristic<Task>& projection) { return T::create(projection); }), "projection"_a);
+        .def(nb::new_([](const ProjectionAbstraction<Task>& projection) { return T::create(projection); }), "projection"_a);
 }
 
 template<typename Task>
@@ -374,6 +374,14 @@ inline void bind_pattern(nb::module_& m, const std::string& name)
 }
 
 template<typename Task>
+void bind_projection_abstraction(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionAbstraction<Task>;
+
+    nb::class_<T>(m, name.c_str());
+}
+
+template<typename Task>
 void bind_pattern_generator(nb::module_& m, const std::string& name)
 {
     using T = PatternGenerator<Task>;
@@ -392,20 +400,12 @@ void bind_goal_pattern_generator(nb::module_& m, const std::string& name)
 }
 
 template<typename Task>
-void bind_projection_abstraction(nb::module_& m, const std::string& name)
-{
-    using T = ProjectionAbstraction<Task>;
-
-    nb::class_<T>(m, name.c_str());
-}
-
-template<typename Task>
 void bind_projection_generator(nb::module_& m, const std::string& name)
 {
     using T = ProjectionGenerator<Task>;
 
     nb::class_<T>(m, name.c_str())  //
-        .def(nb::init<std::shared_ptr<const Task>, const PatternCollection&>(), "task"_a, "patterns"_a)
+        .def(nb::init<std::shared_ptr<const Task>, PatternCollection>(), "task"_a, "patterns"_a)
         .def("generate", &T::generate);
 }
 

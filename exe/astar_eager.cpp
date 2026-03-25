@@ -88,16 +88,13 @@ int main(int argc, char** argv)
         options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
         auto patterns = planning::GoalPatternGenerator<planning::LiftedTask>::create(lifted_task)->generate();
-        // print(std::cout, patterns);
-        // std::cout << std::endl;
+        auto projections = planning::ProjectionGenerator<planning::LiftedTask>(lifted_task, patterns).generate();
+        auto components = std::vector<std::shared_ptr<planning::Heuristic<planning::LiftedTask>>> {};
+        for (const auto& projection : projections)
+            components.push_back(planning::ProjectionAbstractionHeuristic<planning::LiftedTask>::create(projection));
+        auto max_heuristic = planning::MaxHeuristic<planning::LiftedTask>::create(components);
 
-        planning::ProjectionGenerator<planning::LiftedTask>(lifted_task, patterns).generate();
-        // auto canonical_heuristic = planning::CanonicalHeuristic::create(*lifted_task, projections);
-        // auto scp_heuristic = planning::SaturatedCostPartitioningHeuristic::create(*lifted_task, projections);
-
-        auto ff_heuristic = planning::FFHeuristic<planning::LiftedTask>::create(lifted_task, execution_context);
-
-        auto result = planning::astar_eager::find_solution(*lifted_task, successor_generator, *ff_heuristic, options);
+        auto result = planning::astar_eager::find_solution(*lifted_task, successor_generator, *max_heuristic, options);
 
         if (result.status == planning::SearchStatus::SOLVED)
         {
