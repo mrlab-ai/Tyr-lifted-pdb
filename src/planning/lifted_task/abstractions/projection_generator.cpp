@@ -300,8 +300,6 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astat
 {
     auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
 
-    std::cout << "create_abstract_transitions" << std::endl;
-
     auto transitions = TransitionList {};
     auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
 
@@ -317,9 +315,6 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astat
 
         for (const auto& labeled_succ_node : labeled_succ_nodes)
         {
-            const auto label = labeled_succ_node.label;
-            std::cout << label.get_action().get_index() << " " << label.get_row() << std::endl;
-
             auto pastate = project_state(labeled_succ_node.node.get_state(), pattern, state_repository);
 
             assert(uint_t(pastate.get_index()) < astates.size());

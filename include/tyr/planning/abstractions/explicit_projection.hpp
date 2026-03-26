@@ -121,7 +121,7 @@ public:
     const auto& transitions() const noexcept { return m_transitions; }
     const auto& adj_lists() const noexcept { return m_adj_lists; }
     const auto& goal_vertices() const noexcept { return m_goal_vertices; }
-    const auto& get_state_changing_transitions() const noexcept { return m_state_changing_transitions; }
+    const auto& state_changing_transitions() const noexcept { return m_state_changing_transitions; }
 
 private:
     ProjectionMapping<Task> m_mapping;
@@ -168,6 +168,8 @@ public:
     explicit ProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Task>> forward) : m_forward(std::move(forward)), m_backward(m_forward) {}
 
     const auto& get_mapping() const noexcept { return m_forward->get_mapping(); }
+    const auto& state_changing_transitions() const noexcept { return m_forward->state_changing_transitions(); }
+    const auto& transitions() const noexcept { return m_forward->transitions(); }
     const auto& get_forward() const noexcept { return *m_forward; }
     const auto& get_backward() const noexcept { return m_backward; }
 
