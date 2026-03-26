@@ -2,6 +2,7 @@
 
 from pytyr.pytyr.formalism.planning import (
     # Core symbols
+    RowIndex,
     Object,
     ObjectIndex,
     ObjectBuilder,
