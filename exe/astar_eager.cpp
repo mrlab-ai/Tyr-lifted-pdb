@@ -89,12 +89,9 @@ int main(int argc, char** argv)
 
         auto patterns = planning::GoalPatternGenerator<planning::LiftedTask>::create(lifted_task)->generate();
         auto projections = planning::ProjectionGenerator<planning::LiftedTask>(lifted_task, patterns).generate();
-        auto components = std::vector<std::shared_ptr<planning::Heuristic<planning::LiftedTask>>> {};
-        for (const auto& projection : projections)
-            components.push_back(planning::ProjectionAbstractionHeuristic<planning::LiftedTask>::create(projection));
-        auto max_heuristic = planning::MaxHeuristic<planning::LiftedTask>::create(components);
+        auto canonical_heuristic = planning::CanonicalHeuristic<planning::LiftedTask>::create(projections);
 
-        auto result = planning::astar_eager::find_solution(*lifted_task, successor_generator, *max_heuristic, options);
+        auto result = planning::astar_eager::find_solution(*lifted_task, successor_generator, *canonical_heuristic, options);
 
         if (result.status == planning::SearchStatus::SOLVED)
         {

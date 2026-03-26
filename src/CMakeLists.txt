@@ -25,6 +25,8 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     analysis/stratification.cpp
     analysis/task_domains.cpp
 
+    graphs/bron_kerbosch.cpp
+
     formalism/datalog/builder.cpp
     formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
