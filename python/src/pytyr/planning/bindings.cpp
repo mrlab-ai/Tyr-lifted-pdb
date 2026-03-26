@@ -392,6 +392,7 @@ void bind_ground_module_definitions(nb::module_& m)
     bind_goal_count_heuristic<GroundTag>(m, "GoalCountHeuristic");
     bind_max_heuristic<GroundTag>(m, "MaxHeuristic");
     bind_projection_abstraction_heuristic<GroundTag>(m, "ProjectionAbstractionHeuristic");
+    bind_canonical_heuristic<GroundTag>(m, "CanonicalHeuristic");
 
     bind_pattern_generator<GroundTag>(m, "PatternGenerator");
     bind_goal_pattern_generator<GroundTag>(m, "GoalPatternGenerator");
@@ -457,6 +458,7 @@ should not be used further.
     bind_goal_count_heuristic<LiftedTag>(m, "GoalCountHeuristic");
     bind_max_heuristic<LiftedTag>(m, "MaxHeuristic");
     bind_projection_abstraction_heuristic<LiftedTag>(m, "ProjectionAbstractionHeuristic");
+    bind_canonical_heuristic<LiftedTag>(m, "CanonicalHeuristic");
 
     bind_pattern_generator<LiftedTag>(m, "PatternGenerator");
     bind_goal_pattern_generator<LiftedTag>(m, "GoalPatternGenerator");
