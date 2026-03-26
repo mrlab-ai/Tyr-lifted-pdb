@@ -201,11 +201,11 @@ auto create_projected_formalism_domain(fp::DomainView element,
 /// @param planning_task
 /// @param pattern
 /// @return
-auto create_projected_formalism_task(const fp::PlanningTask& planning_task, const Pattern& pattern)
+auto create_projected_formalism_task(const fp::PlanningTask& planning_task,
+                                     const Pattern& pattern,
+                                     fp::RepositoryPtr destination,
+                                     fp::RepositoryFactoryPtr factory)
 {
-    const auto& factory = planning_task.get_domain().get_repository_factory();
-
-    auto destination = factory->create_shared(planning_task.get_repository().get());
     auto builder = fp::Builder();
     // Note: we have to copy the FDRContext to avoid polluting the parent tasks FDRContext with non-existing atoms.
     auto fdr_context = std::make_shared<fp::FDRContext>(*planning_task.get_fdr_context(), builder, destination);
@@ -348,9 +348,14 @@ ProjectionGenerator<LiftedTask>::ProjectionGenerator(std::shared_ptr<const Lifte
 ProjectionAbstractionList<LiftedTask> ProjectionGenerator<LiftedTask>::generate()
 {
     auto projections = ProjectionAbstractionList<LiftedTask> {};
+
+    // All projections share the same repository.
+    const auto& factory = m_task->get_domain().get_repository_factory();
+    auto destination = factory->create_shared(m_task->get_repository().get());
+
     for (const auto& pattern : m_patterns)
     {
-        const auto projected_task = LiftedTask::create(create_projected_formalism_task(m_task->get_formalism_task(), pattern));
+        const auto projected_task = LiftedTask::create(create_projected_formalism_task(m_task->get_formalism_task(), pattern, destination, factory));
 
         projections.push_back(create_projection(pattern, projected_task));
     }
