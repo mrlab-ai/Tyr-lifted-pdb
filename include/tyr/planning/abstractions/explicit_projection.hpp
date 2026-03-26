@@ -88,6 +88,18 @@ class ForwardProjectionAbstraction
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
+    static boost::dynamic_bitset<> compute_state_changing_transitions(const TransitionList& transitions)
+    {
+        auto result = boost::dynamic_bitset<>(transitions.size());
+        for (uint_t t = 0; t < transitions.size(); ++t)
+        {
+            const auto& transition = transitions[t];
+            if (transition.src != transition.dst)
+                result.set(t);
+        }
+        return result;
+    }
+
     ForwardProjectionAbstraction(ProjectionMapping<Task> mapping,
                                  std::vector<StateView<Task>> vertices,
                                  TransitionList transitions,
@@ -97,7 +109,8 @@ public:
         m_vertices(std::move(vertices)),
         m_transitions(std::move(transitions)),
         m_adj_lists(std::move(adj_lists)),
-        m_goal_vertices(std::move(goal_vertices))
+        m_goal_vertices(std::move(goal_vertices)),
+        m_state_changing_transitions(compute_state_changing_transitions(m_transitions))
     {
     }
 
@@ -108,6 +121,7 @@ public:
     const auto& transitions() const noexcept { return m_transitions; }
     const auto& adj_lists() const noexcept { return m_adj_lists; }
     const auto& goal_vertices() const noexcept { return m_goal_vertices; }
+    const auto& get_state_changing_transitions() const noexcept { return m_state_changing_transitions; }
 
 private:
     ProjectionMapping<Task> m_mapping;
@@ -116,6 +130,7 @@ private:
     TransitionList m_transitions;
     std::vector<std::vector<uint_t>> m_adj_lists;
     std::vector<uint_t> m_goal_vertices;
+    boost::dynamic_bitset<> m_state_changing_transitions;
 };
 
 template<typename Task>
