@@ -5,7 +5,7 @@ Example usage (run from the repository root):
 
     python3 python/prototypes/lifted_pdbs.py \
         -d data/gripper/domain.pddl \
-        -p data/gripper/test_problem.pddl
+        -p data/gripper/p-2-0.pddl
 
 Author: Dominik Drexler (dominik.drexler@liu.se)
 """
@@ -34,6 +34,7 @@ from pytyr.planning.lifted import (
     GoalPatternGenerator,
     ProjectionGenerator,
     ProjectionAbstractionHeuristic,
+    CanonicalHeuristic,
     MaxHeuristic, 
     PruningStrategy, 
     TaskGoalStrategy,
@@ -70,10 +71,7 @@ def main():
 
     patterns = GoalPatternGenerator(lifted_task).generate()
     projections = ProjectionGenerator(lifted_task, patterns).generate()
-    components = []
-    for projection in projections:
-        components.append(ProjectionAbstractionHeuristic(projection))
-    heuristic = MaxHeuristic(components)
+    heuristic = CanonicalHeuristic(projections)
 
     options = Options()                               # Lifted search is parallelized but only useful on large tasks.
     options.event_handler = DefaultEventHandler(0)         # Collects and prints statistics. If verbosity >= 2, then also prints labeled nodes.
