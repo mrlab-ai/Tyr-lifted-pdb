@@ -151,7 +151,11 @@ void append_projected_conditional_effect(fp::ConditionalEffectView element,
     ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect).first.get_index());
 }
 
-void append_projected_action(fp::ActionView element, fp::MergeContext& context, IndexList<fp::Action>& ref_projected_actions, const Pattern& pattern)
+void append_projected_action(fp::ActionView element,
+                             fp::MergeContext& context,
+                             IndexList<fp::Action>& ref_projected_actions,
+                             ProjectionMapping<LiftedTask>::ActionMapping& projected_to_original_action,
+                             const Pattern& pattern)
 {
     auto action_ptr = context.builder.template get_builder<fp::Action>();
     auto& action = *action_ptr;
@@ -166,13 +170,16 @@ void append_projected_action(fp::ActionView element, fp::MergeContext& context, 
         append_projected_conditional_effect(effect, context, action.effects, pattern);
 
     canonicalize(action);
-    ref_projected_actions.push_back(context.destination.get_or_create(action).first.get_index());
+    const auto new_action = context.destination.get_or_create(action).first;
+    projected_to_original_action.emplace(new_action, element);
+    ref_projected_actions.push_back(new_action.get_index());
 }
 
 auto create_projected_formalism_domain(fp::DomainView element,
                                        std::shared_ptr<fp::Repository> destination,
                                        fp::MergeContext& context,
                                        fp::RepositoryFactoryPtr factory,
+                                       ProjectionMapping<LiftedTask>::ActionMapping& projected_to_original_action,
                                        const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
@@ -187,7 +194,7 @@ auto create_projected_formalism_domain(fp::DomainView element,
     for (const auto object : element.get_constants())
         domain.constants.push_back(fp::merge_p2p(object, context).first.get_index());
     for (const auto action : element.get_actions())
-        append_projected_action(action, context, domain.actions, pattern);
+        append_projected_action(action, context, domain.actions, projected_to_original_action, pattern);
 
     canonicalize(domain);
     return fp::PlanningDomain(context.destination.get_or_create(domain).first, std::move(destination), std::move(factory));
@@ -204,14 +211,16 @@ auto create_projected_formalism_domain(fp::DomainView element,
 auto create_projected_formalism_task(const fp::PlanningTask& planning_task,
                                      const Pattern& pattern,
                                      fp::RepositoryPtr destination,
-                                     fp::RepositoryFactoryPtr factory)
+                                     fp::RepositoryFactoryPtr factory,
+                                     fp::FDRContextPtr fdr_context)
 {
+    auto projected_to_original_action = ProjectionMapping<LiftedTask>::ActionMapping {};
     auto builder = fp::Builder();
-    // Note: we have to copy the FDRContext to avoid polluting the parent tasks FDRContext with non-existing atoms.
-    auto fdr_context = std::make_shared<fp::FDRContext>(*planning_task.get_fdr_context(), builder, destination);
+
     auto context = fp::MergeContext(builder, *destination);
 
-    const auto project_domain = create_projected_formalism_domain(planning_task.get_domain().get_domain(), destination, context, factory, pattern);
+    const auto project_domain =
+        create_projected_formalism_domain(planning_task.get_domain().get_domain(), destination, context, factory, projected_to_original_action, pattern);
 
     auto task_ptr = builder.get_builder<fp::Task>();
     auto& task = *task_ptr;
@@ -230,7 +239,8 @@ auto create_projected_formalism_task(const fp::PlanningTask& planning_task,
     task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context, *fdr_context).first.get_index();
 
     canonicalize(task);
-    return fp::PlanningTask(destination->get_or_create(task).first, std::move(fdr_context), destination, project_domain);
+    return std::make_pair(fp::PlanningTask(destination->get_or_create(task).first, std::move(fdr_context), destination, project_domain),
+                          std::move(projected_to_original_action));
 }
 
 /// @brief Project a state into the projection.
@@ -290,6 +300,8 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astat
 {
     auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
 
+    std::cout << "create_abstract_transitions" << std::endl;
+
     auto transitions = TransitionList {};
     auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
 
@@ -305,6 +317,9 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astat
 
         for (const auto& labeled_succ_node : labeled_succ_nodes)
         {
+            const auto label = labeled_succ_node.label;
+            std::cout << label.get_action().get_index() << " " << label.get_row() << std::endl;
+
             auto pastate = project_state(labeled_succ_node.node.get_state(), pattern, state_repository);
 
             assert(uint_t(pastate.get_index()) < astates.size());
@@ -319,23 +334,37 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astat
         }
     }
 
-    return std::make_pair(transitions, adj_lists);
+    return std::make_pair(std::move(transitions), std::move(adj_lists));
 }
 
-auto create_projection(const Pattern& pattern, const std::shared_ptr<LiftedTask>& task)
+auto create_projection(const Pattern& pattern, const LiftedTask& original_task)
 {
+    // Note: All projections share the same repository.
+    const auto& factory = original_task.get_domain().get_repository_factory();
+    auto destination = factory->create_shared(original_task.get_repository().get());
+
+    // Note: Copy the FDRContext to avoid polluting the parent tasks FDRContext with non-existing atoms.
+    auto builder = fp::Builder();
+    auto fdr_context = std::make_shared<fp::FDRContext>(*original_task.get_fdr_context(), builder, destination);
+
+    auto [projected_formalism_task, projected_to_original_action] =
+        create_projected_formalism_task(original_task.get_formalism_task(), pattern, destination, factory, fdr_context);
+
+    auto projected_task = LiftedTask::create(projected_formalism_task);
+
     auto execution_context = ExecutionContext::create(1);
-    auto successor_generator = SuccessorGenerator<LiftedTask>(task, execution_context);
+    auto successor_generator = SuccessorGenerator<LiftedTask>(projected_task, execution_context);
     auto& state_repository = successor_generator.get_state_repository();
 
-    auto [astates, goal_vertices] = create_abstract_states(pattern, *task, *state_repository);
-    auto [transitions, adj_lists] = create_abstract_transitions(astates, pattern, *task, successor_generator);
+    auto [astates, goal_vertices] = create_abstract_states(pattern, *projected_task, *state_repository);
+    auto [transitions, adj_lists] = create_abstract_transitions(astates, pattern, *projected_task, successor_generator);
 
-    return ProjectionAbstraction(std::make_shared<const ForwardProjectionAbstraction<LiftedTask>>(ProjectionMapping<LiftedTask>(pattern),
-                                                                                                  std::move(astates),
-                                                                                                  std::move(transitions),
-                                                                                                  std::move(adj_lists),
-                                                                                                  std::move(goal_vertices)));
+    return ProjectionAbstraction(
+        std::make_shared<const ForwardProjectionAbstraction<LiftedTask>>(ProjectionMapping<LiftedTask>(pattern, std::move(projected_to_original_action)),
+                                                                         std::move(astates),
+                                                                         std::move(transitions),
+                                                                         std::move(adj_lists),
+                                                                         std::move(goal_vertices)));
 }
 }
 
@@ -349,16 +378,9 @@ ProjectionAbstractionList<LiftedTask> ProjectionGenerator<LiftedTask>::generate(
 {
     auto projections = ProjectionAbstractionList<LiftedTask> {};
 
-    // All projections share the same repository.
-    const auto& factory = m_task->get_domain().get_repository_factory();
-    auto destination = factory->create_shared(m_task->get_repository().get());
-
     for (const auto& pattern : m_patterns)
-    {
-        const auto projected_task = LiftedTask::create(create_projected_formalism_task(m_task->get_formalism_task(), pattern, destination, factory));
+        projections.push_back(create_projection(pattern, *m_task));
 
-        projections.push_back(create_projection(pattern, projected_task));
-    }
     return projections;
 }
 }
