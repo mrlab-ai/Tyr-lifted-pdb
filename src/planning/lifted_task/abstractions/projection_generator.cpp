@@ -352,6 +352,7 @@ auto create_projection(const Pattern& pattern, const LiftedTask& original_task)
 
     auto projected_task = LiftedTask::create(projected_formalism_task);
 
+    // Note: Each projection has its own StateRepository.
     auto execution_context = ExecutionContext::create(1);
     auto successor_generator = SuccessorGenerator<LiftedTask>(projected_task, execution_context);
     auto& state_repository = successor_generator.get_state_repository();
