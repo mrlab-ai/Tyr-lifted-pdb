@@ -354,6 +354,15 @@ void bind_projection_abstraction_heuristic(nb::module_& m, const std::string& na
 }
 
 template<typename Task>
+void bind_canonical_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = CanonicalHeuristic<Task>;
+
+    nb::class_<T, Heuristic<Task>>(m, name.c_str())  //
+        .def(nb::new_([](const std::vector<ProjectionAbstractionList<Task>>& projections) { return T::create(projections); }), "projections"_a);
+}
+
+template<typename Task>
 class PyPatternGenerator : public PatternGenerator<Task>
 {
 public:

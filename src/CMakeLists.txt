@@ -62,7 +62,6 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     datalog/formatter.cpp
     datalog/rule_scheduler.cpp
 
-    planning/heuristics/goal_count.cpp
     planning/abstractions/explicit_projection.cpp
     planning/abstractions/goal_pattern_generator.cpp
 
@@ -73,6 +72,8 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/ground_task/state.cpp
     planning/ground_task/successor_generator.cpp
 
+    planning/heuristics/goal_count.cpp
+    planning/heuristics/canonical.cpp
     planning/heuristics/max.cpp
     planning/heuristics/projection_abstraction.cpp
 

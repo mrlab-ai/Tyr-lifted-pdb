@@ -22,6 +22,7 @@ from pytyr.pytyr.planning.lifted import (
     GoalCountHeuristic,
     MaxHeuristic,
     ProjectionAbstractionHeuristic,
+    CanonicalHeuristic,
 
     PatternGenerator,
     GoalPatternGenerator,

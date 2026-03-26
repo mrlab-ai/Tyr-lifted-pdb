@@ -76,6 +76,7 @@ void bind_ground_module_definitions(nb::module_& m)
     bind_goal_count_heuristic<GroundTask>(m, "GoalCountHeuristic");
     bind_max_heuristic<GroundTask>(m, "MaxHeuristic");
     bind_projection_abstraction_heuristic<GroundTask>(m, "ProjectionAbstractionHeuristic");
+    bind_canonical_heuristic<GroundTask>(m, "CanonicalHeuristic");
 
     bind_pattern_generator<GroundTask>(m, "PatternGenerator");
     bind_goal_pattern_generator<GroundTask>(m, "GoalPatternGenerator");
@@ -128,6 +129,7 @@ should not be used further.
     bind_goal_count_heuristic<LiftedTask>(m, "GoalCountHeuristic");
     bind_max_heuristic<LiftedTask>(m, "MaxHeuristic");
     bind_projection_abstraction_heuristic<LiftedTask>(m, "ProjectionAbstractionHeuristic");
+    bind_canonical_heuristic<LiftedTask>(m, "CanonicalHeuristic");
 
     bind_pattern_generator<LiftedTask>(m, "PatternGenerator");
     bind_goal_pattern_generator<LiftedTask>(m, "GoalPatternGenerator");
