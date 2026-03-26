@@ -15,32 +15,26 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_HEURISTICS_CANONICAL_HPP_
-#define TYR_PLANNING_HEURISTICS_CANONICAL_HPP_
+#ifndef TYR_GRAPHS_BRON_KERBOSCH_HPP_
+#define TYR_GRAPHS_BRON_KERBOSCH_HPP_
 
-#include "tyr/planning/abstractions/explicit_projection.hpp"
-#include "tyr/planning/heuristic.hpp"
+#include "tyr/common/config.hpp"
 
-#include <memory>
+#include <boost/dynamic_bitset.hpp>
 #include <vector>
 
-namespace tyr::planning
+namespace tyr::graphs::bron_kerbosch
 {
 
-template<typename Task>
-class CanonicalHeuristic : public Heuristic<Task>
+struct Graph
 {
-private:
-    std::vector<std::shared_ptr<Heuristic<Task>>> m_components;
-    std::vector<std::vector<uint_t>> m_additive_partitions;
+    std::vector<boost::dynamic_bitset<>> matrix;
 
-public:
-    explicit CanonicalHeuristic(const ProjectionAbstractionList<Task>& projections);
-
-    static std::shared_ptr<CanonicalHeuristic<Task>> create(const ProjectionAbstractionList<Task>& projections);
-
-    float_t evaluate(const StateView<Task>& state) override;
+    Graph();
+    explicit Graph(size_t nv);
 };
+
+std::vector<std::vector<uint_t>> compute_maximal_cliques(const Graph& graph);
 
 }
 
