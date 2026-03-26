@@ -47,11 +47,14 @@ using TransitionList = std::vector<Transition>;
 template<typename Task>
 class ProjectionMapping
 {
-private:
-    Pattern m_pattern;
-
 public:
-    explicit ProjectionMapping(Pattern pattern) : m_pattern(std::move(pattern)) {}
+    using ActionMapping = UnorderedMap<formalism::planning::ActionView, formalism::planning::ActionView>;
+
+    explicit ProjectionMapping(Pattern pattern, ActionMapping projected_to_original_action) :
+        m_pattern(std::move(pattern)),
+        m_projected_to_original_action(std::move(projected_to_original_action))
+    {
+    }
 
     uint_t map_state(const StateView<Task>& state) const noexcept
     {
@@ -68,19 +71,20 @@ public:
         }
         return r;
     }
+
+    formalism::planning::ActionView get_original_action(formalism::planning::ActionView projected_action) const noexcept
+    {
+        return m_projected_to_original_action.at(projected_action);
+    }
+
+private:
+    Pattern m_pattern;
+    ActionMapping m_projected_to_original_action;
 };
 
 template<typename Task>
 class ForwardProjectionAbstraction
 {
-private:
-    ProjectionMapping<Task> m_mapping;
-    // TODO: get rid of states.
-    std::vector<StateView<Task>> m_vertices;
-    TransitionList m_transitions;
-    std::vector<std::vector<uint_t>> m_adj_lists;
-    std::vector<uint_t> m_goal_vertices;
-
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
@@ -104,16 +108,19 @@ public:
     const auto& transitions() const noexcept { return m_transitions; }
     const auto& adj_lists() const noexcept { return m_adj_lists; }
     const auto& goal_vertices() const noexcept { return m_goal_vertices; }
+
+private:
+    ProjectionMapping<Task> m_mapping;
+    // TODO: get rid of states.
+    std::vector<StateView<Task>> m_vertices;
+    TransitionList m_transitions;
+    std::vector<std::vector<uint_t>> m_adj_lists;
+    std::vector<uint_t> m_goal_vertices;
 };
 
 template<typename Task>
 class BackwardProjectionAbstraction
 {
-private:
-    std::shared_ptr<const ForwardProjectionAbstraction<Task>> m_g;
-
-    std::vector<std::vector<uint_t>> m_adj_lists;
-
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
@@ -130,15 +137,16 @@ public:
     const auto& goal_vertices() const noexcept { return m_g->goal_vertices(); }
     const auto& adj_lists() const noexcept { return m_adj_lists; }
     const auto& g() const noexcept { return *m_g; }
+
+private:
+    std::shared_ptr<const ForwardProjectionAbstraction<Task>> m_g;
+
+    std::vector<std::vector<uint_t>> m_adj_lists;
 };
 
 template<typename Task>
 class ProjectionAbstraction
 {
-private:
-    std::shared_ptr<const ForwardProjectionAbstraction<Task>> m_forward;
-    BackwardProjectionAbstraction<Task> m_backward;
-
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
@@ -147,6 +155,10 @@ public:
     const auto& get_mapping() const noexcept { return m_forward->get_mapping(); }
     const auto& get_forward() const noexcept { return *m_forward; }
     const auto& get_backward() const noexcept { return m_backward; }
+
+private:
+    std::shared_ptr<const ForwardProjectionAbstraction<Task>> m_forward;
+    BackwardProjectionAbstraction<Task> m_backward;
 };
 
 template<typename Task>
