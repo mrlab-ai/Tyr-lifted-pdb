@@ -19,6 +19,7 @@ from pytyr.pytyr.planning.ground import (
     GoalCountHeuristic,
     MaxHeuristic,
     ProjectionAbstractionHeuristic,
+    CanonicalHeuristic,
 
     PatternGenerator,
     GoalPatternGenerator,
