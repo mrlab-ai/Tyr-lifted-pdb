@@ -72,6 +72,8 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/ground_task/state.cpp
     planning/ground_task/successor_generator.cpp
 
+    planning/lifted_task/state_storage/atom_tree_compression.cpp
+    planning/lifted_task/state_storage/fact_tree_compression.cpp
     planning/lifted_task/heuristics/rpg_add.cpp
     planning/lifted_task/heuristics/rpg_max.cpp
     planning/lifted_task/heuristics/rpg_ff.cpp
