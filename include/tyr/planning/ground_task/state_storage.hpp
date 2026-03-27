@@ -15,41 +15,29 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_GROUND_TASK_STATE_STORAGE_CONTEXT_HPP_
-#define TYR_PLANNING_GROUND_TASK_STATE_STORAGE_CONTEXT_HPP_
+#ifndef TYR_PLANNING_GROUND_TASK_STATE_STORAGE_HPP_
+#define TYR_PLANNING_GROUND_TASK_STATE_STORAGE_HPP_
 
 #include "tyr/common/config.hpp"
-#include "tyr/common/raw_array_set.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
+#include "tyr/planning/state_storage/tags.hpp"
 
-#include <concepts>
-#include <valla/valla.hpp>
-#include <vector>
+#include <boost/dynamic_bitset.hpp>
 
 namespace tyr::planning
 {
 
-/**
- * Context
- */
+template<>
+struct AtomUnpackedStorage<GroundTask>
+{
+    boost::dynamic_bitset<> indices;
+};
 
 template<>
-struct StateStorageContext<GroundTask, TreeCompression>
+struct FactUnpackedStorage<GroundTask>
 {
-    struct VariableInfo
-    {
-        uint_t pos;
-        uint_t length;
-    };
-
-    RawArraySet<uint_t> fluent_array_set;
-    std::vector<VariableInfo> fluent_infos;
-
-    RawArraySet<uint_t> derived_array_set;
-    uint_t derived_num_bits;
-
-    valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> uint_nodes;
-    valla::IndexedHashSet<float_t, uint_t> float_nodes;
+    std::vector<uint_t> values;
 };
 
 }
