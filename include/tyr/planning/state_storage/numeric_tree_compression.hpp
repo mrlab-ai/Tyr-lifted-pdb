@@ -32,6 +32,8 @@ template<typename Task>
 struct NumericPackedStorage<Task, TreeCompression>
 {
     valla::Slot<uint_t> slot;
+
+    auto identifying_members() const noexcept { return std::tie(slot.i1, slot.i2); }
 };
 
 template<typename Task>

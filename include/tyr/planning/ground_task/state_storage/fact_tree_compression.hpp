@@ -36,6 +36,8 @@ template<>
 struct FactPackedStorage<GroundTask, TreeCompression>
 {
     uint_t index;
+
+    auto identifying_members() const noexcept { return std::tie(index); }
 };
 
 template<>

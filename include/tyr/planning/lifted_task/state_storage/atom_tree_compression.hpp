@@ -35,6 +35,8 @@ template<>
 struct AtomPackedStorage<LiftedTask, TreeCompression>
 {
     valla::Slot<uint_t> slot;
+
+    auto identifying_members() const noexcept { return std::tie(slot.i1, slot.i2); }
 };
 
 template<>
