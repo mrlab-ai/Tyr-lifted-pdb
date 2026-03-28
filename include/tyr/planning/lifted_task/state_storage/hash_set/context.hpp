@@ -15,41 +15,31 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_STATE_STORAGE_HASH_SET_NUMERIC_HPP_
-#define TYR_PLANNING_STATE_STORAGE_HASH_SET_NUMERIC_HPP_
+#ifndef TYR_PLANNING_LIFTED_TASK_STATE_STORAGE_HASH_SET_CONTEXT_HPP_
+#define TYR_PLANNING_LIFTED_TASK_STATE_STORAGE_HASH_SET_CONTEXT_HPP_
 
 #include "tyr/common/config.hpp"
 #include "tyr/common/raw_vector_set.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
-#include <limits>
+#include <concepts>
+#include <valla/valla.hpp>
+#include <vector>
 
 namespace tyr::planning
 {
-template<typename Task>
-struct NumericPackedStorage<Task, HashSet>
+
+/**
+ * Context
+ */
+
+template<>
+struct StateStorageContext<LiftedTask, HashSet>
 {
-    uint_t index;
-
-    auto identifying_members() const noexcept { return std::tie(index); }
-};
-
-template<typename Task>
-class NumericStorageBackend<Task, HashSet>
-{
-public:
-    using Unpacked = NumericUnpackedStorage<Task>;
-    using Packed = NumericPackedStorage<Task, HashSet>;
-
-    explicit NumericStorageBackend(StateStorageContext<Task, HashSet>& ctx);
-
-    Packed insert(const Unpacked& unpacked);
-
-    void unpack(const Packed& packed, Unpacked& unpacked);
-
-private:
-    RawVectorSet<uint_t, float_t>& m_float_vec_set;
+    RawVectorSet<uint_t, uint_t> uint_vec_set;
+    RawVectorSet<uint_t, float_t> float_vec_set;
 };
 
 }

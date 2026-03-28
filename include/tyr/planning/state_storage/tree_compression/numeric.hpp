@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_STATE_STORAGE_TREE_COMPRESSION_NUMERIC_HPP_
-#define TYR_PLANNING_STATE_STORAGE_TREE_COMPRESSION_NUMERIC_HPP_
+#ifndef TYR_PLANNING_STATE_STORAGE_NUMERIC_TREE_COMPRESSION_HPP_
+#define TYR_PLANNING_STATE_STORAGE_NUMERIC_TREE_COMPRESSION_HPP_
 
 #include "tyr/common/config.hpp"
 #include "tyr/planning/state_storage.hpp"

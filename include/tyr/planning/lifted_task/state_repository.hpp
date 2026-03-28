@@ -27,10 +27,12 @@
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 #include "tyr/planning/state_index.hpp"
 //
+#include "tyr/planning/lifted_task/state_storage/hash_set/atom.hpp"
+#include "tyr/planning/lifted_task/state_storage/hash_set/fact.hpp"
 #include "tyr/planning/lifted_task/state_storage/tree_compression/atom.hpp"
-#include "tyr/planning/lifted_task/state_storage/tree_compression/context.hpp"
 #include "tyr/planning/lifted_task/state_storage/tree_compression/fact.hpp"
 #include "tyr/planning/state_storage/config.hpp"
+#include "tyr/planning/state_storage/hash_set/numeric.hpp"
 #include "tyr/planning/state_storage/tree_compression/numeric.hpp"
 
 #include <memory>

@@ -15,13 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_LIFTED_TASK_STATE_STORAGE_TREE_COMPRESSION_FACT_HPP_
-#define TYR_PLANNING_LIFTED_TASK_STATE_STORAGE_TREE_COMPRESSION_FACT_HPP_
+#ifndef TYR_PLANNING_LIFTED_TASK_STATE_STORAGE_HASH_SET_ATOM_HPP_
+#define TYR_PLANNING_LIFTED_TASK_STATE_STORAGE_HASH_SET_ATOM_HPP_
 
 #include "tyr/common/config.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted_task/state_storage.hpp"
-#include "tyr/planning/lifted_task/state_storage/tree_compression/context.hpp"
+#include "tyr/planning/lifted_task/state_storage/hash_set/context.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
 
@@ -29,30 +29,30 @@ namespace tyr::planning
 {
 
 template<>
-struct FactPackedStorage<LiftedTask, TreeCompression>
+struct AtomPackedStorage<LiftedTask, HashSet>
 {
-    valla::Slot<uint_t> slot;
+    uint_t index;
 
-    auto identifying_members() const noexcept { return std::tie(slot.i1, slot.i2); }
+    auto identifying_members() const noexcept { return std::tie(index); }
 };
 
 template<>
-class FactStorageBackend<LiftedTask, TreeCompression>
+class AtomStorageBackend<LiftedTask, HashSet>
 {
 public:
-    using Unpacked = FactUnpackedStorage<LiftedTask>;
-    using Packed = FactPackedStorage<LiftedTask, TreeCompression>;
+    using Unpacked = AtomUnpackedStorage<LiftedTask>;
+    using Packed = AtomPackedStorage<LiftedTask, HashSet>;
 
-    explicit FactStorageBackend(StateStorageContext<LiftedTask, TreeCompression>& ctx);
+    explicit AtomStorageBackend(StateStorageContext<LiftedTask, HashSet>& ctx);
 
     Packed insert(const Unpacked& unpacked);
 
     void unpack(const Packed& packed, Unpacked& unpacked);
 
 private:
-    valla::IndexedHashSet<valla::Slot<uint_t>, uint_t>& m_uint_nodes;
+    RawVectorSet<uint_t, uint_t>& m_uint_vec_set;
 
-    std::vector<uint_t> m_uint_node_buffer;
+    std::vector<uint_t> m_buffer;
 };
 
 }

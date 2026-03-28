@@ -21,12 +21,9 @@
 #include "tyr/common/config.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/lifted_task/state_storage.hpp"
+#include "tyr/planning/lifted_task/state_storage/tree_compression/context.hpp"
 #include "tyr/planning/state_storage.hpp"
 #include "tyr/planning/state_storage/tags.hpp"
-
-#include <boost/dynamic_bitset.hpp>
-#include <limits>
-#include <valla/valla.hpp>
 
 namespace tyr::planning
 {
