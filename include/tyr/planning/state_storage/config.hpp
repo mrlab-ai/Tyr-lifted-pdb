@@ -22,9 +22,9 @@
 
 namespace tyr::planning
 {
-#if defined(TYR_LIFTED_STATE_STORAGE_TREE)
+#if defined(TYR_STATE_STORAGE_TREE)
 using StateStoragePolicyTag = TreeCompression;
-#elif defined(TYR_LIFTED_STATE_STORAGE_HASHSET)
+#elif defined(TYR_STATE_STORAGE_HASHSET)
 using StateStoragePolicyTag = HashSet;
 #else
 #error "No lifted state storage policy selected"
