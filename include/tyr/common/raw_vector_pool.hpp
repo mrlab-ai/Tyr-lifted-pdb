@@ -196,6 +196,15 @@ public:
         return RawVectorView<const Size, const T>(m_index[index]);
     }
 
+    size_t memory_usage() const noexcept
+    {
+        size_t bytes = 0;
+        for (const auto& seg : m_segments)
+            bytes += seg.storage.capacity() * sizeof(std::byte);
+        bytes += m_index.capacity() * sizeof(std::byte*);
+        return bytes;
+    }
+
     size_t size() const noexcept { return m_index.size(); }
 
     void clear() noexcept

@@ -63,6 +63,15 @@ struct StateStorageContext<GroundTask, HashSet>
 
     RawVectorSet<uint_t, float_t> float_vec_set;
 
+    size_t memory_usage() const noexcept
+    {
+        size_t bytes = 0;
+        bytes += fluent_array_set.memory_usage();
+        bytes += derived_array_set.memory_usage();
+        bytes += float_vec_set.memory_usage();
+        return bytes;
+    }
+
 private:
     explicit StateStorageContext(LayoutData&& layout_data);
 };

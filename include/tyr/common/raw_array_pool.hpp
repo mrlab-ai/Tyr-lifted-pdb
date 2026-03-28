@@ -87,6 +87,14 @@ public:
         m_size = 0;
     }
 
+    size_t memory_usage() const noexcept
+    {
+        size_t bytes = 0;
+        for (const auto& seg : m_segments)
+            bytes += seg.capacity() * sizeof(T);
+        return bytes;
+    }
+
     size_t size() const noexcept { return m_size; }
     size_t array_size() const noexcept { return m_array_size; }
 

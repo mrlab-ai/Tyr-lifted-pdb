@@ -129,6 +129,14 @@ StateView<LiftedTask> StateRepository<LiftedTask>::register_state(SharedObjectPo
     return StateView<LiftedTask>(shared_from_this(), std::move(state));
 }
 
+size_t StateRepository<LiftedTask>::memory_usage() const noexcept
+{
+    size_t bytes = 0;
+    bytes += m_context.memory_usage();
+    bytes += m_packed_states.memory_usage();
+    return bytes;
+}
+
 static_assert(StateRepositoryConcept<StateRepository<LiftedTask>, LiftedTask>);
 
 }

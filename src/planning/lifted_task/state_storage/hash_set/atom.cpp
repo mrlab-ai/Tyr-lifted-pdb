@@ -43,7 +43,7 @@ void AtomStorageBackend<LiftedTask, HashSet>::unpack(const typename AtomStorageB
 
     unpacked.indices.clear();
     for (uint_t i = 0; i < view.size(); ++i)
-        tyr::set(i, true, unpacked.indices);
+        tyr::set(view[i], true, unpacked.indices);
 }
 
 }

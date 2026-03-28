@@ -48,6 +48,14 @@ public:
 
     RawVectorView<const Size, const T> operator[](uint_t idx) const noexcept { return (*m_pool)[idx]; }
 
+    size_t memory_usage() const noexcept
+    {
+        size_t bytes = 0;
+        bytes += m_pool ? m_pool->memory_usage() : 0;
+        bytes += m_set.capacity() * (sizeof(uint_t) + sizeof(gtl::priv::ctrl_t));
+        return bytes;
+    }
+
     size_t size() const noexcept { return m_pool->size(); }
 
     void clear() noexcept

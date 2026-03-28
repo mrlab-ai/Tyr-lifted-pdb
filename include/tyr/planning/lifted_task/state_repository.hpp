@@ -65,6 +65,8 @@ public:
 
     StateView<LiftedTask> register_state(SharedObjectPoolPtr<UnpackedState<LiftedTask>> state);
 
+    size_t memory_usage() const noexcept;
+
     const auto& get_task() const noexcept { return m_task; }
     const auto& get_axiom_evaluator() const noexcept { return m_axiom_evaluator; }
 

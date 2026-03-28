@@ -64,6 +64,16 @@ struct StateStorageContext<GroundTask, TreeCompression>
     valla::IndexedHashSet<valla::Slot<uint_t>, uint_t> uint_nodes;
     valla::IndexedHashSet<float_t, uint_t> float_nodes;
 
+    size_t memory_usage() const noexcept
+    {
+        size_t bytes = 0;
+        bytes += fluent_array_set.memory_usage();
+        bytes += derived_array_set.memory_usage();
+        bytes += uint_nodes.mem_usage();
+        bytes += float_nodes.mem_usage();
+        return bytes;
+    }
+
 private:
     explicit StateStorageContext(LayoutData&& layout_data);
 };
