@@ -26,18 +26,18 @@
 namespace tyr::planning
 {
 
-template<typename Task>
-class MaxHeuristic : public Heuristic<Task>
+template<TaskKind Kind>
+class MaxHeuristic : public Heuristic<Kind>
 {
 private:
-    std::vector<std::shared_ptr<Heuristic<Task>>> m_components;
+    std::vector<std::shared_ptr<Heuristic<Kind>>> m_components;
 
 public:
-    explicit MaxHeuristic(std::vector<std::shared_ptr<Heuristic<Task>>> components);
+    explicit MaxHeuristic(std::vector<std::shared_ptr<Heuristic<Kind>>> components);
 
-    static std::shared_ptr<MaxHeuristic<Task>> create(std::vector<std::shared_ptr<Heuristic<Task>>> components);
+    static std::shared_ptr<MaxHeuristic<Kind>> create(std::vector<std::shared_ptr<Heuristic<Kind>>> components);
 
-    float_t evaluate(const StateView<Task>& state) override;
+    float_t evaluate(const StateView<Kind>& state) override;
 };
 
 }

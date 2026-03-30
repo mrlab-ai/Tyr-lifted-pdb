@@ -30,10 +30,7 @@
 namespace tyr
 {
 template<planning::TaskKind Kind>
-class Data<planning::State<Kind>>
-{
-    static_assert(dependent_false<Kind>::value, "Data<State<Kind>> is not defined for type T.");
-};
+class Data<planning::State<Kind>>;
 }
 
 #endif
