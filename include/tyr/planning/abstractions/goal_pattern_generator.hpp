@@ -27,18 +27,18 @@
 namespace tyr::planning
 {
 
-template<typename Task>
-class GoalPatternGenerator : public PatternGenerator<Task>
+template<TaskKind Kind>
+class GoalPatternGenerator : public PatternGenerator<Kind>
 {
 public:
-    explicit GoalPatternGenerator(std::shared_ptr<const Task> task);
+    explicit GoalPatternGenerator(std::shared_ptr<const Task<Kind>> task);
 
-    static std::shared_ptr<GoalPatternGenerator<Task>> create(std::shared_ptr<const Task> task);
+    static std::shared_ptr<GoalPatternGenerator<Kind>> create(std::shared_ptr<const Task<Kind>> task);
 
     PatternCollection generate() override;
 
 private:
-    std::shared_ptr<const Task> m_task;
+    std::shared_ptr<const Task<Kind>> m_task;
 };
 
 }

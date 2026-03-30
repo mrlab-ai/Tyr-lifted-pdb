@@ -27,19 +27,19 @@
 namespace tyr::planning
 {
 
-template<typename Task>
-class CanonicalHeuristic : public Heuristic<Task>
+template<TaskKind Kind>
+class CanonicalHeuristic : public Heuristic<Kind>
 {
 private:
-    std::vector<std::shared_ptr<Heuristic<Task>>> m_components;
+    std::vector<std::shared_ptr<Heuristic<Kind>>> m_components;
     std::vector<std::vector<uint_t>> m_additive_partitions;
 
 public:
-    explicit CanonicalHeuristic(const ProjectionAbstractionList<Task>& projections);
+    explicit CanonicalHeuristic(const ProjectionAbstractionList<Kind>& projections);
 
-    static std::shared_ptr<CanonicalHeuristic<Task>> create(const ProjectionAbstractionList<Task>& projections);
+    static std::shared_ptr<CanonicalHeuristic<Kind>> create(const ProjectionAbstractionList<Kind>& projections);
 
-    float_t evaluate(const StateView<Task>& state) override;
+    float_t evaluate(const StateView<Kind>& state) override;
 };
 
 }

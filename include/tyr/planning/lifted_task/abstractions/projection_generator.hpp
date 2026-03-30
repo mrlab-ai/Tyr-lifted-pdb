@@ -35,15 +35,15 @@ namespace tyr::planning
 {
 
 template<>
-class ProjectionGenerator<LiftedTask>
+class ProjectionGenerator<LiftedTag>
 {
 public:
-    ProjectionGenerator(std::shared_ptr<const LiftedTask> task, PatternCollection patterns);
+    ProjectionGenerator(std::shared_ptr<const Task<LiftedTag>> task, PatternCollection patterns);
 
-    ProjectionAbstractionList<LiftedTask> generate();
+    ProjectionAbstractionList<LiftedTag> generate();
 
 private:
-    std::shared_ptr<const LiftedTask> m_task;
+    std::shared_ptr<const Task<LiftedTag>> m_task;
     PatternCollection m_patterns;
 };
 
