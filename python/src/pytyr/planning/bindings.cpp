@@ -448,6 +448,8 @@ void bind_module_definitions(nb::module_& m)
      */
 
     nb::class_<Statistics>(m, "Statistics");
+
+    bind_pattern(m, "Pattern");
 }
 
 void bind_ground_module_definitions(nb::module_& m)
@@ -479,6 +481,8 @@ void bind_ground_module_definitions(nb::module_& m)
 
     bind_pattern_generator<GroundTag>(m, "PatternGenerator");
     bind_goal_pattern_generator<GroundTag>(m, "GoalPatternGenerator");
+    bind_projection_abstraction<GroundTag>(m, "ProjectionAbstraction");
+    bind_vector<ProjectionAbstractionList<GroundTag>>(m, "ProjectionAbstractionList");
 }
 
 void bind_lifted_module_definitions(nb::module_& m)
@@ -528,8 +532,6 @@ should not be used further.
     bind_projection_abstraction_heuristic<LiftedTag>(m, "ProjectionAbstractionHeuristic");
     bind_canonical_heuristic<LiftedTag>(m, "CanonicalHeuristic");
 
-    bind_pattern_generator<LiftedTag>(m, "PatternGenerator");
-    bind_goal_pattern_generator<LiftedTag>(m, "GoalPatternGenerator");
     bind_pattern_generator<LiftedTag>(m, "PatternGenerator");
     bind_goal_pattern_generator<LiftedTag>(m, "GoalPatternGenerator");
     bind_projection_abstraction<LiftedTag>(m, "ProjectionAbstraction");
