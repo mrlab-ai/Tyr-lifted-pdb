@@ -50,7 +50,7 @@ struct Pattern
 
 using PatternCollection = std::vector<Pattern>;
 
-template<typename Task>
+template<TaskKind Kind>
 class PatternGenerator
 {
 public:

@@ -32,12 +32,12 @@ namespace tyr::planning
 {
 namespace
 {
-template<typename Task>
-auto create_component_heuristics(const ProjectionAbstractionList<Task>& projections)
+template<TaskKind Kind>
+auto create_component_heuristics(const ProjectionAbstractionList<Kind>& projections)
 {
-    auto result = std::vector<std::shared_ptr<Heuristic<Task>>> {};
+    auto result = std::vector<std::shared_ptr<Heuristic<Kind>>> {};
     for (const auto& projection : projections)
-        result.push_back(ProjectionAbstractionHeuristic<Task>::create(projection));
+        result.push_back(ProjectionAbstractionHeuristic<Kind>::create(projection));
 
     return result;
 }
@@ -74,8 +74,8 @@ struct LabelEqualTo
 
 using LabelSet = gtl::flat_hash_set<Label, LabelHash, LabelEqualTo>;
 
-template<typename Task>
-auto create_additivity_graph(const ProjectionAbstractionList<Task>& projections)
+template<TaskKind Kind>
+auto create_additivity_graph(const ProjectionAbstractionList<Kind>& projections)
 {
     const auto k = projections.size();
 
@@ -125,21 +125,21 @@ auto create_additivity_graph(const ProjectionAbstractionList<Task>& projections)
 
 }
 
-template<typename Task>
-CanonicalHeuristic<Task>::CanonicalHeuristic(const ProjectionAbstractionList<Task>& projections) :
+template<TaskKind Kind>
+CanonicalHeuristic<Kind>::CanonicalHeuristic(const ProjectionAbstractionList<Kind>& projections) :
     m_components(create_component_heuristics(projections)),
     m_additive_partitions(graphs::bron_kerbosch::compute_maximal_cliques(create_additivity_graph(projections)))
 {
 }
 
-template<typename Task>
-std::shared_ptr<CanonicalHeuristic<Task>> CanonicalHeuristic<Task>::create(const ProjectionAbstractionList<Task>& projections)
+template<TaskKind Kind>
+std::shared_ptr<CanonicalHeuristic<Kind>> CanonicalHeuristic<Kind>::create(const ProjectionAbstractionList<Kind>& projections)
 {
-    return std::make_shared<CanonicalHeuristic<Task>>(projections);
+    return std::make_shared<CanonicalHeuristic<Kind>>(projections);
 }
 
-template<typename Task>
-float_t CanonicalHeuristic<Task>::evaluate(const StateView<Task>& state)
+template<TaskKind Kind>
+float_t CanonicalHeuristic<Kind>::evaluate(const StateView<Kind>& state)
 {
     float_t h = 0;
     for (const auto& partition : m_additive_partitions)
@@ -156,7 +156,7 @@ float_t CanonicalHeuristic<Task>::evaluate(const StateView<Task>& state)
     return h;
 }
 
-template class CanonicalHeuristic<LiftedTask>;
-template class CanonicalHeuristic<GroundTask>;
+template class CanonicalHeuristic<LiftedTag>;
+template class CanonicalHeuristic<GroundTag>;
 
 }
