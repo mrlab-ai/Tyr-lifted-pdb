@@ -23,11 +23,8 @@
 namespace tyr::planning
 {
 
-template<typename Task>
-class ProjectionGenerator
-{
-    static_assert(dependent_false<Task>::value, "PatternGenerator is not defined for type T.");
-};
+template<TaskKind Kind>
+class ProjectionGenerator;
 
 }
 

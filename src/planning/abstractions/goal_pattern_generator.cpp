@@ -31,19 +31,19 @@
 namespace tyr::planning
 {
 
-template<typename Task>
-GoalPatternGenerator<Task>::GoalPatternGenerator(std::shared_ptr<const Task> task) : m_task(std::move(task))
+template<TaskKind Kind>
+GoalPatternGenerator<Kind>::GoalPatternGenerator(std::shared_ptr<const Task<Kind>> task) : m_task(std::move(task))
 {
 }
 
-template<typename Task>
-std::shared_ptr<GoalPatternGenerator<Task>> GoalPatternGenerator<Task>::create(std::shared_ptr<const Task> task)
+template<TaskKind Kind>
+std::shared_ptr<GoalPatternGenerator<Kind>> GoalPatternGenerator<Kind>::create(std::shared_ptr<const Task<Kind>> task)
 {
-    return std::make_shared<GoalPatternGenerator<Task>>(std::move(task));
+    return std::make_shared<GoalPatternGenerator<Kind>>(std::move(task));
 }
 
-template<typename Task>
-PatternCollection GoalPatternGenerator<Task>::generate()
+template<TaskKind Kind>
+PatternCollection GoalPatternGenerator<Kind>::generate()
 {
     auto patterns = PatternCollection {};
 
@@ -53,7 +53,7 @@ PatternCollection GoalPatternGenerator<Task>::generate()
     return patterns;
 }
 
-template class GoalPatternGenerator<LiftedTask>;
-template class GoalPatternGenerator<GroundTask>;
+template class GoalPatternGenerator<LiftedTag>;
+template class GoalPatternGenerator<GroundTag>;
 
 }

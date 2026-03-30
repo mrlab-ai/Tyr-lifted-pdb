@@ -24,8 +24,8 @@
 namespace tyr::planning
 {
 
-template<typename Task>
-ProjectionAbstractionHeuristic<Task>::ProjectionAbstractionHeuristic(const ProjectionAbstraction<Task>& projection) :
+template<TaskKind Kind>
+ProjectionAbstractionHeuristic<Kind>::ProjectionAbstractionHeuristic(const ProjectionAbstraction<Kind>& projection) :
     m_distances(),
     m_mapping(projection.get_mapping())
 {
@@ -39,19 +39,19 @@ ProjectionAbstractionHeuristic<Task>::ProjectionAbstractionHeuristic(const Proje
     m_distances = std::move(distances);
 }
 
-template<typename Task>
-std::shared_ptr<ProjectionAbstractionHeuristic<Task>> ProjectionAbstractionHeuristic<Task>::create(const ProjectionAbstraction<Task>& projection)
+template<TaskKind Kind>
+std::shared_ptr<ProjectionAbstractionHeuristic<Kind>> ProjectionAbstractionHeuristic<Kind>::create(const ProjectionAbstraction<Kind>& projection)
 {
-    return std::make_shared<ProjectionAbstractionHeuristic<Task>>(projection);
+    return std::make_shared<ProjectionAbstractionHeuristic<Kind>>(projection);
 }
 
-template<typename Task>
-float_t ProjectionAbstractionHeuristic<Task>::evaluate(const StateView<Task>& state)
+template<TaskKind Kind>
+float_t ProjectionAbstractionHeuristic<Kind>::evaluate(const StateView<Kind>& state)
 {
     return m_distances.at(m_mapping.map_state(state));
 }
 
-template class ProjectionAbstractionHeuristic<LiftedTask>;
-template class ProjectionAbstractionHeuristic<GroundTask>;
+template class ProjectionAbstractionHeuristic<LiftedTag>;
+template class ProjectionAbstractionHeuristic<GroundTag>;
 
 }

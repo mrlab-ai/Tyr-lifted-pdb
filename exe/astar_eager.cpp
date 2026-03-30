@@ -87,9 +87,9 @@ int main(int argc, char** argv)
         options.random_seed = random_seed;
         options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
 
-        auto patterns = planning::GoalPatternGenerator<planning::LiftedTask>::create(lifted_task)->generate();
-        auto projections = planning::ProjectionGenerator<planning::LiftedTask>(lifted_task, patterns).generate();
-        auto canonical_heuristic = planning::CanonicalHeuristic<planning::LiftedTask>::create(projections);
+        auto patterns = planning::GoalPatternGenerator<planning::LiftedTag>::create(lifted_task)->generate();
+        auto projections = planning::ProjectionGenerator<planning::LiftedTag>(lifted_task, patterns).generate();
+        auto canonical_heuristic = planning::CanonicalHeuristic<planning::LiftedTag>::create(projections);
 
         auto result = planning::astar_eager::find_solution(*lifted_task, successor_generator, *canonical_heuristic, options);
 

@@ -25,19 +25,19 @@
 namespace tyr::planning
 {
 
-template<typename Task>
-class ProjectionAbstractionHeuristic : public Heuristic<Task>
+template<TaskKind Kind>
+class ProjectionAbstractionHeuristic : public Heuristic<Kind>
 {
 public:
-    explicit ProjectionAbstractionHeuristic(const ProjectionAbstraction<Task>& projection);
+    explicit ProjectionAbstractionHeuristic(const ProjectionAbstraction<Kind>& projection);
 
-    static std::shared_ptr<ProjectionAbstractionHeuristic<Task>> create(const ProjectionAbstraction<Task>& projection);
+    static std::shared_ptr<ProjectionAbstractionHeuristic<Kind>> create(const ProjectionAbstraction<Kind>& projection);
 
-    float_t evaluate(const StateView<Task>& state) override;
+    float_t evaluate(const StateView<Kind>& state) override;
 
 private:
     std::vector<float_t> m_distances;
-    ProjectionMapping<Task> m_mapping;
+    ProjectionMapping<Kind> m_mapping;
 };
 
 }

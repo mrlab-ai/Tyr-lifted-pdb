@@ -337,6 +337,89 @@ void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
              "execution_context"_a);
 }
 
+template<TaskKind Kind>
+void bind_max_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = MaxHeuristic<Kind>;
+
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](std::vector<std::shared_ptr<Heuristic<Kind>>> components) { return T::create(std::move(components)); }), "components"_a);
+}
+
+template<TaskKind Kind>
+void bind_projection_abstraction_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionAbstractionHeuristic<Kind>;
+
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](const ProjectionAbstraction<Kind>& projection) { return T::create(projection); }), "projection"_a);
+}
+
+template<TaskKind Kind>
+void bind_canonical_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = CanonicalHeuristic<Kind>;
+
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](const ProjectionAbstractionList<Kind>& projections) { return T::create(projections); }), "projections"_a);
+}
+
+template<TaskKind Kind>
+class PyPatternGenerator : public PatternGenerator<Kind>
+{
+public:
+    using Base = PatternGenerator<Kind>;
+
+    NB_TRAMPOLINE(Base, 1);
+
+    /* Trampoline (need one for each virtual function) */
+    PatternCollection generate() override { NB_OVERRIDE_PURE(generate); }
+};
+
+inline void bind_pattern(nb::module_& m, const std::string& name)
+{
+    using T = Pattern;
+
+    nb::class_<T>(m, name.c_str())  //
+        .def(nb::init<formalism::planning::FDRFactViewList<formalism::FluentTag>>(), "facts"_a);
+}
+
+template<TaskKind Kind>
+void bind_projection_abstraction(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionAbstraction<Kind>;
+
+    nb::class_<T>(m, name.c_str());
+}
+
+template<TaskKind Kind>
+void bind_pattern_generator(nb::module_& m, const std::string& name)
+{
+    using T = PatternGenerator<Kind>;
+
+    nb::class_<T, PyPatternGenerator<Kind>>(m, name.c_str())  //
+        .def("generate", &T::generate);
+}
+
+template<TaskKind Kind>
+void bind_goal_pattern_generator(nb::module_& m, const std::string& name)
+{
+    using T = GoalPatternGenerator<Kind>;
+
+    nb::class_<T, PatternGenerator<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](std::shared_ptr<const Task<Kind>> task) { return T::create(std::move(task)); }), "task"_a);
+}
+
+template<TaskKind Kind>
+void bind_projection_generator(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionGenerator<Kind>;
+
+    nb::class_<T>(m, name.c_str())  //
+        .def(nb::init<std::shared_ptr<const Task<Kind>>, PatternCollection>(), "task"_a, "patterns"_a)
+        .def("generate", &T::generate);
+}
+
 }
 
 /**

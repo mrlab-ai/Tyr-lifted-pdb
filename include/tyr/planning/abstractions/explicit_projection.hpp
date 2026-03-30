@@ -25,6 +25,7 @@
 #include "tyr/graphs/concepts.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/state_view.hpp"
+#include "tyr/planning/task.hpp"
 
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -44,7 +45,7 @@ struct Transition
 
 using TransitionList = std::vector<Transition>;
 
-template<typename Task>
+template<TaskKind Kind>
 class ProjectionMapping
 {
 public:
@@ -56,7 +57,7 @@ public:
     {
     }
 
-    uint_t map_state(const StateView<Task>& state) const noexcept
+    uint_t map_state(const StateView<Kind>& state) const noexcept
     {
         // Mimics the indexing obtained via itertools::for_each_boolean_vector used during construction of the ForwardProjectionAbstraction.
         const auto k = m_pattern.size();
@@ -82,7 +83,7 @@ private:
     ActionMapping m_projected_to_original_action;
 };
 
-template<typename Task>
+template<TaskKind Kind>
 class ForwardProjectionAbstraction
 {
 public:
@@ -100,8 +101,8 @@ public:
         return result;
     }
 
-    ForwardProjectionAbstraction(ProjectionMapping<Task> mapping,
-                                 std::vector<StateView<Task>> vertices,
+    ForwardProjectionAbstraction(ProjectionMapping<Kind> mapping,
+                                 std::vector<StateView<Kind>> vertices,
                                  TransitionList transitions,
                                  std::vector<std::vector<uint_t>> adj_lists,
                                  std::vector<uint_t> goal_vertices) :
@@ -124,22 +125,22 @@ public:
     const auto& state_changing_transitions() const noexcept { return m_state_changing_transitions; }
 
 private:
-    ProjectionMapping<Task> m_mapping;
+    ProjectionMapping<Kind> m_mapping;
     // TODO: get rid of states.
-    std::vector<StateView<Task>> m_vertices;
+    std::vector<StateView<Kind>> m_vertices;
     TransitionList m_transitions;
     std::vector<std::vector<uint_t>> m_adj_lists;
     std::vector<uint_t> m_goal_vertices;
     boost::dynamic_bitset<> m_state_changing_transitions;
 };
 
-template<typename Task>
+template<TaskKind Kind>
 class BackwardProjectionAbstraction
 {
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
-    explicit BackwardProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Task>> g) : m_g(g), m_adj_lists(g->num_vertices())
+    explicit BackwardProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Kind>> g) : m_g(g), m_adj_lists(g->num_vertices())
     {
         for (uint_t t = 0; t < g->num_edges(); ++t)
             m_adj_lists[g->transitions()[t].dst].push_back(t);
@@ -154,18 +155,18 @@ public:
     const auto& g() const noexcept { return *m_g; }
 
 private:
-    std::shared_ptr<const ForwardProjectionAbstraction<Task>> m_g;
+    std::shared_ptr<const ForwardProjectionAbstraction<Kind>> m_g;
 
     std::vector<std::vector<uint_t>> m_adj_lists;
 };
 
-template<typename Task>
+template<TaskKind Kind>
 class ProjectionAbstraction
 {
 public:
     using IndexingMode = graphs::ContiguousIndexingTag;
 
-    explicit ProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Task>> forward) : m_forward(std::move(forward)), m_backward(m_forward) {}
+    explicit ProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Kind>> forward) : m_forward(std::move(forward)), m_backward(m_forward) {}
 
     const auto& get_mapping() const noexcept { return m_forward->get_mapping(); }
     const auto& state_changing_transitions() const noexcept { return m_forward->state_changing_transitions(); }
@@ -174,38 +175,38 @@ public:
     const auto& get_backward() const noexcept { return m_backward; }
 
 private:
-    std::shared_ptr<const ForwardProjectionAbstraction<Task>> m_forward;
-    BackwardProjectionAbstraction<Task> m_backward;
+    std::shared_ptr<const ForwardProjectionAbstraction<Kind>> m_forward;
+    BackwardProjectionAbstraction<Kind> m_backward;
 };
 
-template<typename Task>
-using ProjectionAbstractionList = std::vector<ProjectionAbstraction<Task>>;
+template<TaskKind Kind>
+using ProjectionAbstractionList = std::vector<ProjectionAbstraction<Kind>>;
 
 /**
  * VertexListGraph
  */
 
-template<typename Task>
-auto num_vertices(const ForwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto num_vertices(const ForwardProjectionAbstraction<Kind>& g)
 {
     return g.num_vertices();
 }
 
-template<typename Task>
-auto vertices(const ForwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto vertices(const ForwardProjectionAbstraction<Kind>& g)
 {
     using It = boost::counting_iterator<uint_t>;
     return std::make_pair(It { 0 }, It { static_cast<uint_t>(num_vertices(g)) });
 }
 
-template<typename Task>
-auto num_vertices(const BackwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto num_vertices(const BackwardProjectionAbstraction<Kind>& g)
 {
     return g.num_vertices();
 }
 
-template<typename Task>
-auto vertices(const BackwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto vertices(const BackwardProjectionAbstraction<Kind>& g)
 {
     return vertices(g.g());
 }
@@ -214,52 +215,52 @@ auto vertices(const BackwardProjectionAbstraction<Task>& g)
  * IncidenceGraph
  */
 
-template<typename Task>
-auto out_edges(uint_t v, const ForwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto out_edges(uint_t v, const ForwardProjectionAbstraction<Kind>& g)
 {
     const auto& r = g.adj_lists().at(v);
     return std::make_pair(r.begin(), r.end());
 }
 
-template<typename Task>
-auto source(uint_t e, const ForwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto source(uint_t e, const ForwardProjectionAbstraction<Kind>& g)
 {
     return g.transitions().at(e).src;
 }
 
-template<typename Task>
-auto target(uint_t e, const ForwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto target(uint_t e, const ForwardProjectionAbstraction<Kind>& g)
 {
     return g.transitions().at(e).dst;
 }
 
-template<typename Task>
-auto out_degree(uint_t v, const ForwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto out_degree(uint_t v, const ForwardProjectionAbstraction<Kind>& g)
 {
     return g.adj_lists().at(v).size();
 }
 
-template<typename Task>
-auto out_edges(uint_t v, const BackwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto out_edges(uint_t v, const BackwardProjectionAbstraction<Kind>& g)
 {
     const auto& r = g.adj_lists().at(v);
     return std::make_pair(r.begin(), r.end());
 }
 
-template<typename Task>
-auto source(uint_t e, const BackwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto source(uint_t e, const BackwardProjectionAbstraction<Kind>& g)
 {
     return g.transitions().at(e).dst;
 }
 
-template<typename Task>
-auto target(uint_t e, const BackwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto target(uint_t e, const BackwardProjectionAbstraction<Kind>& g)
 {
     return g.transitions().at(e).src;
 }
 
-template<typename Task>
-auto out_degree(uint_t v, const BackwardProjectionAbstraction<Task>& g)
+template<TaskKind Kind>
+auto out_degree(uint_t v, const BackwardProjectionAbstraction<Kind>& g)
 {
     return g.adj_lists().at(v).size();
 }
@@ -271,8 +272,8 @@ namespace boost
 
 /// @private
 /// Traits for a graph that are needed for the boost graph library.
-template<typename Task>
-struct graph_traits<::tyr::planning::ForwardProjectionAbstraction<Task>>
+template<::tyr::planning::TaskKind Kind>
+struct graph_traits<::tyr::planning::ForwardProjectionAbstraction<Kind>>
 {
     struct vertex_list_and_incidence_graph_tag : public vertex_list_graph_tag, public incidence_graph_tag
     {
@@ -296,8 +297,8 @@ struct graph_traits<::tyr::planning::ForwardProjectionAbstraction<Task>>
 
 /// @private
 /// Traits for a graph that are needed for the boost graph library.
-template<typename Task>
-struct graph_traits<::tyr::planning::BackwardProjectionAbstraction<Task>>
+template<::tyr::planning::TaskKind Kind>
+struct graph_traits<::tyr::planning::BackwardProjectionAbstraction<Kind>>
 {
     struct vertex_list_and_incidence_graph_tag : public vertex_list_graph_tag, public incidence_graph_tag
     {

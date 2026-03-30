@@ -177,8 +177,8 @@ std::ostream& print(std::ostream& os, const planning::Plan<Kind>& el)
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::LiftedTag>& el);
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::GroundTag>& el);
 
-template<typename Task>
-std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Task>& el)
+template<planning::TaskKind Kind>
+std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Kind>& el)
 {
     os << "digraph {\n";
 
@@ -209,8 +209,8 @@ std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Task
     return os;
 }
 
-template std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<planning::LiftedTask>& el);
-template std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<planning::GroundTask>& el);
+template std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<planning::LiftedTag>& el);
+template std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<planning::GroundTag>& el);
 
 namespace planning
 {
@@ -256,14 +256,14 @@ std::ostream& operator<<(std::ostream& os, const Plan<Kind>& el)
 template std::ostream& operator<<(std::ostream& os, const Plan<LiftedTag>& el);
 template std::ostream& operator<<(std::ostream& os, const Plan<GroundTag>& el);
 
-template<typename Task>
-std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<Task>& el)
+template<TaskKind Kind>
+std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<Kind>& el)
 {
     return tyr::print(os, el);
 }
 
-template std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<LiftedTask>& el);
-template std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<GroundTask>& el);
+template std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<LiftedTag>& el);
+template std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<GroundTag>& el);
 
 }
 }

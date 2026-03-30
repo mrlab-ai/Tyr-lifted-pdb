@@ -154,7 +154,7 @@ void append_projected_conditional_effect(fp::ConditionalEffectView element,
 void append_projected_action(fp::ActionView element,
                              fp::MergeContext& context,
                              IndexList<fp::Action>& ref_projected_actions,
-                             ProjectionMapping<LiftedTask>::ActionMapping& projected_to_original_action,
+                             ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
                              const Pattern& pattern)
 {
     auto action_ptr = context.builder.template get_builder<fp::Action>();
@@ -179,7 +179,7 @@ auto create_projected_formalism_domain(fp::DomainView element,
                                        std::shared_ptr<fp::Repository> destination,
                                        fp::MergeContext& context,
                                        fp::RepositoryFactoryPtr factory,
-                                       ProjectionMapping<LiftedTask>::ActionMapping& projected_to_original_action,
+                                       ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
                                        const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
@@ -214,7 +214,7 @@ auto create_projected_formalism_task(const fp::PlanningTask& planning_task,
                                      fp::RepositoryFactoryPtr factory,
                                      fp::FDRContextPtr fdr_context)
 {
-    auto projected_to_original_action = ProjectionMapping<LiftedTask>::ActionMapping {};
+    auto projected_to_original_action = ProjectionMapping<LiftedTag>::ActionMapping {};
     auto builder = fp::Builder();
 
     auto context = fp::MergeContext(builder, *destination);
@@ -244,7 +244,7 @@ auto create_projected_formalism_task(const fp::PlanningTask& planning_task,
 }
 
 /// @brief Project a state into the projection.
-auto project_state(const StateView<LiftedTask>& element, const Pattern& pattern, StateRepository<LiftedTask>& state_repository)
+auto project_state(const StateView<LiftedTag>& element, const Pattern& pattern, StateRepository<LiftedTag>& state_repository)
 {
     auto uastate = state_repository.get_unregistered_state();
     for (const auto& fact : element.get_fluent_facts_view())
@@ -260,10 +260,10 @@ auto project_state(const StateView<LiftedTask>& element, const Pattern& pattern,
 
 /// @brief Create all 2^|pattern| abstract states.
 /// This ignores reachability but suffices for domains without unsolvable states.
-auto create_abstract_states(const Pattern& pattern, LiftedTask& task, StateRepository<LiftedTask>& state_repository)
+auto create_abstract_states(const Pattern& pattern, Task<LiftedTag>& task, StateRepository<LiftedTag>& state_repository)
 {
     auto facts = std::vector<fp::FDRFactView<f::FluentTag>>(pattern.facts.begin(), pattern.facts.end());
-    auto astates = std::vector<StateView<LiftedTask>> {};
+    auto astates = std::vector<StateView<LiftedTag>> {};
     auto goal_vertices = std::vector<uint_t> {};
 
     {
@@ -293,12 +293,12 @@ auto create_abstract_states(const Pattern& pattern, LiftedTask& task, StateRepos
     return std::make_pair(std::move(astates), std::move(goal_vertices));
 }
 
-auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astates,
+auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astates,
                                  const Pattern& pattern,
-                                 LiftedTask& task,
-                                 SuccessorGenerator<LiftedTask>& successor_generator)
+                                 Task<LiftedTag>& task,
+                                 SuccessorGenerator<LiftedTag>& successor_generator)
 {
-    auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTask>> {};
+    auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTag>> {};
 
     auto transitions = TransitionList {};
     auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
@@ -309,7 +309,7 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astat
     {
         auto& adj_row = adj_lists[uint_t(astate.get_index())];
 
-        auto anode = Node<LiftedTask>(astate, float_t { 0 });
+        auto anode = Node<LiftedTag>(astate, float_t { 0 });
 
         successor_generator.get_labeled_successor_nodes(anode, labeled_succ_nodes);
 
@@ -332,7 +332,7 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTask>>& astat
     return std::make_pair(std::move(transitions), std::move(adj_lists));
 }
 
-auto create_projection(const Pattern& pattern, const LiftedTask& original_task)
+auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_task)
 {
     // Note: All projections share the same repository.
     const auto& factory = original_task.get_domain().get_repository_factory();
@@ -349,30 +349,30 @@ auto create_projection(const Pattern& pattern, const LiftedTask& original_task)
 
     // Note: Each projection has its own StateRepository.
     auto execution_context = ExecutionContext::create(1);
-    auto successor_generator = SuccessorGenerator<LiftedTask>(projected_task, execution_context);
+    auto successor_generator = SuccessorGenerator<LiftedTag>(projected_task, execution_context);
     auto& state_repository = successor_generator.get_state_repository();
 
     auto [astates, goal_vertices] = create_abstract_states(pattern, *projected_task, *state_repository);
     auto [transitions, adj_lists] = create_abstract_transitions(astates, pattern, *projected_task, successor_generator);
 
     return ProjectionAbstraction(
-        std::make_shared<const ForwardProjectionAbstraction<LiftedTask>>(ProjectionMapping<LiftedTask>(pattern, std::move(projected_to_original_action)),
-                                                                         std::move(astates),
-                                                                         std::move(transitions),
-                                                                         std::move(adj_lists),
-                                                                         std::move(goal_vertices)));
+        std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern, std::move(projected_to_original_action)),
+                                                                        std::move(astates),
+                                                                        std::move(transitions),
+                                                                        std::move(adj_lists),
+                                                                        std::move(goal_vertices)));
 }
 }
 
-ProjectionGenerator<LiftedTask>::ProjectionGenerator(std::shared_ptr<const LiftedTask> task, PatternCollection patterns) :
+ProjectionGenerator<LiftedTag>::ProjectionGenerator(std::shared_ptr<const Task<LiftedTag>> task, PatternCollection patterns) :
     m_task(std::move(task)),
     m_patterns(std::move(patterns))
 {
 }
 
-ProjectionAbstractionList<LiftedTask> ProjectionGenerator<LiftedTask>::generate()
+ProjectionAbstractionList<LiftedTag> ProjectionGenerator<LiftedTag>::generate()
 {
-    auto projections = ProjectionAbstractionList<LiftedTask> {};
+    auto projections = ProjectionAbstractionList<LiftedTag> {};
 
     for (const auto& pattern : m_patterns)
         projections.push_back(create_projection(pattern, *m_task));

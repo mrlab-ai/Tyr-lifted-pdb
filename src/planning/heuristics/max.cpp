@@ -22,19 +22,19 @@
 
 namespace tyr::planning
 {
-template<typename Task>
-MaxHeuristic<Task>::MaxHeuristic(std::vector<std::shared_ptr<Heuristic<Task>>> components) : m_components(std::move(components))
+template<TaskKind Kind>
+MaxHeuristic<Kind>::MaxHeuristic(std::vector<std::shared_ptr<Heuristic<Kind>>> components) : m_components(std::move(components))
 {
 }
 
-template<typename Task>
-std::shared_ptr<MaxHeuristic<Task>> MaxHeuristic<Task>::create(std::vector<std::shared_ptr<Heuristic<Task>>> components)
+template<TaskKind Kind>
+std::shared_ptr<MaxHeuristic<Kind>> MaxHeuristic<Kind>::create(std::vector<std::shared_ptr<Heuristic<Kind>>> components)
 {
-    return std::make_shared<MaxHeuristic<Task>>(std::move(components));
+    return std::make_shared<MaxHeuristic<Kind>>(std::move(components));
 }
 
-template<typename Task>
-float_t MaxHeuristic<Task>::evaluate(const StateView<Task>& state)
+template<TaskKind Kind>
+float_t MaxHeuristic<Kind>::evaluate(const StateView<Kind>& state)
 {
     float_t h = 0;
     for (const auto& h_i : m_components)
@@ -42,7 +42,7 @@ float_t MaxHeuristic<Task>::evaluate(const StateView<Task>& state)
     return h;
 }
 
-template class MaxHeuristic<LiftedTask>;
-template class MaxHeuristic<GroundTask>;
+template class MaxHeuristic<LiftedTag>;
+template class MaxHeuristic<GroundTag>;
 
 }
