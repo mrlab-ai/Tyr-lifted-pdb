@@ -40,19 +40,6 @@
 
 namespace tyr::formalism::planning::invariant
 {
-namespace
-{
-
-/**
- * Refine
- */
-
-}
-
-/**
- * Main loop
- */
-
 InvariantList synthesize_invariants(TaskView task)
 {
     auto ops = make_temp_actions(task.get_domain().get_actions());
