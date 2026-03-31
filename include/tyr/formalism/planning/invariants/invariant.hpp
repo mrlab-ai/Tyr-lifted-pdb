@@ -18,9 +18,11 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANT_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANT_HPP_
 
+#include "tyr/common/comparators.hpp"
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
+#include "tyr/formalism/planning/expression_arity.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -34,136 +36,173 @@
 
 namespace tyr::formalism::planning::invariant
 {
+struct TempAtom
+{
+    PredicateView<FluentTag> predicate;
+    std::vector<Data<Term>> terms;
+
+    auto identifying_members() const noexcept { return std::tie(predicate, terms); }
+};
+
+using TempAtomList = std::vector<TempAtom>;
+
+struct TempLiteral
+{
+    TempAtom atom;
+    bool polarity;
+
+    auto identifying_members() const noexcept { return std::tie(atom, polarity); }
+};
+
+using TempLiteralList = std::vector<TempLiteral>;
+
+struct TempEffect
+{
+    size_t num_variables;
+    TempLiteralList condition;
+    TempAtomList add_effects;
+    TempAtomList del_effects;
+};
+
+using TempEffectList = std::vector<TempEffect>;
+
+struct TempAction
+{
+    size_t num_variables;
+    TempLiteralList precondition;
+    TempEffectList effects;
+};
+
+using TempActionList = std::vector<TempAction>;
+
 struct Invariant
 {
-    VariableViewList variables;
-    size_t quantified_arity;
-    AtomViewList<FluentTag> atoms;
+    size_t num_rigid_variables;
+    size_t num_counted_variables;
+    TempAtomList atoms;
     UnorderedSet<PredicateView<FluentTag>> predicates;
 };
 
 using InvariantList = std::vector<Invariant>;
 
-// Fig 7
-bool covers(const Invariant& inv, AtomView<FluentTag> element)
+struct Substitution
 {
-    for (const auto atom : inv.atoms)
+    std::vector<std::optional<Data<Term>>> data;
+
+    Substitution() = default;
+    explicit Substitution(size_t size) : data(size) {}
+
+    void reset() noexcept { std::fill(data.begin(), data.end(), std::nullopt); }
+
+    void resize(size_t size)
     {
-        // TODO
-        // if the counted variables in ϕ (those not in V )
-        // can be renamed so that ϕ = ψ:
-        // return true.
+        data.resize(size);
+        reset();
     }
 
-    return false;
-}
+    size_t size() const noexcept { return data.size(); }
 
-bool is_operator_too_heavy(const ActionView& op, const Invariant& inv)
-{
-    // TODO:
-    // Let o′ be a copy of o.
-    // Duplicate all (non-trivially) quantified effects of o′ .
-    // Assign unique names to all quantified variables in effects of o′ .
-
-    for (const auto conj_eff_lhs : op.get_effects())
+    bool contains(ParameterIndex parameter) const noexcept
     {
-        for (const auto conj_eff_rhs : op.get_effects())
+        return static_cast<uint_t>(parameter) < data.size() && data[static_cast<uint_t>(parameter)].has_value();
+    }
+
+    const std::optional<Data<Term>>& get(ParameterIndex parameter) const noexcept { return data[static_cast<uint_t>(parameter)]; }
+
+    std::optional<Data<Term>>& get(ParameterIndex parameter) noexcept { return data[static_cast<uint_t>(parameter)]; }
+
+    bool assign(ParameterIndex parameter, const Data<Term>& term)
+    {
+        auto& slot = data[static_cast<uint_t>(parameter)];
+        if (slot.has_value())
+            return false;
+        slot = term;
+        return true;
+    }
+
+    bool assign_or_check(ParameterIndex parameter, const Data<Term>& term)
+    {
+        auto& slot = data[static_cast<uint_t>(parameter)];
+        if (!slot.has_value())
         {
-            for (const auto lit_lhs : conj_eff_lhs.get_effect().get_literals())
-            {
-                if (!lit_lhs.get_polarity())
-                    continue;
-
-                if (!inv.predicates.contains(lit_lhs.get_atom().get_predicate()))
-                    continue;
-
-                for (const auto lit_rhs : conj_eff_rhs.get_effect().get_literals())
-                {
-                    if (!lit_rhs.get_polarity())
-                        continue;
-
-                    if (!inv.predicates.contains(lit_rhs.get_atom().get_predicate()))
-                        continue;
-
-                    // TODO:
-                    // if the parameters of operator o′ can be renamed so that
-                    // (e.atom 6= e′ .atom and
-                    // covers(V , Φ, e.atom) and covers(V , Φ, e′ .atom) and
-                    // o′ .precond ∧ e.cond ∧ e′ .cond ∧ ¬e.atom ∧ ¬e′ .atom
-                    // is satisfiable):
-                    // return true. { The operator is too heavy. }
-                }
-            }
+            slot = term;
+            return true;
         }
+        return *slot == term;
     }
+};
 
-    return false;  // { The operator is not too heavy. }
+inline Data<Term> make_temp_term(TermView element) { return element.get_data(); }
+
+inline TempAtom make_temp_atom(AtomView<FluentTag> element)
+{
+    auto terms = std::vector<Data<Term>> {};
+    terms.reserve(element.get_terms().size());
+
+    for (const auto term : element.get_terms())
+        terms.push_back(make_temp_term(term));
+
+    return TempAtom {
+        .predicate = element.get_predicate(),
+        .terms = std::move(terms),
+    };
 }
 
-bool is_add_effect_unbalanced(const ActionView& op, AtomView<FluentTag> e, const Invariant& inv)
+inline TempLiteral make_temp_literal(LiteralView<FluentTag> element)
 {
-    for (const auto conj_eff : op.get_effects())
+    return TempLiteral {
+        .atom = make_temp_atom(element.get_atom()),
+        .polarity = element.get_polarity(),
+    };
+}
+
+inline TempEffect make_temp_effect(ConditionalEffectView element)
+{
+    TempEffect result {};
+
+    result.num_variables = element.get_arity();
+
+    for (const auto lit : element.get_condition().get_literals<FluentTag>())
+        result.condition.push_back(make_temp_literal(lit));
+
+    for (const auto lit : element.get_effect().get_literals())
     {
-        // TODO:
-        // Let o′ be a copy of o where the parameters are minimally renamed so that covers(V , Φ, e.atom) is true.
-
-        for (const auto lit : conj_eff.get_effect().get_literals())
-        {
-            if (lit.get_polarity())
-                continue;
-
-            // TODO:
-            // if the quantified variables of e′ can be renamed so that
-            // (e.atom 6= e′ .atom and covers(V , Φ, e′ .atom) and
-            // o′ .precond ∧ e.cond ∧ ¬e.atom |= e′ .cond ∧ e′ .atom):
-            // return false. { e′ balances e. }
-        }
+        if (lit.get_polarity())
+            result.add_effects.push_back(make_temp_atom(lit.get_atom()));
+        else
+            result.del_effects.push_back(make_temp_atom(lit.get_atom()));
     }
 
-    return true;  // { The add effect is unbalanced. }
+    return result;
 }
 
-bool prove_invariant(const Invariant& inv, const ActionListView& ops)
+inline TempAction make_temp_action(ActionView op)
 {
+    TempAction result {};
+
+    result.num_variables = op.get_arity();
+
+    for (const auto lit : op.get_condition().get_literals<FluentTag>())
+        result.precondition.push_back(make_temp_literal(lit));
+
+    result.effects.reserve(op.get_effects().size());
+    for (const auto cond_eff : op.get_effects())
+        result.effects.push_back(make_temp_effect(cond_eff));
+
+    return result;
+}
+
+inline TempActionList make_temp_actions(ActionListView ops)
+{
+    auto result = TempActionList {};
+    result.reserve(ops.size());
+
     for (const auto op : ops)
-    {
-        if (is_operator_too_heavy(op, inv))
-            return false;  // { Reject the candidate. }
+        result.push_back(make_temp_action(op));
 
-        for (const auto conj_eff : op.get_effects())
-        {
-            for (const auto lit : conj_eff.get_effect().get_literals())
-            {
-                if (!lit.get_polarity())
-                    continue;
-
-                if (is_add_effect_unbalanced(op, lit.get_atom(), inv))
-                    return false;  // { Reject the candidate. }
-            }
-        }
-    }
-
-    return true;  // { Accept the candidate. }
+    return result;
 }
 
-// Fig 8
-void refine_candidate(const Invariant& inv, const ActionListView& ops)
-{
-    // TODO
-    // Select some schematic operator o and add effect e such that
-    // is-add-effect-unbalanced(o, e, V , Φ) returns true.
-    // for each atom ϕ′ over variables from V and at most one other variable
-    // for which covers(V , Φ, ϕ′ ) is not true:
-    // Φ′ := Φ ∪ {ϕ′ }
-    // Simplify Φ′ by removing atoms from Φ that are covered by ϕ′ .
-    // (These cannot contribute to the weight of an instance of hV, Φ′i.)
-    // Simplify Φ′ by removing unused parameters.
-    // if not is-add-effect-unbalanced(o, e, V , Φ′ ):
-    // Add hV, Φ′i to the set of invariant candidates.
-}
-
-// Fig 15 and 17
-std::vector<GroundAtomViewList<FluentTag>> compute_mutex_groups(const InvariantList& invs, TaskView task);
 }
 
 #endif

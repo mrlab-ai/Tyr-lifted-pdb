@@ -30,6 +30,8 @@ struct ParameterIndex : FixedUintMixin<ParameterIndex>
     using Base::Base;
 };
 
+using ParameterList = std::vector<ParameterIndex>;
+
 }
 
 #endif
