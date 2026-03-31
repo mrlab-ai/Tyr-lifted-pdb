@@ -391,9 +391,14 @@ ProofResult prove_invariant(const Invariant& inv, const TempActionList& ops)
             for (size_t add_index = 0; add_index < conj_eff.add_effects.size(); ++add_index)
             {
                 const auto& atom = conj_eff.add_effects[add_index];
+
+                if (!inv.predicates.contains(atom.predicate))
+                    continue;
+
+                if (is_add_effect_unbalanced(op, conj_eff, atom, inv))
                 {
-                    if (is_add_effect_unbalanced(op, conj_eff, atom, inv))
-                        return { ProofStatus::UnbalancedAddEffect, Threat { op_index, effect_index, add_index } };  // { Reject the candidate. }
+                    std::cout << atom << std::endl;
+                    return { ProofStatus::UnbalancedAddEffect, Threat { op_index, effect_index, add_index } };  // { Reject the candidate. }
                 }
             }
         }
@@ -447,11 +452,7 @@ void remove_covered_atoms(Invariant& inv)
             if (i == j)
                 continue;
 
-            Invariant singleton {};
-            singleton.num_rigid_variables = inv.num_rigid_variables;
-            singleton.num_counted_variables = inv.num_counted_variables;
-            singleton.atoms.push_back(inv.atoms[j]);
-            singleton.predicates.insert(inv.atoms[j].predicate);
+            const auto singleton = Invariant(inv.num_rigid_variables, inv.num_counted_variables, TempAtomList { inv.atoms[j] });
 
             if (covers(singleton, inv.atoms[i]))
             {
@@ -549,7 +550,14 @@ TempAtom make_refinement_atom(PredicateView<FluentTag> predicate, size_t num_rig
     };
 }
 
-InvariantList refine_candidate(const Invariant& inv, const Threat& threat, const TempActionList& ops)
+void normalize_invariant(Invariant& inv)
+{
+    remove_covered_atoms(inv);
+    remove_unused_parameters(inv);
+    inv = Invariant(inv.num_rigid_variables, inv.num_counted_variables, std::move(inv.atoms));
+}
+
+InvariantList refine_candidate(const Invariant& inv, const Threat& threat, const TempActionList& ops, PredicateListView<FluentTag> predicates)
 {
     InvariantList result;
 
@@ -557,42 +565,36 @@ InvariantList refine_candidate(const Invariant& inv, const Threat& threat, const
     const auto& effect = op.effects[threat.effect_index];
     const auto& add_atom = effect.add_effects[threat.add_index];
 
-    // Enumerate candidate refinement atoms.
-    // For now, use predicates from the threatening operator.
-    UnorderedSet<PredicateView<FluentTag>> candidate_predicates;
+    auto candidate_predicates = PredicateViewList<FluentTag> {};
+    candidate_predicates.reserve(predicates.size());
 
-    for (const auto& eff : op.effects)
-    {
-        for (const auto& atom : eff.add_effects)
-            candidate_predicates.insert(atom.predicate);
-        for (const auto& atom : eff.del_effects)
-            candidate_predicates.insert(atom.predicate);
-    }
+    for (const auto predicate : predicates)
+        candidate_predicates.push_back(predicate);
 
     for (const auto predicate : candidate_predicates)
     {
         const auto arity = static_cast<size_t>(predicate.get_arity());
 
-        // Case 1: no extra counted variable
         if (arity == inv.num_rigid_variables)
         {
             auto phi_prime = make_refinement_atom(predicate, inv.num_rigid_variables, std::nullopt);
 
             if (!covers(inv, phi_prime))
             {
-                auto refined = inv;
-                refined.atoms.push_back(std::move(phi_prime));
-                refined.predicates.insert(predicate);
+                auto atoms = inv.atoms;
+                atoms.push_back(std::move(phi_prime));
 
-                remove_covered_atoms(refined);
-                remove_unused_parameters(refined);
+                auto refined = Invariant(inv.num_rigid_variables, inv.num_counted_variables, std::move(atoms));
+
+                normalize_invariant(refined);
 
                 if (!is_add_effect_unbalanced(op, effect, add_atom, refined))
+                {
                     result.push_back(std::move(refined));
+                }
             }
         }
 
-        // Case 2: exactly one extra counted variable
         if (arity == inv.num_rigid_variables + 1)
         {
             for (size_t counted_position = 0; counted_position < arity; ++counted_position)
@@ -602,17 +604,17 @@ InvariantList refine_candidate(const Invariant& inv, const Threat& threat, const
                 if (covers(inv, phi_prime))
                     continue;
 
-                auto refined = inv;
-                refined.atoms.push_back(std::move(phi_prime));
-                refined.predicates.insert(predicate);
+                auto atoms = inv.atoms;
+                atoms.push_back(std::move(phi_prime));
 
-                refined.num_counted_variables = std::max<size_t>(refined.num_counted_variables, 1);
+                auto refined = Invariant(inv.num_rigid_variables, std::max<size_t>(inv.num_counted_variables, 1), std::move(atoms));
 
-                remove_covered_atoms(refined);
-                remove_unused_parameters(refined);
+                normalize_invariant(refined);
 
                 if (!is_add_effect_unbalanced(op, effect, add_atom, refined))
+                {
                     result.push_back(std::move(refined));
+                }
             }
         }
     }
@@ -667,28 +669,15 @@ InvariantList make_initial_candidates(PredicateListView<FluentTag> predicates)
     {
         const auto arity = static_cast<size_t>(predicate.get_arity());
 
-        {
-            Invariant inv {};
-            inv.num_rigid_variables = arity;
-            inv.num_counted_variables = 0;
-            inv.atoms.push_back(make_initial_atom(predicate, arity));
-            inv.predicates.insert(predicate);
-            result.push_back(std::move(inv));
-        }
+        result.emplace_back(arity, 0, TempAtomList { make_initial_atom(predicate, arity) });
 
         for (size_t counted_position = 0; counted_position < arity; ++counted_position)
-        {
-            Invariant inv {};
-            inv.num_rigid_variables = arity - 1;
-            inv.num_counted_variables = 1;
-            inv.atoms.push_back(make_initial_atom(predicate, counted_position));
-            inv.predicates.insert(predicate);
-            result.push_back(std::move(inv));
-        }
+            result.emplace_back(arity - 1, 1, TempAtomList { make_initial_atom(predicate, counted_position) });
     }
 
     return result;
 }
+
 }
 
 /**
@@ -698,21 +687,19 @@ InvariantList make_initial_candidates(PredicateListView<FluentTag> predicates)
 InvariantList synthesize_invariants(TaskView task)
 {
     auto ops = make_temp_actions(task.get_domain().get_actions());
-
     auto queue = make_initial_candidates(task.get_domain().get_predicates<FluentTag>());
 
-    std::cout << "[Total] Initial candidates: " << queue.size() << std::endl;
-    print(std::cout, queue);
-    std::cout << std::endl;
-
     auto accepted = InvariantList {};
-
     auto seen = UnorderedSet<Invariant> {};
 
     while (!queue.empty())
     {
         auto candidate = std::move(queue.back());
         queue.pop_back();
+
+        candidate = Invariant(candidate.num_rigid_variables, candidate.num_counted_variables, std::move(candidate.atoms));
+
+        normalize_invariant(candidate);
 
         if (!seen.insert(candidate).second)
             continue;
@@ -725,7 +712,8 @@ InvariantList synthesize_invariants(TaskView task)
         }
         else if (result.status == ProofStatus::UnbalancedAddEffect)
         {
-            auto refined = refine_candidate(candidate, *result.threat, ops);
+            auto refined = refine_candidate(candidate, *result.threat, ops, task.get_domain().get_predicates<FluentTag>());
+
             queue.insert(queue.end(), std::make_move_iterator(refined.begin()), std::make_move_iterator(refined.end()));
         }
     }

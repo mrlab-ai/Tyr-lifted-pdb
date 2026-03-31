@@ -42,7 +42,7 @@ std::ostream& print(std::ostream& os, const formalism::planning::invariant::Inva
         os << print_indent << "predicates = " << el.predicates << ",\n";
     }
 
-    os << ")\n";
+    os << ")";
 
     return os;
 }

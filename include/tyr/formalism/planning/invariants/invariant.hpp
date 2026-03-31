@@ -86,10 +86,31 @@ using TempActionList = std::vector<TempAction>;
 
 struct Invariant
 {
-    size_t num_rigid_variables;
-    size_t num_counted_variables;
+    size_t num_rigid_variables = 0;
+    size_t num_counted_variables = 0;
     TempAtomList atoms;
     UnorderedSet<PredicateView<FluentTag>> predicates;
+
+    Invariant() = default;
+
+    Invariant(size_t num_rigid_variables_, size_t num_counted_variables_, TempAtomList atoms_) :
+        num_rigid_variables(num_rigid_variables_),
+        num_counted_variables(num_counted_variables_),
+        atoms(std::move(atoms_)),
+        predicates()
+    {
+        canonicalize();
+    }
+
+    void canonicalize()
+    {
+        std::sort(atoms.begin(), atoms.end());
+        atoms.erase(std::unique(atoms.begin(), atoms.end()), atoms.end());
+
+        predicates.clear();
+        for (const auto& atom : atoms)
+            predicates.insert(atom.predicate);
+    }
 
     auto identifying_members() const noexcept { return std::tie(num_rigid_variables, num_counted_variables, atoms); }
 
