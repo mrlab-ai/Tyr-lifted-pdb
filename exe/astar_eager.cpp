@@ -71,6 +71,12 @@ int main(int argc, char** argv)
 
         auto lifted_task = planning::LiftedTask::create(parser.parse_task(problem_filepath));
 
+        auto invariants = formalism::planning::invariant::synthesize_invariants(lifted_task->get_formalism_task().get_task());
+
+        std::cout << "[Total] Synthesized invariants: " << invariants.size() << std::endl;
+        tyr::print(std::cout, invariants);
+        std::cout << std::endl;
+
         if (verbosity > 0)
             std::cout << domain << std::endl;
 

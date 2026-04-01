@@ -15,23 +15,29 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_PLANNING_HPP_
-#define TYR_FORMALISM_PLANNING_PLANNING_HPP_
+#ifndef TYR_FORMALISM_PLANNING_INVARIANTS_SYNTHESIS_HPP_
+#define TYR_FORMALISM_PLANNING_INVARIANTS_SYNTHESIS_HPP_
 
-#include "tyr/formalism/planning/builder.hpp"
-#include "tyr/formalism/planning/canonicalization.hpp"
-#include "tyr/formalism/planning/datas.hpp"
+#include "tyr/common/comparators.hpp"
+#include "tyr/common/declarations.hpp"
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
+#include "tyr/formalism/planning/expression_arity.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
-#include "tyr/formalism/planning/indices.hpp"
-#include "tyr/formalism/planning/invariants/formatter.hpp"
 #include "tyr/formalism/planning/invariants/invariant.hpp"
-#include "tyr/formalism/planning/invariants/synthesis.hpp"
-#include "tyr/formalism/planning/merge.hpp"
-#include "tyr/formalism/planning/parser.hpp"
-#include "tyr/formalism/planning/planning_domain.hpp"
-#include "tyr/formalism/planning/planning_fdr_task.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-#include "tyr/formalism/planning/views.hpp"
+
+#include <algorithm>
+#include <map>
+#include <optional>
+#include <unordered_set>
+#include <variant>
+#include <vector>
+
+namespace tyr::formalism::planning::invariant
+{
+InvariantList synthesize_invariants(TaskView task);
+}
 
 #endif

@@ -159,9 +159,11 @@ using GroundArithmeticOperatorListView = View<DataList<ArithmeticOperator<Data<G
 
 template<FactKind T>
 using AtomView = View<Index<Atom<T>>, Repository>;
-
 template<FactKind T>
 using AtomListView = View<IndexList<Atom<T>>, Repository>;
+template<FactKind T>
+using AtomViewList = std::vector<AtomView<T>>;
+
 using AxiomView = View<Index<Axiom>, Repository>;
 using AxiomListView = View<IndexList<Axiom>, Repository>;
 using AxiomViewList = std::vector<AxiomView>;

@@ -1,0 +1,85 @@
+/*
+ * Copyright (C) 2025 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "tyr/formalism/planning/invariants/synthesis.hpp"
+
+#include "initial_state.hpp"
+#include "normalization.hpp"
+#include "refinement.hpp"
+#include "tyr/common/comparators.hpp"
+#include "tyr/common/declarations.hpp"
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
+#include "tyr/formalism/planning/expression_arity.hpp"
+#include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/invariants/formatter.hpp"
+#include "tyr/formalism/planning/invariants/invariant.hpp"
+#include "tyr/formalism/planning/planning_task.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+
+#include <algorithm>
+#include <map>
+#include <optional>
+#include <unordered_set>
+#include <variant>
+#include <vector>
+
+namespace tyr::formalism::planning::invariant
+{
+InvariantList synthesize_invariants(TaskView task)
+{
+    auto ops = make_temp_actions(task.get_domain().get_actions());
+    auto queue = make_initial_candidates(task.get_domain().get_predicates<FluentTag>());
+
+    auto accepted = InvariantList {};
+    auto seen = UnorderedSet<Invariant> {};
+
+    while (!queue.empty())
+    {
+        auto candidate = std::move(queue.back());
+        queue.pop_back();
+
+        candidate = Invariant(candidate.num_rigid_variables, candidate.num_counted_variables, std::move(candidate.atoms));
+
+        normalize_invariant(candidate);
+
+        if (!is_well_shaped_invariant(candidate))
+            continue;
+
+        if (!seen.insert(candidate).second)
+            continue;
+
+        if (!holds_in_initial_state(candidate, task.get_atoms<FluentTag>()))
+            continue;
+
+        auto result = prove_invariant(candidate, ops);
+
+        if (result.status == ProofStatus::Proven)
+        {
+            accepted.push_back(std::move(candidate));
+        }
+        else if (result.status == ProofStatus::UnbalancedAddEffect)
+        {
+            auto refined = refine_candidate(candidate, *result.threat, ops, task.get_domain().get_predicates<FluentTag>());
+
+            queue.insert(queue.end(), std::make_move_iterator(refined.begin()), std::make_move_iterator(refined.end()));
+        }
+    }
+
+    return accepted;
+}
+}

@@ -15,23 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PARAMETER_INDEX_HPP_
-#define TYR_FORMALISM_PARAMETER_INDEX_HPP_
+#ifndef TYR_FORMALISM_PLANNING_INVARIANTS_INITIAL_STATE_HPP_
+#define TYR_FORMALISM_PLANNING_INVARIANTS_INITIAL_STATE_HPP_
 
-#include "tyr/common/types.hpp"
-#include "tyr/common/uint_mixins.hpp"
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/planning/invariants/invariant.hpp"
 
-namespace tyr::formalism
+namespace tyr::formalism::planning::invariant
 {
-struct ParameterIndex : FixedUintMixin<ParameterIndex>
-{
-    using Base = FixedUintMixin<ParameterIndex>;
-    using Base::Base;
-};
-
-using ParameterList = std::vector<ParameterIndex>;
-
+bool holds_in_initial_state(const Invariant& inv, GroundAtomListView<FluentTag> initial_atoms);
 }
 
 #endif
