@@ -194,6 +194,9 @@ static auto create_fdr_task(const fp::PlanningTask& planning_task,
         fdr_task.static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto atom : fluent_atoms)
         fdr_task.fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+
+    // TODO: synthesize invariants, create mutex groups, instantiate fdr context
+
     for (const auto atom : derived_atoms)
         fdr_task.derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto fterm : fluent_fterms)
@@ -275,48 +278,6 @@ GroundTaskPtr ground_task(LiftedTask& lifted_task, ExecutionContext& execution_c
     execution_context.arena().execute([&] { d::solve_bottom_up(ctx); });
 
     workspace.d2p.clear();
-
-    /**
-     * Create ground atoms
-     */
-    auto ground_repository = lifted_task.get_domain().get_repository_factory()->create_shared(lifted_task.get_domain().get_repository().get());
-    auto fluent_predicates = lifted_task.get_task().get_domain().get_predicates<f::FluentTag>();
-    auto fluent_predicates_set = UnorderedSet<fp::PredicateView<f::FluentTag>>(fluent_predicates.begin(), fluent_predicates.end());
-    auto fluent_atoms = fp::GroundAtomViewList<f::FluentTag> {};
-    auto derived_predicates = lifted_task.get_task().get_domain().get_predicates<f::DerivedTag>();
-    auto derived_predicates_set = UnorderedSet<fp::PredicateView<f::DerivedTag>>(derived_predicates.begin(), derived_predicates.end());
-    auto derived_atoms = fp::GroundAtomViewList<f::DerivedTag> {};
-    {
-        auto builder = fp::Builder {};
-        auto merge_context = fp::MergePlanningContext { builder, *ground_repository };
-        auto fluent_atom_ptr = builder.get_builder<fp::GroundAtom<f::FluentTag>>();
-        auto& fluent_atom = *fluent_atom_ptr;
-        auto derived_atom_ptr = builder.get_builder<fp::GroundAtom<f::DerivedTag>>();
-        auto& derived_atom = *derived_atom_ptr;
-        for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
-        {
-            if (fluent_predicates_set.contains(set.get_predicate()))
-            {
-                for (const auto& binding : set.get_bindings())
-                {
-                    fluent_atom.clear();
-                    fluent_atom.binding = fp::merge_d2p<f::FluentTag, f::FluentTag>(binding, merge_context).first.get_index();
-                    canonicalize(fluent_atom);
-                    fluent_atoms.push_back(ground_repository->get_or_create(fluent_atom).first);
-                }
-            }
-            else if (derived_predicates_set.contains(set.get_predicate()))
-            {
-                for (const auto& binding : set.get_bindings())
-                {
-                    derived_atom.clear();
-                    derived_atom.binding = fp::merge_d2p<f::FluentTag, f::DerivedTag>(binding, merge_context).first.get_index();
-                    canonicalize(derived_atom);
-                    fluent_atoms.push_back(ground_repository->get_or_create(derived_atom).first);
-                }
-            }
-        }
-    }
 
     auto fluent_assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
     auto derived_assign = UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, bool> {};
