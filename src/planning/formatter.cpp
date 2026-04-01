@@ -205,24 +205,25 @@ std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Kind
 
     const auto& vertices = el.get_forward().vertices();
     const auto& transitions = el.get_forward().transitions();
-    const auto& adj_lists = el.get_forward().adj_lists();
 
     for (const auto& vertex : vertices)
         fmt::print(os, "n{} [label=\"{}\"];\n", to_string(vertex.get_index()), to_string(vertex));
 
+    auto grouped_labels = std::vector<std::vector<std::vector<std::string>>>(vertices.size(), std::vector<std::vector<std::string>>(vertices.size()));
+    for (const auto& transition : transitions)
+    {
+        const auto src = transition.src;
+        const auto dst = transition.dst;
+        grouped_labels[src][dst].push_back(to_string(std::make_pair(transition.label, formalism::planning::PlanFormatting())));
+    }
+
     for (uint_t vi = 0; vi < vertices.size(); ++vi)
     {
-        // group by target
-        auto grouped_labels = std::vector<std::vector<std::string>>(vertices.size());
-
-        for (const auto& t : adj_lists[vi])
-        {
-            const auto& transition = transitions[t];
-            grouped_labels[transition.dst].push_back(to_string(std::make_pair(transition.label, formalism::planning::PlanFormatting())));
-        }
-
         for (uint_t vj = 0; vj < vertices.size(); ++vj)
-            fmt::print(os, "n{} -> n{} [label=\"{}\\l\"];\n", vi, vj, fmt::join(grouped_labels[vj], "\\l"));
+        {
+            if (!grouped_labels[vi][vj].empty())
+                fmt::print(os, "n{} -> n{} [label=\"{}\\l\"];\n", vi, vj, fmt::join(grouped_labels[vi][vj], "\\l"));
+        }
     }
 
     os << "}\n";
