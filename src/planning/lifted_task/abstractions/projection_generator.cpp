@@ -24,6 +24,7 @@
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -325,6 +326,8 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astate
 
             transitions.emplace_back(labeled_succ_node.label, src, dst);
 
+            std::cout << "Transition: " << src << " -> " << dst << " via " << labeled_succ_node.label << std::endl;
+
             adj_row.push_back(t);
         }
     }
@@ -344,6 +347,9 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
 
     auto [projected_formalism_task, projected_to_original_action] =
         create_projected_formalism_task(original_task.get_formalism_task(), pattern, destination, factory, fdr_context);
+
+    std::cout << projected_formalism_task.get_task().get_domain() << std::endl;
+    std::cout << projected_formalism_task.get_task() << std::endl;
 
     auto projected_task = LiftedTask::create(projected_formalism_task);
 
