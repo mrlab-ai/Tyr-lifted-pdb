@@ -29,6 +29,8 @@
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/invariants/mutexes.hpp"
+#include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
