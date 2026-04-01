@@ -93,7 +93,7 @@ ConstraintTerm make_invariant_parameter_term(size_t index);
 bool is_equality_literal(const TempLiteral& lit);
 bool is_inequality_literal(const TempLiteral& lit);
 
-void ensure_cover(ConstraintSystem& system, const TempAtom& atom, const Invariant& inv);
+void ensure_cover(ConstraintSystem& system, const TempAtom& pattern, const TempAtom& atom, const Invariant& inv);
 void ensure_inequality(ConstraintSystem& system, const TempAtom& lhs, const TempAtom& rhs);
 void ensure_conjunction_sat(ConstraintSystem& system, const TempLiteralList& lits);
 

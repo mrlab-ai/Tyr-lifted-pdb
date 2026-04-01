@@ -274,12 +274,10 @@ bool is_equality_literal(const TempLiteral& lit) { return lit.atom.predicate.get
 
 bool is_inequality_literal(const TempLiteral& lit) { return lit.atom.predicate.get_name() == "=" && !lit.polarity; }
 
-void ensure_cover(ConstraintSystem& system, const TempAtom& atom, const Invariant& inv)
+void ensure_cover(ConstraintSystem& system, const TempAtom& pattern, const TempAtom& atom, const Invariant& inv)
 {
-    const auto it = std::find_if(inv.atoms.begin(), inv.atoms.end(), [&](const auto& p) { return p.predicate == atom.predicate; });
-    assert(it != inv.atoms.end());
-
-    const auto& pattern = *it;
+    assert(pattern.predicate == atom.predicate);
+    assert(pattern.terms.size() == atom.terms.size());
 
     std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities;
 
@@ -289,11 +287,12 @@ void ensure_cover(ConstraintSystem& system, const TempAtom& atom, const Invarian
             [&](auto&& x)
             {
                 using T = std::decay_t<decltype(x)>;
+
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
                     const auto idx = static_cast<uint_t>(x);
 
-                    // Only invariant parameters, never the counted variable.
+                    // Only non-counted invariant parameters.
                     if (idx < inv.num_rigid_variables)
                     {
                         equalities.emplace_back(make_invariant_parameter_term(idx), make_constraint_term(atom.terms[pos]));

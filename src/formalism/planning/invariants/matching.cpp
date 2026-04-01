@@ -367,9 +367,9 @@ std::optional<InvariantSubstitution> match_invariant_against_ground_atom(const I
                       [&](const Data<Term>& lhs, const Data<Term>& rhs, InvariantSubstitution& sigma) -> bool { return match_ground_term(lhs, rhs, sigma); });
 }
 
-std::vector<ActionSubstitution> enumerate_action_alignments(const Invariant& inv, const TempAtom& element, size_t num_action_variables)
+std::vector<ActionAlignment> enumerate_action_alignments(const Invariant& inv, const TempAtom& element, size_t num_action_variables)
 {
-    auto result = std::vector<ActionSubstitution> {};
+    auto result = std::vector<ActionAlignment> {};
 
     for (const auto& pattern : inv.atoms)
     {
@@ -380,7 +380,7 @@ std::vector<ActionSubstitution> enumerate_action_alignments(const Invariant& inv
                                 { return match_action_alignment_term(inv, lhs, rhs, num_action_variables, substitution); });
 
         if (sigma.has_value())
-            result.push_back(std::move(*sigma));
+            result.push_back(ActionAlignment { .pattern = pattern, .sigma = std::move(*sigma) });
     }
 
     return result;
