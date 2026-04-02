@@ -138,19 +138,11 @@ bool is_applicable_if_fires(formalism::planning::GroundConditionalEffectView ele
                             const StateContext<Kind>& context,
                             formalism::planning::EffectFamilyList& ref_fluent_effect_families)
 {
-    const auto a = is_applicable(element.get_condition(), context);
-
-    std::cout << element << std::endl;
-    std::cout << a << std::endl;
-
-    if (!a)
+    if (!is_applicable(element.get_condition(), context))
         return true;
 
-    const auto b = is_applicable(element.get_effect(), context, ref_fluent_effect_families);
-    std::cout << "Effect: " << b << std::endl;
-
     // Important: only modify effect families if condition is satisfied
-    return b;
+    return is_applicable(element.get_effect(), context, ref_fluent_effect_families);
 }
 
 /**

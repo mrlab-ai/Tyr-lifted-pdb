@@ -42,6 +42,7 @@ namespace tyr::planning::match_tree
 
 using PreconditionVariant = std::variant<Index<formalism::planning::GroundAtom<formalism::DerivedTag>>,
                                          Index<formalism::planning::FDRVariable<formalism::FluentTag>>,
+                                         Data<formalism::planning::FDRFact<formalism::FluentTag>>,
                                          Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>>>;
 
 template<typename Tag>
@@ -66,13 +67,16 @@ template<typename Tag>
 struct VariableStackEntry;
 
 template<typename Tag>
+struct NegativeFactStackEntry;
+
+template<typename Tag>
 struct ConstraintStackEntry;
 
 template<typename Tag>
 struct GeneratorStackEntry;
 
 template<typename Tag>
-using StackEntry = std::variant<AtomStackEntry<Tag>, VariableStackEntry<Tag>, ConstraintStackEntry<Tag>, GeneratorStackEntry<Tag>>;
+using StackEntry = std::variant<AtomStackEntry<Tag>, VariableStackEntry<Tag>, NegativeFactStackEntry<Tag>, ConstraintStackEntry<Tag>, GeneratorStackEntry<Tag>>;
 
 template<typename Tag>
 static std::optional<StackEntry<Tag>> try_create_stack_entry(BaseEntry<Tag> base,
@@ -146,6 +150,32 @@ struct VariableStackEntry
     }
 
     bool explored_children() const noexcept { return forward_pos == forward.size(); }
+    bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result.dontcare_child.has_value()); }
+};
+
+template<typename Tag>
+struct NegativeFactStackEntry
+{
+    BaseEntry<Tag> base;
+
+    std::span<Index<Tag>> true_elements;
+    std::span<Index<Tag>> dontcare_elements;
+
+    Data<NegativeFactSelectorNode<Tag>> result;
+
+    NegativeFactStackEntry(BaseEntry<Tag> base,
+                           Data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
+                           std::span<Index<Tag>> true_elements,
+                           std::span<Index<Tag>> dontcare_elements) :
+        base(base),
+        true_elements(true_elements),
+        dontcare_elements(dontcare_elements),
+        result()
+    {
+        result.fact = fact;
+    }
+
+    bool explored_true_child() const noexcept { return (true_elements.empty() || result.true_child.has_value()); }
     bool explored_dontcare_child() const noexcept { return (dontcare_elements.empty() || result.dontcare_child.has_value()); }
 };
 
@@ -272,6 +302,44 @@ void push_result(VariableStackEntry<Tag>& el, Data<Node<Tag>> node)
         el.result.domain_children.at(el.forward.at(el.forward_pos)) = node;
         ++el.forward_pos;
     }
+    else if (!el.explored_dontcare_child())
+        el.result.dontcare_child = node;
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+bool explored(const NegativeFactStackEntry<Tag>& el) noexcept
+{
+    return el.explored_true_child() && el.explored_dontcare_child();
+}
+
+template<typename Tag>
+std::optional<StackEntry<Tag>> next_entry(const NegativeFactStackEntry<Tag>& el,
+                                          const std::vector<std::pair<PreconditionVariant, IndexList<Tag>>>& sorted_preconditions,
+                                          const PreconditionDetails<Tag>& details,
+                                          const formalism::planning::Repository& context)
+{
+    if (!el.explored_true_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.true_elements }, sorted_preconditions, details, context);
+    else if (!el.explored_dontcare_child())
+        return try_create_stack_entry(BaseEntry<Tag> { el.base.depth + 1, el.dontcare_elements }, sorted_preconditions, details, context);
+    else
+        throw std::logic_error("Unexpected case.");
+}
+
+template<typename Tag>
+Data<Node<Tag>> get_result(NegativeFactStackEntry<Tag>& el, GetResultContext<Tag>& context)
+{
+    canonicalize(el.result);
+    return Data<Node<Tag>>(context.destination.get_or_create(el.result).first);
+}
+
+template<typename Tag>
+void push_result(NegativeFactStackEntry<Tag>& el, Data<Node<Tag>> node)
+{
+    if (!el.explored_true_child())
+        el.result.true_child = node;
     else if (!el.explored_dontcare_child())
         el.result.dontcare_child = node;
     else
@@ -444,6 +512,35 @@ static std::optional<StackEntry<Tag>> try_create_variable_stack_entry(Index<form
 }
 
 template<typename Tag>
+static std::optional<StackEntry<Tag>> try_create_negative_fact_stack_entry(Data<formalism::planning::FDRFact<formalism::FluentTag>> fact,
+                                                                           BaseEntry<Tag> base,
+                                                                           const PreconditionDetails<Tag>& details)
+{
+    assert(!base.elements.empty());
+
+    std::sort(base.elements.begin(),
+              base.elements.end(),
+              [&](auto&& lhs, auto&& rhs)
+              {
+                  const auto lhs_has = details.at(lhs).contains(fact);
+                  const auto rhs_has = details.at(rhs).contains(fact);
+                  if (lhs_has == rhs_has)
+                      return lhs < rhs;
+                  return lhs_has > rhs_has;  // true < dontcare
+              });
+
+    const auto mid = std::find_if(base.elements.begin(), base.elements.end(), [&](auto&& e) { return !details.at(e).contains(fact); });
+
+    const auto true_elements = std::span<Index<Tag>>(base.elements.begin(), mid);
+    const auto dontcare_elements = std::span<Index<Tag>>(mid, base.elements.end());
+
+    if (true_elements.empty())
+        return std::nullopt;  ///< no element cares about the constraint
+
+    return NegativeFactStackEntry<Tag>(base, fact, true_elements, dontcare_elements);
+}
+
+template<typename Tag>
 static std::optional<StackEntry<Tag>>
 try_create_constraint_stack_entry(Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>> constraint,
                                   BaseEntry<Tag> base,
@@ -493,6 +590,8 @@ static std::optional<StackEntry<Tag>> try_create_selector_stack_entry(BaseEntry<
 
             if constexpr (std::same_as<Alternative, Index<formalism::planning::FDRVariable<formalism::FluentTag>>>)
                 return try_create_variable_stack_entry(arg, base, details, context);
+            else if constexpr (std::same_as<Alternative, Data<formalism::planning::FDRFact<formalism::FluentTag>>>)
+                return try_create_negative_fact_stack_entry(arg, base, details);
             else if constexpr (std::same_as<Alternative, Index<formalism::planning::GroundAtom<formalism::DerivedTag>>>)
                 return try_create_atom_stack_entry(arg, base, details);
             else if constexpr (std::same_as<Alternative, Data<formalism::planning::BooleanOperator<Data<formalism::planning::GroundFunctionExpression>>>>)
@@ -551,14 +650,21 @@ public:
 
             details.try_emplace(element);  //
 
-            for (const auto fact : condition.template get_facts<formalism::FluentTag>())
+            for (const auto fact : condition.template get_facts<formalism::PositiveTag>())
             {
                 const auto key = fact.get_variable().get_index();
                 occurences[key].push_back(element);
                 details[element][key] = fact.get_value();
             }
 
-            for (const auto literal : condition.template get_facts<formalism::DerivedTag>())
+            for (const auto fact : condition.template get_facts<formalism::NegativeTag>())
+            {
+                const auto key = fact.get_data();
+                occurences[key].push_back(element);
+                details[element][key] = std::monostate {};
+            }
+
+            for (const auto literal : condition.template get_literals<formalism::DerivedTag>())
             {
                 const auto key = literal.get_atom().get_index();
                 occurences[key].push_back(element);
@@ -703,6 +809,17 @@ public:
 
                         if (data.domain_children[uint_t(value)])
                             m_evaluate_stack.push_back(data.domain_children[uint_t(value)].value());
+
+                        if (data.dontcare_child)
+                            m_evaluate_stack.push_back(data.dontcare_child.value());
+                    }
+                    else if constexpr (std::is_same_v<Alternative, Index<NegativeFactSelectorNode<Tag>>>)
+                    {
+                        const auto& data = make_view(arg, *m_context).get_data();
+                        const auto holds = state.unpacked_state.get(data.fact.variable) != data.fact.value;
+
+                        if (holds && data.true_child)
+                            m_evaluate_stack.push_back(data.true_child.value());
 
                         if (data.dontcare_child)
                             m_evaluate_stack.push_back(data.dontcare_child.value());

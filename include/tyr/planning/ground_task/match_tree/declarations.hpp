@@ -41,6 +41,11 @@ struct VariableSelectorNode
 };
 
 template<typename Tag>
+struct NegativeFactSelectorNode
+{
+};
+
+template<typename Tag>
 struct NumericConstraintSelectorNode
 {
 };

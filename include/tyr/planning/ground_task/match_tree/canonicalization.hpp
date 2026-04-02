@@ -46,6 +46,12 @@ bool is_canonical(const Data<VariableSelectorNode<Tag>>& element)
 };
 
 template<typename Tag>
+bool is_canonical(const Data<NegativeFactSelectorNode<Tag>>& element)
+{
+    return true;
+};
+
+template<typename Tag>
 bool is_canonical(const Data<NumericConstraintSelectorNode<Tag>>& element)
 {
     return true;
@@ -68,6 +74,9 @@ void canonicalize(Data<AtomSelectorNode<Tag>>& element) {};
 
 template<typename Tag>
 void canonicalize(Data<VariableSelectorNode<Tag>>& element) {};
+
+template<typename Tag>
+void canonicalize(Data<NegativeFactSelectorNode<Tag>>& element) {};
 
 template<typename Tag>
 void canonicalize(Data<NumericConstraintSelectorNode<Tag>>& element) {};
