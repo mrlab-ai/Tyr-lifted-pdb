@@ -52,6 +52,7 @@ namespace fpi = tyr::formalism::planning::invariant;
 
 namespace tyr::planning
 {
+
 static auto remap_fdr_fact(fp::FDRFactView<f::FluentTag> fact, fp::FDRContext& fdr_context, fp::MergeContext& context)
 {
     // Ensure that remapping is unambiguous
@@ -92,340 +93,7 @@ static auto create_ground_fdr_conjunctive_condition(fp::GroundConjunctiveConditi
     return context.destination.get_or_create(fdr_conj_cond);
 }
 
-static auto create_ground_conjunctive_effect(fp::GroundConjunctiveEffectView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
-{
-    auto fdr_conj_eff_ptr = context.builder.get_builder<fp::GroundConjunctiveEffect>();
-    auto& fdr_conj_eff = *fdr_conj_eff_ptr;
-    fdr_conj_eff.clear();
-
-    auto assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
-
-    for (const auto fact : element.get_facts())
-        fdr_conj_eff.facts.push_back(remap_fdr_fact(fact, fdr_context, context));
-
-    for (const auto numeric_effect : element.get_numeric_effects())
-        fdr_conj_eff.numeric_effects.push_back(merge_p2p(numeric_effect, context));
-
-    if (element.get_auxiliary_numeric_effect().has_value())
-        fdr_conj_eff.auxiliary_numeric_effect = merge_p2p(element.get_auxiliary_numeric_effect().value(), context);
-
-    canonicalize(fdr_conj_eff);
-    return context.destination.get_or_create(fdr_conj_eff);
-}
-
-static auto create_ground_conditional_effect(fp::GroundConditionalEffectView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
-{
-    auto fdr_cond_eff_ptr = context.builder.get_builder<fp::GroundConditionalEffect>();
-    auto& fdr_cond_eff = *fdr_cond_eff_ptr;
-    fdr_cond_eff.clear();
-
-    fdr_cond_eff.condition = create_ground_fdr_conjunctive_condition(element.get_condition(), fdr_context, context).first.get_index();
-    fdr_cond_eff.effect = create_ground_conjunctive_effect(element.get_effect(), fdr_context, context).first.get_index();
-
-    canonicalize(fdr_cond_eff);
-    return context.destination.get_or_create(fdr_cond_eff);
-}
-
-static auto create_ground_action(fp::GroundActionView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
-{
-    auto fdr_action_ptr = context.builder.get_builder<fp::GroundAction>();
-    auto& fdr_action = *fdr_action_ptr;
-    fdr_action.clear();
-
-    fdr_action.binding = merge_p2p(element.get_row(), context).first.get_index();
-    fdr_action.condition = create_ground_fdr_conjunctive_condition(element.get_condition(), fdr_context, context).first.get_index();
-    for (const auto cond_eff : element.get_effects())
-        fdr_action.effects.push_back(create_ground_conditional_effect(cond_eff, fdr_context, context).first.get_index());
-
-    canonicalize(fdr_action);
-    return context.destination.get_or_create(fdr_action);
-}
-
-static auto create_ground_axiom(fp::GroundAxiomView element, fp::FDRContext& fdr_context, fp::MergeContext& context)
-{
-    auto fdr_axiom_ptr = context.builder.get_builder<fp::GroundAxiom>();
-    auto& fdr_axiom = *fdr_axiom_ptr;
-    fdr_axiom.clear();
-
-    fdr_axiom.binding = merge_p2p(element.get_row(), context).first.get_index();
-    fdr_axiom.body = create_ground_fdr_conjunctive_condition(element.get_body(), fdr_context, context).first.get_index();
-    fdr_axiom.head = merge_p2p(element.get_head(), context).first.get_index();
-
-    canonicalize(fdr_axiom);
-    return context.destination.get_or_create(fdr_axiom);
-}
-
-// TODO: create stronger mutex groups
-static auto create_mutex_groups(fp::GroundAtomListView<f::FluentTag> atoms, fp::MergeContext& context)
-{
-    auto mutex_groups = std::vector<std::vector<fp::GroundAtomView<f::FluentTag>>> {};
-
-    for (const auto atom : atoms)
-    {
-        auto group = std::vector<fp::GroundAtomView<f::FluentTag>> {};
-        group.push_back(merge_p2p(atom, context).first);
-        mutex_groups.push_back(group);
-    }
-
-    return mutex_groups;
-}
-
-static auto create_fdr_task(const fp::PlanningTask& planning_task,
-                            fp::GroundAtomListView<f::FluentTag> fluent_atoms,
-                            fp::GroundAtomListView<f::DerivedTag> derived_atoms,
-                            fp::GroundFunctionTermListView<f::FluentTag> fluent_fterms,
-                            fp::GroundActionListView actions,
-                            fp::GroundAxiomListView axioms)
-{
-    auto task = planning_task.get_task();
-    const auto& factory = planning_task.get_domain().get_repository_factory();
-    auto repository = factory->create_shared(planning_task.get_domain().get_repository().get());
-    auto builder = fp::Builder();
-    auto fdr_task_ptr = builder.get_builder<fp::FDRTask>();
-    auto& fdr_task = *fdr_task_ptr;
-    fdr_task.clear();
-
-    auto merge_context = fp::MergeContext { builder, *repository };
-
-    fdr_task.name = task.get_name();
-    fdr_task.domain = task.get_domain().get_index();
-    for (const auto predicate : task.get_derived_predicates())
-        fdr_task.derived_predicates.push_back(merge_p2p(predicate, merge_context).first.get_index());
-    for (const auto object : task.get_objects())
-        fdr_task.objects.push_back(merge_p2p(object, merge_context).first.get_index());
-
-    for (const auto atom : task.get_atoms<f::StaticTag>())
-        fdr_task.static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
-    for (const auto atom : fluent_atoms)
-        fdr_task.fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
-
-    // TODO: synthesize invariants, create mutex groups, instantiate fdr context
-
-    for (const auto atom : derived_atoms)
-        fdr_task.derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
-    for (const auto fterm : fluent_fterms)
-        fdr_task.fluent_fterms.push_back(merge_p2p(fterm, merge_context).first.get_index());
-
-    for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
-        fdr_task.static_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
-    for (const auto fterm_value : task.get_fterm_values<f::FluentTag>())
-        fdr_task.fluent_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
-    if (task.get_auxiliary_fterm_value().has_value())
-        fdr_task.auxiliary_fterm_value = merge_p2p(task.get_auxiliary_fterm_value().value(), merge_context).first.get_index();
-    if (task.get_metric())
-        fdr_task.metric = merge_p2p(task.get_metric().value(), merge_context).first.get_index();
-    for (const auto axiom : task.get_axioms())
-        fdr_task.axioms.push_back(merge_p2p(axiom, merge_context).first.get_index());
-
-    /// --- Create FDR context
-    auto mutex_groups = create_mutex_groups(fluent_atoms, merge_context);
-    auto fdr_context = std::make_shared<fp::FDRContext>(mutex_groups, repository);
-
-    /// --- Create FDR variables
-    for (const auto variable : fdr_context->get_variables())
-        fdr_task.fluent_variables.push_back(variable.get_index());
-
-    /// --- Create FDR fluent facts
-    for (const auto atom : task.get_atoms<f::FluentTag>())
-        fdr_task.fluent_facts.push_back(fdr_context->get_fact(merge_p2p(atom, merge_context).first.get_index()));
-
-    /// --- Create FDR goal
-    fdr_task.goal = create_ground_fdr_conjunctive_condition(task.get_goal(), *fdr_context, merge_context).first.get_index();
-
-    /// --- Create FDR actions and axioms
-    for (const auto action : actions)
-        fdr_task.ground_actions.push_back(create_ground_action(action, *fdr_context, merge_context).first.get_index());
-    for (const auto axiom : axioms)
-        fdr_task.ground_axioms.push_back(create_ground_axiom(axiom, *fdr_context, merge_context).first.get_index());
-
-    canonicalize(fdr_task);
-
-    return std::make_shared<GroundTask>(
-        fp::PlanningFDRTask(repository->get_or_create(fdr_task).first, std::move(fdr_context), repository, planning_task.get_domain()));
-}
-
-static auto create_fdr_task(const fp::PlanningTask& task,
-                            IndexList<fp::GroundAtom<f::FluentTag>> fluent_atoms,
-                            IndexList<fp::GroundAtom<f::DerivedTag>> derived_atoms,
-                            IndexList<fp::GroundFunctionTerm<f::FluentTag>> fluent_fterms,
-                            IndexList<fp::GroundAction> actions,
-                            IndexList<fp::GroundAxiom> axioms)
-{
-    return create_fdr_task(task,
-                           make_view(fluent_atoms, *task.get_repository()),
-                           make_view(derived_atoms, *task.get_repository()),
-                           make_view(fluent_fterms, *task.get_repository()),
-                           make_view(actions, *task.get_repository()),
-                           make_view(axioms, *task.get_repository()));
-}
-
-GroundTaskPtr ground_task(LiftedTask& lifted_task, ExecutionContext& execution_context)
-{
-    auto ground_program = GroundTaskProgram(lifted_task.get_task());
-
-    // std::cout << lifted_task.get_task().get_domain() << std::endl;
-    // std::cout << lifted_task.get_task() << std::endl;
-
-    // std::cout << ground_program.get_program_context().get_program() << std::endl;
-
-    const auto const_workspace = d::ConstProgramWorkspace(ground_program.get_program_context());
-
-    auto workspace = d::ProgramWorkspace<d::NoOrAnnotationPolicy, d::NoAndAnnotationPolicy, d::NoTerminationPolicy>(ground_program.get_program_context(),
-                                                                                                                    const_workspace,
-                                                                                                                    d::NoOrAnnotationPolicy(),
-                                                                                                                    d::NoAndAnnotationPolicy(),
-                                                                                                                    d::NoTerminationPolicy());
-
-    auto ctx = d::ProgramExecutionContext(workspace, const_workspace);
-    ctx.clear();
-
-    execution_context.arena().execute([&] { d::solve_bottom_up(ctx); });
-
-    workspace.d2p.clear();
-
-    auto fluent_assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
-    auto derived_assign = UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, bool> {};
-    auto iter_workspace = itertools::cartesian_set::Workspace<Index<f::Object>> {};
-
-    /// --- Ground Atoms
-
-    auto fluent_atoms_set = UnorderedSet<Index<fp::GroundAtom<f::FluentTag>>>();
-    auto derived_atoms_set = UnorderedSet<Index<fp::GroundAtom<f::DerivedTag>>>();
-    auto fluent_fterms_set = UnorderedSet<Index<fp::GroundFunctionTerm<f::FluentTag>>>();
-    // TODO: collect fluent function terms
-
-    for (const auto atom : lifted_task.get_task().get_atoms<f::FluentTag>())
-        fluent_atoms_set.insert(atom.get_index());
-
-    // Collect the goal facts
-    for (const auto fact : lifted_task.get_task().get_goal().get_facts<f::FluentTag>())
-        for (const auto atom : fact.get_variable().get_atoms())
-            fluent_atoms_set.insert(atom.get_index());
-
-    for (const auto literal : lifted_task.get_task().get_goal().get_facts<f::DerivedTag>())
-        derived_atoms_set.insert(literal.get_atom().get_index());
-
-    /// --- Ground Actions
-
-    auto ground_actions_set = UnorderedSet<Index<fp::GroundAction>> {};
-
-    auto static_atoms_bitset = boost::dynamic_bitset<>();
-    for (const auto atom : lifted_task.get_task().get_atoms<f::StaticTag>())
-        set(uint_t(atom.get_index()), true, static_atoms_bitset);
-
-    /// TODO: store facts by predicate such that we can swap the iteration, i.e., first over get_predicate_to_actions_mapping, then facts of the predicate
-    for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
-    {
-        for (const auto& binding : set.get_bindings())
-        {
-            const auto& mapping = ground_program.get_predicate_to_actions_mapping();
-
-            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
-            {
-                const auto action = it->second;
-
-                workspace.d2p.binding.clear();
-                for (const auto object : binding.get_objects())
-                    workspace.d2p.binding.push_back(object.get_index());
-
-                auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
-
-                const auto ground_action = fp::ground(action,
-                                                      grounder_context,
-                                                      lifted_task.get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
-                                                      fluent_assign,
-                                                      iter_workspace,
-                                                      *lifted_task.get_fdr_context())
-                                               .first;
-
-                assert(is_statically_applicable(ground_action, static_atoms_bitset));
-
-                if (is_consistent(ground_action, fluent_assign, derived_assign))
-                {
-                    ground_actions_set.insert(ground_action.get_index());
-
-                    for (const auto fact : ground_action.get_condition().get_facts<f::FluentTag>())
-                        for (const auto atom : fact.get_variable().get_atoms())
-                            fluent_atoms_set.insert(atom.get_index());
-
-                    for (const auto literal : ground_action.get_condition().get_facts<f::DerivedTag>())
-                        derived_atoms_set.insert(literal.get_atom().get_index());
-
-                    for (const auto cond_effect : ground_action.get_effects())
-                    {
-                        for (const auto fact : cond_effect.get_condition().get_facts<f::FluentTag>())
-                            for (const auto atom : fact.get_variable().get_atoms())
-                                fluent_atoms_set.insert(atom.get_index());
-
-                        for (const auto literal : cond_effect.get_condition().get_facts<f::DerivedTag>())
-                            derived_atoms_set.insert(literal.get_atom().get_index());
-
-                        for (const auto fact : cond_effect.get_effect().get_facts())
-                            for (const auto atom : fact.get_variable().get_atoms())
-                                fluent_atoms_set.insert(atom.get_index());
-                    }
-                }
-            }
-        }
-    }
-
-    /// --- Ground Axioms
-
-    auto ground_axioms_set = UnorderedSet<Index<fp::GroundAxiom>> {};
-
-    for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
-    {
-        for (const auto& binding : set.get_bindings())
-        {
-            const auto& mapping = ground_program.get_predicate_to_axioms_mapping();
-
-            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
-            {
-                const auto axiom = it->second;
-
-                workspace.d2p.binding.clear();
-                for (const auto object : binding.get_objects())
-                    workspace.d2p.binding.push_back(object.get_index());
-
-                auto grounder_context = fp::GrounderContext { workspace.planning_builder, *lifted_task.get_repository(), workspace.d2p.binding };
-
-                const auto ground_axiom = fp::ground(axiom, grounder_context, *lifted_task.get_fdr_context()).first;
-
-                assert(is_statically_applicable(ground_axiom, static_atoms_bitset));
-
-                if (is_consistent(ground_axiom, fluent_assign, derived_assign))
-                {
-                    ground_axioms_set.insert(ground_axiom.get_index());
-
-                    for (const auto fact : ground_axiom.get_body().get_facts<f::FluentTag>())
-                        for (const auto atom : fact.get_variable().get_atoms())
-                            fluent_atoms_set.insert(atom.get_index());
-
-                    for (const auto literal : ground_axiom.get_body().get_facts<f::DerivedTag>())
-                        derived_atoms_set.insert(literal.get_atom().get_index());
-
-                    derived_atoms_set.insert(ground_axiom.get_head().get_index());
-                }
-            }
-        }
-    }
-
-    auto fluent_atoms = IndexList<fp::GroundAtom<f::FluentTag>>(fluent_atoms_set.begin(), fluent_atoms_set.end());
-    auto derived_atoms = IndexList<fp::GroundAtom<f::DerivedTag>>(derived_atoms_set.begin(), derived_atoms_set.end());
-    auto fluent_fterms = IndexList<fp::GroundFunctionTerm<f::FluentTag>>(fluent_fterms_set.begin(), fluent_fterms_set.end());
-    auto ground_actions = IndexList<fp::GroundAction>(ground_actions_set.begin(), ground_actions_set.end());
-    auto ground_axioms = IndexList<fp::GroundAxiom>(ground_axioms_set.begin(), ground_axioms_set.end());
-
-    canonicalize(fluent_atoms);
-    canonicalize(derived_atoms);
-    canonicalize(fluent_fterms);
-    canonicalize(ground_actions);
-    canonicalize(ground_axioms);
-
-    return create_fdr_task(lifted_task.get_formalism_task(), fluent_atoms, derived_atoms, fluent_fterms, ground_actions, ground_axioms);
-}
-
-GroundTaskPtr ground_task_2(LiftedTask& lifted_task, ExecutionContext& execution_context, const GroundTaskOptions& options)
+GroundTaskPtr ground_task(LiftedTask& lifted_task, ExecutionContext& execution_context, const GroundTaskOptions& options)
 {
     /**
      * Execute datalog program.
@@ -541,7 +209,120 @@ GroundTaskPtr ground_task_2(LiftedTask& lifted_task, ExecutionContext& execution
         fdr_context = std::make_shared<fp::FDRContext>(fluent_atoms, repository);
     }
 
-    std::terminate();
+    for (const auto atom : task.get_atoms<f::StaticTag>())
+        fdr_task.static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+    for (const auto atom : fluent_atoms)
+        fdr_task.fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+
+    // TODO: synthesize invariants, create mutex groups, instantiate fdr context
+
+    for (const auto atom : derived_atoms)
+        fdr_task.derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+    // for (const auto fterm : fluent_fterms)
+    //     fdr_task.fluent_fterms.push_back(merge_p2p(fterm, merge_context).first.get_index());
+
+    for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
+        fdr_task.static_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
+    for (const auto fterm_value : task.get_fterm_values<f::FluentTag>())
+        fdr_task.fluent_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
+    if (task.get_auxiliary_fterm_value().has_value())
+        fdr_task.auxiliary_fterm_value = merge_p2p(task.get_auxiliary_fterm_value().value(), merge_context).first.get_index();
+    if (task.get_metric())
+        fdr_task.metric = merge_p2p(task.get_metric().value(), merge_context).first.get_index();
+    for (const auto axiom : task.get_axioms())
+        fdr_task.axioms.push_back(merge_p2p(axiom, merge_context).first.get_index());
+
+    /// --- Create FDR variables
+    for (const auto variable : fdr_context->get_variables())
+        fdr_task.fluent_variables.push_back(variable.get_index());
+
+    /// --- Create FDR fluent facts
+    for (const auto atom : task.get_atoms<f::FluentTag>())
+        fdr_task.fluent_facts.push_back(fdr_context->get_fact(merge_p2p(atom, merge_context).first.get_index()));
+
+    /// --- Create FDR goal
+    fdr_task.goal = create_ground_fdr_conjunctive_condition(task.get_goal(), *fdr_context, merge_context).first.get_index();
+
+    /// --- Create FDR actions and axioms
+
+    auto fluent_assign = UnorderedMap<Index<fp::FDRVariable<f::FluentTag>>, fp::FDRValue> {};
+    auto derived_assign = UnorderedMap<Index<fp::GroundAtom<f::DerivedTag>>, bool> {};
+    auto iter_workspace = itertools::cartesian_set::Workspace<Index<f::Object>> {};
+
+    auto static_atoms_bitset = boost::dynamic_bitset<>();
+    for (const auto atom : task.get_atoms<f::StaticTag>())
+        set(uint_t(atom.get_index()), true, static_atoms_bitset);
+
+    for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
+    {
+        for (const auto& binding : set.get_bindings())
+        {
+            const auto& mapping = ground_program.get_predicate_to_actions_mapping();
+
+            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
+            {
+                const auto action = it->second;
+
+                workspace.d2p.binding.clear();
+                for (const auto object : binding.get_objects())
+                    workspace.d2p.binding.push_back(object.get_index());
+
+                auto grounder_context = fp::GrounderContext { workspace.planning_builder, *repository, workspace.d2p.binding };
+
+                const auto ground_action = fp::ground(action,
+                                                      grounder_context,
+                                                      lifted_task.get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
+                                                      fluent_assign,
+                                                      iter_workspace,
+                                                      *fdr_context)
+                                               .first;
+
+                assert(is_statically_applicable(ground_action, static_atoms_bitset));
+
+                if (is_consistent(ground_action, fluent_assign, derived_assign))
+                {
+                    fdr_task.ground_actions.push_back(ground_action.get_index());
+                }
+            }
+        }
+    }
+
+    /// --- Ground Axioms
+
+    auto ground_axioms_set = UnorderedSet<Index<fp::GroundAxiom>> {};
+
+    for (const auto& set : workspace.facts.fact_sets.predicate.get_sets())
+    {
+        for (const auto& binding : set.get_bindings())
+        {
+            const auto& mapping = ground_program.get_predicate_to_axioms_mapping();
+
+            if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
+            {
+                const auto axiom = it->second;
+
+                workspace.d2p.binding.clear();
+                for (const auto object : binding.get_objects())
+                    workspace.d2p.binding.push_back(object.get_index());
+
+                auto grounder_context = fp::GrounderContext { workspace.planning_builder, *repository, workspace.d2p.binding };
+
+                const auto ground_axiom = fp::ground(axiom, grounder_context, *fdr_context).first;
+
+                assert(is_statically_applicable(ground_axiom, static_atoms_bitset));
+
+                if (is_consistent(ground_axiom, fluent_assign, derived_assign))
+                {
+                    fdr_task.ground_axioms.push_back(ground_axiom.get_index());
+                }
+            }
+        }
+    }
+
+    canonicalize(fdr_task);
+
+    return std::make_shared<GroundTask>(
+        fp::PlanningFDRTask(repository->get_or_create(fdr_task).first, std::move(fdr_context), repository, planning_task.get_domain()));
 }
 
 }

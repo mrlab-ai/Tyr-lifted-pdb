@@ -123,6 +123,41 @@ int main(int argc, char** argv)
         else
         {
             auto ground_task = lifted_task->instantiate_ground_task(*execution_context);
+
+            std::cout << ground_task->get_formalism_task() << std::endl;
+
+            auto successor_generator = planning::SuccessorGenerator<planning::GroundTag>(ground_task, execution_context);
+
+            auto options = planning::astar_eager::Options<planning::GroundTag>();
+            options.start_node = successor_generator.get_initial_node();
+            options.event_handler = planning::astar_eager::DefaultEventHandler<planning::GroundTag>::create(verbosity);
+            options.random_seed = random_seed;
+            options.shuffle_labeled_succ_nodes = shuffle_labeled_succ_nodes;
+
+            auto blind_heuristic = planning::BlindHeuristic<planning::GroundTag>::create();
+
+            auto result = planning::astar_eager::find_solution(*ground_task, successor_generator, *blind_heuristic, options);
+
+            if (result.status == planning::SearchStatus::SOLVED)
+            {
+                std::ofstream plan_file;
+                plan_file.open(plan_filepath);
+                if (!plan_file.is_open())
+                {
+                    std::cerr << "Error opening file!" << std::endl;
+                    return 1;
+                }
+                plan_file << result.plan.value();
+                plan_file.close();
+            }
+
+            std::cout << "[Total] Number of fluent atoms: " << ground_task->get_repository()->size<formalism::planning::GroundAtom<formalism::FluentTag>>()
+                      << std::endl;
+            std::cout << "[Total] Number of derived atoms: " << ground_task->get_repository()->size<formalism::planning::GroundAtom<formalism::DerivedTag>>()
+                      << std::endl;
+            std::cout << "[Total] Number of fluent fterms: "
+                      << ground_task->get_repository()->size<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>() << std::endl;
+            std::cout << "[Total] States memory usage: " << successor_generator.get_state_repository()->memory_usage() << " bytes" << std::endl;
         }
     }
 

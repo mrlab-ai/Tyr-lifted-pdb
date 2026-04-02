@@ -50,9 +50,6 @@ struct Data<formalism::planning::FDRTask>
     IndexList<formalism::planning::GroundAtom<formalism::StaticTag>> static_atoms;
     IndexList<formalism::planning::GroundAtom<formalism::FluentTag>> fluent_atoms;
     IndexList<formalism::planning::GroundAtom<formalism::DerivedTag>> derived_atoms;
-    IndexList<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> static_fterms;
-    IndexList<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> fluent_fterms;
-    ::cista::optional<Index<formalism::planning::GroundFunctionTerm<formalism::AuxiliaryTag>>> auxiliary_fterm;
     IndexList<formalism::planning::GroundFunctionTermValue<formalism::StaticTag>> static_fterm_values;
     IndexList<formalism::planning::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values;
     ::cista::optional<Index<formalism::planning::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value;
@@ -74,9 +71,6 @@ struct Data<formalism::planning::FDRTask>
          IndexList<formalism::planning::GroundAtom<formalism::StaticTag>> static_atoms_,
          IndexList<formalism::planning::GroundAtom<formalism::FluentTag>> fluent_atoms_,
          IndexList<formalism::planning::GroundAtom<formalism::DerivedTag>> derived_atoms_,
-         IndexList<formalism::planning::GroundFunctionTerm<formalism::StaticTag>> static_fterms_,
-         IndexList<formalism::planning::GroundFunctionTerm<formalism::FluentTag>> fluent_fterms_,
-         ::cista::optional<Index<formalism::planning::GroundFunctionTerm<formalism::AuxiliaryTag>>> auxiliary_fterm_,
          IndexList<formalism::planning::GroundFunctionTermValue<formalism::StaticTag>> static_fterm_values_,
          IndexList<formalism::planning::GroundFunctionTermValue<formalism::FluentTag>> fluent_fterm_values_,
          ::cista::optional<Index<formalism::planning::GroundFunctionTermValue<formalism::AuxiliaryTag>>> auxiliary_fterm_value_,
@@ -95,9 +89,6 @@ struct Data<formalism::planning::FDRTask>
         static_atoms(std::move(static_atoms_)),
         fluent_atoms(std::move(fluent_atoms_)),
         derived_atoms(std::move(derived_atoms_)),
-        static_fterms(std::move(static_fterms_)),
-        fluent_fterms(std::move(fluent_fterms_)),
-        auxiliary_fterm(auxiliary_fterm_),
         static_fterm_values(std::move(static_fterm_values_)),
         fluent_fterm_values(std::move(fluent_fterm_values_)),
         auxiliary_fterm_value(auxiliary_fterm_value_),
@@ -119,9 +110,6 @@ struct Data<formalism::planning::FDRTask>
          const std::vector<View<Index<formalism::planning::GroundAtom<formalism::StaticTag>>, C>>& static_atoms_,
          const std::vector<View<Index<formalism::planning::GroundAtom<formalism::FluentTag>>, C>>& fluent_atoms_,
          const std::vector<View<Index<formalism::planning::GroundAtom<formalism::DerivedTag>>, C>>& derived_atoms_,
-         const std::vector<View<Index<formalism::planning::GroundFunctionTerm<formalism::StaticTag>>, C>>& static_fterms_,
-         const std::vector<View<Index<formalism::planning::GroundFunctionTerm<formalism::FluentTag>>, C>>& fluent_fterms_,
-         const std::optional<View<Index<formalism::planning::GroundFunctionTerm<formalism::AuxiliaryTag>>, C>>& auxiliary_fterm_,
          const std::vector<View<Index<formalism::planning::GroundFunctionTermValue<formalism::StaticTag>>, C>>& static_fterm_values_,
          const std::vector<View<Index<formalism::planning::GroundFunctionTermValue<formalism::FluentTag>>, C>>& fluent_fterm_values_,
          const std::optional<View<Index<formalism::planning::GroundFunctionTermValue<formalism::AuxiliaryTag>>, C>>& auxiliary_fterm_value_,
@@ -140,9 +128,6 @@ struct Data<formalism::planning::FDRTask>
         static_atoms(),
         fluent_atoms(),
         derived_atoms(),
-        static_fterms(),
-        fluent_fterms(),
-        auxiliary_fterm(),
         static_fterm_values(),
         fluent_fterm_values(),
         auxiliary_fterm_value(),
@@ -160,9 +145,6 @@ struct Data<formalism::planning::FDRTask>
         set(static_atoms_, static_atoms);
         set(fluent_atoms_, fluent_atoms);
         set(derived_atoms_, derived_atoms);
-        set(static_fterms_, static_fterms);
-        set(fluent_fterms_, fluent_fterms);
-        set(auxiliary_fterm_, auxiliary_fterm);
         set(static_fterm_values_, static_fterm_values);
         set(fluent_fterm_values_, fluent_fterm_values);
         set(auxiliary_fterm_value_, auxiliary_fterm_value);
@@ -189,9 +171,6 @@ struct Data<formalism::planning::FDRTask>
         tyr::clear(static_atoms);
         tyr::clear(fluent_atoms);
         tyr::clear(derived_atoms);
-        tyr::clear(static_fterms);
-        tyr::clear(fluent_fterms);
-        tyr::clear(auxiliary_fterm);
         tyr::clear(static_fterm_values);
         tyr::clear(fluent_fterm_values);
         tyr::clear(auxiliary_fterm_value);
@@ -213,17 +192,6 @@ struct Data<formalism::planning::FDRTask>
             return fluent_atoms;
         else if constexpr (std::same_as<T, formalism::DerivedTag>)
             return derived_atoms;
-        else
-            static_assert(dependent_false<T>::value, "Missing case");
-    }
-
-    template<formalism::FactKind T>
-    const auto& get_fterms() const
-    {
-        if constexpr (std::same_as<T, formalism::StaticTag>)
-            return static_fterms;
-        else if constexpr (std::same_as<T, formalism::FluentTag>)
-            return fluent_fterms;
         else
             static_assert(dependent_false<T>::value, "Missing case");
     }
@@ -251,9 +219,6 @@ struct Data<formalism::planning::FDRTask>
                         static_atoms,
                         fluent_atoms,
                         derived_atoms,
-                        static_fterms,
-                        fluent_fterms,
-                        auxiliary_fterm,
                         static_fterm_values,
                         fluent_fterm_values,
                         auxiliary_fterm_value,
@@ -274,9 +239,6 @@ struct Data<formalism::planning::FDRTask>
                         static_atoms,
                         fluent_atoms,
                         derived_atoms,
-                        static_fterms,
-                        fluent_fterms,
-                        auxiliary_fterm,
                         static_fterm_values,
                         fluent_fterm_values,
                         auxiliary_fterm_value,

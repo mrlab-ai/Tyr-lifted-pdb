@@ -67,12 +67,6 @@ public:
         return make_view(get_data().template get_atoms<T>(), *m_context);
     }
     template<formalism::FactKind T>
-    auto get_fterms() const noexcept
-    {
-        return make_view(get_data().template get_fterms<T>(), *m_context);
-    }
-    auto get_auxiliary_fterm() const noexcept { return make_view(get_data().auxiliary_fterm, *m_context); }
-    template<formalism::FactKind T>
     auto get_fterm_values() const noexcept
     {
         return make_view(get_data().template get_fterm_values<T>(), *m_context);

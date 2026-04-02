@@ -656,12 +656,6 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::FDRTask>& 
 
         os << print_indent << "derived atoms = " << el.derived_atoms << "\n";
 
-        os << print_indent << "static fterms = " << el.static_fterms << "\n";
-
-        os << print_indent << "fluent fterms = " << el.fluent_fterms << "\n";
-
-        os << print_indent << "auxiliary fterm = " << el.auxiliary_fterm << "\n";
-
         os << print_indent << "static numeric variables = " << el.static_fterm_values << "\n";
 
         os << print_indent << "fluent numeric variables = " << el.fluent_fterm_values << "\n";
@@ -706,12 +700,6 @@ std::ostream& print(std::ostream& os, const formalism::planning::FDRTaskView& el
         os << print_indent << "fluent atoms = " << el.template get_atoms<formalism::FluentTag>() << "\n";
 
         os << print_indent << "derived atoms = " << el.template get_atoms<formalism::DerivedTag>() << "\n";
-
-        os << print_indent << "static fterms = " << el.template get_fterms<formalism::StaticTag>() << "\n";
-
-        os << print_indent << "fluent fterms = " << el.template get_fterms<formalism::FluentTag>() << "\n";
-
-        os << print_indent << "auxiliary fterm = " << el.get_auxiliary_fterm() << "\n";
 
         os << print_indent << "static numeric variables = " << el.template get_fterm_values<formalism::StaticTag>() << "\n";
 
