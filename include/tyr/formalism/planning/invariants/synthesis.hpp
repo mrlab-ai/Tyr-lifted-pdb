@@ -18,26 +18,13 @@
 #ifndef TYR_FORMALISM_PLANNING_INVARIANTS_SYNTHESIS_HPP_
 #define TYR_FORMALISM_PLANNING_INVARIANTS_SYNTHESIS_HPP_
 
-#include "tyr/common/comparators.hpp"
 #include "tyr/common/declarations.hpp"
-#include "tyr/common/equal_to.hpp"
-#include "tyr/common/hash.hpp"
-#include "tyr/formalism/planning/expression_arity.hpp"
-#include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/invariants/invariant.hpp"
-#include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
-
-#include <algorithm>
-#include <map>
-#include <optional>
-#include <unordered_set>
-#include <variant>
-#include <vector>
 
 namespace tyr::formalism::planning::invariant
 {
-InvariantList synthesize_invariants(TaskView task);
+InvariantList synthesize_invariants(DomainView domain);
 }
 
 #endif

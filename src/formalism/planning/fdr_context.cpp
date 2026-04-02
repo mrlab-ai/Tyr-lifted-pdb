@@ -62,7 +62,7 @@ Data<FDRFact<FluentTag>> merge_p2p(FDRFactView<FluentTag> element, MergeContext&
 
 FDRContext::FDRContext(RepositoryPtr context) : m_context(std::move(context)), m_builder(), m_variables(), m_mapping() {}
 
-FDRContext::FDRContext(const std::vector<std::vector<GroundAtomView<FluentTag>>>& mutexes, RepositoryPtr context) :
+FDRContext::FDRContext(const std::vector<GroundAtomViewList<FluentTag>>& mutexes, RepositoryPtr context) :
     m_context(std::move(context)),
     m_builder(),
     m_variables(),

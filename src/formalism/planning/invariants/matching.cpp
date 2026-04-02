@@ -47,51 +47,265 @@ std::optional<Substitution> match_atom(const TempAtom& pattern, const TempAtom& 
     return substitution;
 }
 
+bool match_cover_term(const Invariant& inv, const Data<Term>& lhs, const Data<Term>& rhs, InvariantSubstitution& substitution)
+{
+    return std::visit(
+        [&](auto&& lhs_arg) -> bool
+        {
+            using Lhs = std::decay_t<decltype(lhs_arg)>;
+
+            return std::visit(
+                [&](auto&& rhs_arg) -> bool
+                {
+                    using Rhs = std::decay_t<decltype(rhs_arg)>;
+
+                    if constexpr (std::is_same_v<Lhs, ParameterIndex>)
+                    {
+                        const bool is_counted = (static_cast<uint_t>(lhs_arg) >= inv.num_rigid_variables);
+
+                        if (is_counted)
+                            return substitution.assign_or_check(lhs_arg, rhs);
+
+                        if constexpr (std::is_same_v<Rhs, ParameterIndex>)
+                            return lhs_arg == rhs_arg;
+                        else
+                            return false;
+                    }
+                    else if constexpr (std::is_same_v<Lhs, Index<Object>>)
+                    {
+                        if constexpr (std::is_same_v<Rhs, Index<Object>>)
+                            return lhs_arg == rhs_arg;
+                        else
+                            return false;
+                    }
+                    else
+                    {
+                        static_assert(dependent_false<Lhs>::value, "Missing case");
+                    }
+                },
+                rhs.value);
+        },
+        lhs.value);
+}
+
+bool match_ground_term(const Data<Term>& lhs, const Data<Term>& rhs, InvariantSubstitution& substitution)
+{
+    return std::visit(
+        [&](auto&& lhs_arg) -> bool
+        {
+            using Lhs = std::decay_t<decltype(lhs_arg)>;
+
+            return std::visit(
+                [&](auto&& rhs_arg) -> bool
+                {
+                    using Rhs = std::decay_t<decltype(rhs_arg)>;
+
+                    if constexpr (std::is_same_v<Lhs, ParameterIndex>)
+                    {
+                        return substitution.assign_or_check(lhs_arg, rhs);
+                    }
+                    else if constexpr (std::is_same_v<Lhs, Index<Object>>)
+                    {
+                        if constexpr (std::is_same_v<Rhs, Index<Object>>)
+                            return lhs_arg == rhs_arg;
+                        else
+                            return false;
+                    }
+                    else
+                    {
+                        static_assert(dependent_false<Lhs>::value, "Missing case");
+                    }
+                },
+                rhs.value);
+        },
+        lhs.value);
+}
+
+bool match_action_alignment_term(const Invariant& inv,
+                                 const Data<Term>& lhs,
+                                 const Data<Term>& rhs,
+                                 size_t num_action_variables,
+                                 ActionSubstitution& substitution)
+{
+    return std::visit(
+        [&](auto&& lhs_arg) -> bool
+        {
+            using Lhs = std::decay_t<decltype(lhs_arg)>;
+
+            return std::visit(
+                [&](auto&& rhs_arg) -> bool
+                {
+                    using Rhs = std::decay_t<decltype(rhs_arg)>;
+
+                    if constexpr (std::is_same_v<Lhs, ParameterIndex>)
+                    {
+                        const bool is_counted = (static_cast<uint_t>(lhs_arg) >= inv.num_rigid_variables);
+
+                        if (is_counted)
+                            return true;
+
+                        if constexpr (std::is_same_v<Rhs, ParameterIndex>)
+                        {
+                            if (static_cast<uint_t>(rhs_arg) >= num_action_variables)
+                                return false;
+
+                            return substitution.assign_or_check(rhs_arg, Data<Term>(lhs_arg));
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else if constexpr (std::is_same_v<Lhs, Index<Object>>)
+                    {
+                        if constexpr (std::is_same_v<Rhs, ParameterIndex>)
+                        {
+                            if (static_cast<uint_t>(rhs_arg) >= num_action_variables)
+                                return false;
+
+                            return substitution.assign_or_check(rhs_arg, Data<Term>(lhs_arg));
+                        }
+                        else if constexpr (std::is_same_v<Rhs, Index<Object>>)
+                        {
+                            return lhs_arg == rhs_arg;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        static_assert(dependent_false<Lhs>::value, "Missing case");
+                    }
+                },
+                rhs.value);
+        },
+        lhs.value);
+}
+
+bool match_effect_cover_term(const Invariant& inv,
+                             const Data<Term>& lhs,
+                             const Data<Term>& rhs,
+                             size_t num_action_variables,
+                             std::vector<std::optional<Data<Term>>>& counted_bindings,
+                             EffectSubstitution& sigma)
+{
+    return std::visit(
+        [&](auto&& lhs_arg) -> bool
+        {
+            using Lhs = std::decay_t<decltype(lhs_arg)>;
+
+            return std::visit(
+                [&](auto&& rhs_arg) -> bool
+                {
+                    using Rhs = std::decay_t<decltype(rhs_arg)>;
+
+                    if constexpr (std::is_same_v<Lhs, ParameterIndex>)
+                    {
+                        const auto lhs_index = static_cast<uint_t>(lhs_arg);
+                        const bool lhs_is_counted = lhs_index >= inv.num_rigid_variables;
+
+                        if (!lhs_is_counted)
+                        {
+                            if constexpr (std::is_same_v<Rhs, ParameterIndex>)
+                            {
+                                if (is_effect_local_parameter(rhs_arg, num_action_variables))
+                                {
+                                    const auto local = to_effect_local_parameter(rhs_arg, num_action_variables);
+                                    return sigma.assign_or_check(local, Data<Term>(lhs_arg));
+                                }
+
+                                return lhs_arg == rhs_arg;
+                            }
+                            else if constexpr (std::is_same_v<Rhs, Index<Object>>)
+                            {
+                                return false;
+                            }
+                            else
+                            {
+                                static_assert(dependent_false<Rhs>::value, "Missing case");
+                            }
+                        }
+                        else
+                        {
+                            const auto counted_index = lhs_index - inv.num_rigid_variables;
+                            auto& binding = counted_bindings[counted_index];
+
+                            if constexpr (std::is_same_v<Rhs, ParameterIndex>)
+                            {
+                                if (is_effect_local_parameter(rhs_arg, num_action_variables))
+                                {
+                                    const auto local = to_effect_local_parameter(rhs_arg, num_action_variables);
+
+                                    if (binding.has_value())
+                                        return sigma.assign_or_check(local, *binding);
+
+                                    return true;
+                                }
+
+                                if (!binding.has_value())
+                                {
+                                    binding = Data<Term>(rhs_arg);
+                                    return true;
+                                }
+
+                                return *binding == Data<Term>(rhs_arg);
+                            }
+                            else if constexpr (std::is_same_v<Rhs, Index<Object>>)
+                            {
+                                if (!binding.has_value())
+                                {
+                                    binding = Data<Term>(rhs_arg);
+                                    return true;
+                                }
+
+                                return *binding == Data<Term>(rhs_arg);
+                            }
+                            else
+                            {
+                                static_assert(dependent_false<Rhs>::value, "Missing case");
+                            }
+                        }
+                    }
+                    else if constexpr (std::is_same_v<Lhs, Index<Object>>)
+                    {
+                        if constexpr (std::is_same_v<Rhs, ParameterIndex>)
+                        {
+                            if (is_effect_local_parameter(rhs_arg, num_action_variables))
+                            {
+                                const auto local = to_effect_local_parameter(rhs_arg, num_action_variables);
+                                return sigma.assign_or_check(local, Data<Term>(lhs_arg));
+                            }
+
+                            return false;
+                        }
+                        else if constexpr (std::is_same_v<Rhs, Index<Object>>)
+                        {
+                            return lhs_arg == rhs_arg;
+                        }
+                        else
+                        {
+                            static_assert(dependent_false<Rhs>::value, "Missing case");
+                        }
+                    }
+                    else
+                    {
+                        static_assert(dependent_false<Lhs>::value, "Missing case");
+                    }
+                },
+                rhs.value);
+        },
+        lhs.value);
+}
+
 std::optional<InvariantSubstitution> match_cover_against_atom(const Invariant& inv, const TempAtom& pattern, const TempAtom& element)
 {
     return match_atom(pattern,
                       element,
                       InvariantSubstitution(inv.num_rigid_variables + inv.num_counted_variables),
                       [&](const Data<Term>& lhs, const Data<Term>& rhs, InvariantSubstitution& substitution) -> bool
-                      {
-                          return std::visit(
-                              [&](auto&& lhs_arg) -> bool
-                              {
-                                  using Lhs = std::decay_t<decltype(lhs_arg)>;
-
-                                  return std::visit(
-                                      [&](auto&& rhs_arg) -> bool
-                                      {
-                                          using Rhs = std::decay_t<decltype(rhs_arg)>;
-
-                                          if constexpr (std::is_same_v<Lhs, ParameterIndex>)
-                                          {
-                                              const bool is_counted = (static_cast<uint_t>(lhs_arg) >= inv.num_rigid_variables);
-
-                                              if (is_counted)
-                                                  return substitution.assign_or_check(lhs_arg, rhs);
-
-                                              if constexpr (std::is_same_v<Rhs, ParameterIndex>)
-                                                  return lhs_arg == rhs_arg;
-                                              else
-                                                  return false;
-                                          }
-                                          else if constexpr (std::is_same_v<Lhs, Index<Object>>)
-                                          {
-                                              if constexpr (std::is_same_v<Rhs, Index<Object>>)
-                                                  return lhs_arg == rhs_arg;
-                                              else
-                                                  return false;
-                                          }
-                                          else
-                                          {
-                                              static_assert(dependent_false<Lhs>::value, "Missing case");
-                                          }
-                                      },
-                                      rhs.value);
-                              },
-                              lhs.value);
-                      });
+                      { return match_cover_term(inv, lhs, rhs, substitution); });
 }
 
 std::optional<EffectSubstitution>
@@ -129,114 +343,7 @@ match_effect_cover_against_atom(const Invariant& inv, const TempAtom& pattern, c
                       element,
                       std::move(sigma_eff),
                       [&](const Data<Term>& lhs, const Data<Term>& rhs, EffectSubstitution& sigma) -> bool
-                      {
-                          return std::visit(
-                              [&](auto&& lhs_arg) -> bool
-                              {
-                                  using Lhs = std::decay_t<decltype(lhs_arg)>;
-
-                                  return std::visit(
-                                      [&](auto&& rhs_arg) -> bool
-                                      {
-                                          using Rhs = std::decay_t<decltype(rhs_arg)>;
-
-                                          if constexpr (std::is_same_v<Lhs, ParameterIndex>)
-                                          {
-                                              const auto lhs_index = static_cast<uint_t>(lhs_arg);
-                                              const bool lhs_is_counted = lhs_index >= inv.num_rigid_variables;
-
-                                              if (!lhs_is_counted)
-                                              {
-                                                  if constexpr (std::is_same_v<Rhs, ParameterIndex>)
-                                                  {
-                                                      if (is_effect_local_parameter(rhs_arg, num_action_variables))
-                                                      {
-                                                          const auto local = to_effect_local_parameter(rhs_arg, num_action_variables);
-                                                          return sigma.assign_or_check(local, Data<Term>(lhs_arg));
-                                                      }
-
-                                                      return lhs_arg == rhs_arg;
-                                                  }
-                                                  else if constexpr (std::is_same_v<Rhs, Index<Object>>)
-                                                  {
-                                                      return false;
-                                                  }
-                                                  else
-                                                  {
-                                                      static_assert(dependent_false<Rhs>::value, "Missing case");
-                                                  }
-                                              }
-                                              else
-                                              {
-                                                  const auto counted_index = lhs_index - inv.num_rigid_variables;
-                                                  auto& binding = counted_bindings[counted_index];
-
-                                                  if constexpr (std::is_same_v<Rhs, ParameterIndex>)
-                                                  {
-                                                      if (is_effect_local_parameter(rhs_arg, num_action_variables))
-                                                      {
-                                                          const auto local = to_effect_local_parameter(rhs_arg, num_action_variables);
-
-                                                          if (binding.has_value())
-                                                              return sigma.assign_or_check(local, *binding);
-
-                                                          return true;
-                                                      }
-
-                                                      if (!binding.has_value())
-                                                      {
-                                                          binding = Data<Term>(rhs_arg);
-                                                          return true;
-                                                      }
-
-                                                      return *binding == Data<Term>(rhs_arg);
-                                                  }
-                                                  else if constexpr (std::is_same_v<Rhs, Index<Object>>)
-                                                  {
-                                                      if (!binding.has_value())
-                                                      {
-                                                          binding = Data<Term>(rhs_arg);
-                                                          return true;
-                                                      }
-
-                                                      return *binding == Data<Term>(rhs_arg);
-                                                  }
-                                                  else
-                                                  {
-                                                      static_assert(dependent_false<Rhs>::value, "Missing case");
-                                                  }
-                                              }
-                                          }
-                                          else if constexpr (std::is_same_v<Lhs, Index<Object>>)
-                                          {
-                                              if constexpr (std::is_same_v<Rhs, ParameterIndex>)
-                                              {
-                                                  if (is_effect_local_parameter(rhs_arg, num_action_variables))
-                                                  {
-                                                      const auto local = to_effect_local_parameter(rhs_arg, num_action_variables);
-                                                      return sigma.assign_or_check(local, Data<Term>(lhs_arg));
-                                                  }
-
-                                                  return false;
-                                              }
-                                              else if constexpr (std::is_same_v<Rhs, Index<Object>>)
-                                              {
-                                                  return lhs_arg == rhs_arg;
-                                              }
-                                              else
-                                              {
-                                                  static_assert(dependent_false<Rhs>::value, "Missing case");
-                                              }
-                                          }
-                                          else
-                                          {
-                                              static_assert(dependent_false<Lhs>::value, "Missing case");
-                                          }
-                                      },
-                                      rhs.value);
-                              },
-                              lhs.value);
-                      });
+                      { return match_effect_cover_term(inv, lhs, rhs, num_action_variables, counted_bindings, sigma); });
 }
 
 }  // namespace
@@ -257,43 +364,12 @@ std::optional<InvariantSubstitution> match_invariant_against_ground_atom(const I
     return match_atom(pattern,
                       ground_atom,
                       InvariantSubstitution(inv.num_rigid_variables + inv.num_counted_variables),
-                      [&](const Data<Term>& lhs, const Data<Term>& rhs, InvariantSubstitution& sigma) -> bool
-                      {
-                          return std::visit(
-                              [&](auto&& lhs_arg) -> bool
-                              {
-                                  using Lhs = std::decay_t<decltype(lhs_arg)>;
-
-                                  return std::visit(
-                                      [&](auto&& rhs_arg) -> bool
-                                      {
-                                          using Rhs = std::decay_t<decltype(rhs_arg)>;
-
-                                          if constexpr (std::is_same_v<Lhs, ParameterIndex>)
-                                          {
-                                              return sigma.assign_or_check(lhs_arg, rhs);
-                                          }
-                                          else if constexpr (std::is_same_v<Lhs, Index<Object>>)
-                                          {
-                                              if constexpr (std::is_same_v<Rhs, Index<Object>>)
-                                                  return lhs_arg == rhs_arg;
-                                              else
-                                                  return false;
-                                          }
-                                          else
-                                          {
-                                              static_assert(dependent_false<Lhs>::value, "Missing case");
-                                          }
-                                      },
-                                      rhs.value);
-                              },
-                              lhs.value);
-                      });
+                      [&](const Data<Term>& lhs, const Data<Term>& rhs, InvariantSubstitution& sigma) -> bool { return match_ground_term(lhs, rhs, sigma); });
 }
 
-std::vector<ActionSubstitution> enumerate_action_alignments(const Invariant& inv, const TempAtom& element, size_t num_action_variables)
+std::vector<ActionAlignment> enumerate_action_alignments(const Invariant& inv, const TempAtom& element, size_t num_action_variables)
 {
-    auto result = std::vector<ActionSubstitution> {};
+    auto result = std::vector<ActionAlignment> {};
 
     for (const auto& pattern : inv.atoms)
     {
@@ -301,66 +377,10 @@ std::vector<ActionSubstitution> enumerate_action_alignments(const Invariant& inv
                                 element,
                                 ActionSubstitution(num_action_variables),
                                 [&](const Data<Term>& lhs, const Data<Term>& rhs, ActionSubstitution& substitution) -> bool
-                                {
-                                    return std::visit(
-                                        [&](auto&& lhs_arg) -> bool
-                                        {
-                                            using Lhs = std::decay_t<decltype(lhs_arg)>;
-
-                                            return std::visit(
-                                                [&](auto&& rhs_arg) -> bool
-                                                {
-                                                    using Rhs = std::decay_t<decltype(rhs_arg)>;
-
-                                                    if constexpr (std::is_same_v<Lhs, ParameterIndex>)
-                                                    {
-                                                        const bool is_counted = (static_cast<uint_t>(lhs_arg) >= inv.num_rigid_variables);
-
-                                                        if (is_counted)
-                                                            return true;
-
-                                                        if constexpr (std::is_same_v<Rhs, ParameterIndex>)
-                                                        {
-                                                            if (static_cast<uint_t>(rhs_arg) >= num_action_variables)
-                                                                return false;
-
-                                                            return substitution.assign_or_check(rhs_arg, Data<Term>(lhs_arg));
-                                                        }
-                                                        else
-                                                        {
-                                                            return false;
-                                                        }
-                                                    }
-                                                    else if constexpr (std::is_same_v<Lhs, Index<Object>>)
-                                                    {
-                                                        if constexpr (std::is_same_v<Rhs, ParameterIndex>)
-                                                        {
-                                                            if (static_cast<uint_t>(rhs_arg) >= num_action_variables)
-                                                                return false;
-
-                                                            return substitution.assign_or_check(rhs_arg, Data<Term>(lhs_arg));
-                                                        }
-                                                        else if constexpr (std::is_same_v<Rhs, Index<Object>>)
-                                                        {
-                                                            return lhs_arg == rhs_arg;
-                                                        }
-                                                        else
-                                                        {
-                                                            return false;
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        static_assert(dependent_false<Lhs>::value, "Missing case");
-                                                    }
-                                                },
-                                                rhs.value);
-                                        },
-                                        lhs.value);
-                                });
+                                { return match_action_alignment_term(inv, lhs, rhs, num_action_variables, substitution); });
 
         if (sigma.has_value())
-            result.push_back(std::move(*sigma));
+            result.push_back(ActionAlignment { .pattern = pattern, .sigma = std::move(*sigma) });
     }
 
     return result;

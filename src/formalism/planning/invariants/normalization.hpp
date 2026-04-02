@@ -25,8 +25,6 @@ namespace tyr::formalism::planning::invariant
 
 void normalize_invariant(Invariant& inv);
 
-bool is_well_shaped_invariant(const Invariant& inv);
-
 }
 
 #endif

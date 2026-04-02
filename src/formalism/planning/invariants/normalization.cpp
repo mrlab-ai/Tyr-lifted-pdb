@@ -42,12 +42,12 @@ bool uses_parameter(const Data<Term>& term, ParameterIndex parameter)
 
 bool uses_parameter(const TempAtom& atom, ParameterIndex parameter)
 {
-    return std::find_if(atom.terms.begin(), atom.terms.end(), [&](const auto& term) { return uses_parameter(term, parameter); }) != atom.terms.end();
+    return std::ranges::any_of(atom.terms, [&](const auto& term) { return uses_parameter(term, parameter); });
 }
 
 bool uses_parameter(const Invariant& inv, ParameterIndex parameter)
 {
-    return std::find_if(inv.atoms.begin(), inv.atoms.end(), [&](const auto& atom) { return uses_parameter(atom, parameter); }) != inv.atoms.end();
+    return std::ranges::any_of(inv.atoms, [&](const auto& atom) { return uses_parameter(atom, parameter); });
 }
 
 void remove_covered_atoms(Invariant& inv)
@@ -78,10 +78,6 @@ void remove_covered_atoms(Invariant& inv)
     }
 
     inv.atoms = std::move(kept);
-
-    inv.predicates.clear();
-    for (const auto& atom : inv.atoms)
-        inv.predicates.insert(atom.predicate);
 }
 
 void remove_unused_parameters(Invariant& inv)
@@ -119,7 +115,7 @@ void remove_unused_parameters(Invariant& inv)
                     if constexpr (std::is_same_v<T, ParameterIndex>)
                         return Data<Term>(*remap[static_cast<uint_t>(arg)]);
                     else if constexpr (std::is_same_v<T, Index<Object>>)
-                        return term;
+                        return Data<Term>(arg);
                     else
                         static_assert(dependent_false<T>::value, "Missing case");
                 },
@@ -131,62 +127,13 @@ void remove_unused_parameters(Invariant& inv)
     inv.num_counted_variables = next - new_num_rigid;
 }
 
-bool has_consistent_rigid_role_pattern(const Invariant& inv)
-{
-    if (inv.atoms.empty())
-        return true;
-
-    // For each rigid variable p, remember in which predicate/argument positions
-    // it occurs. For the invariant families from the paper, inconsistent swaps
-    // like in(V1,V0) versus in(V0,V1) should be rejected.
-    for (size_t rigid = 0; rigid < inv.num_rigid_variables; ++rigid)
-    {
-        std::map<PredicateView<FluentTag>, std::vector<size_t>> positions_by_predicate;
-
-        for (const auto& atom : inv.atoms)
-        {
-            std::vector<size_t> positions;
-
-            for (size_t i = 0; i < atom.terms.size(); ++i)
-            {
-                const auto& term = atom.terms[i];
-                std::visit(
-                    [&](auto&& arg)
-                    {
-                        using T = std::decay_t<decltype(arg)>;
-                        if constexpr (std::is_same_v<T, ParameterIndex>)
-                        {
-                            if (static_cast<uint_t>(arg) == rigid)
-                                positions.push_back(i);
-                        }
-                    },
-                    term.value);
-            }
-
-            auto it = positions_by_predicate.find(atom.predicate);
-            if (it == positions_by_predicate.end())
-            {
-                positions_by_predicate.emplace(atom.predicate, std::move(positions));
-            }
-            else
-            {
-                if (it->second != positions)
-                    return false;
-            }
-        }
-    }
-
-    return true;
-}
 }
 
 void normalize_invariant(Invariant& inv)
 {
     remove_covered_atoms(inv);
     remove_unused_parameters(inv);
-    inv = Invariant(inv.num_rigid_variables, inv.num_counted_variables, std::move(inv.atoms));
+    inv.canonicalize();
 }
-
-bool is_well_shaped_invariant(const Invariant& inv) { return has_consistent_rigid_role_pattern(inv); }
 
 }

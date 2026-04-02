@@ -23,15 +23,23 @@
 namespace tyr::formalism::planning::invariant
 {
 
+struct ActionAlignment
+{
+    TempAtom pattern;
+    ActionSubstitution sigma;
+
+    friend bool operator==(const ActionAlignment&, const ActionAlignment&) = default;
+};
+
 bool covers(const Invariant& inv, const TempAtom& element);
 
 std::optional<InvariantSubstitution> match_invariant_against_ground_atom(const Invariant& inv, const TempAtom& pattern, const TempAtom& ground_atom);
 
-std::vector<ActionSubstitution> enumerate_action_alignments(const Invariant& inv, const TempAtom& element, size_t num_action_variables);
+std::vector<ActionAlignment> enumerate_action_alignments(const Invariant& inv, const TempAtom& element, size_t num_action_variables);
 
 std::vector<EffectSubstitution>
 enumerate_effect_renamings(const TempEffect& effect, const TempAtom& element, const Invariant& inv, const ActionSubstitution& sigma_op);
 
-}
+}  // namespace tyr::formalism::planning::invariant
 
 #endif

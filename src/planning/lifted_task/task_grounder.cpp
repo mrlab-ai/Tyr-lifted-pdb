@@ -29,7 +29,10 @@
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/invariants/mutexes.hpp"
+#include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include "tyr/formalism/planning/merge.hpp"
+#include "tyr/formalism/planning/merge_planning.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/applicability.hpp"
@@ -191,6 +194,9 @@ static auto create_fdr_task(const fp::PlanningTask& planning_task,
         fdr_task.static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto atom : fluent_atoms)
         fdr_task.fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+
+    // TODO: synthesize invariants, create mutex groups, instantiate fdr context
+
     for (const auto atom : derived_atoms)
         fdr_task.derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
     for (const auto fterm : fluent_fterms)

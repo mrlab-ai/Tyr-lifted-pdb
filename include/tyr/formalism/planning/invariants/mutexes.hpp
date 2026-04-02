@@ -15,14 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_INVARIANTS_INITIAL_STATE_HPP_
-#define TYR_FORMALISM_PLANNING_INVARIANTS_INITIAL_STATE_HPP_
+#ifndef TYR_FORMALISM_PLANNING_INVARIANTS_MUTEXES_HPP_
+#define TYR_FORMALISM_PLANNING_INVARIANTS_MUTEXES_HPP_
 
+#include "tyr/common/declarations.hpp"
 #include "tyr/formalism/planning/invariants/invariant.hpp"
+#include "tyr/formalism/planning/repository.hpp"
 
 namespace tyr::formalism::planning::invariant
 {
-bool holds_in_initial_state(const Invariant& inv, GroundAtomListView<FluentTag> initial_atoms);
+std::vector<GroundAtomViewList<FluentTag>>
+compute_mutex_groups(TaskView task, Repository& repository, const GroundAtomViewList<FluentTag>& all_atoms, const InvariantList& invariants);
 }
 
 #endif
