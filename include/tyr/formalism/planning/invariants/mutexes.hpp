@@ -25,7 +25,7 @@
 namespace tyr::formalism::planning::invariant
 {
 std::vector<GroundAtomViewList<FluentTag>>
-compute_mutex_groups(TaskView task, Repository& repository, const GroundAtomViewList<FluentTag>& all_atoms, const InvariantList& invariants);
+compute_mutex_groups(const GroundAtomViewList<FluentTag>& initial_atoms, const GroundAtomViewList<FluentTag>& all_atoms, const InvariantList& invariants);
 }
 
 #endif

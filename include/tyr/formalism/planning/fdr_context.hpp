@@ -40,6 +40,9 @@ public:
     // Construct with ground mutexes.
     FDRContext(const std::vector<GroundAtomViewList<FluentTag>>& mutexes, RepositoryPtr context);
 
+    // Construct with binary ground mutexes.
+    FDRContext(const GroundAtomViewList<FluentTag>& all_atoms, RepositoryPtr context);
+
     // Copy the FDRContext.
     FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr context);
 

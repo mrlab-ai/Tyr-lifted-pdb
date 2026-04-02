@@ -19,9 +19,9 @@
 
 #include "matching.hpp"
 
-#include <map>
+#include <algorithm>
+#include <cassert>
 #include <optional>
-#include <set>
 #include <tuple>
 #include <vector>
 
@@ -30,37 +30,20 @@ namespace tyr::formalism::planning::invariant
 namespace
 {
 
-struct GroupKey
-{
-    size_t invariant_index;
-    std::vector<Index<Object>> rigid_values;
-
-    friend bool operator==(const GroupKey&, const GroupKey&) = default;
-
-    friend bool operator<(const GroupKey& lhs, const GroupKey& rhs)
-    {
-        return std::tie(lhs.invariant_index, lhs.rigid_values) < std::tie(rhs.invariant_index, rhs.rigid_values);
-    }
-};
-
-TempAtom make_temp_ground_atom(GroundAtomView<FluentTag> element)
+TempAtom make_temp_ground_atom(GroundAtomView<FluentTag> atom)
 {
     std::vector<Data<Term>> terms;
-    terms.reserve(element.get_row().get_objects().size());
+    terms.reserve(atom.get_row().get_objects().size());
 
-    for (const auto object : element.get_row().get_objects())
+    for (const auto object : atom.get_row().get_objects())
         terms.emplace_back(Data<Term>(object.get_index()));
 
-    return TempAtom {
-        .predicate = element.get_predicate(),
-        .terms = std::move(terms),
-    };
+    return TempAtom { .predicate = atom.get_predicate(), .terms = std::move(terms) };
 }
 
 std::optional<std::vector<Index<Object>>> extract_rigid_values(const Invariant& inv, const TempAtom& pattern, GroundAtomView<FluentTag> atom)
 {
-    const auto temp_ground_atom = make_temp_ground_atom(atom);
-    const auto sigma = match_invariant_against_ground_atom(inv, pattern, temp_ground_atom);
+    const auto sigma = match_invariant_against_ground_atom(inv, pattern, make_temp_ground_atom(atom));
     if (!sigma.has_value())
         return std::nullopt;
 
@@ -78,11 +61,17 @@ std::optional<std::vector<Index<Object>>> extract_rigid_values(const Invariant& 
             {
                 using T = std::decay_t<decltype(arg)>;
                 if constexpr (std::is_same_v<T, Index<Object>>)
+                {
                     return arg;
+                }
                 else if constexpr (std::is_same_v<T, ParameterIndex>)
+                {
                     return std::nullopt;
+                }
                 else
-                    static_assert(dependent_false<T>::value, "Missing case");
+                {
+                    static_assert(dependent_false<T>::value, "Unhandled case");
+                }
             },
             value->value);
 
@@ -93,29 +82,6 @@ std::optional<std::vector<Index<Object>>> extract_rigid_values(const Invariant& 
     }
 
     return rigid_values;
-}
-
-bool is_counted_parameter(const Invariant& inv, ParameterIndex parameter) { return static_cast<uint_t>(parameter) >= inv.num_rigid_variables; }
-
-std::optional<size_t> get_counted_position(const Invariant& inv, const TempAtom& atom)
-{
-    for (size_t pos = 0; pos < atom.terms.size(); ++pos)
-    {
-        bool found = false;
-        std::visit(
-            [&](auto&& arg)
-            {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, ParameterIndex>)
-                    found = is_counted_parameter(inv, arg);
-            },
-            atom.terms[pos].value);
-
-        if (found)
-            return pos;
-    }
-
-    return std::nullopt;
 }
 
 bool instantiate_matches_ground_atom(const TempAtom& pattern,
@@ -132,15 +98,13 @@ bool instantiate_matches_ground_atom(const TempAtom& pattern,
     {
         const auto object = ground_atom.get_row().get_objects()[pos].get_index();
 
-        bool ok = std::visit(
+        const bool ok = std::visit(
             [&](auto&& arg) -> bool
             {
                 using T = std::decay_t<decltype(arg)>;
-
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
                     const auto idx = static_cast<uint_t>(arg);
-
                     if (idx < rigid_values.size())
                         return rigid_values[idx] == object;
 
@@ -152,7 +116,7 @@ bool instantiate_matches_ground_atom(const TempAtom& pattern,
                 }
                 else
                 {
-                    static_assert(dependent_false<T>::value, "Missing case");
+                    static_assert(dependent_false<T>::value, "Unhandled case");
                 }
             },
             pattern.terms[pos].value);
@@ -164,39 +128,60 @@ bool instantiate_matches_ground_atom(const TempAtom& pattern,
     return true;
 }
 
+bool initial_atom_matches_part(const Invariant& inv, const TempAtom& part, GroundAtomView<FluentTag> atom)
+{
+    return match_invariant_against_ground_atom(inv, part, make_temp_ground_atom(atom)).has_value();
+}
+
 GroundAtomViewList<FluentTag>
 instantiate_group(const Invariant& inv, const std::vector<Index<Object>>& rigid_values, const GroundAtomViewList<FluentTag>& all_atoms)
 {
+    assert(inv.num_counted_variables <= 1);
+
     GroundAtomViewList<FluentTag> result;
-    std::set<Index<GroundAtom<FluentTag>>> seen;
+    std::vector<bool> seen(all_atoms.size(), false);
 
     for (const auto& pattern : inv.atoms)
     {
-        const auto counted_pos = get_counted_position(inv, pattern);
+        std::optional<size_t> counted_position;
 
-        if (!counted_pos.has_value())
+        for (size_t pos = 0; pos < pattern.terms.size(); ++pos)
         {
-            for (const auto atom : all_atoms)
-            {
-                if (!instantiate_matches_ground_atom(pattern, rigid_values, std::nullopt, atom))
-                    continue;
+            std::visit(
+                [&](auto&& arg)
+                {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, ParameterIndex>)
+                    {
+                        if (static_cast<uint_t>(arg) >= inv.num_rigid_variables && !counted_position.has_value())
+                            counted_position = pos;
+                    }
+                },
+                pattern.terms[pos].value);
 
-                if (seen.insert(atom.get_index()).second)
-                    result.push_back(atom);
-
+            if (counted_position.has_value())
                 break;
-            }
         }
-        else
-        {
-            for (const auto atom : all_atoms)
-            {
-                if (!instantiate_matches_ground_atom(pattern, rigid_values, std::nullopt, atom)
-                    && !instantiate_matches_ground_atom(pattern, rigid_values, atom.get_row().get_objects()[*counted_pos].get_index(), atom))
-                    continue;
 
-                if (seen.insert(atom.get_index()).second)
-                    result.push_back(atom);
+        for (const auto atom : all_atoms)
+        {
+            if (pattern.predicate != atom.get_predicate())
+                continue;
+            if (pattern.terms.size() != atom.get_row().get_objects().size())
+                continue;
+
+            std::optional<Index<Object>> counted_object = std::nullopt;
+            if (counted_position.has_value())
+                counted_object = atom.get_row().get_objects()[*counted_position].get_index();
+
+            if (!instantiate_matches_ground_atom(pattern, rigid_values, counted_object, atom))
+                continue;
+
+            const auto i = uint_t(atom.get_index());
+            if (!seen[i])
+            {
+                seen[i] = true;
+                result.push_back(atom);
             }
         }
     }
@@ -204,27 +189,40 @@ instantiate_group(const Invariant& inv, const std::vector<Index<Object>>& rigid_
     return result;
 }
 
-bool initial_atom_matches_part(const Invariant& inv, const TempAtom& part, GroundAtomView<FluentTag> atom)
+struct PrecomputedGroup
 {
-    return match_invariant_against_ground_atom(inv, part, make_temp_ground_atom(atom)).has_value();
-}
+    size_t inv_index;
+    std::vector<Index<Object>> rigid_values;
+    GroundAtomViewList<FluentTag> atoms;
 
-}  // namespace
+    auto identifying_members() const noexcept { return std::tie(inv_index, rigid_values, atoms); }
 
-std::vector<GroundAtomViewList<FluentTag>>
-compute_mutex_groups(PlanningTask& task, Repository& repository, const GroundAtomViewList<FluentTag>& all_atoms, const InvariantList& invariants)
+    friend bool operator<(const PrecomputedGroup& lhs, const PrecomputedGroup& rhs) { return lhs.identifying_members() < rhs.identifying_members(); }
+};
+
+struct GroupKey
 {
-    (void) repository;
+    size_t invariant_index;
+    std::vector<Index<Object>> rigid_values;
 
-    std::map<GroupKey, size_t> nonempty_groups;
-    std::set<GroupKey> overcrowded_groups;
+    auto identifying_members() const noexcept { return std::tie(invariant_index, rigid_values); }
 
-    for (const auto atom : task.get_task().get_atoms<FluentTag>())
+    friend bool operator==(const GroupKey&, const GroupKey&) = default;
+    friend bool operator<(const GroupKey& lhs, const GroupKey& rhs) { return lhs.identifying_members() < rhs.identifying_members(); }
+};
+
+std::vector<PrecomputedGroup>
+precompute_groups(const GroundAtomViewList<FluentTag>& initial_atoms, const GroundAtomViewList<FluentTag>& all_atoms, const InvariantList& invariants)
+{
+    std::vector<PrecomputedGroup> groups;
+    std::set<GroupKey> seen_keys;
+
+    for (size_t inv_index = 0; inv_index < invariants.size(); ++inv_index)
     {
-        for (size_t inv_index = 0; inv_index < invariants.size(); ++inv_index)
-        {
-            const auto& inv = invariants[inv_index];
+        const auto& inv = invariants[inv_index];
 
+        for (const auto atom : initial_atoms)
+        {
             if (!inv.predicates.contains(atom.get_predicate()))
                 continue;
 
@@ -235,38 +233,138 @@ compute_mutex_groups(PlanningTask& task, Repository& repository, const GroundAto
                 if (!initial_atom_matches_part(inv, part, atom))
                     continue;
 
-                const auto rigid_values = extract_rigid_values(inv, part, atom);
+                auto rigid_values = extract_rigid_values(inv, part, atom);
                 if (!rigid_values.has_value())
                     continue;
 
-                const auto key = GroupKey {
-                    .invariant_index = inv_index,
-                    .rigid_values = *rigid_values,
-                };
+                GroupKey key { inv_index, *rigid_values };
+                if (!seen_keys.insert(key).second)
+                    continue;
 
-                if (!nonempty_groups.contains(key))
-                    nonempty_groups.emplace(key, 1);
-                else
-                    overcrowded_groups.insert(key);
+                auto instantiated_group = instantiate_group(inv, *rigid_values, all_atoms);
+                if (instantiated_group.empty())
+                    continue;
+
+                std::sort(instantiated_group.begin(), instantiated_group.end());
+
+                groups.push_back(PrecomputedGroup {
+                    .inv_index = inv_index,
+                    .rigid_values = *rigid_values,
+                    .atoms = std::move(instantiated_group),
+                });
             }
         }
     }
 
-    std::vector<GroundAtomViewList<FluentTag>> result;
+    return groups;
+}
 
-    for (const auto& [key, _] : nonempty_groups)
+size_t compute_uncovered_coverage(const PrecomputedGroup& group, const std::vector<bool>& uncovered)
+{
+    size_t coverage = 0;
+    for (const auto atom : group.atoms)
     {
-        if (overcrowded_groups.contains(key))
-            continue;
+        const auto i = uint_t(atom.get_index());
+        if (uncovered[i])
+            ++coverage;
+    }
+    return coverage;
+}
 
-        const auto& inv = invariants[key.invariant_index];
-        auto group = instantiate_group(inv, key.rigid_values, all_atoms);
+std::optional<size_t> select_best_group(const std::vector<PrecomputedGroup>& groups, const std::vector<bool>& uncovered)
+{
+    std::optional<size_t> best_group_index;
+    size_t best_coverage = 0;
 
-        if (!group.empty())
-            result.push_back(std::move(group));
+    for (size_t i = 0; i < groups.size(); ++i)
+    {
+        const auto coverage = compute_uncovered_coverage(groups[i], uncovered);
+        if (coverage > best_coverage)
+        {
+            best_group_index = i;
+            best_coverage = coverage;
+        }
+    }
+
+    return best_group_index;
+}
+
+GroundAtomViewList<FluentTag> build_uncovered_subgroup(const PrecomputedGroup& group, const std::vector<bool>& uncovered)
+{
+    GroundAtomViewList<FluentTag> result;
+    result.reserve(group.atoms.size());
+
+    for (const auto atom : group.atoms)
+    {
+        const auto i = uint_t(atom.get_index());
+        if (uncovered[i])
+            result.push_back(atom);
     }
 
     return result;
 }
 
-}  // namespace tyr::formalism::planning::invariant
+void mark_group_covered(const GroundAtomViewList<FluentTag>& group, std::vector<bool>& uncovered, size_t& num_uncovered)
+{
+    for (const auto atom : group)
+    {
+        const auto i = uint_t(atom.get_index());
+        if (uncovered[i])
+        {
+            uncovered[i] = false;
+            --num_uncovered;
+        }
+    }
+}
+
+std::vector<GroundAtomViewList<FluentTag>> choose_groups_greedily(const std::vector<PrecomputedGroup>& groups, const GroundAtomViewList<FluentTag>& all_atoms)
+{
+    std::vector<bool> uncovered(all_atoms.size(), true);
+    size_t num_uncovered = all_atoms.size();
+
+    std::vector<GroundAtomViewList<FluentTag>> result;
+    result.reserve(groups.size() + all_atoms.size());
+
+    while (num_uncovered > 0)
+    {
+        const auto best_idx = select_best_group(groups, uncovered);
+        if (!best_idx.has_value())
+            break;
+
+        auto selected_group = build_uncovered_subgroup(groups[*best_idx], uncovered);
+        if (selected_group.empty())
+            break;
+
+        result.push_back(selected_group);
+        mark_group_covered(result.back(), uncovered, num_uncovered);
+    }
+
+    // Singleton groups for facts not covered by any selected group.
+    for (size_t pos = 0; pos < all_atoms.size(); ++pos)
+    {
+        if (uncovered[pos])
+            result.push_back(GroundAtomViewList<FluentTag> { all_atoms[pos] });
+    }
+
+    return result;
+}
+
+}  // namespace
+
+std::vector<GroundAtomViewList<FluentTag>>
+compute_mutex_groups(const GroundAtomViewList<FluentTag>& initial_atoms, const GroundAtomViewList<FluentTag>& all_atoms, const InvariantList& invariants)
+{
+    // Ensure that all_atoms are indexed from 0 to size-1 without gaps, as we rely on this when marking atoms as covered.
+    for (uint_t i = 0; i < all_atoms.size(); ++i)
+        assert(uint_t(all_atoms[i].get_index()) == i);
+
+    auto groups = precompute_groups(initial_atoms, all_atoms, invariants);
+    std::sort(groups.begin(), groups.end());
+
+    // Greedy set cover:
+    // repeatedly pick the group that covers the largest number of still-uncovered atoms,
+    // then add singleton groups for anything left.
+    return choose_groups_greedily(groups, all_atoms);
+}
+
+}

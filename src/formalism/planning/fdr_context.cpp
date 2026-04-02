@@ -86,6 +86,21 @@ FDRContext::FDRContext(const std::vector<GroundAtomViewList<FluentTag>>& mutexes
     }
 }
 
+FDRContext::FDRContext(const GroundAtomViewList<FluentTag>& all_atoms, RepositoryPtr context)
+{
+    auto variable = Data<FDRVariable<FluentTag>>();
+
+    for (const auto& atom : all_atoms)
+    {
+        variable.clear();
+        variable.atoms.push_back(atom.get_index());
+        canonicalize(variable);
+        const auto var_index = m_context->get_or_create(variable).first.get_index();
+        m_variables.push_back(var_index);
+        m_mapping.emplace(atom.get_index(), Data<FDRFact<FluentTag>>(var_index, FDRValue { 1 }));
+    }
+}
+
 FDRContext::FDRContext(const FDRContext& other, Builder& builder, RepositoryPtr context) :
     m_context(std::move(context)),
     m_builder(),

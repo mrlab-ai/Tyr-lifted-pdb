@@ -31,6 +31,7 @@
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
+#include "tyr/formalism/planning/invariants/formatter.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 #include "tyr/formalism/planning/merge.hpp"
@@ -47,6 +48,7 @@
 namespace d = tyr::datalog;
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
+namespace fpi = tyr::formalism::planning::invariant;
 
 namespace tyr::planning
 {
@@ -466,6 +468,10 @@ GroundTaskPtr ground_task_2(LiftedTask& lifted_task, ExecutionContext& execution
     for (const auto object : task.get_objects())
         fdr_task.objects.push_back(merge_p2p(object, merge_context).first.get_index());
 
+    auto initial_atoms = fp::GroundAtomViewList<f::FluentTag> {};
+    for (const auto atom : task.get_atoms<f::FluentTag>())
+        initial_atoms.push_back(merge_p2p(atom, merge_context).first);
+
     /**
      * Create ground atoms
      */
@@ -506,11 +512,34 @@ GroundTaskPtr ground_task_2(LiftedTask& lifted_task, ExecutionContext& execution
             }
         }
     }
+    std::sort(fluent_atoms.begin(), fluent_atoms.end());
+    std::sort(derived_atoms.begin(), derived_atoms.end());
 
     std::cout << "Fluent atoms:" << std::endl;
     std::cout << fluent_atoms << std::endl;
     std::cout << "Derived atoms:" << std::endl;
     std::cout << derived_atoms << std::endl;
+
+    auto fdr_context = std::shared_ptr<fp::FDRContext> { nullptr };
+
+    if (options.enable_invariant_synthesis)
+    {
+        auto invariants = fpi::synthesize_invariants(planning_domain.get_domain());
+        auto mutex_groups = fpi::compute_mutex_groups(initial_atoms, fluent_atoms, invariants);
+
+        std::cout << "Invariants:" << std::endl;
+        print(std::cout, invariants);
+        std::cout << std::endl;
+        std::cout << "Mutex groups:" << std::endl;
+        print(std::cout, mutex_groups);
+        std::cout << std::endl;
+
+        fdr_context = std::make_shared<fp::FDRContext>(mutex_groups, repository);
+    }
+    else
+    {
+        fdr_context = std::make_shared<fp::FDRContext>(fluent_atoms, repository);
+    }
 
     std::terminate();
 }
