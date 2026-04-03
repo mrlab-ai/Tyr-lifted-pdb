@@ -72,7 +72,7 @@ if REMOTE:
         #("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
         #("mine-pddl", SUITE_MINEPDDL),
     ]
-    WALL_TIME_LIMIT = 5 * 60
+    WALL_TIME_LIMIT = 30 * 60
 else:
     SUITES = [
         #("downward-benchmarks", ["gripper:prob01.pddl"]), 
