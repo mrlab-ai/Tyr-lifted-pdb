@@ -325,12 +325,14 @@ void bind_ground_conjunctive_condition_builder(nb::module_& m, const std::string
 
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const GroundLiteralViewList<StaticTag>&,
-                                 const FDRFactViewList<FluentTag>&,
                                  const GroundLiteralViewList<DerivedTag>&,
+                                 const FDRFactViewList<FluentTag>&,
+                                 const FDRFactViewList<FluentTag>&,
                                  const GroundBooleanOperatorViewList&>(),
                         "static_literals"_a,
-                        "fluent_facts"_a,
                         "derived_literals"_a,
+                        "positive_facts"_a,
+                        "negative_facts"_a,
                         "numeric_constraints"_a);
     add_print(cls);
     add_hash(cls);
@@ -342,9 +344,11 @@ void bind_ground_conjunctive_effect_builder(nb::module_& m, const std::string& n
 
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<const FDRFactViewList<FluentTag>&,
+                                 const FDRFactViewList<FluentTag>&,
                                  const GroundNumericEffectOperatorViewList<FluentTag>&,
                                  const std::optional<GroundNumericEffectOperatorView<AuxiliaryTag>>&>(),
-                        "fluent_facts"_a,
+                        "add_facts"_a,
+                        "del_facts"_a,
                         "fluent_numeric_effects"_a,
                         "auxiliary_numeric_effect"_a);
     add_print(cls);
