@@ -50,13 +50,13 @@ float_t GoalCountHeuristic<Kind>::evaluate(const StateView<Kind>& state)
 
     for (const auto fact : m_goal.template get_facts<formalism::PositiveTag>())
     {
-        if (!is_applicable(fact, true, state_context))
+        if (!is_applicable<formalism::PositiveTag>(fact, state_context))
             ++unsat_counter;
     }
 
     for (const auto fact : m_goal.template get_facts<formalism::NegativeTag>())
     {
-        if (!is_applicable(fact, false, state_context))
+        if (!is_applicable<formalism::NegativeTag>(fact, state_context))
             ++unsat_counter;
     }
 

@@ -108,11 +108,11 @@ bool is_applicable(formalism::planning::GroundLiteralView<formalism::DerivedTag>
 template<TaskKind Kind, formalism::FactKind T>
 bool is_applicable(formalism::planning::GroundLiteralListView<T> elements, const StateContext<Kind>& context);
 
-template<TaskKind Kind>
-bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> element, bool polarity, const StateContext<Kind>& context);
+template<formalism::PolarityKind P, TaskKind Kind>
+bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> element, const StateContext<Kind>& context);
 
-template<TaskKind Kind>
-bool is_applicable(formalism::planning::FDRFactListView<formalism::FluentTag> elements, bool polarity, const StateContext<Kind>& context);
+template<formalism::PolarityKind P, TaskKind Kind>
+bool is_applicable(formalism::planning::FDRFactListView<formalism::FluentTag> elements, const StateContext<Kind>& context);
 
 template<TaskKind Kind>
 bool is_applicable(formalism::planning::GroundBooleanOperatorView element, const StateContext<Kind>& context);

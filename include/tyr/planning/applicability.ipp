@@ -167,17 +167,25 @@ bool is_applicable(formalism::planning::GroundLiteralListView<T> elements, const
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, context); });
 }
 
-template<TaskKind Kind>
-bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> element, bool polarity, const StateContext<Kind>& context)
+template<formalism::PolarityKind P, TaskKind Kind>
+bool is_applicable(formalism::planning::FDRFactView<formalism::FluentTag> element, const StateContext<Kind>& context)
 {
     assert(element.has_value());
-    return (context.unpacked_state.get(element.get_variable().get_index()) == element.get_value()) == polarity;
+
+    const auto value = context.unpacked_state.get(element.get_variable().get_index());
+
+    if constexpr (std::same_as<P, formalism::PositiveTag>)
+        return value == element.get_value();
+    else if constexpr (std::same_as<P, formalism::NegativeTag>)
+        return value != element.get_value();
+    else
+        static_assert(dependent_false<P>::value, "Missing case");
 }
 
-template<TaskKind Kind>
-bool is_applicable(formalism::planning::FDRFactListView<formalism::FluentTag> elements, bool polarity, const StateContext<Kind>& context)
+template<formalism::PolarityKind P, TaskKind Kind>
+bool is_applicable(formalism::planning::FDRFactListView<formalism::FluentTag> elements, const StateContext<Kind>& context)
 {
-    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, polarity, context); });
+    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable<P>(arg, context); });
 }
 
 template<TaskKind Kind>
@@ -252,10 +260,10 @@ bool is_applicable(formalism::planning::GroundNumericEffectOperatorView<formalis
 template<TaskKind Kind>
 bool is_applicable(formalism::planning::GroundConjunctiveConditionView element, const StateContext<Kind>& context)
 {
-    return is_applicable(element.template get_literals<formalism::StaticTag>(), context)           //
-           && is_applicable(element.template get_facts<formalism::PositiveTag>(), true, context)   //
-           && is_applicable(element.template get_facts<formalism::NegativeTag>(), false, context)  //
-           && is_applicable(element.template get_literals<formalism::DerivedTag>(), context)       //
+    return is_applicable(element.template get_literals<formalism::StaticTag>(), context)                            //
+           && is_applicable<formalism::PositiveTag>(element.template get_facts<formalism::PositiveTag>(), context)  //
+           && is_applicable<formalism::NegativeTag>(element.template get_facts<formalism::NegativeTag>(), context)  //
+           && is_applicable(element.template get_literals<formalism::DerivedTag>(), context)                        //
            && is_applicable(element.get_numeric_constraints(), context);
 }
 
@@ -347,9 +355,9 @@ TYR_INLINE_IMPL bool is_statically_applicable(formalism::planning::GroundAxiomVi
 template<TaskKind Kind>
 bool is_dynamically_applicable(formalism::planning::GroundConjunctiveConditionView element, const StateContext<Kind>& context)
 {
-    return is_applicable(element.template get_facts<formalism::PositiveTag>(), true, context)      //
-           && is_applicable(element.template get_facts<formalism::NegativeTag>(), false, context)  //
-           && is_applicable(element.template get_literals<formalism::DerivedTag>(), context)       //
+    return is_applicable<formalism::PositiveTag>(element.template get_facts<formalism::PositiveTag>(), context)     //
+           && is_applicable<formalism::NegativeTag>(element.template get_facts<formalism::NegativeTag>(), context)  //
+           && is_applicable(element.template get_literals<formalism::DerivedTag>(), context)                        //
            && is_applicable(element.get_numeric_constraints(), context);
 }
 
