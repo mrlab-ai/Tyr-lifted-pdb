@@ -29,25 +29,20 @@ namespace
 {
 fs::path absolute(const std::string& subdir) { return fs::path(std::string(DATA_DIR)) / subdir; }
 
+/// @brief Compare statistics that must be the same for both configurations
+/// Notes:
+/// - plan length may differ because two plans of different length may have same optimal cost.
+/// - number of generated states may differ because of f value improvements due to differences in labeled successor node orderings.
 struct SearchSummary
 {
-    uint64_t expanded;
-    uint64_t generated;
-    uint64_t pruned;
-
     std::optional<uint64_t> expanded_last_snapshot;
-    std::optional<uint64_t> generated_last_snapshot;
-    std::optional<uint64_t> pruned_last_snapshot;
 
     p::SearchStatus status;
     float_t plan_cost;
-    size_t plan_length;
 
     bool operator==(const SearchSummary& other) const
     {
-        return expanded == other.expanded && generated == other.generated && pruned == other.pruned && expanded_last_snapshot == other.expanded_last_snapshot
-               && generated_last_snapshot == other.generated_last_snapshot && pruned_last_snapshot == other.pruned_last_snapshot && status == other.status
-               && plan_cost == other.plan_cost && plan_length == other.plan_length;
+        return expanded_last_snapshot == other.expanded_last_snapshot && status == other.status && f::apply(f::OpEq {}, plan_cost, other.plan_cost);
     }
 };
 
@@ -75,23 +70,17 @@ SearchSummary run_blind_astar(const fs::path& domain_filepath, const fs::path& p
     const auto result = p::astar_eager::find_solution(*task, successor_generator, *heuristic, options);
 
     SearchSummary summary {};
-    summary.expanded = event_handler->get_statistics().get_num_expanded();
-    summary.generated = event_handler->get_statistics().get_num_generated();
-    summary.pruned = event_handler->get_statistics().get_num_pruned();
 
     if (!event_handler->get_progress_statistics().get_snapshots().empty())
     {
         const auto& last = event_handler->get_progress_statistics().get_snapshots().back();
         summary.expanded_last_snapshot = last.get_num_expanded();
-        summary.generated_last_snapshot = last.get_num_generated();
-        summary.pruned_last_snapshot = last.get_num_pruned();
     }
 
     summary.status = result.status;
     if (result.plan.has_value())
     {
         summary.plan_cost = result.plan->get_cost();
-        summary.plan_length = result.plan->get_length();
     }
 
     return summary;

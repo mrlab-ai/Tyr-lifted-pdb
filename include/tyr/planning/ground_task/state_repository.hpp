@@ -72,6 +72,8 @@ public:
     const auto& get_task() const noexcept { return m_task; }
     const auto& get_axiom_evaluator() const noexcept { return m_axiom_evaluator; }
 
+    size_t num_states() const noexcept { return m_packed_states.size(); }
+
 private:
     std::shared_ptr<Task<GroundTag>> m_task;
 

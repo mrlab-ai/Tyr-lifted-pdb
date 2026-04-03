@@ -18,6 +18,8 @@
 #ifndef TYR_FORMALISM_FORMALISM_HPP_
 #define TYR_FORMALISM_FORMALISM_HPP_
 
+#include "tyr/formalism/arithmetic_operator_utils.hpp"
+#include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/canonicalization.hpp"
 #include "tyr/formalism/datalog/datalog.hpp"
 #include "tyr/formalism/datas.hpp"

@@ -269,11 +269,6 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
                 return result;
             }
 
-            /* Skip previously generated state. */
-
-            if (!is_new_successor_state)
-                continue;
-
             /* Apply pruning strategy */
 
             if (pruning_strategy->should_prune_successor_state(state, succ_state, is_new_successor_state))
@@ -282,22 +277,14 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
                 continue;
             }
 
-            event_handler->on_generate_node(labeled_succ_node);
-
             /* Check whether state must be reopened or not. */
 
             if (succ_node.get_metric() < successor_search_node.g_value)
             {
-                successor_search_node.status = SearchNodeStatus::OPEN;
+                event_handler->on_generate_node(labeled_succ_node);
+
                 successor_search_node.parent_state = state_index;
                 successor_search_node.g_value = succ_node.get_metric();
-
-                const auto successor_is_goal_state = goal_strategy->is_dynamic_goal_satisfied(succ_state);
-
-                if (is_new_successor_state && successor_is_goal_state)
-                {
-                    successor_search_node.status = SearchNodeStatus::GOAL;
-                }
 
                 const auto successor_h_value = heuristic.evaluate(succ_state);
 
@@ -306,6 +293,9 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
                     successor_search_node.status = SearchNodeStatus::DEAD_END;
                     continue;
                 }
+
+                const auto successor_is_goal_state = goal_strategy->is_dynamic_goal_satisfied(succ_state);
+                successor_search_node.status = successor_is_goal_state ? SearchNodeStatus::GOAL : SearchNodeStatus::OPEN;
 
                 event_handler->on_generate_node_relaxed(labeled_succ_node);
 
@@ -316,8 +306,6 @@ SearchResult<Kind> find_solution(Task<Kind>& task, SuccessorGenerator<Kind>& suc
             {
                 event_handler->on_generate_node_not_relaxed(labeled_succ_node);
             }
-
-            event_handler->on_generate_node(labeled_succ_node);
         }
     }
 
