@@ -141,8 +141,6 @@ int main(int argc, char** argv)
         {
             auto ground_task = lifted_task->instantiate_ground_task(*execution_context);
 
-            std::cout << ground_task->get_formalism_task() << std::endl;
-
             auto successor_generator = planning::SuccessorGenerator<planning::GroundTag>(ground_task, execution_context);
 
             auto options = planning::gbfs_lazy::Options<planning::GroundTag>();
