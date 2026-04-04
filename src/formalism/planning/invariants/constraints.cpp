@@ -166,7 +166,13 @@ void ConstraintSystem::extend(const ConstraintSystem& other)
 
 EqualityConjunction ConstraintSystem::combine_equality_conjunctions(const std::vector<EqualityConjunction>& conjunctions)
 {
+    size_t total = 0;
+    for (const auto& c : conjunctions)
+        total += c.equalities.size();
+
     std::vector<std::pair<ConstraintTerm, ConstraintTerm>> all_equalities;
+    all_equalities.reserve(total);
+
     for (const auto& c : conjunctions)
         all_equalities.insert(all_equalities.end(), c.equalities.begin(), c.equalities.end());
     return EqualityConjunction(std::move(all_equalities));
@@ -268,6 +274,10 @@ bool ConstraintSystem::is_solvable() const
     return false;
 }
 
+ConstraintTerm make_constraint_term(ParameterIndex parameter) { return VariableTerm { parameter }; }
+
+ConstraintTerm make_constraint_term(Index<Object> object) { return ObjectTerm { object }; }
+
 ConstraintTerm make_constraint_term(const Data<Term>& term)
 {
     return std::visit(
@@ -287,16 +297,13 @@ ConstraintTerm make_constraint_term(const Data<Term>& term)
 
 ConstraintTerm make_invariant_parameter_term(size_t index) { return InvariantParameter { index }; }
 
-bool is_equality_literal(const TempLiteral& lit) { return lit.atom.predicate.get_name() == "=" && lit.polarity; }
-
-bool is_inequality_literal(const TempLiteral& lit) { return lit.atom.predicate.get_name() == "=" && !lit.polarity; }
-
-void ensure_cover(ConstraintSystem& system, const TempAtom& pattern, const TempAtom& atom, const Invariant& inv)
+EqualityConjunction make_cover_equality_conjunction(const TempAtom& pattern, const TempAtom& atom, const Invariant& inv)
 {
     assert(pattern.predicate == atom.predicate);
     assert(pattern.terms.size() == atom.terms.size());
 
     std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities;
+    equalities.reserve(pattern.terms.size());
 
     for (size_t pos = 0; pos < pattern.terms.size(); ++pos)
     {
@@ -307,19 +314,21 @@ void ensure_cover(ConstraintSystem& system, const TempAtom& pattern, const TempA
 
                 if constexpr (std::is_same_v<T, ParameterIndex>)
                 {
-                    const auto idx = static_cast<uint_t>(x);
-
-                    // Only non-counted invariant parameters.
-                    if (idx < inv.num_rigid_variables)
+                    if (uint_t(x) < inv.num_rigid_variables)
                     {
-                        equalities.emplace_back(make_invariant_parameter_term(idx), make_constraint_term(atom.terms[pos]));
+                        equalities.emplace_back(make_invariant_parameter_term(uint_t(x)), make_constraint_term(atom.terms[pos]));
                     }
                 }
             },
             pattern.terms[pos].value);
     }
 
-    system.add_equality_conjunction(EqualityConjunction(std::move(equalities)));
+    return EqualityConjunction(std::move(equalities));
+}
+
+void ensure_cover(ConstraintSystem& system, const TempAtom& pattern, const TempAtom& atom, const Invariant& inv)
+{
+    system.add_equality_conjunction(make_cover_equality_conjunction(pattern, atom, inv));
 }
 
 void ensure_inequality(ConstraintSystem& system, const TempAtom& lhs, const TempAtom& rhs)

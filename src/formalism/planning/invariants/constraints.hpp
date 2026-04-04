@@ -107,11 +107,11 @@ private:
     static EqualityConjunction combine_equality_conjunctions(const std::vector<EqualityConjunction>& conjunctions);
 };
 
+ConstraintTerm make_constraint_term(ParameterIndex parameter);
+ConstraintTerm make_constraint_term(Index<Object> object);
 ConstraintTerm make_constraint_term(const Data<Term>& term);
 ConstraintTerm make_invariant_parameter_term(size_t index);
-
-bool is_equality_literal(const TempLiteral& lit);
-bool is_inequality_literal(const TempLiteral& lit);
+EqualityConjunction make_cover_equality_conjunction(const TempAtom& pattern, const TempAtom& atom, const Invariant& inv);
 
 void ensure_cover(ConstraintSystem& system, const TempAtom& pattern, const TempAtom& atom, const Invariant& inv);
 void ensure_inequality(ConstraintSystem& system, const TempAtom& lhs, const TempAtom& rhs);

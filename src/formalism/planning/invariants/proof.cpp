@@ -31,6 +31,7 @@ namespace tyr::formalism::planning::invariant
 {
 namespace
 {
+
 struct EffectAtomRef
 {
     const TempEffect* effect;
@@ -39,43 +40,16 @@ struct EffectAtomRef
 
 using Renaming = tyr::formalism::unification::SubstitutionFunction<Data<Term>>;
 
-Renaming make_effect_alpha_renaming(size_t num_action_variables, size_t num_effect_variables, size_t fresh_base)
+Renaming make_effect_alpha_renaming(const TempEffect& effect, size_t fresh_base)
 {
-    auto sigma = Renaming::from_range(ParameterIndex { uint_t(num_action_variables) }, num_effect_variables);
+    auto sigma = Renaming::from_range(ParameterIndex { uint_t(effect.num_action_variables) }, effect.num_effect_variables);
 
-    for (size_t i = 0; i < num_effect_variables; ++i)
+    for (size_t i = 0; i < effect.num_effect_variables; ++i)
     {
-        sigma.assign(ParameterIndex { uint_t(num_action_variables + i) }, Data<Term>(ParameterIndex { uint_t(fresh_base + i) }));
+        sigma.assign(ParameterIndex { uint_t(effect.num_action_variables + i) }, Data<Term>(ParameterIndex { uint_t(fresh_base + i) }));
     }
 
     return sigma;
-}
-
-EqualityConjunction make_cover_equality_conjunction(const TempAtom& pattern, const TempAtom& atom, const Invariant& inv)
-{
-    assert(pattern.predicate == atom.predicate);
-    assert(pattern.terms.size() == atom.terms.size());
-
-    std::vector<std::pair<ConstraintTerm, ConstraintTerm>> equalities;
-
-    for (size_t pos = 0; pos < pattern.terms.size(); ++pos)
-    {
-        std::visit(
-            [&](auto&& x)
-            {
-                using T = std::decay_t<decltype(x)>;
-
-                if constexpr (std::is_same_v<T, ParameterIndex>)
-                {
-                    const auto idx = static_cast<uint_t>(x);
-                    if (idx < inv.num_rigid_variables)
-                        equalities.emplace_back(make_invariant_parameter_term(idx), make_constraint_term(atom.terms[pos]));
-                }
-            },
-            pattern.terms[pos].value);
-    }
-
-    return EqualityConjunction(std::move(equalities));
 }
 
 template<typename Accessor>
@@ -85,7 +59,9 @@ std::vector<EffectAtomRef> collect_relevant_effect_atoms(const TempAction& op, c
 
     for (const auto& eff : op.effects)
     {
-        for (const auto& atom : accessor(eff))
+        const auto& atoms = accessor(eff);
+
+        for (const auto& atom : atoms)
         {
             if (inv.predicates.contains(atom.predicate))
                 result.push_back(EffectAtomRef { .effect = &eff, .atom = &atom });
@@ -116,6 +92,12 @@ ConstraintSystem make_param_system(const TempAction& op, const TempEffect& add_e
     ConstraintSystem param_system;
     const auto& representative = add_cover.get_representative();
 
+    const auto representative_of = [&](const ConstraintTerm& term) -> ConstraintTerm
+    {
+        const auto it = representative.find(term);
+        return (it != representative.end()) ? it->second : term;
+    };
+
     std::vector<ParameterIndex> params;
     params.reserve(op.num_variables + add_effect.num_effect_variables);
 
@@ -127,21 +109,24 @@ ConstraintSystem make_param_system(const TempAction& op, const TempEffect& add_e
 
     for (const auto param : params)
     {
-        const auto term = make_constraint_term(Data<Term>(param));
-        const auto repr = representative.contains(term) ? representative.at(term) : term;
+        const auto term = make_constraint_term(param);
+        const auto repr = representative_of(term);
 
         if (std::holds_alternative<InvariantParameter>(repr) || std::holds_alternative<VariableTerm>(repr))
+        {
             param_system.add_not_constant(term);
+        }
     }
 
     for (size_t i = 0; i < params.size(); ++i)
     {
         for (size_t j = i + 1; j < params.size(); ++j)
         {
-            const auto t1 = make_constraint_term(Data<Term>(params[i]));
-            const auto t2 = make_constraint_term(Data<Term>(params[j]));
-            const auto r1 = representative.contains(t1) ? representative.at(t1) : t1;
-            const auto r2 = representative.contains(t2) ? representative.at(t2) : t2;
+            const auto t1 = make_constraint_term(params[i]);
+            const auto t2 = make_constraint_term(params[j]);
+
+            const auto r1 = representative_of(t1);
+            const auto r2 = representative_of(t2);
 
             if (r1 != r2)
                 param_system.add_inequality_disjunction(InequalityDisjunction({ { t1, t2 } }));
@@ -179,7 +164,9 @@ std::optional<ConstraintSystem> make_balance_system(const TempEffect& add_effect
             eqs.reserve(lit.atom.terms.size());
 
             for (size_t i = 0; i < lit.atom.terms.size(); ++i)
+            {
                 eqs.emplace_back(make_constraint_term(lit.atom.terms[i]), make_constraint_term(match.atom.terms[i]));
+            }
 
             possibilities.emplace_back(std::move(eqs));
         }
@@ -198,7 +185,7 @@ std::optional<ConstraintSystem> make_balance_system(const TempEffect& add_effect
 
 bool is_operator_too_heavy(const TempAction& op, const Invariant& inv)
 {
-    const auto add_effects = collect_relevant_effect_atoms(op, inv, [](const auto& eff) -> const auto& { return eff.add_effects; });
+    const auto add_effects = collect_relevant_effect_atoms(op, inv, [](const TempEffect& eff) -> const TempAtomList& { return eff.add_effects; });
 
     if (add_effects.size() <= 1)
         return false;
@@ -217,8 +204,8 @@ bool is_operator_too_heavy(const TempAction& op, const Invariant& inv)
             const auto& eff1 = add_effects[i];
             const auto& eff2 = add_effects[j];
 
-            const auto lhs_sigma = make_effect_alpha_renaming(eff1.effect->num_action_variables, eff1.effect->num_effect_variables, fresh_base_lhs);
-            const auto rhs_sigma = make_effect_alpha_renaming(eff2.effect->num_action_variables, eff2.effect->num_effect_variables, fresh_base_rhs);
+            const auto lhs_sigma = make_effect_alpha_renaming(*eff1.effect, fresh_base_lhs);
+            const auto rhs_sigma = make_effect_alpha_renaming(*eff2.effect, fresh_base_rhs);
 
             const auto lhs_atom = tyr::formalism::unification::apply_substitution(*eff1.atom, lhs_sigma);
             const auto rhs_atom = tyr::formalism::unification::apply_substitution(*eff2.atom, rhs_sigma);
@@ -260,10 +247,11 @@ bool is_add_effect_unbalanced(const TempAction& op, const TempEffect& add_effect
         return true;
 
     const auto add_cover = make_cover_equality_conjunction(*add_pattern, add_atom, inv);
+
     auto param_system = make_param_system(op, add_effect, add_cover);
     const auto produced_by_pred = build_add_effect_produced_by_pred(op, add_effect, add_atom);
 
-    const auto del_effects = collect_relevant_effect_atoms(op, inv, [](const auto& eff) -> const auto& { return eff.del_effects; });
+    const auto del_effects = collect_relevant_effect_atoms(op, inv, [](const TempEffect& eff) -> const TempAtomList& { return eff.del_effects; });
 
     for (const auto& del_ref : del_effects)
     {
