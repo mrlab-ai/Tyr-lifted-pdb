@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025-2026 Dominik Drexler
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,47 +15,28 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_GROUND_NUMERIC_EFFECT_OPERATOR_UTILS_HPP_
-#define TYR_FORMALISM_PLANNING_GROUND_NUMERIC_EFFECT_OPERATOR_UTILS_HPP_
+#ifndef TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_HPP_
+#define TYR_FORMALISM_UNIFICATION_STRUCTURE_TRAITS_HPP_
 
-#include "tyr/common/declarations.hpp"
-#include "tyr/formalism/planning/declarations.hpp"
-
-namespace tyr::formalism::planning
+namespace tyr::formalism::unification
 {
-/**
- * Float
- */
 
 template<typename T>
-inline T apply(OpAssign, T lhs, T rhs)
-{
-    return rhs;
-}
+struct structure_traits;
 
 template<typename T>
-inline T apply(OpIncrease, T lhs, T rhs)
-{
-    return lhs + rhs;
-}
+concept TermStructure = requires(const T& lhs, const T& rhs) { typename structure_traits<T>; };
 
 template<typename T>
-inline T apply(OpDecrease, T lhs, T rhs)
+struct structure_traits
 {
-    return lhs - rhs;
-}
+    template<typename F>
+    static bool zip_terms(const T& lhs, const T& rhs, F&& f);
 
-template<typename T>
-inline T apply(OpScaleUp, T lhs, T rhs)
-{
-    return lhs * rhs;
-}
+    template<typename F>
+    static T transform_terms(const T& value, F&& f);
+};
 
-template<typename T>
-inline T apply(OpScaleDown, T lhs, T rhs)
-{
-    return lhs / rhs;
-}
-}
+}  // namespace tyr::formalism::unification
 
 #endif

@@ -15,48 +15,21 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_ARITHMETIC_OPERATOR_UTILS_HPP_
-#define TYR_FORMALISM_ARITHMETIC_OPERATOR_UTILS_HPP_
+#ifndef TYR_FORMALISM_UNIFICATION_TERM_OPERATIONS_HPP_
+#define TYR_FORMALISM_UNIFICATION_TERM_OPERATIONS_HPP_
 
-#include "tyr/common/closed_interval.hpp"
-#include "tyr/common/declarations.hpp"
-#include "tyr/formalism/declarations.hpp"
+#include "tyr/formalism/term_data.hpp"
 
-namespace tyr::formalism
+namespace tyr::formalism::unification
 {
-/**
- * Float
- */
 
-template<typename T>
-inline T apply(OpSub, T el)
-{
-    return -el;
-}
+inline bool is_parameter(const Data<Term>& term) { return holds_alternative<ParameterIndex>(term.value); }
 
-template<typename T>
-inline T apply(OpAdd, T lhs, T rhs)
-{
-    return lhs + rhs;
-}
+inline bool is_object(const Data<Term>& term) { return holds_alternative<Index<Object>>(term.value); }
 
-template<typename T>
-inline T apply(OpSub, T lhs, T rhs)
-{
-    return lhs - rhs;
-}
+inline ParameterIndex get_parameter(const Data<Term>& term) { return std::get<ParameterIndex>(term.value); }
 
-template<typename T>
-inline T apply(OpMul, T lhs, T rhs)
-{
-    return lhs * rhs;
-}
-
-template<typename T>
-inline T apply(OpDiv, T lhs, T rhs)
-{
-    return lhs / rhs;
-}
+inline Index<Object> get_object(const Data<Term>& term) { return std::get<Index<Object>>(term.value); }
 
 }
 
