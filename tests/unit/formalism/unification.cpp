@@ -174,4 +174,15 @@ TEST(TyrTests, TyrFormalismUnificationMatchExReportsFailure)
     EXPECT_EQ(*result.state->sigma[f::ParameterIndex(0)], object(8));
 }
 
+TEST(TyrTests, TyrFormalismUnificationMatchExReportsStructureMismatch)
+{
+    auto sigma = TermSubstitution::from_range(f::ParameterIndex(0), 1);
+    fu::TermMatchState state { std::move(sigma), TermSubstitution {} };
+
+    const auto result = fu::match_ex(std::vector { parameter(0) }, std::vector { object(8), object(9) }, std::move(state));
+
+    EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(result.failure, fu::MatchFailure::structure_mismatch);
+}
+
 }  // namespace tyr::tests

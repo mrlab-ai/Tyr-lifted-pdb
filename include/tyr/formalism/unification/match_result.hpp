@@ -21,6 +21,10 @@ struct MatchResult
     [[nodiscard]] bool has_value() const noexcept { return state.has_value(); }
 
     [[nodiscard]] explicit operator bool() const noexcept { return has_value(); }
+
+    [[nodiscard]] const State& value() const { return *state; }
+
+    [[nodiscard]] State& value() { return *state; }
 };
 
 }

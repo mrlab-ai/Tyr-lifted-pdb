@@ -4,10 +4,12 @@
 #include "tyr/formalism/unification/match_result.hpp"
 #include "tyr/formalism/unification/match_term.hpp"
 #include "tyr/formalism/unification/structure_traits.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
 
 namespace tyr::formalism::unification
 {
 
+/// Attempts to match two structures while preserving failure information.
 template<UnifiableStructure T, typename Policy = DefaultMatchPolicy>
 [[nodiscard]] MatchResult<TermMatchState> match_ex(const T& pattern, const T& element, TermMatchState state, const Policy& policy = {})
 {
@@ -20,6 +22,7 @@ template<UnifiableStructure T, typename Policy = DefaultMatchPolicy>
     return { std::move(state), MatchFailure::none };
 }
 
+/// Backward-compatible wrapper that discards failure details.
 template<UnifiableStructure T, typename Policy = DefaultMatchPolicy>
 [[nodiscard]] std::optional<TermMatchState> match(const T& pattern, const T& element, TermMatchState state, const Policy& policy = {})
 {
@@ -30,6 +33,7 @@ template<UnifiableStructure T, typename Policy = DefaultMatchPolicy>
     return std::move(result.state);
 }
 
+/// Convenience overload that returns only the resulting sigma substitution.
 template<UnifiableStructure T>
 [[nodiscard]] std::optional<SubstitutionFunction<Data<Term>>> match(const T& pattern, const T& element, SubstitutionFunction<Data<Term>> sigma)
 {

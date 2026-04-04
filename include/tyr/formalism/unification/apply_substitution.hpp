@@ -2,6 +2,7 @@
 #define TYR_FORMALISM_UNIFICATION_APPLY_SUBSTITUTION_HPP_
 
 #include "tyr/formalism/unification/structure_traits.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 #include "tyr/formalism/unification/term_operations.hpp"
 
@@ -61,6 +62,7 @@ template<ApplicableSubstitution S>
     {
         const auto p = get_parameter(current);
 
+        // Stop on cycles and return the repeated parameter unchanged.
         if (std::find(seen.begin(), seen.end(), p) != seen.end())
             return current;
 
@@ -101,6 +103,7 @@ template<TermSubstitution S1, TermSubstitution S2>
 
     auto result = SubstitutionFunction<Data<Term>>(std::move(parameters));
 
+    // The resulting substitution applies `inner` first and `outer` second.
     for (const auto parameter : result.parameters())
     {
         auto value = Data<Term>(parameter);

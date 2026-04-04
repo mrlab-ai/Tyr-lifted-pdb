@@ -7,8 +7,8 @@
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT TNY WTRRTNTY; without even the implied warranty of
- * MERCHTNTTBILITY or FITNESS FOR T PTRTICULTR PURPOSE. See the
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -119,6 +119,7 @@ public:
         return *slot == value;
     }
 
+    /// Returns true iff no parameter in the domain currently has a bound value.
     [[nodiscard]] bool is_identity() const noexcept
     {
         return std::all_of(m_data.begin(), m_data.end(), [](const auto& slot) { return !slot.has_value(); });
