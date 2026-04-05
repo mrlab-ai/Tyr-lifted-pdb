@@ -47,8 +47,10 @@ PatternCollection GoalPatternGenerator<Kind>::generate()
 {
     auto patterns = PatternCollection {};
 
-    for (const auto fact : m_task->get_task().get_goal().template get_facts<formalism::FluentTag>())
+    for (const auto fact : m_task->get_task().get_goal().template get_facts<formalism::PositiveTag>())
         patterns.push_back(Pattern({ fact }));
+
+    // TODO: how to handle disequality facts?
 
     return patterns;
 }
