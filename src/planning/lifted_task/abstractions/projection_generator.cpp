@@ -95,10 +95,12 @@ auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pat
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
-    for (const auto literal : element.template get_facts<f::StaticTag>())
+    for (const auto literal : element.template get_literals<f::StaticTag>())
         conj_cond.static_literals.push_back(merge_p2p(literal, context).first.get_index());  // always useful to have
-    for (const auto fact : element.template get_facts<f::FluentTag>())
-        append_projected_fact(fact, pattern, conj_cond.fluent_facts, context, fdr_context);
+    for (const auto fact : element.template get_facts<f::PositiveTag>())
+        append_projected_fact(fact, pattern, conj_cond.positive_facts, context, fdr_context);
+    for (const auto fact : element.template get_facts<f::NegativeTag>())
+        append_projected_fact(fact, pattern, conj_cond.negative_facts, context, fdr_context);
 
     canonicalize(conj_cond);
     return context.destination.get_or_create(conj_cond);
