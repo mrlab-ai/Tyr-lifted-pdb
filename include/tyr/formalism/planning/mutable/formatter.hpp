@@ -43,6 +43,16 @@ namespace formalism::planning
 template<FactKind T>
 std::ostream& operator<<(std::ostream& os, const MutableAtom<T>& el);
 
+template<FactKind T>
+std::ostream& operator<<(std::ostream& os, const MutableLiteral<T>& el);
+
+std::ostream& operator<<(std::ostream& os, const ConditionalEffect& el);
+
+std::ostream& operator<<(std::ostream& os, const ConjunctiveCondition& el);
+
+std::ostream& operator<<(std::ostream& os, const ConjunctiveEffect& el);
+
+std::ostream& operator<<(std::ostream& os, const Action& el);
 }
 
 /**
@@ -52,10 +62,32 @@ std::ostream& operator<<(std::ostream& os, const MutableAtom<T>& el);
 template<formalism::FactKind T>
 std::ostream& print(std::ostream& os, const formalism::planning::MutableAtom<T>& el);
 
+template<formalism::FactKind T>
+std::ostream& print(std::ostream& os, const formalism::planning::MutableLiteral<T>& el);
+
+std::ostream& print(std::ostream& os, const formalism::planning::MutableConditionalEffect& el);
+
+std::ostream& print(std::ostream& os, const formalism::planning::MutableConjunctiveCondition& el);
+
+std::ostream& print(std::ostream& os, const formalism::planning::MutableConjunctiveEffect& el);
+
+std::ostream& print(std::ostream& os, const formalism::planning::MutableAction& el);
+
 namespace formalism::planning
 {
 template<FactKind T>
 std::ostream& operator<<(std::ostream& os, const MutableAtom<T>& el);
+
+template<FactKind T>
+std::ostream& operator<<(std::ostream& os, const MutableLiteral<T>& el);
+
+std::ostream& operator<<(std::ostream& os, const MutableConditionalEffect& el);
+
+std::ostream& operator<<(std::ostream& os, const MutableConjunctiveCondition& el);
+
+std::ostream& operator<<(std::ostream& os, const MutableConjunctiveEffect& el);
+
+std::ostream& operator<<(std::ostream& os, const MutableAction& el);
 }
 }
 

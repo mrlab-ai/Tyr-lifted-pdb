@@ -15,21 +15,17 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FORMALISM_HPP_
-#define TYR_FORMALISM_FORMALISM_HPP_
+#ifndef TYR_PYTHON_FORMALISM_PLANNING_MUTABLE_HPP
+#define TYR_PYTHON_FORMALISM_PLANNING_MUTABLE_HPP
 
-#include "tyr/formalism/arithmetic_operator_utils.hpp"
-#include "tyr/formalism/boolean_operator_utils.hpp"
-#include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/datalog/datalog.hpp"
-#include "tyr/formalism/datas.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/indices.hpp"
-#include "tyr/formalism/planning/invariants/invariants.hpp"
-#include "tyr/formalism/planning/mutable/mutable.hpp"
-#include "tyr/formalism/planning/planning.hpp"
-#include "tyr/formalism/unification/unification.hpp"
-#include "tyr/formalism/views.hpp"
+#include "../../common/bindings.hpp"
+#include "../../init_declarations.hpp"
+
+namespace tyr::formalism::planning
+{
+
+void bind_mutable(nb::module_& m);
+
+}
 
 #endif

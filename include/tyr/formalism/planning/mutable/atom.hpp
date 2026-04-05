@@ -41,10 +41,15 @@ struct MutableAtom
     std::vector<Data<Term>> terms;
 
     MutableAtom() = default;
-    MutableAtom(PredicateView<T> predicate, std::vector<Data<Term>> terms) : predicate(predicate), terms(std::move(terms)) {}
-    MutableAtom(AtomView<T> element) : predicate(element.get_predicate()), terms()
+    MutableAtom(PredicateView<T> predicate_, std::vector<Data<Term>> terms_) : predicate(predicate_), terms(std::move(terms_)) {}
+    MutableAtom(PredicateView<T> predicate_, const TermViewList& terms_) : predicate(predicate_), terms()
     {
-        for (const auto& term : element.get_terms())
+        for (const auto& term : terms_)
+            terms.push_back(term.get_data());
+    }
+    MutableAtom(AtomView<T> element_) : predicate(element_.get_predicate()), terms()
+    {
+        for (const auto& term : element_.get_terms())
             terms.push_back(term.get_data());
     }
     MutableAtom(GroundAtomView<T> element) : predicate(element.get_predicate()), terms()

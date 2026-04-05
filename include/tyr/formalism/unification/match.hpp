@@ -13,8 +13,7 @@ namespace tyr::formalism::unification
 template<TermUnifiableStructure T, typename Policy = DefaultMatchPolicy>
 [[nodiscard]] MatchResult<TermMatchState> match_ex(const T& pattern, const T& element, TermMatchState state, const Policy& policy = {})
 {
-    const bool ok =
-        structure_traits<T>::zip_terms(pattern, element, [&](const Data<Term>& lhs, const Data<Term>& rhs) { return match_term(lhs, rhs, state, policy); });
+    const bool ok = zip_terms(pattern, element, [&](const Data<Term>& lhs, const Data<Term>& rhs) { return match_term(lhs, rhs, state, policy); });
 
     if (!ok)
         return { std::nullopt, MatchFailure::structure_mismatch };

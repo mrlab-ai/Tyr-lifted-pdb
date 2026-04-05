@@ -29,7 +29,7 @@ template<TermSubstitution S>
 template<TermUnifiableStructure T, TermSubstitution S>
 [[nodiscard]] T apply_substitution_once(const T& value, const S& rho)
 {
-    return structure_traits<T>::transform_terms(value, [&](const Data<Term>& term) { return apply_substitution_once(term, rho); });
+    return transform_terms(value, [&](const Data<Term>& term) { return apply_substitution_once(term, rho); });
 }
 
 template<TermSubstitution S>
@@ -72,7 +72,7 @@ template<TermSubstitution S>
 template<TermUnifiableStructure T, TermSubstitution S>
 [[nodiscard]] T apply_substitution_fixpoint(const T& value, const S& rho)
 {
-    return structure_traits<T>::transform_terms(value, [&](const Data<Term>& term) { return apply_substitution_fixpoint(term, rho); });
+    return transform_terms(value, [&](const Data<Term>& term) { return apply_substitution_fixpoint(term, rho); });
 }
 
 template<TermSubstitution S1, TermSubstitution S2>

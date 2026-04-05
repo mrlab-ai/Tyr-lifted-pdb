@@ -15,21 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FORMALISM_HPP_
-#define TYR_FORMALISM_FORMALISM_HPP_
+#ifndef TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANTS_HPP_
+#define TYR_FORMALISM_PLANNING_INVARIANTS_INVARIANTS_HPP_
 
-#include "tyr/formalism/arithmetic_operator_utils.hpp"
-#include "tyr/formalism/boolean_operator_utils.hpp"
-#include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/datalog/datalog.hpp"
-#include "tyr/formalism/datas.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/indices.hpp"
-#include "tyr/formalism/planning/invariants/invariants.hpp"
-#include "tyr/formalism/planning/mutable/mutable.hpp"
-#include "tyr/formalism/planning/planning.hpp"
-#include "tyr/formalism/unification/unification.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/invariants/formatter.hpp"
+#include "tyr/formalism/planning/invariants/invariant.hpp"
+#include "tyr/formalism/planning/invariants/mutexes.hpp"
+#include "tyr/formalism/planning/invariants/synthesis.hpp"
 
 #endif

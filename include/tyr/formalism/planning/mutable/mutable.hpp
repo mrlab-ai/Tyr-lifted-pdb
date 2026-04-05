@@ -15,21 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FORMALISM_HPP_
-#define TYR_FORMALISM_FORMALISM_HPP_
+#ifndef TYR_FORMALISM_PLANNING_MUTABLE_MUTABLE_HPP_
+#define TYR_FORMALISM_PLANNING_MUTABLE_MUTABLE_HPP_
 
-#include "tyr/formalism/arithmetic_operator_utils.hpp"
-#include "tyr/formalism/boolean_operator_utils.hpp"
-#include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/datalog/datalog.hpp"
-#include "tyr/formalism/datas.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/indices.hpp"
-#include "tyr/formalism/planning/invariants/invariants.hpp"
-#include "tyr/formalism/planning/mutable/mutable.hpp"
-#include "tyr/formalism/planning/planning.hpp"
-#include "tyr/formalism/unification/unification.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/planning/mutable/action.hpp"
+#include "tyr/formalism/planning/mutable/atom.hpp"
+#include "tyr/formalism/planning/mutable/conditional_effect.hpp"
+#include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
+#include "tyr/formalism/planning/mutable/conjunctive_effect.hpp"
+#include "tyr/formalism/planning/mutable/formatter.hpp"
+#include "tyr/formalism/planning/mutable/literal.hpp"
 
 #endif

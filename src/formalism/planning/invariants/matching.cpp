@@ -17,9 +17,13 @@
 
 #include "matching.hpp"
 
+#include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/unification/apply_substitution.hpp"
 #include "tyr/formalism/unification/match_state.hpp"
 #include "tyr/formalism/unification/match_term.hpp"
+#include "tyr/formalism/unification/structure_traits.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
+#include "tyr/formalism/unification/substitution.hpp"
 
 #include <algorithm>
 
@@ -129,9 +133,7 @@ template<typename T, typename State, typename Matcher>
 std::optional<State> match_structure(const T& pattern, const T& element, State state, Matcher&& matcher)
 {
     const bool ok =
-        tyr::formalism::unification::structure_traits<T>::zip_terms(pattern,
-                                                                    element,
-                                                                    [&](const Data<Term>& lhs, const Data<Term>& rhs) { return matcher(lhs, rhs, state); });
+        tyr::formalism::unification::zip_terms(pattern, element, [&](const Data<Term>& lhs, const Data<Term>& rhs) { return matcher(lhs, rhs, state); });
 
     if (!ok)
         return std::nullopt;
@@ -279,7 +281,7 @@ std::vector<EffectSubstitution> enumerate_effect_renamings(const MutableConditio
 {
     auto result = std::vector<EffectSubstitution> {};
 
-    const auto partially_renamed = tyr::formalism::unification::apply_substitution(element, sigma_op);
+    const MutableAtom<FluentTag> partially_renamed = tyr::formalism::unification::apply_substitution(element, sigma_op);
 
     for (const auto& pattern : inv.atoms)
     {
@@ -288,7 +290,7 @@ std::vector<EffectSubstitution> enumerate_effect_renamings(const MutableConditio
         if (!sigma_eff.has_value())
             continue;
 
-        const auto fully_renamed = tyr::formalism::unification::apply_substitution(partially_renamed, *sigma_eff);
+        const MutableAtom<FluentTag> fully_renamed = tyr::formalism::unification::apply_substitution(partially_renamed, *sigma_eff);
 
         if (covers(inv, fully_renamed))
             result.push_back(std::move(*sigma_eff));

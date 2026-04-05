@@ -17,6 +17,8 @@ nanobind_add_module(pytyr
     formalism/planning/bindings.cpp
     formalism/planning/datas.cpp
     formalism/planning/indices.cpp
+    formalism/planning/invariants.cpp
+    formalism/planning/mutable.cpp
     formalism/planning/views.cpp
     planning/bindings.cpp
 )

@@ -32,7 +32,7 @@ bool operator==(const T& lhs, const T& rhs)
 template<Identifiable T>
 bool operator!=(const T& lhs, const T& rhs)
 {
-    return !(lhs.identifying_members() == rhs.identifying_members());
+    return !(lhs == rhs);
 }
 
 template<Identifiable T>
@@ -44,7 +44,7 @@ bool operator<(const T& lhs, const T& rhs)
 template<Identifiable T>
 bool operator<=(const T& lhs, const T& rhs)
 {
-    return lhs.identifying_members() <= rhs.identifying_members();
+    return !(lhs > rhs);
 }
 
 template<Identifiable T>
@@ -56,7 +56,7 @@ bool operator>(const T& lhs, const T& rhs)
 template<Identifiable T>
 bool operator>=(const T& lhs, const T& rhs)
 {
-    return lhs.identifying_members() >= rhs.identifying_members();
+    return !(lhs < rhs);
 }
 
 }

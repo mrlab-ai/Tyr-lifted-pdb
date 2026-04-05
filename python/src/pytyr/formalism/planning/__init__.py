@@ -1,6 +1,23 @@
 # Import all classes for better IDE support
 
 from pytyr.pytyr.formalism.planning import (
+    MutableStaticAtom,
+    MutableFluentAtom,
+    MutableDerivedAtom,
+    MutableStaticLiteral,
+    MutableFluentLiteral,
+    MutableDerivedLiteral,
+    MutableConjunctiveCondition,
+    MutableConjunctiveEffect,
+    MutableConditionalEffect,
+    MutableAction,
+)
+from pytyr.pytyr.formalism.planning import (
+    Invariant,
+    synthesize_invariants,
+)
+
+from pytyr.pytyr.formalism.planning import (
     # Core symbols
     RowIndex,
     Object,

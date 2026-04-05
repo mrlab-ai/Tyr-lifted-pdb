@@ -29,6 +29,7 @@ namespace tyr::formalism::unification
 template<typename T>
 struct structure_traits;
 
+/// @brief Base case for unification: structures that are directly represented by terms.
 template<>
 struct structure_traits<Data<Term>>
 {
@@ -45,14 +46,31 @@ struct structure_traits<Data<Term>>
     }
 };
 
+/// @brief Free helper function to zip terms and template argument deduction.
+template<typename T, typename F>
+bool zip_terms(const T& lhs, const T& rhs, F&& f);
+
+/// @brief Free helper function to transform terms and template argument deduction.
+template<typename T, typename F>
+T transform_terms(const T& value, F&& f);
+
+namespace detail
+{
+struct ZipProbe
+{
+    bool operator()(const Data<Term>&, const Data<Term>&) const { return true; }
+};
+
+struct TransformProbe
+{
+    Data<Term> operator()(const Data<Term>& term) const { return term; }
+};
+}  // namespace detail
+
 template<typename T>
 concept TermUnifiableStructure = requires(const T& lhs, const T& rhs) {
-    {
-        structure_traits<T>::zip_terms(lhs, rhs, [](const Data<Term>&, const Data<Term>&) { return true; })
-    } -> std::same_as<bool>;
-    {
-        structure_traits<T>::transform_terms(lhs, [](const Data<Term>& term) { return term; })
-    } -> std::same_as<T>;
+    { structure_traits<T>::zip_terms(lhs, rhs, detail::ZipProbe {}) } -> std::same_as<bool>;
+    { structure_traits<T>::transform_terms(lhs, detail::TransformProbe {}) } -> std::same_as<T>;
 };
 
 }  // namespace tyr::formalism::unification

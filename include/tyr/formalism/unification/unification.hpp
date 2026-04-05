@@ -15,21 +15,18 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_FORMALISM_HPP_
-#define TYR_FORMALISM_FORMALISM_HPP_
+#ifndef TYR_FORMALISM_UNIFICATION_UNIFICATION_HPP_
+#define TYR_FORMALISM_UNIFICATION_UNIFICATION_HPP_
 
-#include "tyr/formalism/arithmetic_operator_utils.hpp"
-#include "tyr/formalism/boolean_operator_utils.hpp"
-#include "tyr/formalism/canonicalization.hpp"
-#include "tyr/formalism/datalog/datalog.hpp"
-#include "tyr/formalism/datas.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/formalism/formatter.hpp"
-#include "tyr/formalism/indices.hpp"
-#include "tyr/formalism/planning/invariants/invariants.hpp"
-#include "tyr/formalism/planning/mutable/mutable.hpp"
-#include "tyr/formalism/planning/planning.hpp"
-#include "tyr/formalism/unification/unification.hpp"
-#include "tyr/formalism/views.hpp"
+#include "tyr/formalism/unification/apply_substitution.hpp"
+#include "tyr/formalism/unification/match.hpp"
+#include "tyr/formalism/unification/match_policy.hpp"
+#include "tyr/formalism/unification/match_result.hpp"
+#include "tyr/formalism/unification/match_state.hpp"
+#include "tyr/formalism/unification/match_term.hpp"
+#include "tyr/formalism/unification/structure_traits.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
+#include "tyr/formalism/unification/substitution.hpp"
+#include "tyr/formalism/unification/term_operations.hpp"
 
 #endif

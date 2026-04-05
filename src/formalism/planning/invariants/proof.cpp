@@ -19,11 +19,14 @@
 
 #include "constraints.hpp"
 #include "tyr/formalism/planning/mutable/action.hpp"
+#include "tyr/formalism/planning/mutable/atom.hpp"
 #include "tyr/formalism/planning/mutable/conditional_effect.hpp"
 #include "tyr/formalism/planning/mutable/conjunctive_condition.hpp"
 #include "tyr/formalism/planning/mutable/conjunctive_effect.hpp"
 #include "tyr/formalism/planning/mutable/literal.hpp"
 #include "tyr/formalism/unification/apply_substitution.hpp"
+#include "tyr/formalism/unification/structure_traits.hpp"
+#include "tyr/formalism/unification/structure_traits_impl.hpp"
 #include "tyr/formalism/unification/substitution.hpp"
 #include "utils.hpp"
 
@@ -34,14 +37,13 @@
 
 namespace tyr::formalism::planning::invariant
 {
+
 namespace
 {
-
-using Renaming = tyr::formalism::unification::SubstitutionFunction<Data<Term>>;
-
-Renaming make_effect_alpha_renaming(const MutableConditionalEffect& effect, size_t fresh_base)
+tyr::formalism::unification::SubstitutionFunction<Data<Term>> make_effect_alpha_renaming(const MutableConditionalEffect& effect, size_t fresh_base)
 {
-    auto sigma = Renaming::from_range(ParameterIndex { uint_t(effect.num_parent_variables) }, effect.num_variables);
+    auto sigma =
+        tyr::formalism::unification::SubstitutionFunction<Data<Term>>::from_range(ParameterIndex { uint_t(effect.num_parent_variables) }, effect.num_variables);
 
     for (size_t i = 0; i < effect.num_variables; ++i)
     {

@@ -20,6 +20,8 @@
 #include "../../common/bindings.hpp"
 #include "datas.hpp"
 #include "indices.hpp"
+#include "invariants.hpp"
+#include "mutable.hpp"
 #include "views.hpp"
 
 namespace tyr::formalism::planning
@@ -79,6 +81,18 @@ void bind_module_definitions(nb::module_& m)
 
     bind_fixed_uint<FDRValue>(m, "FDRValue");
     bind_fixed_uint<ParameterIndex>(m, "ParameterIndex");
+
+    /**
+     * Invariants
+     */
+
+    invariant::bind_invariants(m);
+
+    /**
+     * Mutable
+     */
+
+    bind_mutable(m);
 
     /**
      * Index
