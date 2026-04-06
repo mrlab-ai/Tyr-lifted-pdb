@@ -27,6 +27,7 @@
 #include <concepts>
 #include <functional>
 #include <gtl/phmap.hpp>
+#include <ranges>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
