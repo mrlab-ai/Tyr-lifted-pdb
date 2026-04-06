@@ -141,6 +141,8 @@ public:
 
     const auto& get_index() const noexcept { return m_index; }
     const auto& get_root() const noexcept { return *m_root; }
+    const auto& get_relation_repository() const noexcept { return m_relation_repository; }
+    const auto& get_symbol_repository() const noexcept { return m_symbol_repository; }
 
     void clear() noexcept
     {

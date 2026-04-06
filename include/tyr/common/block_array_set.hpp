@@ -60,9 +60,16 @@ public:
         m_pool->clear();
     }
 
-    static size_t hash(std::span<const value_type> element) noexcept { return gtl::phmap_mix<sizeof(size_t)>()(Hash {}(element)); }
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    static size_t hash(const Range& element) noexcept
+    {
+        return gtl::phmap_mix<sizeof(size_t)>()(Hash {}(element));
+    }
 
-    std::optional<index_type> find_with_hash(std::span<const value_type> element, size_t h) const
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    std::optional<index_type> find_with_hash(const Range& element, size_t h) const
     {
         assert(h == BlockArraySet::hash(element) && "The given hash does not match container internal's hash.");
         assert(h == m_set.hash(element));
@@ -74,14 +81,18 @@ public:
         return std::nullopt;
     }
 
-    std::optional<index_type> find(std::span<const value_type> element) const
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    std::optional<index_type> find(const Range& element) const
     {
         assert(BlockArraySet::hash(element) == m_set.hash(element));
 
         return find_with_hash(element, BlockArraySet::hash(element));
     }
 
-    std::pair<index_type, bool> insert_with_hash(size_t h, std::span<const value_type> element)
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    std::pair<index_type, bool> insert_with_hash(size_t h, const Range& element)
     {
         assert(h == BlockArraySet::hash(element) && "The given hash does not match container internal's hash.");
         assert(h == m_set.hash(element));
@@ -98,14 +109,21 @@ public:
         return { index, true };
     }
 
-    std::pair<index_type, bool> insert(std::span<const value_type> element)
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    std::pair<index_type, bool> insert(const Range& element)
     {
         assert(BlockArraySet::hash(element) == m_set.hash(element));
 
         return insert_with_hash(BlockArraySet::hash(element), element);
     }
 
-    bool contains(std::span<const value_type> element) const { return m_set.contains(element); }
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    bool contains(const Range& element) const
+    {
+        return m_set.contains(element);
+    }
 
     ConstArrayView operator[](index_type index) const { return std::as_const(*m_pool)[index]; }
 
@@ -124,7 +142,7 @@ public:
 private:
     struct Hash
     {
-        template<std::ranges::input_range Range>
+        template<std::ranges::sized_range Range>
             requires std::same_as<std::ranges::range_value_t<Range>, value_type>
         size_t operator()(const Range& el) const noexcept
         {
@@ -137,7 +155,7 @@ private:
 
     struct EqualTo
     {
-        template<std::ranges::input_range Range1, std::ranges::input_range Range2>
+        template<std::ranges::sized_range Range1, std::ranges::sized_range Range2>
             requires std::same_as<std::ranges::range_value_t<Range1>, value_type> && std::same_as<std::ranges::range_value_t<Range2>, value_type>
         bool operator()(const Range1& lhs, const Range2& rhs) const noexcept
         {
@@ -158,7 +176,13 @@ private:
         explicit IndexableHash(const pool_type& pool_) noexcept : pool(&pool_), m_hash() {}
 
         size_t operator()(index_type idx) const noexcept { return m_hash((*pool)[idx]); }
-        size_t operator()(std::span<const value_type> values) const noexcept { return m_hash(values); }
+
+        template<std::ranges::sized_range Range>
+            requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+        size_t operator()(const Range& values) const noexcept
+        {
+            return m_hash(values);
+        }
     };
 
     class IndexableEqualTo
@@ -174,8 +198,20 @@ private:
         explicit IndexableEqualTo(const pool_type& pool_) noexcept : pool(&pool_), m_equal_to() {}
 
         bool operator()(index_type lhs, index_type rhs) const noexcept { return m_equal_to((*pool)[lhs], (*pool)[rhs]); }
-        bool operator()(std::span<const value_type> lhs, index_type rhs) const noexcept { return m_equal_to(lhs, (*pool)[rhs]); }
-        bool operator()(index_type lhs, std::span<const value_type> rhs) const noexcept { return m_equal_to((*pool)[lhs], rhs); }
+
+        template<std::ranges::sized_range Range>
+            requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+        bool operator()(const Range& lhs, index_type rhs) const noexcept
+        {
+            return m_equal_to(lhs, (*pool)[rhs]);
+        }
+
+        template<std::ranges::sized_range Range>
+            requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+        bool operator()(index_type lhs, const Range& rhs) const noexcept
+        {
+            return m_equal_to((*pool)[lhs], rhs);
+        }
     };
 
     std::unique_ptr<pool_type> m_pool;

@@ -17,9 +17,12 @@
 
 #include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 
+#include "tyr/analysis/domains.hpp"
+#include "tyr/common/block_array_set.hpp"
 #include "tyr/common/declarations.hpp"
 #include "tyr/common/itertools.hpp"
 #include "tyr/common/onetbb.hpp"
+#include "tyr/database/database.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -30,6 +33,7 @@
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/variable_dependency_graph.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/unification/unification.hpp"
 #include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
@@ -328,8 +332,6 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astate
 
             transitions.emplace_back(labeled_succ_node.label, src, dst);
 
-            std::cout << "Transition: " << src << " -> " << dst << " via " << labeled_succ_node.label << std::endl;
-
             adj_row.push_back(t);
         }
     }
@@ -337,8 +339,179 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astate
     return std::make_pair(std::move(transitions), std::move(adj_lists));
 }
 
+namespace
+{
+
+template<std::unsigned_integral Block>
+struct ObjectIndexCoder
+{
+    using value_type = Index<f::Object>;
+
+    static constexpr value_type decode(Block block) noexcept { return value_type(block); }
+    static constexpr Block encode(value_type value) noexcept { return static_cast<Block>((static_cast<uint_t>(value))); }
+};
+
+using Table = BlockArraySet<uint_t, ObjectIndexCoder<uint_t>>;
+using Relation = db::Relation<Table>;
+
+template<class T>
+inline constexpr bool dependent_false_v = false;
+
+template<class Literal>
+std::vector<f::ParameterIndex> extract_parameter_terms(const Literal& literal)
+{
+    std::vector<f::ParameterIndex> terms;
+    terms.reserve(literal.get_atom().get_terms().size());
+
+    for (const auto term : literal.get_atom().get_terms())
+    {
+        visit(
+            [&](auto&& arg)
+            {
+                using Variant = std::decay_t<decltype(arg)>;
+
+                if constexpr (std::is_same_v<Variant, f::ParameterIndex>)
+                {
+                    terms.push_back(arg);
+                }
+                else if constexpr (std::is_same_v<Variant, fp::ObjectView>)
+                {
+                    throw std::runtime_error("Object constants in static literals are not supported yet.");
+                }
+                else
+                {
+                    static_assert(dependent_false_v<Variant>, "Missing case in extract_parameter_terms");
+                }
+            },
+            term.get_variant());
+    }
+
+    return terms;
+}
+
+size_t compute_static_predicate_table_count(fp::DomainView domain)
+{
+    size_t max_index = 0;
+    bool found_any = false;
+
+    for (const auto predicate : domain.get_predicates<f::StaticTag>())
+    {
+        found_any = true;
+        max_index = std::max(max_index, size_t(uint_t(predicate.get_index())));
+    }
+
+    return found_any ? (max_index + 1) : 0;
+}
+
+auto build_static_relation_tables(fp::TaskView task) -> std::vector<std::unique_ptr<Table>>
+{
+    auto tables = std::vector<std::unique_ptr<Table>>(compute_static_predicate_table_count(task.get_domain()));
+
+    for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
+    {
+        const auto g = uint_t(predicate.get_index());
+        tables[g] = std::make_unique<Table>(predicate.get_arity());
+    }
+
+    for (const auto atom : task.get_atoms<f::StaticTag>())
+    {
+        const auto g = uint_t(atom.get_predicate().get_index());
+
+        if (!tables[g])
+            throw std::runtime_error("Missing table for static predicate index.");
+
+        tables[g]->insert(atom.get_row().get_data());
+    }
+
+    return tables;
+}
+
+template<f::FactKind T>
+Relation
+make_base_relation(fp::LiteralView<T> literal, const std::vector<std::unique_ptr<Table>>& static_relation_tables, std::vector<f::ParameterIndex>& out_terms)
+{
+    const auto g = uint_t(literal.get_atom().get_predicate().get_index());
+
+    if (g >= static_relation_tables.size() || !static_relation_tables[g])
+        throw std::runtime_error("Missing base relation table for static literal.");
+
+    out_terms = extract_parameter_terms(literal);
+    return Relation(*static_relation_tables[g], out_terms);
+}
+
+template<f::FactKind T>
+Relation extend_relation(Relation current,
+                         std::vector<f::ParameterIndex>& current_terms,
+                         const fp::LiteralView<T>& literal,
+                         const std::vector<std::unique_ptr<Table>>& static_relation_tables,
+                         std::deque<Table>& work_tables)
+{
+    const auto g = uint_t(literal.get_atom().get_predicate().get_index());
+
+    if (g >= static_relation_tables.size() || !static_relation_tables[g])
+        throw std::runtime_error("Missing base relation table for static literal.");
+
+    auto next_terms = extract_parameter_terms(literal);
+    auto next = Relation(*static_relation_tables[g], next_terms);
+
+    auto join_plan = db::make_natural_join_plan(current_terms, next_terms);
+
+    work_tables.emplace_back(join_plan.out_columns.size());
+    auto& out_table = work_tables.back();
+
+    auto result = literal.get_polarity() ? db::natural_join(current, next, out_table) : db::anti_join(current, next, out_table);
+
+    current_terms = std::move(join_plan.out_columns);
+    return result;
+}
+}
+
 auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_task)
 {
+    const auto& formalism_task = original_task.get_formalism_task();
+    const auto task = formalism_task.get_task();
+    const auto domain = task.get_domain();
+
+    auto static_relation_tables = build_static_relation_tables(task);
+
+    for (const auto action : domain.get_actions())
+    {
+        const auto static_literals = action.get_condition().get_literals<f::StaticTag>();
+
+        if (static_literals.empty())
+        {
+            continue;
+        }
+
+        auto lit_it = static_literals.rbegin();
+
+        if (!(*lit_it).get_polarity())
+        {
+            throw std::runtime_error("The first static literal is negative. "
+                                     "This requires a universal seed relation and is not supported by this code path.");
+        }
+
+        std::vector<f::ParameterIndex> current_terms;
+        auto current = make_base_relation(*lit_it, static_relation_tables, current_terms);
+
+        // Keep all intermediate result tables alive for as long as `current` may refer to them.
+        std::deque<Table> work_tables;
+
+        ++lit_it;
+        for (; lit_it != static_literals.rend(); ++lit_it)
+        {
+            current = extend_relation(std::move(current), current_terms, *lit_it, static_relation_tables, work_tables);
+        }
+    }
+    // Ignore code below
+    //
+    //
+    //
+    //
+    //
+    //
+    //
+
     // Note: All projections share the same repository.
     const auto& factory = original_task.get_domain().get_repository_factory();
     auto destination = factory->create_shared(original_task.get_repository().get());
@@ -350,8 +523,8 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
     auto [projected_formalism_task, projected_to_original_action] =
         create_projected_formalism_task(original_task.get_formalism_task(), pattern, destination, factory, fdr_context);
 
-    std::cout << projected_formalism_task.get_task().get_domain() << std::endl;
-    std::cout << projected_formalism_task.get_task() << std::endl;
+    // std::cout << projected_formalism_task.get_task().get_domain() << std::endl;
+    // std::cout << projected_formalism_task.get_task() << std::endl;
 
     auto projected_task = LiftedTask::create(projected_formalism_task);
 
@@ -383,7 +556,9 @@ ProjectionAbstractionList<LiftedTag> ProjectionGenerator<LiftedTag>::generate()
     auto projections = ProjectionAbstractionList<LiftedTag> {};
 
     for (const auto& pattern : m_patterns)
+    {
         projections.push_back(create_projection(pattern, *m_task));
+    }
 
     return projections;
 }

@@ -81,6 +81,14 @@ public:
         return BasicRelationRepository<T>::hash(builder);
     }
 
+    /**
+     * Global
+     */
+
+    /**
+     * Local
+     */
+
     template<typename T>
     auto find_with_hash(const Data<RelationBinding<T>>& builder, size_t h) const noexcept
     {

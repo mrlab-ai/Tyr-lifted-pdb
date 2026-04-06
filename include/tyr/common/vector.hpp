@@ -138,7 +138,7 @@ public:
         friend difference_type operator-(const_iterator lhs, const_iterator rhs) noexcept { return lhs.ptr - rhs.ptr; }
 
         // []
-        auto operator[](difference_type n) const noexcept
+        decltype(auto) operator[](difference_type n) const noexcept
         {
             if constexpr (ViewConcept<T, C>)
                 return make_view(*(ptr + n), *ctx);
@@ -160,9 +160,13 @@ public:
         friend bool operator>=(const const_iterator& lhs, const const_iterator& rhs) noexcept { return !(lhs < rhs); }
     };
 
-    const_iterator begin() const noexcept { return const_iterator { get_data().data(), get_context() }; }
+    using reverse_const_iterator = std::reverse_iterator<const_iterator>;
 
+    const_iterator begin() const noexcept { return const_iterator { get_data().data(), get_context() }; }
     const_iterator end() const noexcept { return const_iterator { get_data().data() + get_data().size(), get_context() }; }
+
+    reverse_const_iterator rbegin() const noexcept { return reverse_const_iterator { end() }; }
+    reverse_const_iterator rend() const noexcept { return reverse_const_iterator { begin() }; }
 
     const auto& get_data() const noexcept { return *m_handle; }
     const auto& get_context() const noexcept { return *m_context; }
