@@ -40,7 +40,7 @@ int main(int argc, char** argv)
         .default_value(false)
         .implicit_value(true)
         .help("Disable invariant synthesis during ground task instantiation.");
-    program.add_argument("-H", "--heuristic-type").default_value("blind").choices("blind", "goal_count", "rpg_max", "rpg_add", "rpg_ff");
+    program.add_argument("-H", "--heuristic-type").default_value("blind").choices("blind", "goal_count", "rpg_max", "rpg_add", "rpg_ff", "canonical");
     program.add_argument("-V", "--verbosity")
         .default_value(size_t(0))
         .scan<'u', size_t>()
@@ -112,6 +112,12 @@ int main(int argc, char** argv)
                 heuristic = planning::MaxRPGHeuristic<planning::LiftedTag>::create(lifted_task, execution_context);
             else if (heuristic_type == "rpg_ff")
                 heuristic = planning::FFRPGHeuristic<planning::LiftedTag>::create(lifted_task, execution_context);
+            else if (heuristic_type == "canonical")
+            {
+                auto patterns = planning::GoalPatternGenerator<planning::LiftedTag>(lifted_task).generate();
+                auto projections = planning::ProjectionGenerator<planning::LiftedTag>(lifted_task, patterns).generate();
+                heuristic = planning::CanonicalHeuristic<planning::LiftedTag>::create(projections);
+            }
             else
                 throw std::invalid_argument("The heuristic is not implemented.");
 
