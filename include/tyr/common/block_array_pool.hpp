@@ -51,9 +51,11 @@ public:
     using reference = std::conditional_t<std::is_const_v<Block>, value_type, reference_type>;
 
 private:
-    void ensure_fits(std::span<const value_type> elements) const
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    void ensure_fits(const Range& elements) const
     {
-        if (elements.size() != m_length)
+        if (std::ranges::size(elements) != m_length)
             throw std::invalid_argument("BasicBlockArrayView: wrong number of elements.");
     }
 
@@ -66,22 +68,35 @@ public:
 
     BasicBlockArrayView(Block* data, size_t length) : m_data(data), m_length(length) {}
 
-    BasicBlockArrayView& operator=(std::span<const value_type> elements)
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    BasicBlockArrayView& operator=(const Range& elements)
         requires(!std::is_const_v<Block>)
     {
         ensure_fits(elements);
 
-        for (size_t i = 0; i < m_length; ++i)
-            (*this)[i] = elements[i];
+        size_t i = 0;
+        for (const auto& el : elements)
+            (*this)[i++] = el;
 
         return *this;
     }
 
     friend bool operator==(const BasicBlockArrayView& lhs, const BasicBlockArrayView& rhs) { return std::ranges::equal(lhs, rhs); }
 
-    friend bool operator==(const BasicBlockArrayView& lhs, std::span<const value_type> rhs) { return std::ranges::equal(lhs, rhs); }
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    friend bool operator==(const BasicBlockArrayView& lhs, const Range& rhs)
+    {
+        return std::ranges::equal(lhs, rhs);
+    }
 
-    friend bool operator==(std::span<const value_type> lhs, const BasicBlockArrayView& rhs) { return rhs == lhs; }
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    friend bool operator==(const Range& lhs, const BasicBlockArrayView& rhs)
+    {
+        return rhs == lhs;
+    }
 
     template<typename View>
     class BasicIterator
@@ -222,9 +237,11 @@ private:
         }
     }
 
-    void ensure_fits(std::span<const value_type> elements) const
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    void ensure_fits(const Range& elements) const
     {
-        if (elements.size() != m_length)
+        if (std::ranges::size(elements) != m_length)
             throw std::invalid_argument("BlockArrayPool: wrong number of elements.");
     }
 
@@ -318,7 +335,9 @@ public:
     const_iterator cbegin() const noexcept { return const_iterator(*this, 0); }
     const_iterator cend() const noexcept { return const_iterator(*this, size()); }
 
-    void push_back(std::span<const value_type> elements)
+    template<std::ranges::sized_range Range>
+        requires std::same_as<std::ranges::range_value_t<Range>, value_type>
+    void push_back(const Range& elements)
     {
         ensure_fits(elements);
 
@@ -327,8 +346,9 @@ public:
         ++m_size;
 
         auto view = (*this)[index];
-        for (size_t i = 0; i < m_length; ++i)
-            view[i] = elements[i];
+        size_t i = 0;
+        for (const auto& el : elements)
+            view[i++] = el;
     }
 
     void clear() noexcept { m_size = 0; }
