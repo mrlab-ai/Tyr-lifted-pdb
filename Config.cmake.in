@@ -120,6 +120,16 @@ if(loki_FOUND)
 endif()
 
 
+# -----------
+# TeDDy
+# -----------
+
+find_dependency(TeDDy REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(TeDDy_FOUND)
+  message(STATUS "Found TeDDy: ${TeDDy_DIR} (found version ${TeDDy_VERSION})")
+endif()
+
+
 ############
 # Components
 ############

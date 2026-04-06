@@ -230,6 +230,12 @@ if(loki_FOUND)
 endif()
 
 
+find_package(TeDDy REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(TeDDy_FOUND)
+  message(STATUS "Found TeDDy: ${TeDDy_DIR} (found version ${TeDDy_VERSION})")
+endif()
+
+
 ##############################################################
 # Add library and executable targets
 ##############################################################
