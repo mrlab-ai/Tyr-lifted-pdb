@@ -64,19 +64,6 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                 free_variables[var] = False
 
         return free_variables
-    
-    # Helper to find the corresponding ground atom for a fully grounded tuple.
-    def lookup_ground_atom(self, pred: FluentPredicate, objs: List[Object]) -> FluentGroundAtom | None:
-        task = self._task.get_task()
-        # TODO: Possible bug in Tyr code: 
-        # In test_problem.pddl for blocks-3 it doesn't consider (clear b2) as a fluent atom.
-        # This results in missing causal links when (clear b2) is a precondition of move-b-to-b with 
-        # partial mapping {(?bm -> b3, ?bf -> b1), ?bt free}
-        for ga in task.get_fluent_atoms():
-            #print(f"Checking ground atom {ga} against predicate {pred} and objects {objs}")
-            if ga.get_predicate() == pred and ga.get_objects() == objs:
-                return ga
-        return None
 
     def create_ground_atom(self, pred: FluentPredicate, objs: List[Object]) -> FluentGroundAtom:
         """Create (or retrieve) a ground fluent atom pred(objs) in the task's repository.
@@ -306,68 +293,6 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
         return parent, children, depth
 
-    def one_pattern_bfs_tree(self, goal_atom: FluentGroundAtom, max_pattern_size: int):
-        """Build the explicit backward causal BFS tree rooted at ``goal_atom``.
-
-        The exploration order and successor function are the same as in
-        ``_one_pattern_bfs`` (using ``find_causally_linked_atoms``), but
-        instead of emitting patterns we return the discovered tree
-        structure. Exploration is truncated at depth ``max_pattern_size-1``
-        so that any root-to-leaf path has length at most ``max_pattern_size``.
-
-        Returns
-        -------
-        parent : dict[FluentGroundAtom, FluentGroundAtom | None]
-            Parent pointer for each discovered node (root maps to None).
-        children : dict[FluentGroundAtom, list[FluentGroundAtom]]
-            Adjacency list of the tree.
-        depth : dict[FluentGroundAtom, int]
-            Depth (distance from the root) for each node.
-        """
-
-        if max_pattern_size <= 0:
-            return {}, {}, {}
-
-        parent: Dict[FluentGroundAtom, FluentGroundAtom | None] = {goal_atom: None}
-        depth: Dict[FluentGroundAtom, int] = {goal_atom: 0}
-        children: Dict[FluentGroundAtom, List[FluentGroundAtom]] = {goal_atom: []}
-
-        queue = deque([goal_atom])
-
-        # Maximum depth allowed from root (0-based). A path of length
-        # max_pattern_size has depth max_pattern_size - 1 at its leaf.
-        max_depth = max_pattern_size - 1
-
-        while queue:
-            current_atom = queue.popleft()
-
-            if depth[current_atom] >= max_depth:
-                # Do not expand beyond the allowed depth.
-                continue
-
-            for action in self._task.get_task().get_domain().get_actions():
-                candidates = self.find_causally_linked_atoms(current_atom, action)
-                for candidate in candidates:
-                    # Skip trivial self-loops in the causal graph. As
-                    # above, rely on semantic equality rather than object
-                    # identity.
-                    if candidate == current_atom:
-                        continue
-
-                    # As in the naive variant, always record the causal
-                    # edge (which may introduce cycles), but only expand
-                    # each node once.
-                    children.setdefault(current_atom, []).append(candidate)
-                    children.setdefault(candidate, [])
-
-                    if candidate in parent:
-                        continue  # already discovered; don't re-enqueue
-
-                    parent[candidate] = current_atom
-                    depth[candidate] = depth[current_atom] + 1
-                    queue.append(candidate)
-
-        return parent, children, depth
     
     def write_dot(
         self,
@@ -401,69 +326,6 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                     f.write(f'    "{pred}" -> "{succ}";\n')
 
             f.write("}\n")
-
-    def _one_pattern_bfs(self, goal_atom, max_pattern_size, max_pattern_count) -> List[Pattern]:
-        """Perform a BFS from ``goal_atom`` and return up to ``max_pattern_count`` patterns.
-
-        Each pattern is the ancestor path of some BFS-discovered node, trimmed
-        to length at most ``max_pattern_size``. This guarantees that every
-        pattern is a weakly connected set of atoms with a directed causal path
-        to the goal atom, but patterns themselves are simple paths (no
-        branching inside a single pattern).
-        """
-
-        if max_pattern_size <= 0 or max_pattern_count <= 0:
-            return []
-
-        parent = {goal_atom: None}
-        queue = deque([goal_atom])
-
-        patterns: List[Pattern] = []
-
-        while queue and len(patterns) < max_pattern_count:
-            current_atom = queue.popleft()
-
-            # Reconstruct ancestor path from root to current_atom as ground
-            # atoms.
-            atom_path = []
-            node = current_atom
-            while node is not None:
-                atom_path.append(node)
-                node = parent[node]
-            atom_path.reverse()  # root -> ... -> current_atom
-
-            # Enforce maximum pattern size while keeping a contiguous path
-            # that still contains the current_atom.
-            if len(atom_path) > max_pattern_size:
-                atom_path = atom_path[-max_pattern_size:]
-
-            # Convert ground atoms to FDR facts expected by Pattern.
-            fact_path = [self._fdr_context.get_fact(atom) for atom in atom_path]
-
-            print(f"Discovered pattern with {len(fact_path)} facts: {[str(atom) for atom in atom_path]}")
-
-            patterns.append(Pattern(fact_path))
-
-            if len(patterns) == max_pattern_count:
-                break
-
-            # Expand backwards in the causal graph from current_atom.
-            for action in self._task.get_task().get_domain().get_actions():
-                # find_causally_linked_atoms itself checks whether any of the
-                # action's effects unify with current_atom; if not, it returns
-                # an empty list.
-                candidates = self.find_causally_linked_atoms(current_atom, action)
-                for candidate in candidates:
-                    if candidate in parent:
-                        continue  # already discovered
-
-                    parent[candidate] = current_atom
-                    queue.append(candidate)
-
-                if len(patterns) == max_pattern_count:
-                    break
-
-        return patterns
 
     def generate_interesting_patterns(self, goal_atom, max_pattern_size, max_pattern_count) -> List[Pattern]:
         """Generate a set of interesting patterns from ``goal_atom``.
