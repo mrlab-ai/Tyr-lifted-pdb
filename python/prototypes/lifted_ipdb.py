@@ -23,6 +23,10 @@ from pytyr.formalism.planning import (
     Variable,
 )
 
+YELLOW = "\033[93m"
+RED = "\033[91m"
+RESET = "\033[0m"
+
 
 class LiftedIPDBPatternGenerator(PatternGenerator):
 
@@ -103,16 +107,88 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
         return mapping
 
+    def object_in_atoms(self, obj: Object, objects) -> bool:
+        for o in objects:
+            #print("Checking if object", str(obj), "matches", str(o))
+            if o == obj:
+                return True
+        return False
+
+    """
+    Returns True if the given object is compatible with the type constraints of the given lifted predicate,
+    """
+    def compatible_type(self, type_mapping, static_atoms, atom, obj_tuple: List[Object]) -> bool:
+
+        # Go through static atoms to find all types associated with the objects in the atom,
+        # and for each type, collect the set of terms in the mapping that are associated with that type.
+        # If they all have at least one term in common, then it is compatible.
+        # ex: (at-robby roomb) have types (object roomb) and (room roomb),
+        # both of which have the common term V1.
+
+        terms_dict = {}
+
+        # For static atom in static atoms, 
+        # if obj in static_atom.get_objects()
+        # then for the index of which obj appears in the static atom,
+        # add that entry (t)
+        for static_atom in static_atoms:
+            for obj in obj_tuple:
+               #print(type(static_atom))
+                #print(atom)
+                #print(obj)
+                if self.object_in_atoms(obj, static_atom.get_objects()):
+                    if(static_atom.get_predicate() not in terms_dict):
+                        terms_dict[static_atom.get_predicate()] = set()
+                    for term in type_mapping.keys():
+                        if static_atom.get_predicate() in type_mapping[term]:
+                            terms_dict[static_atom.get_predicate()].add(term)
+
+        # If the intersection of all sets in terms_dict is non-empty, then the object is compatible with the lifted predicate.
+        all_terms = set.intersection(*terms_dict.values())
+
+        return len(all_terms) > 0
+
     """
     Computes all ground atoms that can be generated from a lifted precondition,
     given the constraints of the current parameter-to-object mapping and the available objects for free parameters.
     """
-    def compute_available_atoms(self, lifted_precondition, param_to_obj, available_objects):
+    def compute_available_atoms(self, conditions, lifted_precondition, param_to_obj, available_objects):
         atoms = set()
 
         lifted_atom = lifted_precondition.get_atom()
         pred = lifted_atom.get_predicate()
         terms = lifted_atom.get_terms()
+
+        static_pre = conditions.get_static_literals()
+
+        type_mappings = {}
+
+        #print("Type mappings for free parameters:", {idx: [t.get_name() for t in types] for idx, types in type_mappings.items()})
+
+        # Use static literals to associate type constraints with the lifted atom's parameters, and filter available_objects accordingly.
+        for static_lit in static_pre:
+            static_atom = static_lit.get_atom()
+            #print("Checking static precondition:", str(static_lit))
+            #print("terms in lifted atom:", [str(term) for term in lifted_atom.get_terms()])
+            for term in static_atom.get_terms():
+                #print("Checking term in static precondition:", str(term))
+                if(term not in type_mappings):
+                    type_mappings[term] = set()
+                    type_mappings[term].add(static_atom.get_predicate())
+                else:
+                    type_mappings[term].add(static_atom.get_predicate())
+
+        #print(f"computed type mappings: { {idx: [pred for pred in preds] for idx, preds in type_mappings.items()} }")
+
+        #print(self._task.get_task().get_static_atoms())
+            
+            
+
+        #print("Computing available atoms for lifted precondition:", str(lifted_precondition))
+        #print(f"static preconditions: {[str(lit) for lit in static_pre]}")
+
+        # Get type constraints from static preconditions and filter available_objects accordingly.
+        #for static_lit in static_pre:
 
         template: list[Object | int] = []
         free_param_indices: list[int] = []
@@ -121,6 +197,8 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
         # This could probably be a helper method.
 
         #TODO; Also check typing with static literals.
+
+
 
         for term in terms:
             tv = term.get_variant()
@@ -140,7 +218,11 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
         if not free_param_indices:
             obj_tuple = [arg for arg in template if isinstance(arg, Object)]
             ga = self.create_ground_atom(pred, obj_tuple)
-            atoms.add(ga)
+            print(f"{YELLOW}No free parameters, created ground atom: {str(ga)}{RESET}")
+            if self.compatible_type(type_mappings, self._task.get_task().get_static_atoms(), ga, obj_tuple):
+                atoms.add(ga)
+            else:
+                print(f"{RED}Incompatible types for ground atom: {str(ga)}{RESET}")
             return atoms
 
         # Generate all k-permutations of available objects for k free parameters,
@@ -156,9 +238,11 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                     obj_tuple.append(arg)
 
             ga = self.create_ground_atom(pred, obj_tuple)
-
-            if ga not in atoms:
+            print(f"{YELLOW}No free parameters, created ground atom: {str(ga)}{RESET}")
+            if self.compatible_type(type_mappings, self._task.get_task().get_static_atoms(), ga, obj_tuple):
                 atoms.add(ga)
+            else:
+                print(f"{RED}Incompatible types for ground atom: {str(ga)}{RESET}")
 
         return atoms
 
@@ -209,7 +293,7 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
             #We only care about fluents, as static atoms won't help by being included in the pattern.
             for pre_lit in lifted_preconditions.get_fluent_literals():
                 lifted_atom = pre_lit.get_atom()
-                computed_atoms = self.compute_available_atoms(pre_lit, param_to_obj, available_objects)
+                computed_atoms = self.compute_available_atoms(lifted_preconditions, pre_lit, param_to_obj, available_objects)
                 for atom in computed_atoms:
                     if atom not in atoms:
                         atoms.append(atom)
