@@ -13,7 +13,9 @@ Author: Dominik Drexler (dominik.drexler@liu.se)
 import argparse
 
 from pathlib import Path
+import sys
 
+from lifted_ipdb import LiftedIPDBPatternGenerator
 from pytyr.common import (
     ExecutionContext
 )
@@ -69,7 +71,10 @@ def main():
     execution_context = ExecutionContext(1)
     successor_generator = SuccessorGenerator(lifted_task, execution_context)
 
-    patterns = GoalPatternGenerator(lifted_task).generate()
+    patterns = LiftedIPDBPatternGenerator(lifted_task).generate()
+
+    sys.exit(0)  # Exit after printing the generated patterns. Remove this line to run the search.
+
     projections = ProjectionGenerator(lifted_task, patterns).generate()
     heuristic = CanonicalHeuristic(projections)
 
