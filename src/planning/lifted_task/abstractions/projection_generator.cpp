@@ -28,6 +28,7 @@
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/formatter.hpp"
+#include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -120,8 +121,10 @@ auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element
         conj_cond.variables.push_back(merge_p2p(variable, context).first.get_index());
     for (const auto literal : element.template get_literals<f::StaticTag>())
         conj_cond.static_literals.push_back(merge_p2p(literal, context).first.get_index());
-    // for (const auto literal : element.template get_literals<f::FluentTag>())
-    //     append_projected_literal(literal, pattern, conj_cond.fluent_literals, context);
+    // We overapproximate by excluding **all** fluent literals.
+    // Explanation: The off-the-shelf successor generator cannot distinguish between facts in and outside the pattern.
+    // Axioms could be used to encode don't care condition but would result in a blowup in ground atoms
+    // because an axiom of the form P(X) :- not Q(X) would be needed for all ground Q(X) that are not in the pattern.
 
     canonicalize(conj_cond);
     return context.destination.get_or_create(conj_cond);
@@ -201,7 +204,9 @@ auto create_projected_formalism_domain(fp::DomainView element,
     for (const auto object : element.get_constants())
         domain.constants.push_back(fp::merge_p2p(object, context).first.get_index());
     for (const auto action : element.get_actions())
+    {
         append_projected_action(action, context, domain.actions, projected_to_original_action, pattern);
+    }
 
     canonicalize(domain);
     return fp::PlanningDomain(context.destination.get_or_create(domain).first, std::move(destination), std::move(factory));
@@ -300,10 +305,57 @@ auto create_abstract_states(const Pattern& pattern, Task<LiftedTag>& task, State
     return std::make_pair(std::move(astates), std::move(goal_vertices));
 }
 
+bool is_truly_applicable(fp::GroundActionView action,
+                         fp::ActionView original_action,
+                         const Pattern& pattern,
+                         StateContext<LiftedTag> state_context,
+                         fp::GrounderContext& grounder_context,
+                         fp::FDRContext& fdr_context)
+{
+    auto& binding = grounder_context.binding;
+    binding.clear();
+    for (const auto object : action.get_row().get_objects())
+        binding.push_back(object.get_index());
+
+    for (const auto literal : original_action.get_condition().template get_literals<f::FluentTag>())
+    {
+        // Fast path: Predicate not in pattern -> Literal is projected away -> Don't need to check applicability.
+        if (!pattern.predicates_set.contains(literal.get_atom().get_predicate()))
+            continue;
+
+        // TODO: instead of interning via ground, we could do a find based on temporary Data<GroundAtom<FluentTag>> in the ground atoms occuring in the pattern.
+        // If the find fails, we know the atom cannot be part of the pattern and thus the literal is projected away.
+        const auto ground_atom = fp::ground(literal.get_atom(), grounder_context).first;
+
+        const auto fact = fdr_context.get_fact_view(ground_atom);
+
+        if (!pattern.facts_set.contains(fact))
+            continue;
+
+        // Only check applicability for fluent literals that are in the pattern.
+        // The applicable of all other types, i.e., static (and possibly derived)
+        // is already guaranteed by the successor generator because they are not projected away.
+        if (literal.get_polarity())
+        {
+            if (!is_applicable<f::PositiveTag>(fact, state_context))
+                return false;
+        }
+        else
+        {
+            if (!is_applicable<f::NegativeTag>(fact, state_context))
+                return false;
+        }
+    }
+
+    return true;
+}
+
 auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astates,
                                  const Pattern& pattern,
+                                 const ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
                                  Task<LiftedTag>& task,
-                                 SuccessorGenerator<LiftedTag>& successor_generator)
+                                 SuccessorGenerator<LiftedTag>& successor_generator,
+                                 fp::FDRContext& fdr_context)
 {
     auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTag>> {};
 
@@ -311,6 +363,10 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astate
     auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
 
     auto& state_repository = *successor_generator.get_state_repository();
+
+    auto builder = fp::Builder();
+    auto binding = IndexList<f::Object> {};
+    auto grounder_context = fp::GrounderContext(builder, *task.get_repository(), binding);
 
     for (const auto& astate : astates)
     {
@@ -322,6 +378,18 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astate
 
         for (const auto& labeled_succ_node : labeled_succ_nodes)
         {
+            const auto label = labeled_succ_node.label;
+            const auto original_action = projected_to_original_action.at(label.get_action());
+
+            // Fix the overapproximation described in create_projected_conjunctive_condition
+            if (!is_truly_applicable(label,
+                                     original_action,
+                                     pattern,
+                                     StateContext<LiftedTag> { task, astate.get_unpacked_state(), float_t { 0 } },
+                                     grounder_context,
+                                     fdr_context))
+                continue;
+
             auto pastate = project_state(labeled_succ_node.node.get_state(), pattern, state_repository);
 
             assert(uint_t(pastate.get_index()) < astates.size());
@@ -363,7 +431,8 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
     auto& state_repository = successor_generator.get_state_repository();
 
     auto [astates, goal_vertices] = create_abstract_states(pattern, *projected_task, *state_repository);
-    auto [transitions, adj_lists] = create_abstract_transitions(astates, pattern, *projected_task, successor_generator);
+    auto [transitions, adj_lists] =
+        create_abstract_transitions(astates, pattern, projected_to_original_action, *projected_task, successor_generator, *fdr_context);
 
     return ProjectionAbstraction(
         std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern, std::move(projected_to_original_action)),
@@ -385,9 +454,7 @@ ProjectionAbstractionList<LiftedTag> ProjectionGenerator<LiftedTag>::generate()
     auto projections = ProjectionAbstractionList<LiftedTag> {};
 
     for (const auto& pattern : m_patterns)
-    {
         projections.push_back(create_projection(pattern, *m_task));
-    }
 
     return projections;
 }
