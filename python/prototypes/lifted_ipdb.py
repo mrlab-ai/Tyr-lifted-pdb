@@ -1,14 +1,4 @@
 """Prototype of a lifted iPDB-style pattern generator.
-
-This module is meant to be used from ``lifted_pdbs.py`` in place of
-``GoalPatternGenerator``::
-
-    from python.prototypes.lifted_ipdb import LiftedIPDBPatternGenerator
-
-    patterns = LiftedIPDBPatternGenerator(lifted_task).generate()
-
-Only the interface is defined here; the actual iPDB algorithm is left as
-future work.
 """
 
 from __future__ import annotations
@@ -39,40 +29,25 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
     def __init__(self, task: Task) -> None:
 
         self._task: Task = task
-        # FDR context lets us map ground atoms to FDR facts, which are
-        # required by the low-level Pattern representation.
         self._fdr_context = task.get_fdr_context()
 
-    # Check if predicate symbol matches atom symbol.
+    # ------------------------------------------------------------------
+    # Helper methods
+    # ------------------------------------------------------------------
+
+    """ 
+    Check if predicate symbol matches atom symbol.
+    """
     def atom_in_predicate(self, atom: FluentGroundAtom, lifted_literal) -> bool:
 
         lifted_atom = lifted_literal.get_atom()
         return atom.get_predicate().get_name() == lifted_atom.get_predicate().get_name()
     
 
-    # Flag which variables from a condition are already bound by var_to_obj.
-    def apply_mapping(
-        self,
-        variables: Iterable[Variable],
-        var_to_obj: Dict[Variable, object],
-    ) -> Dict[Variable, bool]:
-
-        free_variables: Dict[Variable, bool] = {var: True for var in variables}
-
-        for var in var_to_obj:
-            if var in free_variables:
-                free_variables[var] = False
-
-        return free_variables
-
+    """
+    Create or retrieve a ground fluent atom pred(objs)
+    """
     def create_ground_atom(self, pred: FluentPredicate, objs: List[Object]) -> FluentGroundAtom:
-        """Create (or retrieve) a ground fluent atom pred(objs) in the task's repository.
-
-        This does *not* require that the atom already appears in ``get_fluent_atoms()``;
-        it simply ensures that a corresponding ``FluentGroundAtom`` object exists in
-        the shared repository, suitable for use as a node in our causal graph.
-        """
-
         repository = self._task.get_repository()
 
         # First create or retrieve the predicate binding ⟨pred, objs⟩.
@@ -85,17 +60,18 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
         return atom
 
-    def _unify_effect_atom_with_ground(
+    # Try to unify a lifted effect atom with a ground atom.
+    #
+    # Returns a mapping from ParameterIndex (as int) to Object on success,
+    # or ``None`` if the two atoms are incompatible.
+    """
+    Try to unify a lifted effect atom with a ground atom.
+    """
+    def unify_effect_atom_with_ground(
         self,
         lifted_atom: FluentAtom,
         ground_atom: FluentGroundAtom,
     ) -> Dict[int, Object] | None:
-        """Try to unify a lifted effect atom with a ground atom.
-
-        Returns a mapping from ParameterIndex (as int) to Object on success,
-        or ``None`` if the two atoms are incompatible.
-        """
-
         terms = lifted_atom.get_terms()
         objs = ground_atom.get_objects()
 
@@ -126,78 +102,12 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                 return None
 
         return mapping
-    
-    # Given an atom and a lifted action whose effects can be unified with the atom,
-    # find all *ground* atoms from the preconditions that are causally linked to it.
-    def find_causally_linked_atoms(self, atom: FluentGroundAtom, action_schema: Action) -> List[FluentGroundAtom]:
 
-        atoms: List[FluentGroundAtom] = []
-
-        # All mappings from parameter index (int) to object, derived from
-        # unifying effect literals with the target ground atom.
-        param_mappings: List[Dict[int, Object]] = []
-
-        lifted_effects = action_schema.get_effects()
-
-        # Go through all of the lifted effect literals and unify them with the ground atom to find.
-        for cond_eff in lifted_effects:
-            effect = cond_eff.get_effect()
-            for lifted_literal in effect.get_literals():
-                if not self.atom_in_predicate(atom, lifted_literal):
-                    continue
-
-                lifted_atom = lifted_literal.get_atom()  # get lifted atom from literal.
-                mapping = self._unify_effect_atom_with_ground(lifted_atom, atom)
-
-                # Successful unification: store mapping if it's new.
-                if mapping and mapping not in param_mappings:
-                    param_mappings.append(mapping)
-
-        # No unifying effect => no causal link.
-        if not param_mappings:
-            return atoms
-        
-        #print(f"Found {len(param_mappings)} unifying effect mappings for atom {atom} and action {action_schema.get_name()}")
-        #for i, mapping in enumerate(param_mappings):
-            #print(f" - Mapping {i}: {mapping}")
-
-        objects = self._task.get_task().get_objects()
-        lifted_preconditions = action_schema.get_condition()
-        
-
-
-        for param_to_obj in param_mappings:
-            # Objects that are not yet used in this mapping; free parameters
-            # will only be instantiated with these, so we don't reuse objects
-            # already fixed by the effect unification (e.g., if bm->b3 and
-            # bf->b1, then bt can only range over remaining blocks).
-            available_objects = [o for o in objects if o not in param_to_obj.values()]
-
-            #print(f"Available objects for free parameters in preconditions: {available_objects} given mapping {param_to_obj} for atom {atom} and action {action_schema.get_name()}")
-
-            #print(f"Preconditions of action {action_schema.get_name()}:")
-            #for pre_lit in lifted_preconditions.get_fluent_literals():
-            ##
-            #   print(f" - {pre_lit}")
-
-            #print(f"Computed {len(new_atoms)} available atoms from lifted preconditions with mapping {param_to_obj} and available objects {available_objects} for action {action_schema.get_name()}")
-            #for new_atom in new_atoms:
-            #    print(f" - {new_atom}")
-
-            #We only care about fluents, as static atoms won't help by being included in the pattern.
-            for pre_lit in lifted_preconditions.get_fluent_literals():
-                lifted_atom = pre_lit.get_atom()
-                computed_atoms = self.compute_available_atoms(action_schema.get_variables(), pre_lit, param_to_obj, available_objects)
-                for atom in computed_atoms:
-                    if atom not in atoms:
-                        atoms.append(atom)
-
-
-        return atoms
-    
-
-    # Given a lifted precondition, a partial mapping of variables to objects, and the available objects for free parameters, compute all ground atoms that can be generated from this precondition and mapping.
-    def compute_available_atoms(self, _action_variables, lifted_precondition, param_to_obj, available_objects):
+    """
+    Computes all ground atoms that can be generated from a lifted precondition,
+    given the constraints of the current parameter-to-object mapping and the available objects for free parameters.
+    """
+    def compute_available_atoms(self, lifted_precondition, param_to_obj, available_objects):
         atoms = set()
 
         lifted_atom = lifted_precondition.get_atom()
@@ -206,6 +116,11 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
         template: list[Object | int] = []
         free_param_indices: list[int] = []
+
+
+        # This could probably be a helper method.
+
+        #TODO; Also check typing with static literals.
 
         for term in terms:
             tv = term.get_variant()
@@ -228,6 +143,9 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
             atoms.add(ga)
             return atoms
 
+        # Generate all k-permutations of available objects for k free parameters,
+        # and create corresponding ground atoms for each assignment.
+
         for combo in permutations(available_objects, len(free_param_indices)):
             assignment = dict(zip(free_param_indices, combo))
             obj_tuple: list[Object] = []
@@ -238,20 +156,76 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                     obj_tuple.append(arg)
 
             ga = self.create_ground_atom(pred, obj_tuple)
-            #print(f"Generated ground atom {ga} from lifted precondition {lifted_precondition} with mapping {param_to_obj} and available objects {available_objects}")
+
             if ga not in atoms:
                 atoms.add(ga)
 
         return atoms
 
+    # ------------------------------------------------------------------
+    # Causal link computation
+    # ------------------------------------------------------------------
+
+    """
+    Finds all ground atoms that are causally linked to a given atom via a given lifted action schema.
+    """
+    def find_causally_linked_atoms(self, atom: FluentGroundAtom, action_schema: Action) -> List[FluentGroundAtom]:
+
+        atoms: List[FluentGroundAtom] = []
+
+        # All mappings from parameter index (int) to object, derived from
+        # unifying effect literals with the target ground atom.
+        param_mappings: List[Dict[int, Object]] = []
+
+        lifted_effects = action_schema.get_effects()
+
+        # Go through all of the lifted effect literals and unify them with the ground atom to find.
+        for cond_eff in lifted_effects:
+            effect = cond_eff.get_effect()
+            for lifted_literal in effect.get_literals():
+                if not self.atom_in_predicate(atom, lifted_literal):
+                    continue
+
+                lifted_atom = lifted_literal.get_atom()  # get lifted atom from literal.
+                mapping = self.unify_effect_atom_with_ground(lifted_atom, atom)
+
+                # Successful unification: store mapping if it's new.
+                if mapping and mapping not in param_mappings:
+                    param_mappings.append(mapping)
+
+        # No unifying effect => no causal link.
+        if not param_mappings:
+            return atoms
+        
+        objects = self._task.get_task().get_objects()
+        lifted_preconditions = action_schema.get_condition()
+        
+
+
+        for param_to_obj in param_mappings:
+
+            available_objects = [o for o in objects if o not in param_to_obj.values()]
+
+            #We only care about fluents, as static atoms won't help by being included in the pattern.
+            for pre_lit in lifted_preconditions.get_fluent_literals():
+                lifted_atom = pre_lit.get_atom()
+                computed_atoms = self.compute_available_atoms(pre_lit, param_to_obj, available_objects)
+                for atom in computed_atoms:
+                    if atom not in atoms:
+                        atoms.append(atom)
+
+
+        return atoms
+
+    # ------------------------------------------------------------------
+    # BFS tree construction and DOT export
+    # ------------------------------------------------------------------
+
+    """
+    Construct a causal graph rooted at ``goal_atom`` by backward BFS search,
+    exploring all causal links up to a maximum depth.
+    """
     def one_pattern_bfs_tree_naive(self, goal_atom: FluentGroundAtom, max_depth: int):
-        """Naive BFS tree construction without max pattern size limit.
-
-        This version does not enforce a maximum pattern size and will explore
-        the entire backward causal graph reachable from ``goal_atom`` wrt max_depth. It is
-        provided for comparison and testing purposes.
-        """
-
         parent: Dict[FluentGroundAtom, FluentGroundAtom | None] = {goal_atom: None}
         children: Dict[FluentGroundAtom, List[FluentGroundAtom]] = {goal_atom: []}
         depth: Dict[FluentGroundAtom, int] = {goal_atom: 0}
@@ -260,27 +234,17 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
         while queue:
             current_atom = queue.popleft()
-            #print(f"Expanding {current_atom} at depth {depth[current_atom]}")
-            #prevent expanding beyond max depth
+
             if depth[current_atom] >= max_depth:
                 continue
             
             for action in self._task.get_task().get_domain().get_actions():
                 candidates = self.find_causally_linked_atoms(current_atom, action)
-                #print(f"Expanding {current_atom} with action {action.get_name()}, found {len(candidates)} candidates")
                 for candidate in candidates:
-                    #print(f" - Found candidate: {candidate}")
-                    # Skip trivial self-loops in the causal graph. We use
-                    # equality rather than identity here because
-                    # FluentGroundAtom instances may be re-created but still
-                    # represent the same fact.
+
                     if candidate == current_atom:
                         continue
 
-                    # Always record the causal edge, even if ``candidate``
-                    # was discovered earlier. This allows cycles in the
-                    # causal graph while still expanding each node at most
-                    # once.
                     children.setdefault(current_atom, []).append(candidate)
                     children.setdefault(candidate, [])
 
@@ -294,6 +258,9 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
         return parent, children, depth
 
     
+    """
+    Write the causal graph defined by ``parent_map`` and ``children`` to a DOT file for visualization.
+    """
     def write_dot(
         self,
         parent_map: Dict[FluentGroundAtom, FluentGroundAtom | None],
@@ -302,13 +269,6 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
         filename: str,
 
     ) -> None:
-        """Write the discovered causal graph to a DOT file.
-
-        Edges are oriented along *causal* direction: from predecessor
-        (precondition node) to successor (effect/goal node). We use the
-        ``children`` adjacency (which may contain cycles) for edges, and
-        ``parent_map`` only to highlight the root goal node(s).
-        """
 
         with open(filename, "w") as f:
             f.write("digraph BFS {\n")
@@ -327,47 +287,86 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
             f.write("}\n")
 
-    def generate_interesting_patterns(self, goal_atom, max_pattern_size, max_pattern_count) -> List[Pattern]:
-        """Generate a set of interesting patterns from ``goal_atom``.
+    """
+    Generate all goal patterns arbitrarily of size max_pattern_size from the causal graph.
+    """
+    def simple_generation(self, goal_atom, causal_graph, max_pattern_size, max_pattern_count) -> List[Pattern]:
 
-        This now performs a single BFS pass and may return multiple patterns,
-        all rooted at the same goal atom and derived from the same BFS tree.
-        """
+        patterns = []
 
-        return self._one_pattern_bfs(goal_atom, max_pattern_size, max_pattern_count)
+        pattern_count = 0
+        current_pattern = [goal_atom]
+        atom_counter = 0
+        while pattern_count < max_pattern_count:
+            if(len(current_pattern) == max_pattern_size):
 
-    def generate(self) -> List[Pattern]:
-        """Generate a collection of patterns for ``self._task``.
-        This method is intentionally left unimplemented for now and should be
-        filled with a lifted iPDB pattern generation algorithm.
-        """
+                print("Generating pattern with atoms:", [str(atom) for atom in current_pattern])
+
+
+                facts = [self._fdr_context.get_fact(atom) for atom in current_pattern]
+                pattern = Pattern(facts)
+                patterns.append(pattern)
+                pattern_count += 1
+                # Generate next combination of atoms for the pattern (this is just a placeholder, actual logic needed)
+                current_pattern = [goal_atom]
+            else:
+                # get any atom from the causal graph.
+                if atom_counter >= len(causal_graph):
+                    break  # No more atoms to add, exit loop
+                next_atom = list(causal_graph.keys())[atom_counter]
+                if next_atom not in current_pattern:
+                    current_pattern.append(next_atom)
+                atom_counter += 1
+
+        return patterns
+
+    """
+    Generate a set of interesting patterns from ``goal_atom``,
+    using your choice of strategy.
+    """
+    def generate_interesting_patterns(self, goal_atom, causal_graph, max_pattern_size, max_pattern_count) -> List[Pattern]:
+        return self.simple_generation(goal_atom, causal_graph, max_pattern_size, max_pattern_count)
+
+    # Generate a collection of patterns for ``self._task``. This is intended
+    # to be filled with a full lifted iPDB pattern generation algorithm; the
+    # current implementation is a simple prototype.
+    """
+    Compute the causal graph for each goal atom in the task,
+    and generate a set of interesting patterns from each goal atom's causal graph.
+    """
+    def generate(self, max_pattern_size=2, max_pattern_count=10) -> List[Pattern]:
         interesting_patterns = []
+        causal_graphs = []
+
+        print("Generating patterns with max size", max_pattern_size, "and max count", max_pattern_count)
 
         goals = self._task.get_task().get_goal().get_fluent_facts()
-        #print("Goals in the task:")
 
         # If available, build the causal BFS tree for the first goal atom and
         # dump it as a DOT file for external visualization.
         if goals:
-            first_goal_atom = goals[0].get_atom()
-            parent, children, depth = self.one_pattern_bfs_tree_naive(
-                first_goal_atom,
-                max_depth=1,
-            )
-            self.write_dot(parent, children, first_goal_atom, "test.dot")
+            for inx, goal in enumerate(goals):
+                goal_atom = goal.get_atom()
+                parent, children, depth = self.one_pattern_bfs_tree_naive(
+                    goal_atom,
+                    max_depth=max_pattern_size-1,  # Only explore up to max_pattern_size levels in the causal graph, since deeper levels won't be relevant for patterns of that size.
+                )
+                causal_graphs.append((parent, children, goal_atom))
+                self.write_dot(parent, children, goal_atom, f"goal_{inx}.dot")
 
-        sys.exit(0)  # Exit after writing the DOT file. Remove this line to run the rest of the pattern generation.
 
-        for goal in goals:
-            print(f" - {goal.get_atom()}")
+        for inx, goal in enumerate(goals):
+            if len(interesting_patterns) >= max_pattern_count:
+                break
+            #print(f" - {goal.get_atom()}")
             interesting_patterns.extend(self.generate_interesting_patterns(
                 goal.get_atom(),
-                max_pattern_size=1,
-                max_pattern_count=100,  # Adjust as needed, perhaps pass as command-line arguments
+                causal_graphs[inx][1],  # children_one_pattern_bfs(goal_atom, max_pattern_size, max_pattern_count) dict for this goal atom's BFS tree
+                max_pattern_size,
+                max_pattern_count-len(interesting_patterns),  # Adjust as needed, perhaps pass as command-line arguments
             ))
 
-        for i, p in enumerate(interesting_patterns[:10]):
-            print(f"Pattern {i}: {p}")
+        print(f"Generated {len(interesting_patterns)} interesting patterns.")
 
         return interesting_patterns
 
