@@ -83,8 +83,6 @@ int main(int argc, char** argv)
 
         auto lifted_task = planning::LiftedTask::create(parser.parse_task(problem_filepath));
 
-        std::cout << lifted_task->get_formalism_task().get_variable_domains_view() << std::endl;
-
         if (verbosity > 0)
             std::cout << domain << std::endl;
 
