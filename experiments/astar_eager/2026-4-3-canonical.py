@@ -21,6 +21,7 @@ sys.path.append(str(DIR.parent.parent))
 from experiments.parser_datalog import DatalogParser
 from experiments.parser_search import SearchParser
 from parser_astar_eager import AStarEagerParser
+from experiments.lifted_pdb_parser import LiftedPDBParser
 
 from experiments.suite import SUITE_CNOT_SYNTHESIS, SUITE_IPC_OPTIMAL_STRIPS, SUITE_IPC_OPTIMAL_ADL, SUITE_IPC_SATISFICING_STRIPS, SUITE_IPC_LEARNING, SUITE_AUTOSCALE_OPTIMAL_STRIPS, SUITE_AUTOSCALE_AGILE_STRIPS, SUITE_HTG, SUITE_IPC2023_NUMERIC, SUITE_PUSHWORLD, SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC, SUITE_MINEPDDL, SUITE_IPC_SATISFICING_ADL
 from experiments.suite_test import SUITE_CNOT_SYNTHESIS_TEST, SUITE_IPC_OPTIMAL_STRIPS_TEST, SUITE_IPC_OPTIMAL_ADL_TEST, SUITE_IPC_SATISFICING_STRIPS_TEST, SUITE_IPC_LEARNING_TEST, SUITE_AUTOSCALE_OPTIMAL_STRIPS_TEST, SUITE_AUTOSCALE_AGILE_STRIPS_TEST, SUITE_HTG_TEST, SUITE_IPC2023_NUMERIC_TEST, SUITE_PUSHWORLD_TEST, SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC_TEST, SUITE_MINEPDDL_TEST, SUITE_IPC_SATISFICING_ADL_TEST
@@ -46,10 +47,12 @@ REMOTE = re.match(r"tetralith\d+.nsc.liu.se|n\d+", NODE)
 NUM_THREADS = 1
 RANDOM_SEED = 0
 
+MEMORY_LIMIT = 2850
+
 if REMOTE:
     ENV = TetralithEnvironment(
         setup=TetralithEnvironment.DEFAULT_SETUP,
-        memory_per_cpu="8000M",
+        memory_per_cpu=f"{MEMORY_LIMIT}M",
         cpus_per_task=1,
         extra_options="#SBATCH --account=naiss2025-5-382")
     
@@ -69,7 +72,7 @@ if REMOTE:
         #("autoscale-benchmarks-main/21.11-agile-strips", SUITE_AUTOSCALE_AGILE_STRIPS),
         ("htg-domains/flat", SUITE_HTG),
         #("pushworld", SUITE_PUSHWORLD),
-        #("beluga2025", SUITE_BELUGA2025_SCALABILITY_DETERMINISTIC),
+        #("beluga2025", SUITE_BELUGA2025_SCALABITY_DETERMINISTIC),
         #("mine-pddl", SUITE_MINEPDDL),
     ]
     WALL_TIME_LIMIT = 30 * 60
@@ -96,14 +99,13 @@ ATTRIBUTES = [
 ]
 ATTRIBUTES += SearchParser.get_attributes()
 ATTRIBUTES += AStarEagerParser.get_attributes()
-
-MEMORY_LIMIT = 8000
+ATTRIBUTES += LiftedPDBParser.get_attributes()
 
 # Create a new experiment.
 exp = Experiment(environment=ENV)
 exp.add_parser(SearchParser())
 exp.add_parser(AStarEagerParser())
-# exp.add_parser(DatalogParser())
+exp.add_parser(LiftedPDBParser())
 
 PLANNER_DIR = REPO / "build" / "exe" / "astar_eager"
 
@@ -116,7 +118,7 @@ base_cmd = [
     "{domain}",
     "{problem}",
     "plan.out",
-    "blind",
+    "canonical",
     str(NUM_THREADS),
     str(RANDOM_SEED),
 ]
@@ -129,7 +131,7 @@ for prefix, SUITE in SUITES:
         run.add_resource("problem", task.problem_file, symlink=True)
 
         run.add_command(
-            f"tyr-astar-blind-lifted-{NUM_THREADS}",
+            f"tyr-astar-canonical-lifted-{NUM_THREADS}",
             base_cmd + ["-S"],
             time_limit=None,
             wall_time_limit=WALL_TIME_LIMIT,
@@ -139,7 +141,7 @@ for prefix, SUITE in SUITES:
         # 'domain', 'problem', 'algorithm', 'coverage'.
         run.set_property("domain", task.domain)
         run.set_property("problem", task.problem)
-        run.set_property("algorithm", f"tyr-astar-blind-lifted-{NUM_THREADS}")
+        run.set_property("algorithm", f"tyr-astar-canonical-lifted-{NUM_THREADS}")
         # BaseReport needs the following properties:
         # 'time_limit', 'memory_limit'.
         run.set_property("wall_time_limit", WALL_TIME_LIMIT)
@@ -147,33 +149,7 @@ for prefix, SUITE in SUITES:
         # Every run has to have a unique id in the form of a list.
         # The algorithm name is only really needed when there are
         # multiple algorithms.
-        run.set_property("id", [f"tyr-astar-blind-lifted-{NUM_THREADS}", task.domain, task.problem])
-
-        ################ Grounded ################
-        run = exp.add_run()
-        run.add_resource("domain", task.domain_file, symlink=True)
-        run.add_resource("problem", task.problem_file, symlink=True)
-
-        run.add_command(
-            f"tyr-astar-blind-grounded-{NUM_THREADS}",
-            base_cmd + ["-S", "-G"],
-            time_limit=None,
-            wall_time_limit=WALL_TIME_LIMIT,
-            memory_limit=MEMORY_LIMIT,
-        )
-        # AbsoluteReport needs the following properties:
-        # 'domain', 'problem', 'algorithm', 'coverage'.
-        run.set_property("domain", task.domain)
-        run.set_property("problem", task.problem)
-        run.set_property("algorithm", f"tyr-astar-blind-grounded-{NUM_THREADS}")
-        # BaseReport needs the following properties:
-        # 'time_limit', 'memory_limit'.
-        run.set_property("wall_time_limit", WALL_TIME_LIMIT)
-        run.set_property("memory_limit", MEMORY_LIMIT)
-        # Every run has to have a unique id in the form of a list.
-        # The algorithm name is only really needed when there are
-        # multiple algorithms.
-        run.set_property("id", [f"tyr-astar-blind-grounded-{NUM_THREADS}", task.domain, task.problem])
+        run.set_property("id", [f"tyr-astar-canonical-lifted-{NUM_THREADS}", task.domain, task.problem])
 
 # Add step that writes experiment files to disk.
 exp.add_step("build", exp.build)
