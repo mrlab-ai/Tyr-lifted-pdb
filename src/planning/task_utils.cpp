@@ -17,7 +17,7 @@
 
 #include "tyr/planning/task_utils.hpp"
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/config.hpp"
 #include "tyr/datalog/assignment_sets.hpp"
 #include "tyr/datalog/fact_sets.hpp"

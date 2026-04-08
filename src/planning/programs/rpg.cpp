@@ -18,6 +18,7 @@
 #include "tyr/planning/programs/rpg.hpp"
 
 #include "common.hpp"
+#include "tyr/analysis/domains.hpp"
 #include "tyr/common/unordered_set.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"

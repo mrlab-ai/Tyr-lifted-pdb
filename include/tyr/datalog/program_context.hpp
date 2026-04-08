@@ -18,7 +18,7 @@
 #ifndef TYR_DATALOG_PROGRAM_CONTEXT_HPP_
 #define TYR_DATALOG_PROGRAM_CONTEXT_HPP_
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/analysis/listeners.hpp"
 #include "tyr/analysis/stratification.hpp"
 #include "tyr/formalism/datalog/program_index.hpp"

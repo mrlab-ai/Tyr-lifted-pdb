@@ -18,7 +18,7 @@
 #ifndef TYR_DATALOG_CONSISTENCY_GRAPH_HPP_
 #define TYR_DATALOG_CONSISTENCY_GRAPH_HPP_
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/datalog/assignment_sets.hpp"
 #include "tyr/datalog/declarations.hpp"

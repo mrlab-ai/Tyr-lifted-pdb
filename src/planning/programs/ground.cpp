@@ -18,6 +18,7 @@
 #include "tyr/planning/programs/ground.hpp"
 
 #include "common.hpp"
+#include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"

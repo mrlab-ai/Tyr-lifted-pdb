@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/itertools.hpp"
 #include "tyr/common/macros.hpp"
 #include "tyr/common/tuple.hpp"

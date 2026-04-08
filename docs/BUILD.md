@@ -3,7 +3,7 @@
 Before building the project, ensure you have the following installed:
 
 1. **CMake** (version 3.21 or higher)
-2. **Python 3** and **Python 3 Development Headers**
+2. **Python 3.11** and **Python 3 Development Headers**
 3. **C++20 Compiler**
 
 If no C++20 compliant compiler is easily available, we provide install instructions for GCC 14.2.0 (Linux) from source at the bottom of the page.

@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_GROUNDER_HPP_
 #define TYR_FORMALISM_PLANNING_GROUNDER_HPP_
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/itertools.hpp"
 #include "tyr/common/tuple.hpp"
 #include "tyr/formalism/planning/builder.hpp"
@@ -84,7 +84,7 @@ std::pair<ActionBindingView, bool> ground(ActionView action, GrounderContext& co
 
 std::pair<GroundActionView, bool> ground(ActionView element,
                                          GrounderContext& context,
-                                         const analysis::DomainListListList& cond_effect_domains,
+                                         const analysis::ActionDomain& action_domains,
                                          itertools::cartesian_set::Workspace<Index<formalism::Object>>& iter_workspace,
                                          FDRContext& fdr);
 

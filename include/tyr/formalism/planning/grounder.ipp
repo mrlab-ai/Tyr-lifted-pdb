@@ -15,7 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/itertools.hpp"
 #include "tyr/common/macros.hpp"
 #include "tyr/common/tuple.hpp"
@@ -342,7 +342,7 @@ TYR_INLINE_IMPL std::pair<ActionBindingView, bool> ground(ActionView action, Gro
 
 TYR_INLINE_IMPL std::pair<GroundActionView, bool> ground(ActionView element,
                                                          GrounderContext& context,
-                                                         const analysis::DomainListListList& cond_effect_domains,
+                                                         const analysis::ActionDomain& action_domains,
                                                          itertools::cartesian_set::Workspace<Index<formalism::Object>>& iter_workspace,
                                                          FDRContext& fdr)
 {
@@ -360,12 +360,11 @@ TYR_INLINE_IMPL std::pair<GroundActionView, bool> ground(ActionView element,
     for (uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
         const auto cond_effect = element.get_effects()[cond_effect_index];
-        const auto& parameter_domains = cond_effect_domains[cond_effect_index];
+        const auto& parameter_domains = action_domains.effect_domains[cond_effect_index].variable_domains;
 
-        // Ensure that we stripped off the action precondition parameter domains.
-        assert(std::distance(parameter_domains.begin(), parameter_domains.end()) == static_cast<int>(cond_effect.get_arity()));
+        assert(std::distance(parameter_domains.begin(), parameter_domains.end()) == static_cast<int>(element.get_arity() + cond_effect.get_arity()));
 
-        itertools::cartesian_set::for_each_element(parameter_domains.begin(),
+        itertools::cartesian_set::for_each_element(parameter_domains.begin() + element.get_arity(),
                                                    parameter_domains.end(),
                                                    iter_workspace,
                                                    [&](auto&& binding_cond)

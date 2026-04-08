@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_TASK_UTILS_HPP_
 #define TYR_PLANNING_TASK_UTILS_HPP_
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/config.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/repository.hpp"

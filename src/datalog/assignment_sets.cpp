@@ -17,7 +17,7 @@
 
 #include "tyr/datalog/assignment_sets.hpp"
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/closed_interval.hpp"
 #include "tyr/common/config.hpp"
 #include "tyr/datalog/assignment.hpp"

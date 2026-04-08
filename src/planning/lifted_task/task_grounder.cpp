@@ -17,7 +17,7 @@
 
 #include "tyr/planning/lifted_task/task_grounder.hpp"
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
@@ -307,7 +307,7 @@ std::optional<fp::GroundConditionalEffectView> ground_pruned(fp::ConditionalEffe
 std::optional<fp::GroundActionView> ground_pruned(fp::ActionView element,
                                                   const UnorderedSet<fp::GroundAtomView<f::FluentTag>>& fluent_atoms,
                                                   const UnorderedSet<fp::GroundAtomView<f::DerivedTag>>& derived_atoms,
-                                                  const analysis::DomainListListList& cond_effect_domains,
+                                                  const analysis::ActionDomain& action_domains,
                                                   itertools::cartesian_set::Workspace<Index<f::Object>>& iter_workspace,
                                                   fp::GrounderContext& context,
                                                   fp::FDRContext& fdr_context)
@@ -331,12 +331,11 @@ std::optional<fp::GroundActionView> ground_pruned(fp::ActionView element,
     for (uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
         const auto cond_effect = element.get_effects()[cond_effect_index];
-        const auto& parameter_domains = cond_effect_domains[cond_effect_index];
+        const auto& parameter_domains = action_domains.effect_domains[cond_effect_index].variable_domains;
 
-        // Ensure that we stripped off the action precondition parameter domains.
-        assert(std::distance(parameter_domains.begin(), parameter_domains.end()) == static_cast<int>(cond_effect.get_arity()));
+        assert(std::distance(parameter_domains.begin(), parameter_domains.end()) == static_cast<int>(element.get_arity() + cond_effect.get_arity()));
 
-        itertools::cartesian_set::for_each_element(parameter_domains.begin(),
+        itertools::cartesian_set::for_each_element(parameter_domains.begin() + element.get_arity(),
                                                    parameter_domains.end(),
                                                    iter_workspace,
                                                    [&](auto&& binding_cond)
@@ -573,13 +572,14 @@ GroundTaskInstantiationResult instantiate_ground_task(LiftedTask& lifted_task,  
 
                 auto grounder_context = fp::GrounderContext { workspace.planning_builder, *repository, workspace.d2p.binding };
 
-                const auto ground_action_or_nullopt = ground_pruned(action,
-                                                                    fluent_atoms_set,
-                                                                    derived_atoms_set,
-                                                                    lifted_task.get_parameter_domains_per_cond_effect_per_action()[uint_t(action.get_index())],
-                                                                    iter_workspace,
-                                                                    grounder_context,
-                                                                    *fdr_context);
+                const auto ground_action_or_nullopt =
+                    ground_pruned(action,
+                                  fluent_atoms_set,
+                                  derived_atoms_set,
+                                  lifted_task.get_formalism_task().get_variable_domains().action_domains[uint_t(action.get_index())],
+                                  iter_workspace,
+                                  grounder_context,
+                                  *fdr_context);
 
                 if (!ground_action_or_nullopt.has_value())
                     continue;

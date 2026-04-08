@@ -17,7 +17,7 @@
 
 #include "tyr/datalog/consistency_graph.hpp"
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/chrono.hpp"
 #include "tyr/common/closed_interval.hpp"
 #include "tyr/datalog/assignment_sets.hpp"

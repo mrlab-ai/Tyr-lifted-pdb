@@ -54,6 +54,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     formalism/planning/views.cpp
     formalism/planning/loki_to_tyr.cpp
     formalism/planning/parser.cpp
+    formalism/planning/planning_task.cpp
 
     datalog/policies/annotation.cpp
     datalog/policies/termination.cpp

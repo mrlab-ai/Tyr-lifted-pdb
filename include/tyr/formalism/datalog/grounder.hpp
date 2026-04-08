@@ -18,7 +18,7 @@
 #ifndef TYR_FORMALISM_DATALOG_GROUNDER_HPP_
 #define TYR_FORMALISM_DATALOG_GROUNDER_HPP_
 
-#include "tyr/analysis/domains.hpp"
+#include "tyr/analysis/declarations.hpp"
 #include "tyr/common/itertools.hpp"
 #include "tyr/common/tuple.hpp"
 #include "tyr/formalism/datalog/builder.hpp"

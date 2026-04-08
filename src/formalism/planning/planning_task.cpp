@@ -15,10 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
-#define TYR_FORMALISM_PLANNING_PLANNING_TASK_HPP_
+#include "tyr/formalism/planning/planning_task.hpp"
 
-#include "tyr/analysis/declarations.hpp"
+#include "tyr/analysis/domains.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/fdr_context.hpp"
 #include "tyr/formalism/planning/planning_domain.hpp"
@@ -27,26 +26,14 @@
 
 namespace tyr::formalism::planning
 {
-
-class PlanningTask
+PlanningTask::PlanningTask(TaskView task, FDRContextPtr fdr_context, std::shared_ptr<Repository> repository, PlanningDomain domain) :
+    m_repository(std::move(repository)),
+    m_task(task),
+    m_fdr_context(std::move(fdr_context)),
+    m_domain(std::move(domain)),
+    m_variable_domains(analysis::compute_variable_domains(m_task))
 {
-public:
-    PlanningTask(TaskView task, FDRContextPtr fdr_context, std::shared_ptr<Repository> repository, PlanningDomain domain);
-
-    const auto& get_repository() const noexcept { return m_repository; }
-    auto get_task() const noexcept { return m_task; }
-    const auto& get_fdr_context() const noexcept { return m_fdr_context; }
-    const auto& get_domain() const noexcept { return m_domain; }
-    const auto& get_variable_domains() const noexcept { return m_variable_domains; }
-
-private:
-    std::shared_ptr<Repository> m_repository;
-    TaskView m_task;
-    FDRContextPtr m_fdr_context;
-    PlanningDomain m_domain;
-    analysis::TaskVariableDomains m_variable_domains;
-};
-
+    if (&m_task.get_context() != m_repository.get())
+        throw std::invalid_argument("Task context does not match the given Repository.");
 }
-
-#endif
+}
