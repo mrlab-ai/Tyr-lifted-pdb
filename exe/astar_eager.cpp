@@ -116,9 +116,32 @@ int main(int argc, char** argv)
                 heuristic = planning::FFRPGHeuristic<planning::LiftedTag>::create(lifted_task, execution_context);
             else if (heuristic_type == "canonical")
             {
-                auto patterns = planning::GoalPatternGenerator<planning::LiftedTag>(lifted_task).generate();
-                auto projections = planning::ProjectionGenerator<planning::LiftedTag>(lifted_task, patterns).generate();
-                heuristic = planning::CanonicalHeuristic<planning::LiftedTag>::create(projections);
+                auto time_pattern_generator = std::chrono::nanoseconds { 0 };
+                auto time_projection_generator = std::chrono::nanoseconds { 0 };
+                auto time_canonical_heuristic = std::chrono::nanoseconds { 0 };
+
+                auto patterns = std::vector<planning::Pattern> {};
+                {
+                    auto stop_watch = StopwatchScope(time_pattern_generator);
+
+                    patterns = planning::GoalPatternGenerator<planning::LiftedTag>(lifted_task).generate();
+                }
+                std::cout << "[Total] Pattern generator time: " << to_ms(time_pattern_generator) << " ms" << std::endl;
+
+                auto projections = std::vector<planning::ProjectionAbstraction<planning::LiftedTag>> {};
+                {
+                    auto stop_watch = StopwatchScope(time_projection_generator);
+
+                    projections = planning::ProjectionGenerator<planning::LiftedTag>(lifted_task, patterns).generate();
+                }
+                std::cout << "[Total] Projection generator time: " << to_ms(time_projection_generator) << " ms" << std::endl;
+
+                {
+                    auto stop_watch = StopwatchScope(time_canonical_heuristic);
+
+                    heuristic = planning::CanonicalHeuristic<planning::LiftedTag>::create(projections);
+                }
+                std::cout << "[Total] Canonical heuristic time: " << to_ms(time_canonical_heuristic) << " ms" << std::endl;
             }
             else
                 throw std::invalid_argument("The heuristic is not implemented.");
