@@ -220,9 +220,11 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
             obj_tuple = [arg for arg in template if isinstance(arg, Object)]
             #print("tuplefree:", obj_tuple)
             #print(f"pred, obj_tuple: {str(pred)}, {str(obj_tuple)}")
-            ga = self.create_ground_atom(pred, obj_tuple)
-            print(f"{YELLOW}freeNo free parameters, created ground atom: {str(ga)}{RESET}")
-            if self.compatible_type(type_mappings, self._task.get_task().get_static_atoms(), ga, obj_tuple):
+            #ga = self.create_ground_atom(pred, obj_tuple)
+            
+            if self.compatible(pred, terms, obj_tuple, type_mappings, self._task.get_task().get_static_atoms()):
+                ga = self.create_ground_atom(pred, obj_tuple)
+                #print(f"{YELLOW}mainCreated ground atom: {str(ga)}{RESET}")
                 atoms.add(ga)
             #else:
                 #print(f"{RED}freeIncompatible types for ground atom: {str(ga)}{RESET}")
@@ -246,7 +248,8 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
             if self.compatible(pred, terms, obj_tuple, type_mappings, self._task.get_task().get_static_atoms()):
                 
                 ga = self.create_ground_atom(pred, obj_tuple)
-                print(f"{YELLOW}mainCreated ground atom: {str(ga)}{RESET}")
+                #print(f"{YELLOW}mainCreated ground atom: {str(ga)}{RESET}")
+                atoms.add(ga)
             #else:
                 #print(f"{RED}mainIncompatible types for ground atom: {str(pred)}{str(obj_tuple)}{RESET}")
 
@@ -463,6 +466,53 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                 atom_counter += 1
 
         return patterns
+    
+    """
+    G
+    """
+
+    
+    """
+    Generate all systematic patterns of size 2, given a goal atom.
+    """
+    def sys2_generation(self, goal_atom, max_pattern_count) -> List[Pattern]:
+
+        patterns = []
+
+        # For all fluent predicates in the task, for all instantiations (except for those that create that goal atom), store a pattern of size 2 with the goal atom and that fluent atom.
+        for predicate in self._task.get_task().get_domain().get_fluent_predicates():
+            for obj_tuple in product(self._task.get_task().get_objects(), repeat=predicate.get_arity()):
+                candidate_atom = self.create_ground_atom(predicate, list(obj_tuple))
+                if candidate_atom != goal_atom:
+                    facts = [self._fdr_context.get_fact(goal_atom), self._fdr_context.get_fact(candidate_atom)]
+                    pattern = Pattern(facts)
+                    patterns.append(pattern)
+                    #print("Generating sys2 pattern with atoms:", [str(atom) for atom in [goal_atom, candidate_atom]])
+                    if len(patterns) >= max_pattern_count:
+                        break
+            if len(patterns) >= max_pattern_count:
+                break
+
+        return patterns
+    
+
+    # Generate all systematic patterns of size 1, which is just the pattern containing the goal atom itself.
+    def sys1_generation(self, goal_atom) -> List[Pattern]:
+        patterns = []
+        facts = [self._fdr_context.get_fact(goal_atom)]
+        pattern = Pattern(facts)
+        patterns.append(pattern)
+        #print("Generating sys1 pattern with atoms:", [str(goal_atom)])
+        return patterns
+
+    def generate_systematic_patterns(self, goal_atom, max_pattern_size, max_pattern_count) -> List[Pattern]:
+        if max_pattern_size == 1:
+            return self.sys1_generation(goal_atom)
+        elif max_pattern_size == 2:
+            return self.sys2_generation(goal_atom, max_pattern_count)
+        else:
+            # Placeholder for larger systematic patterns.
+            return self.simple_generation(goal_atom, {}, max_pattern_size, max_pattern_count)
 
     """
     Generate a set of interesting patterns from ``goal_atom``,
@@ -471,21 +521,28 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
     def generate_interesting_patterns(self, goal_atom, causal_graph, max_pattern_size, max_pattern_count) -> List[Pattern]:
         return self.simple_generation(goal_atom, causal_graph, max_pattern_size, max_pattern_count)
 
-    # Generate a collection of patterns for ``self._task``. This is intended
-    # to be filled with a full lifted iPDB pattern generation algorithm; the
-    # current implementation is a simple prototype.
+
     """
     Compute the causal graph for each goal atom in the task,
     and generate a set of interesting patterns from each goal atom's causal graph.
     """
     def generate(self, max_pattern_size=2, max_pattern_count=10) -> List[Pattern]:
-        interesting_patterns = []
+        pattern_collection = []
         causal_graphs = []
 
         print("Generating patterns with max size", max_pattern_size, "and max count", max_pattern_count)
 
+        
+
         goals = self._task.get_task().get_goal().get_fluent_facts()
 
+        patterns_count_per_goal = max_pattern_count // len(goals) if goals else 0
+        
+        for inx, goal in enumerate(goals):
+            goal_atom = goal.get_atom()
+            pattern_collection.extend(self.generate_systematic_patterns(goal_atom, max_pattern_size, patterns_count_per_goal))
+
+        """
         # If available, build the causal BFS tree for the first goal atom and
         # dump it as a DOT file for external visualization.
         if goals:
@@ -500,17 +557,16 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
 
         for inx, goal in enumerate(goals):
-            if len(interesting_patterns) >= max_pattern_count:
-                break
             #print(f" - {goal.get_atom()}")
-            interesting_patterns.extend(self.generate_interesting_patterns(
+            pattern_collection.extend(self.generate_interesting_patterns(
                 goal.get_atom(),
                 causal_graphs[inx][1],  # children_one_pattern_bfs(goal_atom, max_pattern_size, max_pattern_count) dict for this goal atom's BFS tree
                 max_pattern_size,
-                max_pattern_count-len(interesting_patterns),  # Adjust as needed, perhaps pass as command-line arguments
+                patterns_count_per_goal,  # Adjust as needed, perhaps pass as command-line arguments
             ))
+        """
+        print(f"Generated {len(pattern_collection)} patterns.")
 
-        print(f"Generated {len(interesting_patterns)} interesting patterns.")
 
-        return interesting_patterns
+        return pattern_collection
 
