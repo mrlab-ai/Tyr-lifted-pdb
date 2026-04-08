@@ -65,10 +65,12 @@ inline std::ostream& print(std::ostream& os, const analysis::Scoped<Element, Pay
     os << "ElementDomain(\n";
     {
         IndentScope scope(os);
-        os << print_indent << "element= " << el.element << "\n";
-        os << print_indent << "payload= " << el.payload << "\n";
+
+        os << print_indent << "element = " << el.element << "\n";
+
+        os << print_indent << "payload = " << el.payload << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 
@@ -77,10 +79,12 @@ inline std::ostream& print(std::ostream& os, const analysis::ConditionalEffectDo
     os << "ConditionalEffectDomain(\n";
     {
         IndentScope scope(os);
-        os << print_indent << "condition_domain= " << el.condition_domain << "\n";
-        os << print_indent << "effect_domain= " << el.effect_domain << "\n";
+
+        os << print_indent << "condition domain = " << el.condition_domain << "\n";
+
+        os << print_indent << "effect domain = " << el.effect_domain << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 
@@ -89,10 +93,11 @@ inline std::ostream& print(std::ostream& os, const analysis::ActionDomain& el)
     os << "ActionDomain(\n";
     {
         IndentScope scope(os);
-        os << print_indent << "precondition_domain= " << el.precondition_domain << "\n";
-        os << print_indent << "effect_domains= " << el.effect_domains << "\n";
+        os << print_indent << "precondition domain = " << el.precondition_domain << "\n";
+
+        os << print_indent << "effect domains = " << el.effect_domains << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 
@@ -102,17 +107,18 @@ inline std::ostream& print(std::ostream& os, const analysis::ProgramVariableDoma
     {
         IndentScope scope(os);
 
-        os << print_indent << "static predicate domains= " << el.static_predicate_domains << "\n";
+        os << print_indent << "static predicate domains = " << el.static_predicate_domains << "\n";
 
-        os << print_indent << "fluent predicate domains= " << el.fluent_predicate_domains << "\n";
+        os << print_indent << "fluent predicate domains = " << el.fluent_predicate_domains << "\n";
 
-        os << print_indent << "static function domains= " << el.static_function_domains << "\n";
+        os << print_indent << "static function domains = " << el.static_function_domains << "\n";
 
-        os << print_indent << "fluent function domains= " << el.fluent_function_domains << "\n";
+        os << print_indent << "fluent function domains = " << el.fluent_function_domains << "\n";
 
-        os << print_indent << "rule domains= " << el.rule_domains << "\n";
+        for (const auto& [rule, domain] : el.rule_domains)
+            os << print_indent << "rule " << rule << " domain = " << domain << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 
@@ -122,21 +128,23 @@ inline std::ostream& print(std::ostream& os, const analysis::TaskVariableDomains
     {
         IndentScope scope(os);
 
-        os << print_indent << "static predicate domains= " << el.static_predicate_domains << "\n";
+        os << print_indent << "static predicate domains = " << el.static_predicate_domains << "\n";
 
-        os << print_indent << "fluent predicate domains= " << el.fluent_predicate_domains << "\n";
+        os << print_indent << "fluent predicate domains = " << el.fluent_predicate_domains << "\n";
 
-        os << print_indent << "derived predicate domains= " << el.derived_predicate_domains << "\n";
+        os << print_indent << "derived predicate domains = " << el.derived_predicate_domains << "\n";
 
-        os << print_indent << "static function domains= " << el.static_function_domains << "\n";
+        os << print_indent << "static function domains = " << el.static_function_domains << "\n";
 
-        os << print_indent << "fluent function domains= " << el.fluent_function_domains << "\n";
+        os << print_indent << "fluent function domains = " << el.fluent_function_domains << "\n";
 
-        os << print_indent << "action domains= " << el.action_domains << "\n";
+        for (const auto& [action, domain] : el.action_domains)
+            os << print_indent << "action " << action << " domain = " << domain << "\n";
 
-        os << print_indent << "axiom domains= " << el.axiom_domains << "\n";
+        for (const auto& [axiom, domain] : el.axiom_domains)
+            os << print_indent << "axiom " << axiom << " domain = " << domain << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 
@@ -153,10 +161,42 @@ inline std::ostream& print(std::ostream& os, const analysis::ScopedView<Element,
     os << "ElementDomain(\n";
     {
         IndentScope scope(os);
-        os << print_indent << "element= " << el.element << "\n";
-        os << print_indent << "payload= " << el.payload << "\n";
+
+        os << print_indent << "element = " << el.element.get_index() << "\n";
+
+        os << print_indent << "payload = " << el.payload << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
+    return os;
+}
+
+template<typename Payload, typename C>
+inline std::ostream& print(std::ostream& os, const analysis::ScopedView<formalism::planning::ConjunctiveCondition, Payload, C>& el)
+{
+    os << "ConjunctiveConditionDomain(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "element = " << el.element.get_index() << "\n";
+
+        os << print_indent << "payload = " << el.payload << "\n";
+    }
+    os << print_indent << ")";
+    return os;
+}
+
+template<typename Payload, typename C>
+inline std::ostream& print(std::ostream& os, const analysis::ScopedView<formalism::planning::ConjunctiveEffect, Payload, C>& el)
+{
+    os << "ConjunctiveEffectDomain(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "element = " << el.element.get_index() << "\n";
+
+        os << print_indent << "payload = " << el.payload << "\n";
+    }
+    os << print_indent << ")";
     return os;
 }
 
@@ -166,10 +206,12 @@ inline std::ostream& print(std::ostream& os, const analysis::ConditionalEffectDo
     os << "ConditionalEffectDomain(\n";
     {
         IndentScope scope(os);
-        os << print_indent << "condition_domain= " << el.condition_domain << "\n";
-        os << print_indent << "effect_domain= " << el.effect_domain << "\n";
+
+        os << print_indent << el.condition_domain << "\n";
+
+        os << print_indent << el.effect_domain << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 
@@ -179,10 +221,13 @@ inline std::ostream& print(std::ostream& os, const analysis::ActionDomainView<C>
     os << "ActionDomain(\n";
     {
         IndentScope scope(os);
-        os << print_indent << "precondition_domain= " << el.precondition_domain << "\n";
-        os << print_indent << "effect_domains= " << el.effect_domains << "\n";
+
+        os << print_indent << el.precondition_domain << "\n";
+
+        for (const auto& [conditional_effect, domain] : el.effect_domains)
+            os << print_indent << domain << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 
@@ -192,17 +237,18 @@ inline std::ostream& print(std::ostream& os, const analysis::ProgramVariableDoma
     {
         IndentScope scope(os);
 
-        os << print_indent << "static predicate domains= " << el.static_predicate_domains << "\n";
+        os << print_indent << "static predicate domains = " << el.static_predicate_domains << "\n";
 
-        os << print_indent << "fluent predicate domains= " << el.fluent_predicate_domains << "\n";
+        os << print_indent << "fluent predicate domains = " << el.fluent_predicate_domains << "\n";
 
-        os << print_indent << "static function domains= " << el.static_function_domains << "\n";
+        os << print_indent << "static function domains = " << el.static_function_domains << "\n";
 
-        os << print_indent << "fluent function domains= " << el.fluent_function_domains << "\n";
+        os << print_indent << "fluent function domains = " << el.fluent_function_domains << "\n";
 
-        os << print_indent << "rule domains= " << el.rule_domains << "\n";
+        for (const auto& [rule, domain] : el.rule_domains)
+            os << print_indent << domain << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 
@@ -212,21 +258,23 @@ inline std::ostream& print(std::ostream& os, const analysis::TaskVariableDomains
     {
         IndentScope scope(os);
 
-        os << print_indent << "static predicate domains= " << el.static_predicate_domains << "\n";
+        os << print_indent << "static predicate domains = " << el.static_predicate_domains << "\n";
 
-        os << print_indent << "fluent predicate domains= " << el.fluent_predicate_domains << "\n";
+        os << print_indent << "fluent predicate domains = " << el.fluent_predicate_domains << "\n";
 
-        os << print_indent << "derived predicate domains= " << el.derived_predicate_domains << "\n";
+        os << print_indent << "derived predicate domains = " << el.derived_predicate_domains << "\n";
 
-        os << print_indent << "static function domains= " << el.static_function_domains << "\n";
+        os << print_indent << "static function domains = " << el.static_function_domains << "\n";
 
-        os << print_indent << "fluent function domains= " << el.fluent_function_domains << "\n";
+        os << print_indent << "fluent function domains = " << el.fluent_function_domains << "\n";
 
-        os << print_indent << "action domains= " << el.action_domains << "\n";
+        for (const auto& [action, domain] : el.action_domains)
+            os << print_indent << domain << "\n";
 
-        os << print_indent << "axiom domains= " << el.axiom_domains << "\n";
+        for (const auto& [axiom, domain] : el.axiom_domains)
+            os << print_indent << domain << "\n";
     }
-    os << ")";
+    os << print_indent << ")";
     return os;
 }
 

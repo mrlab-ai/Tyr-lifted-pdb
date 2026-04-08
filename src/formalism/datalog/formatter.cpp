@@ -93,6 +93,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::datalog::Conjunctive
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "variables = " << el.variables << "\n";
 
         os << print_indent << "static literals = " << el.static_literals << "\n";
@@ -111,6 +113,8 @@ std::ostream& print(std::ostream& os, const formalism::datalog::ConjunctiveCondi
     os << "ConjunctiveCondition(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "variables = " << el.get_variables() << "\n";
 
@@ -173,6 +177,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::datalog::GroundConju
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "static literals = " << el.static_literals << "\n";
 
         os << print_indent << "fluent literals = " << el.fluent_literals << "\n";
@@ -189,6 +195,8 @@ std::ostream& print(std::ostream& os, const formalism::datalog::GroundConjunctiv
     os << "GroundConjunctiveCondition(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
@@ -207,6 +215,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::datalog::GroundRule>
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "head = " << el.head << "\n";
 
         os << print_indent << "body = " << el.body << "\n";
@@ -222,6 +232,8 @@ std::ostream& print(std::ostream& os, const formalism::datalog::GroundRuleView& 
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.get_index() << "\n";
+
         os << print_indent << "head = " << el.get_head() << "\n";
 
         os << print_indent << "body = " << el.get_body() << "\n";
@@ -236,6 +248,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::datalog::Program>& e
     os << "Program(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
 
         os << print_indent << "static predicates =" << el.static_predicates << "\n";
 
@@ -267,6 +281,8 @@ std::ostream& print(std::ostream& os, const formalism::datalog::ProgramView& el)
     os << "Program(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "static predicates =" << el.template get_predicates<formalism::StaticTag>() << "\n";
 

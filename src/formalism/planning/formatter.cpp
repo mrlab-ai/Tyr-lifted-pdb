@@ -106,6 +106,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::Conditiona
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "variables = " << el.variables << "\n";
 
         os << print_indent << "condition = " << el.condition << "\n";
@@ -122,6 +124,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::ConditionalEffe
     os << "ConditionalEffect(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "variables = " << el.get_variables() << "\n";
 
@@ -140,6 +144,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::GroundCond
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "condition = " << el.condition << "\n";
 
         os << print_indent << "effect = " << el.effect << "\n";
@@ -155,6 +161,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::GroundCondition
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.get_index() << "\n";
+
         os << print_indent << "condition = " << el.get_condition() << "\n";
 
         os << print_indent << "effect = " << el.get_effect() << "\n";
@@ -169,6 +177,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::Conjunctiv
     os << "ConjunctiveEffect(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
 
         os << print_indent << "fluent literals = " << el.literals << "\n";
 
@@ -187,6 +197,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::ConjunctiveEffe
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.get_index() << "\n";
+
         os << print_indent << "fluent literals = " << el.get_literals() << "\n";
 
         os << print_indent << "fluent numeric effects = " << el.get_numeric_effects() << "\n";
@@ -203,6 +215,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::GroundConj
     os << "GroundConjunctiveEffect(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
 
         os << print_indent << "add facts = " << el.add_facts << "\n";
 
@@ -222,6 +236,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::GroundConjuncti
     os << "GroundConjunctiveEffect(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "add facts = " << el.get_facts<formalism::PositiveTag>() << "\n";
 
@@ -438,6 +454,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::Task>& el)
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "name = " << el.name << "\n";
 
         os << print_indent << "derived predicates = " << el.derived_predicates << "\n";
@@ -470,6 +488,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::TaskView& el)
     os << "Task(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "name = " << el.get_name() << "\n";
 
@@ -504,6 +524,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::Domain>& e
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "name = " << el.name << "\n";
 
         os << print_indent << "static predicates = " << el.static_predicates << "\n";
@@ -534,6 +556,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::DomainView& el)
     os << "Domain(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "name = " << el.get_name() << "\n";
 
@@ -572,6 +596,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::Conjunctiv
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "variables = " << el.variables << "\n";
 
         os << print_indent << "static literals = " << el.static_literals << "\n";
@@ -592,6 +618,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::ConjunctiveCond
     os << "ConjunctiveCondition(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "variables = " << el.get_variables() << "\n";
 
@@ -614,6 +642,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::GroundConj
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.index << "\n";
+
         os << print_indent << "static literals = " << el.static_literals << "\n";
 
         os << print_indent << "derived literals = " << el.derived_literals << "\n";
@@ -635,6 +665,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::GroundConjuncti
     {
         IndentScope scope(os);
 
+        os << print_indent << "index = " << el.get_index() << "\n";
+
         os << print_indent << "static literals = " << el.template get_literals<formalism::StaticTag>() << "\n";
 
         os << print_indent << "derived literals = " << el.template get_literals<formalism::DerivedTag>() << "\n";
@@ -655,6 +687,8 @@ std::ostream& print(std::ostream& os, const Data<formalism::planning::FDRTask>& 
     os << "FDRTask(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.index << "\n";
 
         os << print_indent << "name = " << el.name << "\n";
 
@@ -700,6 +734,8 @@ std::ostream& print(std::ostream& os, const formalism::planning::FDRTaskView& el
     os << "FDRTask(\n";
     {
         IndentScope scope(os);
+
+        os << print_indent << "index = " << el.get_index() << "\n";
 
         os << print_indent << "name = " << el.get_name() << "\n";
 
