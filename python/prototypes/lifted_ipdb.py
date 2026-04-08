@@ -62,6 +62,8 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
         atom_builder = FluentGroundAtomBuilder(binding)
         atom, _ = repository.get_or_create(atom_builder)
 
+        
+
         return atom
 
     # Try to unify a lifted effect atom with a ground atom.
@@ -114,10 +116,9 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                 return True
         return False
 
-    """
-    Returns True if the given object is compatible with the type constraints of the given lifted predicate,
-    """
-    def compatible_type(self, type_mapping, static_atoms, atom, obj_tuple: List[Object]) -> bool:
+    
+
+    def compatible_type(self, type_mapping, static_atoms, g_atom, obj_tuple: List[Object]) -> bool:
 
         # Go through static atoms to find all types associated with the objects in the atom,
         # and for each type, collect the set of terms in the mapping that are associated with that type.
@@ -174,9 +175,9 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                 #print("Checking term in static precondition:", str(term))
                 if(term not in type_mappings):
                     type_mappings[term] = set()
-                    type_mappings[term].add(static_atom.get_predicate())
+                    type_mappings[term].add(static_atom.get_predicate().get_name())
                 else:
-                    type_mappings[term].add(static_atom.get_predicate())
+                    type_mappings[term].add(static_atom.get_predicate().get_name())
 
         #print(f"computed type mappings: { {idx: [pred for pred in preds] for idx, preds in type_mappings.items()} }")
 
@@ -217,12 +218,14 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
         if not free_param_indices:
             obj_tuple = [arg for arg in template if isinstance(arg, Object)]
+            #print("tuplefree:", obj_tuple)
+            #print(f"pred, obj_tuple: {str(pred)}, {str(obj_tuple)}")
             ga = self.create_ground_atom(pred, obj_tuple)
-            print(f"{YELLOW}No free parameters, created ground atom: {str(ga)}{RESET}")
+            print(f"{YELLOW}freeNo free parameters, created ground atom: {str(ga)}{RESET}")
             if self.compatible_type(type_mappings, self._task.get_task().get_static_atoms(), ga, obj_tuple):
                 atoms.add(ga)
-            else:
-                print(f"{RED}Incompatible types for ground atom: {str(ga)}{RESET}")
+            #else:
+                #print(f"{RED}freeIncompatible types for ground atom: {str(ga)}{RESET}")
             return atoms
 
         # Generate all k-permutations of available objects for k free parameters,
@@ -236,15 +239,72 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                     obj_tuple.append(assignment[arg])
                 else:
                     obj_tuple.append(arg)
-
-            ga = self.create_ground_atom(pred, obj_tuple)
-            print(f"{YELLOW}No free parameters, created ground atom: {str(ga)}{RESET}")
-            if self.compatible_type(type_mappings, self._task.get_task().get_static_atoms(), ga, obj_tuple):
-                atoms.add(ga)
-            else:
-                print(f"{RED}Incompatible types for ground atom: {str(ga)}{RESET}")
+            #print("tuple:", obj_tuple)
+            #print(f"pred, obj_tuple: {str(pred)}, {str(obj_tuple)}")
+            #self.compatible(pred, terms, obj_tuple, type_mappings, self._task.get_task().get_static_atoms())
+            # Check if the objects in the proposed ground atom satisfy the type constraints derived from static preconditions. If not, skip this combination.
+            if self.compatible(pred, terms, obj_tuple, type_mappings, self._task.get_task().get_static_atoms()):
+                
+                ga = self.create_ground_atom(pred, obj_tuple)
+                print(f"{YELLOW}mainCreated ground atom: {str(ga)}{RESET}")
+            #else:
+                #print(f"{RED}mainIncompatible types for ground atom: {str(pred)}{str(obj_tuple)}{RESET}")
 
         return atoms
+
+    # Given a predicate and a tuple of objects, check if the combination is compatible with the type constraints derived from static preconditions.
+    def compatible(self, pred, terms, obj_tuple, type_mappings, static_atoms) -> bool:
+        """
+        type_mappings: dict[Term, set[FluentPredicate]]
+            Built from static literals; for each Term occurring in a
+            static precondition, we store the static predicates (types)
+            that constrain that Term.
+
+        static_atoms: sequence of static ground atoms in the task.
+
+        terms: list[Term]
+            Terms of the *lifted* precondition atom we are grounding.
+
+        obj_tuple: list[Object]
+            Concrete objects proposed for each argument position.
+        """
+
+        obj_preds: dict = {}
+
+        allowed_preds: dict[int, set[FluentPredicate]] = {}
+        # For each index of the atom, compute allowed types based on static preconditions.
+        for pos, term in enumerate(terms):
+            tv = term.get_variant()
+            if isinstance(tv, ParameterIndex):
+                idx = int(tv)
+                allowed_preds[term] = type_mappings.get(term)
+
+        for inx, obj in enumerate(obj_tuple):
+            obj_preds[obj] = set()
+            for static_atom in static_atoms:
+                if self.object_in_atoms(obj, static_atom.get_objects()):
+                    obj_preds[obj].add(static_atom.get_predicate().get_name())
+
+        #print(terms)
+        #print(type_mappings)
+        #print(obj_tuple)
+        #print(static_atoms)
+        #print((obj_preds))
+        #print((allowed_preds))
+
+        # For each object index, o in the proposed ground atom, if obj_preds[o] intersect with allowed_preds[terms[index]], the combination is compatible.
+        for index, obj in enumerate(obj_tuple):
+            if obj_preds[obj] == allowed_preds[terms[index]]:
+                #do nothing
+                pass
+            else:
+                #print(f"Combination is NOT compatible for object {obj} at index {index}.")
+                return False
+
+        #print("\n")
+        return True
+
+
 
     # ------------------------------------------------------------------
     # Causal link computation
