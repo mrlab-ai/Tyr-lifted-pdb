@@ -31,7 +31,8 @@ void bind_object_builder(nb::module_& m, const std::string& name)
     using V = Data<Object>;
 
     nb::class_<V>(m, name.c_str())  //
-        .def(nb::init<const std::string&>(), "name"_a);
+        .def(nb::init<const std::string&>(), "name"_a)
+        .def_rw("name", &V::name);
 }
 
 void bind_variable_builder(nb::module_& m, const std::string& name)
@@ -39,7 +40,8 @@ void bind_variable_builder(nb::module_& m, const std::string& name)
     using V = Data<Variable>;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def(nb::init<const std::string&>(), "name"_a);
+                   .def(nb::init<const std::string&>(), "name"_a)
+                   .def_rw("name", &V::name);
     add_print(cls);
     add_hash(cls);
 }
@@ -49,7 +51,8 @@ void bind_term_builder(nb::module_& m, const std::string& name)
     using V = Data<Term>;
 
     auto cls = nb::class_<V>(m, name.c_str())  //
-                   .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a);
+                   .def(nb::init<typename V::template ViewVariant<Repository>>(), "value"_a)
+                   .def_rw("value", &V::value);
     add_print(cls);
     add_hash(cls);
 }

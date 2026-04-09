@@ -45,10 +45,12 @@ def rigid_parameter_domains_from_task_variable_domains(
             continue
 
         for position, term in enumerate(atom.terms):
-            if not isinstance(term, ParameterIndex):
+            value = term.value
+
+            if not isinstance(value, ParameterIndex):
                 continue
 
-            parameter = int(term)
+            parameter = int(value)
             if parameter >= inv.num_rigid_variables:
                 continue
 
