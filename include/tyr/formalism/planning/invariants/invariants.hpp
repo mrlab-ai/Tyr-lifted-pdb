@@ -20,6 +20,7 @@
 
 #include "tyr/formalism/planning/invariants/formatter.hpp"
 #include "tyr/formalism/planning/invariants/invariant.hpp"
+#include "tyr/formalism/planning/invariants/matcher.hpp"
 #include "tyr/formalism/planning/invariants/mutexes.hpp"
 #include "tyr/formalism/planning/invariants/synthesis.hpp"
 

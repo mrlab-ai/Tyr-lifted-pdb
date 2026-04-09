@@ -16,6 +16,13 @@ from pytyr.pytyr.formalism.planning import (
 from pytyr.pytyr.formalism.planning import (
     Invariant,
     synthesize_invariants,
+    ObjectSubstitution,
+    TermSubstitution,
+    InvariantMatchData,
+    InvariantQueryWorkspace,
+    InvariantQueryResult,
+    InvariantQueryResultMatch,
+    InvariantMatcher,
 )
 
 from pytyr.pytyr.formalism.planning import (

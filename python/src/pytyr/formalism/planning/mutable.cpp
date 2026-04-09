@@ -29,7 +29,8 @@ void bind_atom(nb::module_& m, const std::string& name)
     auto cls = nb::class_<V>(m, name.c_str())  //
                    .def(nb::init<PredicateView<T>, const TermViewList&>(), "predicate"_a, "terms"_a)
                    .def(nb::init<AtomView<T>>(), "atom"_a)
-                   .def_rw("predicate", &V::predicate);
+                   .def_rw("predicate", &V::predicate)
+                   .def_rw("terms", &V::terms);
     add_print(cls);
     add_hash(cls);
 }

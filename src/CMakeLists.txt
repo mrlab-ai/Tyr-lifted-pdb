@@ -39,6 +39,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     formalism/planning/invariants/constraints.cpp
     formalism/planning/invariants/formatter.cpp
     formalism/planning/invariants/matching.cpp
+    formalism/planning/invariants/matcher.cpp
     formalism/planning/invariants/mutexes.cpp
     formalism/planning/invariants/normalization.cpp
     formalism/planning/invariants/proof.cpp

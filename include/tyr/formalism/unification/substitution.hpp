@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Dominik Drexler
+ * Copyright (C) 2025-2026 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -139,6 +139,8 @@ public:
     }
 
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), std::nullopt); }
+
+    auto identifying_members() const noexcept { return std::tie(m_parameters, m_data); }
 
 private:
     void rebuild_positions()

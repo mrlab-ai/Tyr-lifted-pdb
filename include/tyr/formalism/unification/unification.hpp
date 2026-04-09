@@ -19,6 +19,7 @@
 #define TYR_FORMALISM_UNIFICATION_UNIFICATION_HPP_
 
 #include "tyr/formalism/unification/apply_substitution.hpp"
+#include "tyr/formalism/unification/formatter.hpp"
 #include "tyr/formalism/unification/match.hpp"
 #include "tyr/formalism/unification/match_policy.hpp"
 #include "tyr/formalism/unification/match_result.hpp"
