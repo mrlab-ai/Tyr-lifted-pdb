@@ -36,22 +36,26 @@ namespace tyr::planning
 {
 namespace
 {
-void process_axiom_body(fp::ConjunctiveConditionView axiom_body, fp::MergeDatalogContext& context, Data<fd::ConjunctiveCondition>& conj_cond)
+void process_axiom_body(fp::ConjunctiveConditionView axiom_body,
+                        const TranslationContext& translation_context,
+                        fp::MergeDatalogContext& context,
+                        Data<fd::ConjunctiveCondition>& conj_cond)
 {
     for (const auto literal : axiom_body.get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(fp::merge_p2d(literal, context).first.get_index());
+        conj_cond.static_literals.push_back(fp::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
 
     for (const auto literal : axiom_body.get_literals<f::FluentTag>())
-        conj_cond.fluent_literals.push_back(fp::merge_p2d(literal, context).first.get_index());
+        conj_cond.fluent_literals.push_back(fp::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     for (const auto literal : axiom_body.get_literals<f::DerivedTag>())
-        conj_cond.fluent_literals.push_back(fp::merge_p2d<f::DerivedTag, f::FluentTag>(literal, context).first.get_index());
+        conj_cond.fluent_literals.push_back(
+            fp::merge_p2d<f::DerivedTag, f::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context).first.get_index());
 
     for (const auto numeric_constraint : axiom_body.get_numeric_constraints())
         conj_cond.numeric_constraints.push_back(fp::merge_p2d(numeric_constraint, context));
 }
 
-auto create_axiom_rule(fp::AxiomView axiom, fp::MergeDatalogContext& context)
+auto create_axiom_rule(fp::AxiomView axiom, const TranslationContext& translation_context, fp::MergeDatalogContext& context)
 {
     auto rule_ptr = context.builder.get_builder<fd::Rule>();
     auto& rule = *rule_ptr;
@@ -64,14 +68,15 @@ auto create_axiom_rule(fp::AxiomView axiom, fp::MergeDatalogContext& context)
     for (const auto variable : axiom.get_variables())
         conj_cond.variables.push_back(fp::merge_p2d(variable, context).first.get_index());
 
-    process_axiom_body(axiom.get_body(), context, conj_cond);
+    process_axiom_body(axiom.get_body(), translation_context, context, conj_cond);
 
     canonicalize(conj_cond);
     const auto new_conj_cond = context.destination.get_or_create(conj_cond).first.get_index();
 
     rule.body = new_conj_cond;
 
-    const auto new_head = fp::merge_p2d<f::DerivedTag, f::FluentTag>(axiom.get_head(), context).first.get_index();
+    const auto new_head =
+        fp::merge_p2d<f::DerivedTag, f::FluentTag>(axiom.get_head(), translation_context.p2d.derived_to_fluent_predicate, context).first.get_index();
 
     rule.head = new_head;
 
@@ -88,8 +93,12 @@ auto create_program(fp::TaskView task, TranslationContext& translation_context, 
     program.clear();
 
     for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
-        program.static_predicates.push_back(fp::merge_p2d(predicate, context).first.get_index());
-
+    {
+        const auto new_predicate = fp::merge_p2d(predicate, context).first;
+        translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
+        translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
+        program.static_predicates.push_back(new_predicate.get_index());
+    }
     for (const auto predicate : task.get_domain().get_predicates<f::FluentTag>())
     {
         const auto new_predicate = fp::merge_p2d(predicate, context).first;
@@ -97,7 +106,6 @@ auto create_program(fp::TaskView task, TranslationContext& translation_context, 
         translation_context.p2d.fluent_to_fluent_predicate.emplace(predicate, new_predicate);
         program.fluent_predicates.push_back(new_predicate.get_index());
     }
-
     for (const auto predicate : task.get_domain().get_predicates<f::DerivedTag>())
     {
         const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::FluentTag>(predicate, context).first;
@@ -105,7 +113,6 @@ auto create_program(fp::TaskView task, TranslationContext& translation_context, 
         translation_context.p2d.derived_to_fluent_predicate.emplace(predicate, new_predicate);
         program.fluent_predicates.push_back(new_predicate.get_index());
     }
-
     for (const auto predicate : task.get_derived_predicates())
     {
         const auto new_predicate = fp::merge_p2d<f::DerivedTag, f::FluentTag>(predicate, context).first;
@@ -125,9 +132,9 @@ auto create_program(fp::TaskView task, TranslationContext& translation_context, 
         program.objects.push_back(fp::merge_p2d(object, context).first.get_index());
 
     for (const auto atom : task.get_atoms<f::StaticTag>())
-        program.static_atoms.push_back(fp::merge_p2d(atom, context).first.get_index());
+        program.static_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     for (const auto atom : task.get_atoms<f::FluentTag>())
-        program.fluent_atoms.push_back(fp::merge_p2d(atom, context).first.get_index());
+        program.fluent_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
         program.static_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
@@ -135,9 +142,9 @@ auto create_program(fp::TaskView task, TranslationContext& translation_context, 
         program.fluent_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
 
     for (const auto axiom : task.get_domain().get_axioms())
-        program.rules.push_back(create_axiom_rule(axiom, context).first.get_index());
+        program.rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
     for (const auto axiom : task.get_axioms())
-        program.rules.push_back(create_axiom_rule(axiom, context).first.get_index());
+        program.rules.push_back(create_axiom_rule(axiom, translation_context, context).first.get_index());
 
     canonicalize(program);
     return repository.get_or_create(program).first;

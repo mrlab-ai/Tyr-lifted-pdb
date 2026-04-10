@@ -88,10 +88,16 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
     const auto state = node.get_state();
 
     auto merge_context = fp::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
+    const auto& program = m_task->get_action_program();
 
-    insert_extended_state(state.get_unpacked_state(), *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets, m_workspace.facts.assignment_sets);
+    insert_extended_state(state.get_unpacked_state(),
+                          *m_task->get_repository(),
+                          program.get_translation_context().p2d,
+                          merge_context,
+                          m_workspace.facts.fact_sets,
+                          m_workspace.facts.assignment_sets);
 
-    auto ctx = d::ProgramExecutionContext(m_workspace, m_task->get_action_program().get_const_program_workspace());
+    auto ctx = d::ProgramExecutionContext(m_workspace, program.get_const_program_workspace());
     ctx.clear();
 
     m_execution_context->arena().execute([&] { d::solve_bottom_up(ctx); });
@@ -107,7 +113,7 @@ void SuccessorGenerator<LiftedTag>::get_labeled_successor_nodes(const Node<Lifte
     {
         for (const auto& binding : set.get_bindings())
         {
-            const auto& mapping = m_task->get_action_program().get_predicate_to_action_mapping();
+            const auto& mapping = program.get_predicate_to_action_mapping();
 
             if (const auto it = mapping.find(binding.get_relation()); it != mapping.end())
             {

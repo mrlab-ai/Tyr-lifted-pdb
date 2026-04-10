@@ -27,33 +27,83 @@ template std::pair<PredicateView<StaticTag>, bool> merge_d2p(formalism::datalog:
 template std::pair<PredicateView<FluentTag>, bool> merge_d2p(formalism::datalog::PredicateView<FluentTag> element, MergePlanningContext& context);
 template std::pair<PredicateView<DerivedTag>, bool> merge_d2p(formalism::datalog::PredicateView<FluentTag> element, MergePlanningContext& context);
 
-template std::pair<AtomView<StaticTag>, bool> merge_d2p(formalism::datalog::AtomView<StaticTag> element, MergePlanningContext& context);
-template std::pair<AtomView<FluentTag>, bool> merge_d2p(formalism::datalog::AtomView<FluentTag> element, MergePlanningContext& context);
-template std::pair<AtomView<DerivedTag>, bool> merge_d2p(formalism::datalog::AtomView<FluentTag> element, MergePlanningContext& context);
+template std::pair<AtomView<StaticTag>, bool>
+merge_d2p(formalism::datalog::AtomView<StaticTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<StaticTag>, PredicateView<StaticTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<AtomView<FluentTag>, bool>
+merge_d2p(formalism::datalog::AtomView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<FluentTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<AtomView<DerivedTag>, bool>
+merge_d2p(formalism::datalog::AtomView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<DerivedTag>>& predicate_mapping,
+          MergePlanningContext& context);
 
-template std::pair<PredicateBindingView<StaticTag>, bool> merge_d2p(formalism::datalog::PredicateBindingView<StaticTag> element, MergePlanningContext& context);
-template std::pair<PredicateBindingView<FluentTag>, bool> merge_d2p(formalism::datalog::PredicateBindingView<FluentTag> element, MergePlanningContext& context);
-template std::pair<PredicateBindingView<DerivedTag>, bool> merge_d2p(formalism::datalog::PredicateBindingView<FluentTag> element,
-                                                                     MergePlanningContext& context);
+template std::pair<PredicateBindingView<StaticTag>, bool>
+merge_d2p(formalism::datalog::PredicateBindingView<StaticTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<StaticTag>, PredicateView<StaticTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<PredicateBindingView<FluentTag>, bool>
+merge_d2p(formalism::datalog::PredicateBindingView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<FluentTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<PredicateBindingView<DerivedTag>, bool>
+merge_d2p(formalism::datalog::PredicateBindingView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<DerivedTag>>& predicate_mapping,
+          MergePlanningContext& context);
 
-template std::pair<GroundAtomView<StaticTag>, bool> merge_atom_d2p<StaticTag, StaticTag>(formalism::datalog::PredicateBindingView<StaticTag> element,
-                                                                                         MergePlanningContext& context);
-template std::pair<GroundAtomView<FluentTag>, bool> merge_atom_d2p<FluentTag, FluentTag>(formalism::datalog::PredicateBindingView<FluentTag> element,
-                                                                                         MergePlanningContext& context);
-template std::pair<GroundAtomView<DerivedTag>, bool> merge_atom_d2p<FluentTag, DerivedTag>(formalism::datalog::PredicateBindingView<FluentTag> element,
-                                                                                           MergePlanningContext& context);
+template std::pair<GroundAtomView<StaticTag>, bool>
+merge_atom_d2p<StaticTag, StaticTag>(formalism::datalog::PredicateBindingView<StaticTag> element,
+                                     const UnorderedMap<formalism::datalog::PredicateView<StaticTag>, PredicateView<StaticTag>>& predicate_mapping,
+                                     MergePlanningContext& context);
+template std::pair<GroundAtomView<FluentTag>, bool>
+merge_atom_d2p<FluentTag, FluentTag>(formalism::datalog::PredicateBindingView<FluentTag> element,
+                                     const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<FluentTag>>& predicate_mapping,
+                                     MergePlanningContext& context);
+template std::pair<GroundAtomView<DerivedTag>, bool>
+merge_atom_d2p<FluentTag, DerivedTag>(formalism::datalog::PredicateBindingView<FluentTag> element,
+                                      const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<DerivedTag>>& predicate_mapping,
+                                      MergePlanningContext& context);
 
-template std::pair<GroundAtomView<StaticTag>, bool> merge_d2p(formalism::datalog::GroundAtomView<StaticTag> element, MergePlanningContext& context);
-template std::pair<GroundAtomView<FluentTag>, bool> merge_d2p(formalism::datalog::GroundAtomView<FluentTag> element, MergePlanningContext& context);
-template std::pair<GroundAtomView<DerivedTag>, bool> merge_d2p(formalism::datalog::GroundAtomView<FluentTag> element, MergePlanningContext& context);
+template std::pair<GroundAtomView<StaticTag>, bool>
+merge_d2p(formalism::datalog::GroundAtomView<StaticTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<StaticTag>, PredicateView<StaticTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<GroundAtomView<FluentTag>, bool>
+merge_d2p(formalism::datalog::GroundAtomView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<FluentTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<GroundAtomView<DerivedTag>, bool>
+merge_d2p(formalism::datalog::GroundAtomView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<DerivedTag>>& predicate_mapping,
+          MergePlanningContext& context);
 
-template std::pair<LiteralView<StaticTag>, bool> merge_d2p(formalism::datalog::LiteralView<StaticTag> element, MergePlanningContext& context);
-template std::pair<LiteralView<FluentTag>, bool> merge_d2p(formalism::datalog::LiteralView<FluentTag> element, MergePlanningContext& context);
-template std::pair<LiteralView<DerivedTag>, bool> merge_d2p(formalism::datalog::LiteralView<FluentTag> element, MergePlanningContext& context);
+template std::pair<LiteralView<StaticTag>, bool>
+merge_d2p(formalism::datalog::LiteralView<StaticTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<StaticTag>, PredicateView<StaticTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<LiteralView<FluentTag>, bool>
+merge_d2p(formalism::datalog::LiteralView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<FluentTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<LiteralView<DerivedTag>, bool>
+merge_d2p(formalism::datalog::LiteralView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<DerivedTag>>& predicate_mapping,
+          MergePlanningContext& context);
 
-template std::pair<GroundLiteralView<StaticTag>, bool> merge_d2p(formalism::datalog::GroundLiteralView<StaticTag> element, MergePlanningContext& context);
-template std::pair<GroundLiteralView<FluentTag>, bool> merge_d2p(formalism::datalog::GroundLiteralView<FluentTag> element, MergePlanningContext& context);
-template std::pair<GroundLiteralView<DerivedTag>, bool> merge_d2p(formalism::datalog::GroundLiteralView<FluentTag> element, MergePlanningContext& context);
+template std::pair<GroundLiteralView<StaticTag>, bool>
+merge_d2p(formalism::datalog::GroundLiteralView<StaticTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<StaticTag>, PredicateView<StaticTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<GroundLiteralView<FluentTag>, bool>
+merge_d2p(formalism::datalog::GroundLiteralView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<FluentTag>>& predicate_mapping,
+          MergePlanningContext& context);
+template std::pair<GroundLiteralView<DerivedTag>, bool>
+merge_d2p(formalism::datalog::GroundLiteralView<FluentTag> element,
+          const UnorderedMap<formalism::datalog::PredicateView<FluentTag>, PredicateView<DerivedTag>>& predicate_mapping,
+          MergePlanningContext& context);
 
 // Numeric
 

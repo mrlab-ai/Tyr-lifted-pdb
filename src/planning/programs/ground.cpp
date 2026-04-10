@@ -102,22 +102,25 @@ auto create_applicability_atom(fp::AxiomView axiom, fp::MergeDatalogContext& con
     return context.destination.get_or_create(atom);
 }
 
-void append_from_condition(fp::ConjunctiveConditionView cond, fp::MergeDatalogContext& context, Data<fd::ConjunctiveCondition>& conj_cond)
+void append_from_condition(fp::ConjunctiveConditionView cond,
+                           const TranslationContext& translation_context,
+                           fp::MergeDatalogContext& context,
+                           Data<fd::ConjunctiveCondition>& conj_cond)
 {
     // Keep negated static atoms because they are monotonic
     for (const auto literal : cond.template get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, context).first.get_index());
-
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     for (const auto literal : cond.template get_literals<f::FluentTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge_p2d(literal, context).first.get_index());
+            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     for (const auto literal : cond.template get_literals<f::DerivedTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge_p2d<f::DerivedTag, f::FluentTag>(literal, context).first.get_index());
+            conj_cond.fluent_literals.push_back(
+                merge_p2d<f::DerivedTag, f::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context).first.get_index());
 };
 
-auto create_applicability_literal(fp::ActionView action, fp::MergeDatalogContext& context)
+auto create_applicability_literal(fp::ActionView action, const TranslationContext& translation_context, fp::MergeDatalogContext& context)
 {
     auto literal_ptr = context.builder.get_builder<fd::Literal<f::FluentTag>>();
     auto& literal = *literal_ptr;
@@ -130,7 +133,7 @@ auto create_applicability_literal(fp::ActionView action, fp::MergeDatalogContext
     return context.destination.get_or_create(literal);
 }
 
-auto create_applicability_rule(fp::ActionView action, fp::MergeDatalogContext& context)
+auto create_applicability_rule(fp::ActionView action, const TranslationContext& translation_context, fp::MergeDatalogContext& context)
 {
     auto rule_ptr = context.builder.get_builder<fd::Rule>();
     auto& rule = *rule_ptr;
@@ -142,7 +145,7 @@ auto create_applicability_rule(fp::ActionView action, fp::MergeDatalogContext& c
 
     for (const auto variable : action.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
-    append_from_condition(action.get_condition(), context, conj_cond);
+    append_from_condition(action.get_condition(), translation_context, context, conj_cond);
 
     canonicalize(conj_cond);
     const auto new_conj_cond = context.destination.get_or_create(conj_cond).first;
@@ -155,7 +158,7 @@ auto create_applicability_rule(fp::ActionView action, fp::MergeDatalogContext& c
     return context.destination.get_or_create(rule);
 }
 
-auto create_applicability_literal(fp::AxiomView axiom, fp::MergeDatalogContext& context)
+auto create_applicability_literal(fp::AxiomView axiom, const TranslationContext& translation_context, fp::MergeDatalogContext& context)
 {
     auto literal_ptr = context.builder.get_builder<fd::Literal<f::FluentTag>>();
     auto& literal = *literal_ptr;
@@ -168,7 +171,7 @@ auto create_applicability_literal(fp::AxiomView axiom, fp::MergeDatalogContext& 
     return context.destination.get_or_create(literal);
 }
 
-auto create_applicability_rule(fp::AxiomView axiom, fp::MergeDatalogContext& context)
+auto create_applicability_rule(fp::AxiomView axiom, const TranslationContext& translation_context, fp::MergeDatalogContext& context)
 {
     auto rule_ptr = context.builder.get_builder<fd::Rule>();
     auto& rule = *rule_ptr;
@@ -180,7 +183,7 @@ auto create_applicability_rule(fp::AxiomView axiom, fp::MergeDatalogContext& con
 
     for (const auto variable : axiom.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
-    append_from_condition(axiom.get_body(), context, conj_cond);
+    append_from_condition(axiom.get_body(), translation_context, context, conj_cond);
 
     canonicalize(conj_cond);
     const auto new_conj_cond = context.destination.get_or_create(conj_cond).first;
@@ -193,7 +196,11 @@ auto create_applicability_rule(fp::AxiomView axiom, fp::MergeDatalogContext& con
     return context.destination.get_or_create(rule);
 }
 
-auto create_cond_effect_rule(fp::ActionView action, fp::ConditionalEffectView cond_eff, fd::AtomView<f::FluentTag> effect, fp::MergeDatalogContext& context)
+auto create_cond_effect_rule(fp::ActionView action,
+                             fp::ConditionalEffectView cond_eff,
+                             fd::AtomView<f::FluentTag> effect,
+                             const TranslationContext& translation_context,
+                             fp::MergeDatalogContext& context)
 {
     auto rule_ptr = context.builder.get_builder<fd::Rule>();
     auto& rule = *rule_ptr;
@@ -206,12 +213,12 @@ auto create_cond_effect_rule(fp::ActionView action, fp::ConditionalEffectView co
     for (const auto variable : action.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
     for (const auto literal : action.get_condition().get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, context).first.get_index());
-    conj_cond.fluent_literals.push_back(create_applicability_literal(action, context).first.get_index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_fluent_predicate, context).first.get_index());
+    conj_cond.fluent_literals.push_back(create_applicability_literal(action, translation_context, context).first.get_index());
 
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
-    append_from_condition(cond_eff.get_condition(), context, conj_cond);
+    append_from_condition(cond_eff.get_condition(), translation_context, context, conj_cond);
 
     canonicalize(conj_cond);
     const auto new_conj_cond = context.destination.get_or_create(conj_cond).first;
@@ -224,7 +231,7 @@ auto create_cond_effect_rule(fp::ActionView action, fp::ConditionalEffectView co
     return context.destination.get_or_create(rule);
 }
 
-auto create_effect_rule(fp::AxiomView axiom, fd::AtomView<f::FluentTag> effect, fp::MergeDatalogContext& context)
+auto create_effect_rule(fp::AxiomView axiom, fd::AtomView<f::FluentTag> effect, const TranslationContext& translation_context, fp::MergeDatalogContext& context)
 {
     auto rule_ptr = context.builder.get_builder<fd::Rule>();
     auto& rule = *rule_ptr;
@@ -237,8 +244,8 @@ auto create_effect_rule(fp::AxiomView axiom, fd::AtomView<f::FluentTag> effect, 
     for (const auto variable : axiom.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
     for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, context).first.get_index());
-    conj_cond.fluent_literals.push_back(create_applicability_literal(axiom, context).first.get_index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_fluent_predicate, context).first.get_index());
+    conj_cond.fluent_literals.push_back(create_applicability_literal(axiom, translation_context, context).first.get_index());
 
     canonicalize(conj_cond);
     const auto new_conj_cond = context.destination.get_or_create(conj_cond).first;
@@ -253,6 +260,7 @@ auto create_effect_rule(fp::AxiomView axiom, fd::AtomView<f::FluentTag> effect, 
 
 void translate_action_to_delete_free_rules(fp::ActionView action,
                                            Data<fd::Program>& program,
+                                           const TranslationContext& translation_context,
                                            fp::MergeDatalogContext& context,
                                            GroundTaskProgram::AppPredicateToActionMapping& predicate_to_actions)
 {
@@ -263,7 +271,7 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
 
     program.fluent_predicates.push_back(applicability_predicate.get_index());
 
-    const auto applicability_rule = create_applicability_rule(action, context).first.get_index();
+    const auto applicability_rule = create_applicability_rule(action, translation_context, context).first.get_index();
 
     program.rules.push_back(applicability_rule);
 
@@ -274,13 +282,20 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
             if (!literal.get_polarity())
                 continue;  /// ignore delete effects
 
-            program.rules.push_back(create_cond_effect_rule(action, cond_eff, fp::merge_p2d(literal.get_atom(), context).first, context).first.get_index());
+            program.rules.push_back(
+                create_cond_effect_rule(action,
+                                        cond_eff,
+                                        fp::merge_p2d(literal.get_atom(), translation_context.p2d.fluent_to_fluent_predicate, context).first,
+                                        translation_context,
+                                        context)
+                    .first.get_index());
         }
     }
 }
 
 void translate_axiom_to_delete_free_axiom_rules(fp::AxiomView axiom,
                                                 Data<fd::Program>& program,
+                                                const TranslationContext& translation_context,
                                                 fp::MergeDatalogContext& context,
                                                 GroundTaskProgram::AppPredicateToAxiomMapping& predicate_to_axioms)
 {
@@ -291,11 +306,15 @@ void translate_axiom_to_delete_free_axiom_rules(fp::AxiomView axiom,
     [[maybe_unused]] const auto [it, inserted] = predicate_to_axioms.emplace(applicability_predicate, axiom);
     assert(inserted);
 
-    const auto applicability_rule = create_applicability_rule(axiom, context).first.get_index();
+    const auto applicability_rule = create_applicability_rule(axiom, translation_context, context).first.get_index();
 
     program.rules.push_back(applicability_rule);
 
-    program.rules.push_back(create_effect_rule(axiom, fp::merge_p2d<f::DerivedTag, f::FluentTag>(axiom.get_head(), context).first, context).first.get_index());
+    program.rules.push_back(
+        create_effect_rule(axiom,
+                           fp::merge_p2d<f::DerivedTag, f::FluentTag>(axiom.get_head(), translation_context.p2d.derived_to_fluent_predicate, context).first,
+                           context)
+            .first.get_index());
 }
 
 auto create_program(fp::TaskView task,
@@ -311,7 +330,12 @@ auto create_program(fp::TaskView task,
     program.clear();
 
     for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
-        program.static_predicates.push_back(fp::merge_p2d(predicate, context).first.get_index());
+    {
+        const auto new_predicate = fp::merge_p2d(predicate, context).first;
+        translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
+        translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
+        program.static_predicates.push_back(new_predicate.get_index());
+    }
     for (const auto predicate : task.get_domain().get_predicates<f::FluentTag>())
     {
         const auto new_predicate = fp::merge_p2d(predicate, context).first;
@@ -345,9 +369,9 @@ auto create_program(fp::TaskView task,
         program.objects.push_back(fp::merge_p2d(object, context).first.get_index());
 
     for (const auto atom : task.get_atoms<f::StaticTag>())
-        program.static_atoms.push_back(fp::merge_p2d(atom, context).first.get_index());
+        program.static_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     for (const auto atom : task.get_atoms<f::FluentTag>())
-        program.fluent_atoms.push_back(fp::merge_p2d(atom, context).first.get_index());
+        program.fluent_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
         program.static_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
@@ -355,13 +379,13 @@ auto create_program(fp::TaskView task,
         program.fluent_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
 
     for (const auto action : task.get_domain().get_actions())
-        translate_action_to_delete_free_rules(action, program, context, predicate_to_actions);
+        translate_action_to_delete_free_rules(action, program, translation_context, context, predicate_to_actions);
 
     for (const auto axiom : task.get_domain().get_axioms())
-        translate_axiom_to_delete_free_axiom_rules(axiom, program, context, predicate_to_axioms);
+        translate_axiom_to_delete_free_axiom_rules(axiom, program, translation_context, context, predicate_to_axioms);
 
     for (const auto axiom : task.get_axioms())
-        translate_axiom_to_delete_free_axiom_rules(axiom, program, context, predicate_to_axioms);
+        translate_axiom_to_delete_free_axiom_rules(axiom, program, translation_context, context, predicate_to_axioms);
 
     canonicalize(program);
     return destination.get_or_create(program).first;

@@ -59,7 +59,11 @@ public:
         for (const auto fact : goal.get_facts<formalism::PositiveTag>())
         {
             assert(fact.has_value());
-            m_workspace.facts.goal_fact_sets.insert(formalism::planning::merge_p2d(fact.get_atom().value(), merge_context).first);
+            m_workspace.facts.goal_fact_sets.insert(
+                formalism::planning::merge_p2d(fact.get_atom().value(),
+                                               m_task->get_rpg_program().get_translation_context().p2d.fluent_to_fluent_predicate,
+                                               merge_context)
+                    .first);
         }
     }
 
@@ -69,7 +73,11 @@ public:
 
         auto merge_context = formalism::planning::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
 
-        insert_fluent_atoms_to_fact_set(state.get_unpacked_state(), *m_task->get_repository(), merge_context, m_workspace.facts.fact_sets);
+        insert_fluent_atoms_to_fact_set(state.get_unpacked_state(),
+                                        *m_task->get_repository(),
+                                        m_task->get_rpg_program().get_translation_context().p2d.fluent_to_fluent_predicate,
+                                        merge_context,
+                                        m_workspace.facts.fact_sets);
 
         auto ctx = datalog::ProgramExecutionContext(m_workspace, m_task->get_rpg_program().get_const_program_workspace());
         ctx.clear();

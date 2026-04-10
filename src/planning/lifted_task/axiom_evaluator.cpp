@@ -59,7 +59,11 @@ void read_derived_atoms_from_program_context(const AxiomEvaluatorProgram& axiom_
         {
             if (axiom_program.get_translation_context().d2p.fluent_to_derived_predicate.contains(binding.get_relation()))
             {
-                const auto ground_atom = fp::merge_atom_d2p<f::FluentTag, f::DerivedTag>(binding, merge_context).first.get_index();
+                const auto ground_atom =
+                    fp::merge_atom_d2p<f::FluentTag, f::DerivedTag>(binding,
+                                                                    axiom_program.get_translation_context().d2p.fluent_to_derived_predicate,
+                                                                    merge_context)
+                        .first.get_index();
 
                 unpacked_state.set(ground_atom);
             }
@@ -87,17 +91,23 @@ std::shared_ptr<AxiomEvaluator<LiftedTag>> AxiomEvaluator<LiftedTag>::create(std
 void AxiomEvaluator<LiftedTag>::compute_extended_state(UnpackedState<LiftedTag>& unpacked_state)
 {
     auto merge_datalog_context = fp::MergeDatalogContext { m_workspace.datalog_builder, m_workspace.workspace_repository };
+    const auto& program = m_task->get_axiom_program();
 
-    insert_unextended_state(unpacked_state, *m_task->get_repository(), merge_datalog_context, m_workspace.facts.fact_sets, m_workspace.facts.assignment_sets);
+    insert_unextended_state(unpacked_state,
+                            *m_task->get_repository(),
+                            program.get_translation_context().p2d,
+                            merge_datalog_context,
+                            m_workspace.facts.fact_sets,
+                            m_workspace.facts.assignment_sets);
 
-    auto ctx = d::ProgramExecutionContext(m_workspace, m_task->get_axiom_program().get_const_program_workspace());
+    auto ctx = d::ProgramExecutionContext(m_workspace, program.get_const_program_workspace());
     ctx.clear();
 
     m_execution_context->arena().execute([&] { d::solve_bottom_up(ctx); });
 
     auto merge_planning_context = fp::MergePlanningContext { m_workspace.planning_builder, *m_task->get_repository() };
 
-    read_derived_atoms_from_program_context(m_task->get_axiom_program(), unpacked_state, merge_planning_context, m_workspace.facts.fact_sets);
+    read_derived_atoms_from_program_context(program, unpacked_state, merge_planning_context, m_workspace.facts.fact_sets);
 }
 
 void AxiomEvaluator<LiftedTag>::print_summary(size_t verbosity) const

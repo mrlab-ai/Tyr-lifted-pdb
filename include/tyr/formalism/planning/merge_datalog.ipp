@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/common/declarations.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/macros.hpp"
@@ -90,13 +91,16 @@ std::pair<formalism::datalog::PredicateView<T_DST>, bool> merge_p2d(PredicateVie
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<formalism::datalog::AtomView<T_DST>, bool> merge_p2d(AtomView<T_SRC> element, MergeDatalogContext& context)
+std::pair<formalism::datalog::AtomView<T_DST>, bool>
+merge_p2d(AtomView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context)
 {
     auto atom_ptr = context.builder.template get_builder<formalism::datalog::Atom<T_DST>>();
     auto& atom = *atom_ptr;
     atom.clear();
 
-    atom.predicate = merge_p2d<T_SRC, T_DST>(element.get_predicate(), context).first.get_index();
+    atom.predicate = predicate_mapping.at(element.get_predicate()).get_index();
     for (const auto term : element.get_terms())
         atom.terms.push_back(merge_p2d(term, context));
 
@@ -105,13 +109,16 @@ std::pair<formalism::datalog::AtomView<T_DST>, bool> merge_p2d(AtomView<T_SRC> e
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<formalism::datalog::PredicateBindingView<T_DST>, bool> merge_p2d(PredicateBindingView<T_SRC> element, MergeDatalogContext& context)
+std::pair<formalism::datalog::PredicateBindingView<T_DST>, bool>
+merge_p2d(PredicateBindingView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context)
 {
     auto binding_ptr = context.builder.template get_builder<RelationBinding<Predicate<T_DST>>>();
     auto& binding = *binding_ptr;
     binding.clear();
 
-    binding.relation = merge_p2d<T_SRC, T_DST>(element.get_relation(), context).first.get_index();
+    binding.relation = predicate_mapping.at(element.get_relation()).get_index();
     for (const auto object : element.get_objects())
         binding.objects.push_back(object.get_index());
 
@@ -120,41 +127,50 @@ std::pair<formalism::datalog::PredicateBindingView<T_DST>, bool> merge_p2d(Predi
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<formalism::datalog::GroundAtomView<T_DST>, bool> merge_p2d(GroundAtomView<T_SRC> element, MergeDatalogContext& context)
+std::pair<formalism::datalog::GroundAtomView<T_DST>, bool>
+merge_p2d(GroundAtomView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context)
 {
     auto atom_ptr = context.builder.template get_builder<formalism::datalog::GroundAtom<T_DST>>();
     auto& atom = *atom_ptr;
     atom.clear();
 
-    atom.binding = merge_p2d<T_SRC, T_DST>(element.get_row(), context).first.get_index();
+    atom.binding = merge_p2d<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.get_index();
 
     canonicalize(atom);
     return context.destination.get_or_create(atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<formalism::datalog::LiteralView<T_DST>, bool> merge_p2d(LiteralView<T_SRC> element, MergeDatalogContext& context)
+std::pair<formalism::datalog::LiteralView<T_DST>, bool>
+merge_p2d(LiteralView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context)
 {
     auto literal_ptr = context.builder.template get_builder<formalism::datalog::Literal<T_DST>>();
     auto& literal = *literal_ptr;
     literal.clear();
 
     literal.polarity = element.get_polarity();
-    literal.atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), context).first.get_index();
+    literal.atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
     canonicalize(literal);
     return context.destination.get_or_create(literal);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<formalism::datalog::GroundLiteralView<T_DST>, bool> merge_p2d(GroundLiteralView<T_SRC> element, MergeDatalogContext& context)
+std::pair<formalism::datalog::GroundLiteralView<T_DST>, bool>
+merge_p2d(GroundLiteralView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context)
 {
     auto literal_ptr = context.builder.template get_builder<formalism::datalog::GroundLiteral<T_DST>>();
     auto& literal = *literal_ptr;
     literal.clear();
 
     literal.polarity = element.get_polarity();
-    literal.atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), context).first.get_index();
+    literal.atom = merge_p2d<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
     canonicalize(literal);
     return context.destination.get_or_create(literal);

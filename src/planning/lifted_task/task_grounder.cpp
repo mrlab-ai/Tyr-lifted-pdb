@@ -464,7 +464,10 @@ GroundTaskInstantiationResult instantiate_ground_task(LiftedTask& lifted_task,  
                 for (const auto& binding : set.get_bindings())
                 {
                     fluent_atom.clear();
-                    fluent_atom.binding = fp::merge_d2p<f::FluentTag, f::FluentTag>(binding, merge_planning_context).first.get_index();
+                    fluent_atom.binding = fp::merge_d2p<f::FluentTag, f::FluentTag>(binding,
+                                                                                    ground_program.get_translation_context().d2p.fluent_to_fluent_predicate,
+                                                                                    merge_planning_context)
+                                              .first.get_index();
                     canonicalize(fluent_atom);
                     fluent_atoms.push_back(repository->get_or_create(fluent_atom).first);
                 }
@@ -474,7 +477,10 @@ GroundTaskInstantiationResult instantiate_ground_task(LiftedTask& lifted_task,  
                 for (const auto& binding : set.get_bindings())
                 {
                     derived_atom.clear();
-                    derived_atom.binding = fp::merge_d2p<f::FluentTag, f::DerivedTag>(binding, merge_planning_context).first.get_index();
+                    derived_atom.binding = fp::merge_d2p<f::FluentTag, f::DerivedTag>(binding,
+                                                                                      ground_program.get_translation_context().d2p.fluent_to_derived_predicate,
+                                                                                      merge_planning_context)
+                                               .first.get_index();
                     canonicalize(derived_atom);
                     derived_atoms.push_back(repository->get_or_create(derived_atom).first);
                 }
@@ -514,12 +520,14 @@ GroundTaskInstantiationResult instantiate_ground_task(LiftedTask& lifted_task,  
     }
 
     for (const auto atom : task.get_atoms<f::StaticTag>())
-        fdr_task.static_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+        fdr_task.static_atoms.push_back(
+            merge_p2p(atom, ground_program.get_translation_context().d2p.static_to_static_predicate, merge_context).first.get_index());
     for (const auto atom : fluent_atoms)
-        fdr_task.fluent_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
+        fdr_task.fluent_atoms.push_back(
+            merge_p2p(atom, ground_program.get_translation_context().d2p.fluent_to_fluent_predicate, merge_context).first.get_index());
     for (const auto atom : derived_atoms)
-        fdr_task.derived_atoms.push_back(merge_p2p(atom, merge_context).first.get_index());
-
+        fdr_task.derived_atoms.push_back(
+            merge_p2p(atom, ground_program.get_translation_context().d2p.fluent_to_derived_predicate, merge_context).first.get_index());
     for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
         fdr_task.static_fterm_values.push_back(merge_p2p(fterm_value, merge_context).first.get_index());
     for (const auto fterm_value : task.get_fterm_values<f::FluentTag>())
@@ -537,7 +545,8 @@ GroundTaskInstantiationResult instantiate_ground_task(LiftedTask& lifted_task,  
 
     /// --- Create FDR fluent facts
     for (const auto atom : task.get_atoms<f::FluentTag>())
-        fdr_task.fluent_facts.push_back(fdr_context->get_fact(merge_p2p(atom, merge_context).first.get_index()));
+        fdr_task.fluent_facts.push_back(
+            fdr_context->get_fact(merge_p2p(atom, ground_program.get_translation_context().d2p.fluent_to_fluent_predicate, merge_context).first.get_index()));
 
     /// --- Create FDR goal
     const auto goal_or_nullopt = create_ground_fdr_conjunctive_condition(task.get_goal(), fluent_atoms_set, derived_atoms_set, *fdr_context, merge_context);

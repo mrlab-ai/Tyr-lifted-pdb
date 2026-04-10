@@ -15,6 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/common/declarations.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/macros.hpp"
@@ -93,13 +94,15 @@ std::pair<PredicateView<T_DST>, bool> merge_d2p(formalism::datalog::PredicateVie
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<AtomView<T_DST>, bool> merge_d2p(formalism::datalog::AtomView<T_SRC> element, MergePlanningContext& context)
+std::pair<AtomView<T_DST>, bool> merge_d2p(formalism::datalog::AtomView<T_SRC> element,  //
+                                           const UnorderedMap<formalism::datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
+                                           MergePlanningContext& context)
 {
     auto atom_ptr = context.builder.template get_builder<Atom<T_DST>>();
     auto& atom = *atom_ptr;
     atom.clear();
 
-    atom.predicate = merge_d2p<T_SRC, T_DST>(element.get_predicate(), context).first.get_index();
+    atom.predicate = predicate_mapping.at(element.get_predicate()).get_index();
     for (const auto term : element.get_terms())
         atom.terms.push_back(merge_d2p(term, context));
 
@@ -108,13 +111,15 @@ std::pair<AtomView<T_DST>, bool> merge_d2p(formalism::datalog::AtomView<T_SRC> e
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<PredicateBindingView<T_DST>, bool> merge_d2p(formalism::datalog::PredicateBindingView<T_SRC> element, MergePlanningContext& context)
+std::pair<PredicateBindingView<T_DST>, bool> merge_d2p(formalism::datalog::PredicateBindingView<T_SRC> element,  //
+                                                       const UnorderedMap<formalism::datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
+                                                       MergePlanningContext& context)
 {
     auto binding_ptr = context.builder.template get_builder<RelationBinding<Predicate<T_DST>>>();
     auto& binding = *binding_ptr;
     binding.clear();
 
-    binding.relation = merge_d2p<T_SRC, T_DST>(element.get_relation(), context).first.get_index();
+    binding.relation = predicate_mapping.at(element.get_relation()).get_index();
     for (const auto object : element.get_objects())
         binding.objects.push_back(object.get_index());
 
@@ -123,54 +128,62 @@ std::pair<PredicateBindingView<T_DST>, bool> merge_d2p(formalism::datalog::Predi
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<GroundAtomView<T_DST>, bool> merge_atom_d2p(formalism::datalog::PredicateBindingView<T_SRC> element, MergePlanningContext& context)
+std::pair<GroundAtomView<T_DST>, bool> merge_atom_d2p(formalism::datalog::PredicateBindingView<T_SRC> element,  //
+                                                      const UnorderedMap<formalism::datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
+                                                      MergePlanningContext& context)
 {
     auto atom_ptr = context.builder.template get_builder<GroundAtom<T_DST>>();
     auto& atom = *atom_ptr;
     atom.clear();
 
-    atom.binding = merge_d2p<T_SRC, T_DST>(element, context).first.get_index();
+    atom.binding = merge_d2p<T_SRC, T_DST>(element, predicate_mapping, context).first.get_index();
 
     canonicalize(atom);
     return context.destination.get_or_create(atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<GroundAtomView<T_DST>, bool> merge_d2p(formalism::datalog::GroundAtomView<T_SRC> element, MergePlanningContext& context)
+std::pair<GroundAtomView<T_DST>, bool> merge_d2p(formalism::datalog::GroundAtomView<T_SRC> element,  //
+                                                 const UnorderedMap<formalism::datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
+                                                 MergePlanningContext& context)
 {
     auto atom_ptr = context.builder.template get_builder<GroundAtom<T_DST>>();
     auto& atom = *atom_ptr;
     atom.clear();
 
-    atom.binding = merge_d2p<T_SRC, T_DST>(element.get_row(), context).first.get_index();
+    atom.binding = merge_d2p<T_SRC, T_DST>(element.get_row(), predicate_mapping, context).first.get_index();
 
     canonicalize(atom);
     return context.destination.get_or_create(atom);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<LiteralView<T_DST>, bool> merge_d2p(formalism::datalog::LiteralView<T_SRC> element, MergePlanningContext& context)
+std::pair<LiteralView<T_DST>, bool> merge_d2p(formalism::datalog::LiteralView<T_SRC> element,  //
+                                              const UnorderedMap<formalism::datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
+                                              MergePlanningContext& context)
 {
     auto literal_ptr = context.builder.template get_builder<Literal<T_DST>>();
     auto& literal = *literal_ptr;
     literal.clear();
 
     literal.polarity = element.get_polarity();
-    literal.atom = merge_d2p<T_SRC, T_DST>(element.get_atom(), context).first.get_index();
+    literal.atom = merge_d2p<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
     canonicalize(literal);
     return context.destination.get_or_create(literal);
 }
 
 template<FactKind T_SRC, FactKind T_DST>
-std::pair<GroundLiteralView<T_DST>, bool> merge_d2p(formalism::datalog::GroundLiteralView<T_SRC> element, MergePlanningContext& context)
+std::pair<GroundLiteralView<T_DST>, bool> merge_d2p(formalism::datalog::GroundLiteralView<T_SRC> element,  //
+                                                    const UnorderedMap<formalism::datalog::PredicateView<T_SRC>, PredicateView<T_DST>>& predicate_mapping,
+                                                    MergePlanningContext& context)
 {
     auto literal_ptr = context.builder.template get_builder<GroundLiteral<T_DST>>();
     auto& literal = *literal_ptr;
     literal.clear();
 
     literal.polarity = element.get_polarity();
-    literal.atom = merge_d2p<T_SRC, T_DST>(element.get_atom(), context).first.get_index();
+    literal.atom = merge_d2p<T_SRC, T_DST>(element.get_atom(), predicate_mapping, context).first.get_index();
 
     canonicalize(literal);
     return context.destination.get_or_create(literal);

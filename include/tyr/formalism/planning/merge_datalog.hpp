@@ -18,6 +18,7 @@
 #ifndef TYR_FORMALISM_PLANNING_MERGE_DATALOG_HPP_
 #define TYR_FORMALISM_PLANNING_MERGE_DATALOG_HPP_
 
+#include "tyr/common/declarations.hpp"
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/tuple.hpp"
@@ -46,19 +47,34 @@ template<FactKind T_SRC, FactKind T_DST = T_SRC>
 std::pair<formalism::datalog::PredicateView<T_DST>, bool> merge_p2d(PredicateView<T_SRC> element, MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
-std::pair<formalism::datalog::AtomView<T_DST>, bool> merge_p2d(AtomView<T_SRC> element, MergeDatalogContext& context);
+std::pair<formalism::datalog::AtomView<T_DST>, bool>
+merge_p2d(AtomView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
-std::pair<formalism::datalog::PredicateBindingView<T_DST>, bool> merge_p2d(PredicateBindingView<T_SRC> element, MergeDatalogContext& context);
+std::pair<formalism::datalog::PredicateBindingView<T_DST>, bool>
+merge_p2d(PredicateBindingView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
-std::pair<formalism::datalog::GroundAtomView<T_DST>, bool> merge_p2d(GroundAtomView<T_SRC> element, MergeDatalogContext& context);
+std::pair<formalism::datalog::GroundAtomView<T_DST>, bool>
+merge_p2d(GroundAtomView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
-std::pair<formalism::datalog::LiteralView<T_DST>, bool> merge_p2d(LiteralView<T_SRC> element, MergeDatalogContext& context);
+std::pair<formalism::datalog::LiteralView<T_DST>, bool>
+merge_p2d(LiteralView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context);
 
 template<FactKind T_SRC, FactKind T_DST = T_SRC>
-std::pair<formalism::datalog::GroundLiteralView<T_DST>, bool> merge_p2d(GroundLiteralView<T_SRC> element, MergeDatalogContext& context);
+std::pair<formalism::datalog::GroundLiteralView<T_DST>, bool>
+merge_p2d(GroundLiteralView<T_SRC> element,  //
+          const UnorderedMap<PredicateView<T_SRC>, formalism::datalog::PredicateView<T_DST>>& predicate_mapping,
+          MergeDatalogContext& context);
 
 // Numeric
 

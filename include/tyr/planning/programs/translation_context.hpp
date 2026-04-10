@@ -31,22 +31,28 @@ namespace tyr::planning
 
 struct D2PTranslationContext
 {
+    using StaticToStaticPredicateMapping =
+        UnorderedMap<formalism::datalog::PredicateView<formalism::StaticTag>, formalism::planning::PredicateView<formalism::StaticTag>>;
     using FluentToFluentPredicateMapping =
         UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::PredicateView<formalism::FluentTag>>;
     using FluentToDerivedPredicateMapping =
         UnorderedMap<formalism::datalog::PredicateView<formalism::FluentTag>, formalism::planning::PredicateView<formalism::DerivedTag>>;
 
+    StaticToStaticPredicateMapping static_to_static_predicate;
     FluentToFluentPredicateMapping fluent_to_fluent_predicate;
     FluentToDerivedPredicateMapping fluent_to_derived_predicate;
 };
 
 struct P2DTranslationContext
 {
+    using StaticToStaticPredicateMapping =
+        UnorderedMap<formalism::planning::PredicateView<formalism::StaticTag>, formalism::datalog::PredicateView<formalism::StaticTag>>;
     using FluentToFluentPredicateMapping =
         UnorderedMap<formalism::planning::PredicateView<formalism::FluentTag>, formalism::datalog::PredicateView<formalism::FluentTag>>;
     using DerivedToFluentPredicateMapping =
         UnorderedMap<formalism::planning::PredicateView<formalism::DerivedTag>, formalism::datalog::PredicateView<formalism::FluentTag>>;
 
+    StaticToStaticPredicateMapping static_to_static_predicate;
     FluentToFluentPredicateMapping fluent_to_fluent_predicate;
     DerivedToFluentPredicateMapping derived_to_fluent_predicate;
 };

@@ -41,6 +41,7 @@ namespace
 auto create_cond_effect_rule(fp::ActionView action,
                              fp::ConditionalEffectView cond_eff,
                              fp::AtomView<formalism::FluentTag> effect,
+                             TranslationContext& translation_context,
                              formalism::planning::MergeDatalogContext& context)
 {
     auto rule_ptr = context.builder.get_builder<formalism::datalog::Rule>();
@@ -55,25 +56,25 @@ auto create_cond_effect_rule(fp::ActionView action,
     for (const auto& variable : action.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
     for (const auto literal : action.get_condition().get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, context).first.get_index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     for (const auto literal : action.get_condition().get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge_p2d(literal, context).first.get_index());
+            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     for (const auto variable : cond_eff.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, context).first.get_index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     for (const auto literal : cond_eff.get_condition().template get_literals<formalism::FluentTag>())
         if (literal.get_polarity())
-            conj_cond.fluent_literals.push_back(merge_p2d(literal, context).first.get_index());
+            conj_cond.fluent_literals.push_back(merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     canonicalize(conj_cond);
     const auto new_conj_cond = context.destination.get_or_create(conj_cond).first;
 
     rule.variables = new_conj_cond.get_variables().get_data();
     rule.body = new_conj_cond.get_index();
-    rule.head = merge_p2d(effect, context).first.get_index();
+    rule.head = merge_p2d(effect, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index();
     rule.cost = 1;
 
     canonicalize(rule);
@@ -82,6 +83,7 @@ auto create_cond_effect_rule(fp::ActionView action,
 
 void translate_action_to_delete_free_rules(fp::ActionView action,
                                            Data<fd::Program>& program,
+                                           TranslationContext& translation_context,
                                            fp::MergeDatalogContext& context,
                                            RPGProgram::RuleToActionMapping& rule_to_action)
 {
@@ -92,7 +94,7 @@ void translate_action_to_delete_free_rules(fp::ActionView action,
             if (!literal.get_polarity())
                 continue;  /// ignore delete effects
 
-            const auto rule = create_cond_effect_rule(action, cond_eff, literal.get_atom(), context).first;
+            const auto rule = create_cond_effect_rule(action, cond_eff, literal.get_atom(), translation_context, context).first;
 
             program.rules.push_back(rule.get_index());
             rule_to_action.emplace(rule, action);
@@ -109,7 +111,12 @@ auto create_program(fp::TaskView task, TranslationContext& translation_context, 
     program.clear();
 
     for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
-        program.static_predicates.push_back(fp::merge_p2d(predicate, context).first.get_index());
+    {
+        const auto new_predicate = fp::merge_p2d(predicate, context).first;
+        translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
+        translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
+        program.static_predicates.push_back(new_predicate.get_index());
+    }
     for (const auto predicate : task.get_domain().get_predicates<f::FluentTag>())
     {
         const auto new_predicate = fp::merge_p2d(predicate, context).first;
@@ -129,9 +136,9 @@ auto create_program(fp::TaskView task, TranslationContext& translation_context, 
         program.objects.push_back(fp::merge_p2d(object, context).first.get_index());
 
     for (const auto atom : task.get_atoms<f::StaticTag>())
-        program.static_atoms.push_back(fp::merge_p2d(atom, context).first.get_index());
+        program.static_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     for (const auto atom : task.get_atoms<f::FluentTag>())
-        program.fluent_atoms.push_back(fp::merge_p2d(atom, context).first.get_index());
+        program.fluent_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
         program.static_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
@@ -139,7 +146,7 @@ auto create_program(fp::TaskView task, TranslationContext& translation_context, 
         program.fluent_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
 
     for (const auto action : task.get_domain().get_actions())
-        translate_action_to_delete_free_rules(action, program, context, rule_to_action);
+        translate_action_to_delete_free_rules(action, program, translation_context, context, rule_to_action);
 
     canonicalize(program);
     return destination.get_or_create(program).first;

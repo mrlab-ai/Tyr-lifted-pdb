@@ -78,7 +78,12 @@ auto create_program(fp::TaskView task,
     program.clear();
 
     for (const auto predicate : task.get_domain().get_predicates<f::StaticTag>())
-        program.static_predicates.push_back(fp::merge_p2d(predicate, context).first.get_index());
+    {
+        const auto new_predicate = fp::merge_p2d(predicate, context).first;
+        translation_context.d2p.static_to_static_predicate.emplace(new_predicate, predicate);
+        translation_context.p2d.static_to_static_predicate.emplace(predicate, new_predicate);
+        program.static_predicates.push_back(new_predicate.get_index());
+    }
     for (const auto predicate : task.get_domain().get_predicates<f::FluentTag>())
     {
         const auto new_predicate = fp::merge_p2d(predicate, context).first;
@@ -112,9 +117,9 @@ auto create_program(fp::TaskView task,
         program.objects.push_back(fp::merge_p2d(object, context).first.get_index());
 
     for (const auto atom : task.get_atoms<f::StaticTag>())
-        program.static_atoms.push_back(fp::merge_p2d(atom, context).first.get_index());
+        program.static_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     for (const auto atom : task.get_atoms<f::FluentTag>())
-        program.fluent_atoms.push_back(fp::merge_p2d(atom, context).first.get_index());
+        program.fluent_atoms.push_back(fp::merge_p2d(atom, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
     for (const auto fterm_value : task.get_fterm_values<f::StaticTag>())
         program.static_fterm_values.push_back(fp::merge_p2d(fterm_value, context).first.get_index());
@@ -145,13 +150,14 @@ auto create_program(fp::TaskView task,
             conj_cond.variables.push_back(fp::merge_p2d(variable, context).first.get_index());
 
         for (const auto literal : action.get_condition().get_literals<f::StaticTag>())
-            conj_cond.static_literals.push_back(fp::merge_p2d(literal, context).first.get_index());
+            conj_cond.static_literals.push_back(fp::merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
 
         for (const auto literal : action.get_condition().get_literals<f::FluentTag>())
-            conj_cond.fluent_literals.push_back(fp::merge_p2d(literal, context).first.get_index());
+            conj_cond.fluent_literals.push_back(fp::merge_p2d(literal, translation_context.p2d.fluent_to_fluent_predicate, context).first.get_index());
 
         for (const auto literal : action.get_condition().get_literals<f::DerivedTag>())
-            conj_cond.fluent_literals.push_back(fp::merge_p2d<f::DerivedTag, f::FluentTag>(literal, context).first.get_index());
+            conj_cond.fluent_literals.push_back(
+                fp::merge_p2d<f::DerivedTag, f::FluentTag>(literal, translation_context.p2d.derived_to_fluent_predicate, context).first.get_index());
 
         for (const auto numeric_constraint : action.get_condition().get_numeric_constraints())
             conj_cond.numeric_constraints.push_back(fp::merge_p2d(numeric_constraint, context));
