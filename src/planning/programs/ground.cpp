@@ -213,7 +213,7 @@ auto create_cond_effect_rule(fp::ActionView action,
     for (const auto variable : action.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
     for (const auto literal : action.get_condition().get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_fluent_predicate, context).first.get_index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     conj_cond.fluent_literals.push_back(create_applicability_literal(action, translation_context, context).first.get_index());
 
     for (const auto variable : cond_eff.get_variables())
@@ -244,7 +244,7 @@ auto create_effect_rule(fp::AxiomView axiom, fd::AtomView<f::FluentTag> effect, 
     for (const auto variable : axiom.get_variables())
         conj_cond.variables.push_back(merge_p2d(variable, context).first.get_index());
     for (const auto literal : axiom.get_body().get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_fluent_predicate, context).first.get_index());
+        conj_cond.static_literals.push_back(merge_p2d(literal, translation_context.p2d.static_to_static_predicate, context).first.get_index());
     conj_cond.fluent_literals.push_back(create_applicability_literal(axiom, translation_context, context).first.get_index());
 
     canonicalize(conj_cond);
@@ -313,6 +313,7 @@ void translate_axiom_to_delete_free_axiom_rules(fp::AxiomView axiom,
     program.rules.push_back(
         create_effect_rule(axiom,
                            fp::merge_p2d<f::DerivedTag, f::FluentTag>(axiom.get_head(), translation_context.p2d.derived_to_fluent_predicate, context).first,
+                           translation_context,
                            context)
             .first.get_index());
 }
