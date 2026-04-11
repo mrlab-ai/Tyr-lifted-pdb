@@ -44,7 +44,7 @@ StateRepository<LiftedTag>::StateRepository(std::shared_ptr<Task<LiftedTag>> tas
     m_derived_backend(m_context),
     m_numeric_backend(m_context),
     m_unpacked_state_pool(),
-    m_axiom_evaluator(std::make_shared<AxiomEvaluator<LiftedTag>>(task, execution_context))
+    m_axiom_evaluator(m_task->has_axioms() ? std::make_shared<AxiomEvaluator<LiftedTag>>(task, execution_context) : nullptr)
 {
 }
 
@@ -116,7 +116,8 @@ SharedObjectPoolPtr<UnpackedState<LiftedTag>> StateRepository<LiftedTag>::get_un
 
 StateView<LiftedTag> StateRepository<LiftedTag>::register_state(SharedObjectPoolPtr<UnpackedState<LiftedTag>> state)
 {
-    m_axiom_evaluator->compute_extended_state(*state);
+    if (m_axiom_evaluator)
+        m_axiom_evaluator->compute_extended_state(*state);
 
     state->set(m_packed_states
                    .insert(Data<State<LiftedTag>>(Index<State<LiftedTag>>(m_packed_states.size()),

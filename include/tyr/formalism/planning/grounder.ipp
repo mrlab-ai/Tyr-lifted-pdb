@@ -342,20 +342,25 @@ TYR_INLINE_IMPL std::pair<ActionBindingView, bool> ground(ActionView action, Gro
 
 TYR_INLINE_IMPL std::pair<GroundActionView, bool> ground(ActionView element,
                                                          GrounderContext& context,
+                                                         GrounderCache& cache,
                                                          const analysis::ActionDomain& action_domains,
                                                          itertools::cartesian_set::Workspace<Index<formalism::Object>>& iter_workspace,
                                                          FDRContext& fdr)
 {
-    // Fetch and clear
+    const auto binding = ground(element, context).first.get_index();
+
+    auto& action_cache = cache.get_cache<Action>();
+    if (auto it = action_cache.find(binding); it != action_cache.end())
+        return { make_view(it->second, context.destination), false };
+
     auto action_ptr = context.builder.template get_builder<GroundAction>();
     auto& action = *action_ptr;
     action.clear();
 
-    // Fill data
-    action.binding = ground(element, context).first.get_index();
+    action.binding = binding;
     action.condition = ground(element.get_condition(), context, fdr).first.get_index();
 
-    auto binding_size = context.binding.size();
+    const auto binding_size = context.binding.size();
 
     for (uint_t cond_effect_index = 0; cond_effect_index < element.get_effects().size(); ++cond_effect_index)
     {
@@ -369,18 +374,21 @@ TYR_INLINE_IMPL std::pair<GroundActionView, bool> ground(ActionView element,
                                                    iter_workspace,
                                                    [&](auto&& binding_cond)
                                                    {
-                                                       // push the additional parameters to the end
                                                        context.binding.resize(binding_size);
                                                        context.binding.insert(context.binding.end(), binding_cond.begin(), binding_cond.end());
 
                                                        action.effects.push_back(ground(cond_effect, context, fdr).first.get_index());
                                                    });
     }
-    context.binding.resize(binding_size);  ///< important to restore the binding in case of grounding other actions
 
-    // Canonicalize and Serialize
+    context.binding.resize(binding_size);
+
     canonicalize(action);
-    return context.destination.get_or_create(action);
+    const auto result = context.destination.get_or_create(action);
+
+    action_cache.emplace(binding, result.first.get_index());
+
+    return result;
 }
 
 TYR_INLINE_IMPL std::pair<AxiomBindingView, bool> ground(AxiomView axiom, GrounderContext& context)
@@ -398,21 +406,28 @@ TYR_INLINE_IMPL std::pair<AxiomBindingView, bool> ground(AxiomView axiom, Ground
     return context.destination.get_or_create(binding);
 }
 
-TYR_INLINE_IMPL std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, FDRContext& fdr)
+TYR_INLINE_IMPL std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, GrounderCache& cache, FDRContext& fdr)
 {
-    // Fetch and clear
+    const auto binding = ground(element, context).first.get_index();
+
+    auto& axiom_cache = cache.get_cache<Axiom>();
+    if (auto it = axiom_cache.find(binding); it != axiom_cache.end())
+        return { make_view(it->second, context.destination), false };
+
     auto axiom_ptr = context.builder.template get_builder<GroundAxiom>();
     auto& axiom = *axiom_ptr;
     axiom.clear();
 
-    // Fill data
-    axiom.binding = ground(element, context).first.get_index();
+    axiom.binding = binding;
     axiom.body = ground(element.get_body(), context, fdr).first.get_index();
     axiom.head = ground(element.get_head(), context).first.get_index();
 
-    // Canonicalize and Serialize
     canonicalize(axiom);
-    return context.destination.get_or_create(axiom);
+    const auto result = context.destination.get_or_create(axiom);
+
+    axiom_cache.emplace(binding, result.first.get_index());
+
+    return result;
 }
 
 }

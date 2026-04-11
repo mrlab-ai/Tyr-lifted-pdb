@@ -131,7 +131,8 @@ int main(int argc, char** argv)
             }
 
             successor_generator.print_summary(1);
-            successor_generator.get_state_repository()->get_axiom_evaluator()->print_summary(1);
+            if (successor_generator.get_state_repository()->get_axiom_evaluator())
+                successor_generator.get_state_repository()->get_axiom_evaluator()->print_summary(1);
             heuristic->print_summary(1);
 
             std::cout << "[Total] Number of fluent atoms: " << lifted_task->get_repository()->size<formalism::planning::GroundAtom<formalism::FluentTag>>()

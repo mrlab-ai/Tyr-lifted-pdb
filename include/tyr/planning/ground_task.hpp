@@ -61,6 +61,7 @@ public:
     auto get_task() const noexcept { return m_task.get_task(); }
     const auto& get_fdr_context() const noexcept { return m_task.get_fdr_context(); }
     const auto& get_repository() const noexcept { return m_task.get_repository(); }
+    bool has_axioms() const noexcept { return !get_task().get_ground_axioms().empty(); }
 
     const auto& get_action_match_tree() const noexcept { return m_action_match_tree; }
     const auto& get_axiom_match_tree_strata() const noexcept { return m_axiom_match_tree_strata; }

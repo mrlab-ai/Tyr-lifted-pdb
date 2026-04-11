@@ -24,6 +24,7 @@
 #include "tyr/common/vector.hpp"                    // for get
 #include "tyr/formalism/planning/declarations.hpp"  // for OverlayRepos...
 #include "tyr/formalism/planning/fdr_context.hpp"
+#include "tyr/formalism/planning/grounder_decl.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/views.hpp"  // for View
 #include "tyr/planning/declarations.hpp"
@@ -62,6 +63,7 @@ public:
     auto& get_fdr_context() noexcept { return m_task.get_fdr_context(); }
     const auto& get_fdr_context() const noexcept { return m_task.get_fdr_context(); }
     const auto& get_repository() const noexcept { return m_task.get_repository(); }
+    bool has_axioms() const noexcept { return !get_task().get_axioms().empty() || !get_domain().get_domain().get_axioms().empty(); }
 
     auto& get_axiom_program() noexcept { return m_axiom_program; }
     const auto& get_axiom_program() const noexcept { return m_axiom_program; }
@@ -69,6 +71,9 @@ public:
     const auto& get_action_program() const noexcept { return m_action_program; }
     auto& get_rpg_program() noexcept { return m_rpg_program; }
     const auto& get_rpg_program() const noexcept { return m_rpg_program; }
+
+    auto& get_grounder_cache() noexcept { return m_grounder_cache; }
+    const auto& get_grounder_cache() const noexcept { return m_grounder_cache; }
 
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
@@ -89,6 +94,8 @@ private:
     ApplicableActionProgram m_action_program;
 
     RPGProgram m_rpg_program;
+
+    formalism::planning::GrounderCache m_grounder_cache;
 };
 
 }

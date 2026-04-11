@@ -84,13 +84,14 @@ std::pair<ActionBindingView, bool> ground(ActionView action, GrounderContext& co
 
 std::pair<GroundActionView, bool> ground(ActionView element,
                                          GrounderContext& context,
+                                         GrounderCache& cache,
                                          const analysis::ActionDomain& action_domains,
                                          itertools::cartesian_set::Workspace<Index<formalism::Object>>& iter_workspace,
                                          FDRContext& fdr);
 
 std::pair<AxiomBindingView, bool> ground(AxiomView axiom, GrounderContext& context);
 
-std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, FDRContext& fdr);
+std::pair<GroundAxiomView, bool> ground(AxiomView element, GrounderContext& context, GrounderCache& cache, FDRContext& fdr);
 
 }
 

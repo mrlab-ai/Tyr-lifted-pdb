@@ -30,6 +30,44 @@ struct GrounderContext
     IndexList<Object>& binding;
 };
 
+template<typename T>
+struct GrounderCacheEntry;
+
+template<>
+struct GrounderCacheEntry<Action>
+{
+    using container_type = UnorderedMap<Index<RelationBinding<Action>>, Index<GroundAction>>;
+
+    container_type container;
+};
+
+template<>
+struct GrounderCacheEntry<Axiom>
+{
+    using container_type = UnorderedMap<Index<RelationBinding<Axiom>>, Index<GroundAxiom>>;
+
+    container_type container;
+};
+
+struct GrounderCache
+{
+    using Storage = std::tuple<GrounderCacheEntry<Action>, GrounderCacheEntry<Axiom>>;
+
+    Storage m_cache;
+
+    template<typename T>
+    [[nodiscard]] auto& get_cache() noexcept
+    {
+        return std::get<GrounderCacheEntry<T>>(m_cache).container;
+    }
+
+    template<typename T>
+    [[nodiscard]] const auto& get_cache() const noexcept
+    {
+        return std::get<GrounderCacheEntry<T>>(m_cache).container;
+    }
+};
+
 }
 
 #endif
