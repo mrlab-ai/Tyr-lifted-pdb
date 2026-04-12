@@ -257,6 +257,13 @@ public:
                            uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
+    void initialize_dynamic_consistency_graphs2(const AssignmentSets& assignment_sets,
+                                                const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
+                                                const kpkc::GraphLayout& layout,
+                                                kpkc::Graph& delta_graph,
+                                                kpkc::Graph& full_graph,
+                                                std::vector<kpkc::Edge>& delta_edges) const;
+
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
                                                const kpkc::GraphLayout& layout,
@@ -285,6 +292,7 @@ private:
     formalism::datalog::ConjunctiveConditionView m_unary_overapproximation_condition;
     formalism::datalog::ConjunctiveConditionView m_binary_overapproximation_condition;
 
+    formalism::datalog::VariableDependencyGraph m_unary_overapproximation_vdg;
     formalism::datalog::VariableDependencyGraph m_binary_overapproximation_vdg;
 
     /* The data member of the consistency graph. */
