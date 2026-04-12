@@ -106,12 +106,6 @@ struct UnaryDependencies
                || has_literal_dependency<FluentTag, PositiveTag>(p) || has_literal_dependency<FluentTag, NegativeTag>(p) || has_numeric_dependency(p);
     }
 
-    template<FactKind T>
-    bool has_dependency(uint_t p) const noexcept
-    {
-        return has_literal_dependency<T, PositiveTag>(p) || has_literal_dependency<T, NegativeTag>(p) || has_numeric_dependency(p);
-    }
-
     uint_t k;
 
     boost::dynamic_bitset<> static_positive_literal;
@@ -168,12 +162,6 @@ struct BinaryDependencies
         return has_literal_dependency<StaticTag, PositiveTag>(pi, pj) || has_literal_dependency<StaticTag, NegativeTag>(pi, pj)
                || has_literal_dependency<FluentTag, PositiveTag>(pi, pj) || has_literal_dependency<FluentTag, NegativeTag>(pi, pj)
                || has_numeric_dependency(pi, pj);
-    }
-
-    template<FactKind T>
-    bool has_dependency(uint_t pi, uint_t pj) const noexcept
-    {
-        return has_literal_dependency<T, PositiveTag>(pi, pj) || has_literal_dependency<T, NegativeTag>(pi, pj) || has_numeric_dependency(pi, pj);
     }
 
     uint_t k;

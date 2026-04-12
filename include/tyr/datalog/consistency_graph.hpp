@@ -262,7 +262,8 @@ public:
                                                 const kpkc::GraphLayout& layout,
                                                 kpkc::Graph& delta_graph,
                                                 kpkc::Graph& full_graph,
-                                                std::vector<kpkc::Edge>& delta_edges) const;
+                                                std::vector<kpkc::Edge>& delta_edges,
+                                                bool bootstrap_filter_only_regions) const;
 
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
                                                const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
