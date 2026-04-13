@@ -1098,253 +1098,225 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
     // std::cout << m_binary_overapproximation_indexed_literals << std::endl;
 }
 
-void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const AssignmentSets& assignment_sets,
-                                                                    const TaggedFactSets<f::FluentTag>& delta_fact_sets,
-                                                                    const kpkc::GraphLayout& layout,
-                                                                    kpkc::Graph& delta_graph,
-                                                                    kpkc::Graph& full_graph,
-                                                                    std::vector<kpkc::Edge>& delta_edges,
-                                                                    bool bootstrap_filter_only_regions) const
+namespace
 {
-    delta_graph.reset();
+inline void commit_vertex(uint_t b,
+                          BitsetSpan<uint64_t> full_affected_partition,
+                          BitsetSpan<uint64_t> delta_affected_partition,
+                          BitsetSpan<uint64_t> full_delta_partition,
+                          BitsetSpan<uint64_t> delta_delta_partition) noexcept
+{
+    full_affected_partition.set(b);
+    delta_affected_partition.set(b);
 
+    full_delta_partition.set(b);
+    delta_delta_partition.set(b);
+}
+
+inline void commit_edge(uint_t vi,
+                        uint_t vj,
+                        uint_t bi,
+                        uint_t bj,
+                        BitsetSpan<uint64_t> full_edges_i,
+                        BitsetSpan<uint64_t> delta_edges_i,
+                        boost::dynamic_bitset<>::reference full_touched_i,
+                        boost::dynamic_bitset<>::reference delta_touched_i,
+                        BitsetSpan<uint64_t> full_affected_partition_i,
+                        BitsetSpan<uint64_t> full_affected_partition_j,
+                        BitsetSpan<uint64_t> delta_affected_partition_i,
+                        BitsetSpan<uint64_t> delta_affected_partition_j,
+                        const kpkc::GraphLayout::BitsetInfo& info_i,
+                        const kpkc::GraphLayout::BitsetInfo& info_j,
+                        kpkc::Graph& full_graph,
+                        kpkc::Graph& delta_graph,
+                        std::vector<kpkc::Edge>& delta_edges,
+                        uint_t reverse_partition_i)
+{
+    full_edges_i.set(bj);
+    full_graph.matrix.get_bitset(vj, reverse_partition_i).set(bi);
+
+    delta_edges_i.set(bj);
+    delta_graph.matrix.get_bitset(vj, reverse_partition_i).set(bi);
+
+    delta_edges.emplace_back(kpkc::Vertex(vi), kpkc::Vertex(vj));
+
+    assert(full_affected_partition_i.test(bi));
+    assert(full_affected_partition_j.test(bj));
+    delta_affected_partition_i.set(bi);
+    delta_affected_partition_j.set(bj);
+
+    assert(full_graph.delta_partitions.get_bitset(info_i).test(bi));
+    assert(full_graph.delta_partitions.get_bitset(info_j).test(bj));
+
+    delta_touched_i = true;
+    full_touched_i = true;
+    delta_graph.matrix.touched_partitions(vj, reverse_partition_i) = true;
+    full_graph.matrix.touched_partitions(vj, reverse_partition_i) = true;
+}
+}
+
+void StaticConsistencyGraph::bootstrap_vertices_from_filter_only_regions(const AssignmentSets& assignment_sets,
+                                                                         const kpkc::GraphLayout& layout,
+                                                                         kpkc::Graph& delta_graph,
+                                                                         kpkc::Graph& full_graph) const
+{
     const auto k = layout.k;
-    const auto& predicate_sets = delta_fact_sets.predicate.get_sets();
-    const auto& predicate_to_anchors = m_unary_overapproximation_predicate_to_anchors;
     const auto unary_overapproximation_constraints = m_unary_overapproximation_condition.get_numeric_constraints();
+
+    for (uint_t p = 0; p < k; ++p)
+    {
+        const bool has_fluent_positive = m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::PositiveTag>(p);
+
+        const bool has_runtime_filter = m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::NegativeTag>(p)
+                                        || m_unary_overapproximation_vdg.unary().has_numeric_dependency(p);
+
+        const auto mode = has_fluent_positive ? BootstrapMode::skip : has_runtime_filter ? BootstrapMode::filter_only : BootstrapMode::static_only;
+
+        if (mode == BootstrapMode::skip)
+            continue;
+
+        auto full_delta_partition = full_graph.delta_partitions.get_bitset(layout.info.infos[p]);
+        auto full_affected_partition = full_graph.affected_partitions.get_bitset(layout.info.infos[p]);
+        auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(layout.info.infos[p]);
+        auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(layout.info.infos[p]);
+
+        for (const auto v : layout.vertex_partitions[p])
+        {
+            const auto b = layout.vertex_to_bit[v];
+
+            bool accept = (mode == BootstrapMode::static_only);
+
+            if (mode == BootstrapMode::filter_only)
+            {
+                const auto& vertex = get_vertex(v);
+
+                accept = consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                         && consistent_numeric_constraints(vertex,
+                                                           unary_overapproximation_constraints,
+                                                           m_unary_overapproximation_indexed_constraints,
+                                                           assignment_sets);
+            }
+
+            if (!accept)
+                continue;
+
+            commit_vertex(b, full_affected_partition, delta_affected_partition, full_delta_partition, delta_delta_partition);
+        }
+    }
+}
+
+void StaticConsistencyGraph::bootstrap_edges_from_filter_only_regions(const AssignmentSets& assignment_sets,
+                                                                      const kpkc::GraphLayout& layout,
+                                                                      kpkc::Graph& delta_graph,
+                                                                      kpkc::Graph& full_graph,
+                                                                      std::vector<kpkc::Edge>& delta_edges) const
+{
+    const auto k = layout.k;
     const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
 
-    /**
-     * Phase A (first semi-naive iteration only): Bootstrap filter-only regions.
-     *
-     * Initialize vertices and edges for partitions and partition pairs that
-     * have no positive anchor and therefore cannot be discovered from delta
-     * facts alone. This mainly covers dependencies induced only by negative
-     * literals and, for now, numeric constraints.
-     *
-     * Validation and graph updates happen immediately during this phase.
-     */
-
-    if (bootstrap_filter_only_regions)
+    for (uint_t pi = 0; pi < k; ++pi)
     {
-        // Vertices
-        for (uint_t p = 0; p < k; ++p)
+        const auto& info_i = layout.info.infos[pi];
+        auto full_affected_partition_i = full_graph.affected_partitions.get_bitset(info_i);
+        auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(info_i);
+
+        for (uint_t pj = pi + 1; pj < k; ++pj)
         {
-            const bool has_fluent_positive = m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::PositiveTag>(p);
+            if (!m_binary_overapproximation_vdg.binary().has_dependency(pi, pj))
+                continue;
 
-            const bool has_runtime_filter = m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::NegativeTag>(p)
-                                            || m_unary_overapproximation_vdg.unary().has_numeric_dependency(p);
+            const auto& info_j = layout.info.infos[pj];
 
-            if (!has_fluent_positive)
+            const bool has_fluent_positive = m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::PositiveTag>(pi, pj);
+
+            const bool has_runtime_filter = m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::NegativeTag>(pi, pj)
+                                            || m_binary_overapproximation_vdg.binary().has_numeric_dependency(pi, pj);
+
+            const auto mode = has_fluent_positive ? BootstrapMode::skip : has_runtime_filter ? BootstrapMode::filter_only : BootstrapMode::static_only;
+
+            if (mode == BootstrapMode::skip)
+                continue;
+
+            const auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
+            auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
+            const auto offset_j = info_j.bit_offset;
+
+            for (const auto vi : layout.vertex_partitions[pi])
             {
-                auto full_delta_partition = full_graph.delta_partitions.get_bitset(m_layout.info.infos[p]);
-                auto full_affected_partition = full_graph.affected_partitions.get_bitset(m_layout.info.infos[p]);
-                auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(m_layout.info.infos[p]);
-                auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(m_layout.info.infos[p]);
+                const auto bi = layout.vertex_to_bit[vi];
 
-                if (!has_runtime_filter)
-                {
-                    // static-only: copy/use static-consistent edges
+                const auto static_edges = m_matrix.get_bitset(vi, pj);
+                auto full_edges_i = full_graph.matrix.get_bitset(vi, pj);
+                auto delta_edges_i = delta_graph.matrix.get_bitset(vi, pj);
+                auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
+                auto full_touched_i = full_graph.matrix.touched_partitions(vi, pj);
 
-                    for (const auto v : m_layout.vertex_partitions[p])
+                for_each_bit(
+                    [&](auto&& bj)
                     {
-                        const auto b = m_layout.vertex_to_bit[v];
-                        full_delta_partition.set(b);
-                        delta_delta_partition.set(b);
-                        full_affected_partition.set(b);
-                        delta_affected_partition.set(b);
-                    }
-                }
-                else
-                {
-                    // filter-only: scan static-consistent edges once and apply filters
+                        const auto vj = offset_j + bj;
 
-                    for (const auto v : m_layout.vertex_partitions[p])
-                    {
-                        const auto b = m_layout.vertex_to_bit[v];
-                        const auto& vertex = get_vertex(v);
+                        bool accept = (mode == BootstrapMode::static_only);
 
-                        if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
-                            && consistent_numeric_constraints(vertex,
-                                                              unary_overapproximation_constraints,
-                                                              m_unary_overapproximation_indexed_constraints,
-                                                              assignment_sets))
+                        if (mode == BootstrapMode::filter_only)
                         {
-                            /// Process delta consistent vertex.
-                            full_affected_partition.set(b);
-                            delta_affected_partition.set(b);
-
-                            full_delta_partition.set(b);
-                            delta_delta_partition.set(b);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Edges
-        for (uint_t pi = 0; pi < k; ++pi)
-        {
-            const auto& info_i = layout.info.infos[pi];
-
-            auto full_affected_partition_i = full_graph.affected_partitions.get_bitset(m_layout.info.infos[pi]);
-            auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(m_layout.info.infos[pi]);
-
-            for (uint_t pj = pi + 1; pj < k; ++pj)
-            {
-                const auto& info_j = layout.info.infos[pj];
-
-                const bool has_fluent_positive = m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::PositiveTag>(pi, pj);
-
-                const bool has_runtime_filter = m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::NegativeTag>(pi, pj)
-                                                || m_binary_overapproximation_vdg.binary().has_numeric_dependency(pi, pj);
-
-                if (!has_fluent_positive)
-                {
-                    if (!has_runtime_filter)
-                    {
-                        // static-only: copy/use static-consistent edges
-
-                        for (const auto vi : m_layout.vertex_partitions[pi])
-                        {
-                            const auto bi = m_layout.vertex_to_bit[vi];
-
-                            const auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
-                            auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
-
-                            const auto static_edges = m_matrix.get_bitset(vi, pj);
-                            auto full_edges_i = full_graph.matrix.get_bitset(vi, pj);
-                            auto delta_edges_i = delta_graph.matrix.get_bitset(vi, pj);
-                            auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
-                            auto full_touched_i = full_graph.matrix.touched_partitions(vi, pj);
-
-                            auto offset_j = info_j.bit_offset;
-
-                            for_each_bit(
-                                [&](auto&& bj)
-                                {
-                                    const auto vj = offset_j + bj;
-
-                                    // Set edges
-                                    full_edges_i.set(bj);
-                                    full_graph.matrix.get_bitset(vj, pi).set(bi);
-
-                                    delta_edges_i.set(bj);
-                                    delta_graph.matrix.get_bitset(vj, pi).set(bi);
-
-                                    delta_edges.emplace_back(kpkc::Vertex(vi), kpkc::Vertex(vj));
-
-                                    // Set/test affected partitions
-                                    assert(full_affected_partition_i.test(bi));
-                                    assert(full_affected_partition_j.test(bj));
-                                    delta_affected_partition_i.set(bi);
-                                    delta_affected_partition_j.set(bj);
-
-                                    // Set/test delta partitions
-                                    assert(full_graph.delta_partitions.get_bitset(info_i).test(bi));
-                                    assert(full_graph.delta_partitions.get_bitset(info_j).test(bj));
-
-                                    // Set touched partitions
-                                    delta_touched_i = true;
-                                    full_touched_i = true;
-                                    delta_graph.matrix.touched_partitions(vj, pi) = true;
-                                    full_graph.matrix.touched_partitions(vj, pi) = true;
-                                },
-                                [](auto&& a, auto&& b) noexcept { return a & b; },
-                                static_edges,
-                                full_affected_partition_j);
-                        }
-                    }
-                    else
-                    {
-                        // filter-only: scan static-consistent edges once and apply filters
-
-                        for (const auto vi : m_layout.vertex_partitions[pi])
-                        {
-                            const auto bi = m_layout.vertex_to_bit[vi];
                             const auto& vertex_i = get_vertex(vi);
+                            const auto& vertex_j = get_vertex(vj);
+                            const auto edge = details::Edge(vertex_i, vertex_j);
 
-                            const auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
-                            auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
-
-                            const auto static_edges = m_matrix.get_bitset(vi, pj);
-                            auto full_edges_i = full_graph.matrix.get_bitset(vi, pj);
-                            auto delta_edges_i = delta_graph.matrix.get_bitset(vi, pj);
-                            auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
-                            auto full_touched_i = full_graph.matrix.touched_partitions(vi, pj);
-
-                            auto offset_j = info_j.bit_offset;
-
-                            for_each_bit(
-                                [&](auto&& bj)
-                                {
-                                    const auto vj = offset_j + bj;
-
-                                    const auto& vertex_j = get_vertex(vj);
-
-                                    const auto edge = details::Edge(vertex_i, vertex_j);
-
-                                    if (consistent_literals(edge,
-                                                            m_binary_overapproximation_indexed_literals.fluent_indexed,
-                                                            assignment_sets.fluent_sets.predicate)
-                                        && consistent_numeric_constraints(edge,
-                                                                          binary_overapproximation_constraints,
-                                                                          m_binary_overapproximation_indexed_constraints,
-                                                                          assignment_sets))
-                                    {
-                                        /// Process delta consistent edge.
-
-                                        // Set edges
-                                        full_edges_i.set(bj);
-                                        full_graph.matrix.get_bitset(vj, pi).set(bi);
-
-                                        delta_edges_i.set(bj);
-                                        delta_graph.matrix.get_bitset(vj, pi).set(bi);
-
-                                        delta_edges.emplace_back(kpkc::Vertex(vi), kpkc::Vertex(vj));
-
-                                        // Set/test affected partitions
-                                        assert(full_affected_partition_i.test(bi));
-                                        assert(full_affected_partition_j.test(bj));
-                                        delta_affected_partition_i.set(bi);
-                                        delta_affected_partition_j.set(bj);
-
-                                        // Set/test delta partitions
-                                        assert(full_graph.delta_partitions.get_bitset(info_i).test(bi));
-                                        assert(full_graph.delta_partitions.get_bitset(info_j).test(bj));
-
-                                        // Set touched partitions
-                                        delta_touched_i = true;
-                                        full_touched_i = true;
-                                        delta_graph.matrix.touched_partitions(vj, pi) = true;
-                                        full_graph.matrix.touched_partitions(vj, pi) = true;
-                                    }
-                                },
-                                [](auto&& a, auto&& b) noexcept { return a & b; },
-                                static_edges,
-                                full_affected_partition_j);
+                            accept =
+                                consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                                && consistent_numeric_constraints(edge,
+                                                                  binary_overapproximation_constraints,
+                                                                  m_binary_overapproximation_indexed_constraints,
+                                                                  assignment_sets);
                         }
-                    }
-                }
+
+                        if (!accept)
+                            return;
+
+                        commit_edge(vi,
+                                    vj,
+                                    bi,
+                                    bj,
+                                    full_edges_i,
+                                    delta_edges_i,
+                                    full_touched_i,
+                                    delta_touched_i,
+                                    full_affected_partition_i,
+                                    full_affected_partition_j,
+                                    delta_affected_partition_i,
+                                    delta_affected_partition_j,
+                                    info_i,
+                                    info_j,
+                                    full_graph,
+                                    delta_graph,
+                                    delta_edges,
+                                    pi);
+                    },
+                    [](auto&& a, auto&& b) noexcept { return a & b; },
+                    static_edges,
+                    full_affected_partition_j);
             }
         }
     }
+}
 
-    /**
-     * Phase B (every iteration): Delta-driven expansion from positive literals.
-     *
-     * Use newly added positive facts to induce candidate vertices and edges
-     * for positively anchored partitions and partition pairs.
-     *
-     * Validation and graph updates happen immediately during this phase.
-     */
+void StaticConsistencyGraph::expand_vertices_from_positive_deltas(const AssignmentSets& assignment_sets,
+                                                                  const TaggedFactSets<f::FluentTag>& delta_fact_sets,
+                                                                  const kpkc::GraphLayout& layout,
+                                                                  kpkc::Graph& delta_graph,
+                                                                  kpkc::Graph& full_graph) const
+{
+    const auto& predicate_sets = delta_fact_sets.predicate.get_sets();
+    const auto& predicate_to_anchors = m_unary_overapproximation_predicate_to_anchors;
+    const auto unary_overapproximation_constraints = m_unary_overapproximation_condition.get_numeric_constraints();
 
-    // Vertices
     for (const auto& group : predicate_to_anchors.groups)
     {
         const auto predicate_index = group.predicate;
 
-        for (const auto binding : predicate_sets[uint_t(predicate_index)].get_bindings())  ///< Outter loop because |facts| > |infos|
+        for (const auto binding : predicate_sets[uint_t(predicate_index)].get_bindings())
         {
             const auto objects = binding.get_objects();
 
@@ -1356,6 +1328,10 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const Assign
                 for (uint_t i = 0; i < pairs_size; ++i)
                 {
                     const auto& [pos, p] = pairs[i];
+
+                    if (!m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::PositiveTag>(p))
+                        continue;
+
                     const auto v = m_object_to_vertex_per_partition[p][uint_t(objects[pos].get_index())];
 
                     if (v == std::numeric_limits<uint_t>::max())
@@ -1366,7 +1342,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const Assign
 
                     auto full_delta_partition = full_graph.delta_partitions.get_bitset(layout_info);
                     if (full_delta_partition.test(b))
-                        continue;  ///< Already consistent.
+                        continue;
 
                     auto delta_affected_partition = delta_graph.affected_partitions.get_bitset(layout_info);
                     auto delta_delta_partition = delta_graph.delta_partitions.get_bitset(layout_info);
@@ -1379,24 +1355,30 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const Assign
                                                           m_unary_overapproximation_indexed_constraints,
                                                           assignment_sets))
                     {
-                        /// Process delta consistent vertex.
-                        full_affected_partition.set(b);
-                        delta_affected_partition.set(b);
-
-                        full_delta_partition.set(b);
-                        delta_delta_partition.set(b);
+                        commit_vertex(b, full_affected_partition, delta_affected_partition, full_delta_partition, delta_delta_partition);
                     }
                 }
             }
         }
     }
+}
 
-    // Edges
+void StaticConsistencyGraph::expand_edges_from_positive_deltas(const AssignmentSets& assignment_sets,
+                                                               const TaggedFactSets<f::FluentTag>& delta_fact_sets,
+                                                               const kpkc::GraphLayout& layout,
+                                                               kpkc::Graph& delta_graph,
+                                                               kpkc::Graph& full_graph,
+                                                               std::vector<kpkc::Edge>& delta_edges) const
+{
+    const auto& predicate_sets = delta_fact_sets.predicate.get_sets();
+    const auto& predicate_to_anchors = m_unary_overapproximation_predicate_to_anchors;
+    const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+
     for (const auto& group : predicate_to_anchors.groups)
     {
         const auto predicate_index = group.predicate;
 
-        for (const auto binding : predicate_sets[uint_t(predicate_index)].get_bindings())  ///< Outter loop because |facts| > |infos|
+        for (const auto binding : predicate_sets[uint_t(predicate_index)].get_bindings())
         {
             const auto objects = binding.get_objects();
 
@@ -1418,7 +1400,7 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const Assign
                     auto full_delta_partition_i = full_graph.delta_partitions.get_bitset(layout_info_i);
 
                     if (!full_delta_partition_i.test(bi))
-                        continue;  ///< Vertex inconsistent, so no edge can become consistent now.
+                        continue;
 
                     const auto& vertex_i = get_vertex(vi);
 
@@ -1426,10 +1408,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const Assign
                     {
                         const auto& [pos_j, pj] = pairs[j];
 
-                        if (!m_binary_overapproximation_vdg.binary().has_dependency(pi, pj))
-                        {
-                            continue;  // Already checked via vertex consistency
-                        }
+                        if (!m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::PositiveTag>(pi, pj))
+                            continue;
 
                         const auto vj = m_object_to_vertex_per_partition[pj][uint_t(objects[pos_j].get_index())];
 
@@ -1440,19 +1420,16 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const Assign
                         const auto bj = layout.vertex_to_bit[vj];
 
                         auto full_delta_partition_j = full_graph.delta_partitions.get_bitset(layout_info_j);
-
                         if (!full_delta_partition_j.test(bj))
-                            continue;  ///< Vertex inconsistent, so no edge can become consistent now.
+                            continue;
 
                         auto full_edges_i = full_graph.matrix.get_bitset(vi, pj);
-
                         if (full_edges_i.test(bj))
-                            continue;  ///< Already consistent.
+                            continue;
 
                         const auto static_edges = m_matrix.get_bitset(vi, pj);
-
                         if (!static_edges.test(bj))
-                            continue;  ///< Not consistent in the static overapproximation, so cannot be consistent now.
+                            continue;
 
                         auto delta_edges_i = delta_graph.matrix.get_bitset(vi, pj);
                         auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
@@ -1467,47 +1444,35 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const Assign
                                                               m_binary_overapproximation_indexed_constraints,
                                                               assignment_sets))
                         {
-                            /// Process delta consistent edge.
-
-                            // Set edges
-                            full_edges_i.set(bj);
-                            full_graph.matrix.get_bitset(vj, pi).set(bi);
-
-                            delta_edges_i.set(bj);
-                            delta_graph.matrix.get_bitset(vj, pi).set(bi);
-
-                            delta_edges.emplace_back(kpkc::Vertex(vi), kpkc::Vertex(vj));
-
-                            // Set/test affected partitions
-                            assert(full_graph.affected_partitions.get_bitset(layout_info_i).test(bi));
-                            assert(full_graph.affected_partitions.get_bitset(layout_info_j).test(bj));
-                            delta_graph.affected_partitions.get_bitset(layout_info_i).set(bi);
-                            delta_graph.affected_partitions.get_bitset(layout_info_j).set(bj);
-
-                            // Set/test delta partitions
-                            assert(full_graph.delta_partitions.get_bitset(layout_info_i).test(bi));
-                            assert(full_graph.delta_partitions.get_bitset(layout_info_j).test(bj));
-
-                            // Set touched partitions
-                            delta_touched_i = true;
-                            full_touched_i = true;
-                            delta_graph.matrix.touched_partitions(vj, pi) = true;
-                            full_graph.matrix.touched_partitions(vj, pi) = true;
+                            commit_edge(vi,
+                                        vj,
+                                        bi,
+                                        bj,
+                                        full_edges_i,
+                                        delta_edges_i,
+                                        full_touched_i,
+                                        delta_touched_i,
+                                        full_graph.affected_partitions.get_bitset(layout_info_i),
+                                        full_graph.affected_partitions.get_bitset(layout_info_j),
+                                        delta_graph.affected_partitions.get_bitset(layout_info_i),
+                                        delta_graph.affected_partitions.get_bitset(layout_info_j),
+                                        layout_info_i,
+                                        layout_info_j,
+                                        full_graph,
+                                        delta_graph,
+                                        delta_edges,
+                                        pi);
                         }
                     }
                 }
             }
         }
     }
+}
 
-    /**
-     * Propagate delta through implicit binary blocks.
-     *
-     * If (pi, pj) has no binary dependency, then every consistent vertex in pi
-     * is implicitly adjacent to every consistent vertex in pj. Hence, if one side
-     * gains new vertices in the current iteration, the other side becomes newly
-     * affected as well.
-     */
+void StaticConsistencyGraph::propagate_implicit_binary_blocks(const kpkc::GraphLayout& layout, kpkc::Graph& delta_graph, const kpkc::Graph& full_graph) const
+{
+    const auto k = layout.k;
 
     for (uint_t pi = 0; pi < k; ++pi)
     {
@@ -1531,6 +1496,190 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const Assign
             }
         }
     }
+}
+
+void StaticConsistencyGraph::expand_nonpositive_binary_blocks_from_new_vertices(const AssignmentSets& assignment_sets,
+                                                                                const kpkc::GraphLayout& layout,
+                                                                                kpkc::Graph& delta_graph,
+                                                                                kpkc::Graph& full_graph,
+                                                                                std::vector<kpkc::Edge>& delta_edges) const
+{
+    const auto k = layout.k;
+    const auto binary_overapproximation_constraints = m_binary_overapproximation_condition.get_numeric_constraints();
+
+    for (uint_t pi = 0; pi < k; ++pi)
+    {
+        const auto& info_i = layout.info.infos[pi];
+        auto full_affected_partition_i = full_graph.affected_partitions.get_bitset(info_i);
+        auto delta_affected_partition_i = delta_graph.affected_partitions.get_bitset(info_i);
+        const auto delta_delta_partition_i = delta_graph.delta_partitions.get_bitset(info_i);
+
+        for (uint_t pj = pi + 1; pj < k; ++pj)
+        {
+            if (!m_binary_overapproximation_vdg.binary().has_dependency(pi, pj))
+                continue;
+
+            const bool has_fluent_positive = m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::PositiveTag>(pi, pj);
+
+            if (has_fluent_positive)
+                continue;
+
+            const bool has_runtime_filter = m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::NegativeTag>(pi, pj)
+                                            || m_binary_overapproximation_vdg.binary().has_numeric_dependency(pi, pj);
+
+            const auto mode = has_runtime_filter ? BootstrapMode::filter_only : BootstrapMode::static_only;
+
+            const auto& info_j = layout.info.infos[pj];
+            auto full_affected_partition_j = full_graph.affected_partitions.get_bitset(info_j);
+            auto delta_affected_partition_j = delta_graph.affected_partitions.get_bitset(info_j);
+            const auto delta_delta_partition_j = delta_graph.delta_partitions.get_bitset(info_j);
+
+            auto expand_from_new_vertices = [&](uint_t src_p,
+                                                uint_t dst_p,
+                                                const auto& src_info,
+                                                const auto& dst_info,
+                                                auto delta_src_partition,
+                                                auto full_affected_src,
+                                                auto delta_affected_src,
+                                                auto full_affected_dst,
+                                                auto delta_affected_dst)
+            {
+                const auto src_offset = src_info.bit_offset;
+                const auto dst_offset = dst_info.bit_offset;
+
+                for (auto b_src = delta_src_partition.find_first(); b_src != BitsetSpan<const uint64_t>::npos; b_src = delta_src_partition.find_next(b_src))
+                {
+                    const auto v_src = src_offset + b_src;
+                    const auto static_edges = m_matrix.get_bitset(v_src, dst_p);
+                    auto full_edges = full_graph.matrix.get_bitset(v_src, dst_p);
+                    auto delta_edges_local = delta_graph.matrix.get_bitset(v_src, dst_p);
+                    auto delta_touched = delta_graph.matrix.touched_partitions(v_src, dst_p);
+                    auto full_touched = full_graph.matrix.touched_partitions(v_src, dst_p);
+
+                    for_each_bit(
+                        [&](auto&& b_dst)
+                        {
+                            const auto v_dst = dst_offset + b_dst;
+
+                            bool accept = (mode == BootstrapMode::static_only);
+
+                            if (mode == BootstrapMode::filter_only)
+                            {
+                                const auto& vertex_src = get_vertex(v_src);
+                                const auto& vertex_dst = get_vertex(v_dst);
+                                const auto edge = details::Edge(vertex_src, vertex_dst);
+
+                                accept =
+                                    consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                                    && consistent_numeric_constraints(edge,
+                                                                      binary_overapproximation_constraints,
+                                                                      m_binary_overapproximation_indexed_constraints,
+                                                                      assignment_sets);
+                            }
+
+                            if (!accept)
+                                return;
+
+                            commit_edge(v_src,
+                                        v_dst,
+                                        b_src,
+                                        b_dst,
+                                        full_edges,
+                                        delta_edges_local,
+                                        full_touched,
+                                        delta_touched,
+                                        full_affected_src,
+                                        full_affected_dst,
+                                        delta_affected_src,
+                                        delta_affected_dst,
+                                        src_info,
+                                        dst_info,
+                                        full_graph,
+                                        delta_graph,
+                                        delta_edges,
+                                        src_p);
+                        },
+                        [](auto&& a, auto&& b, auto&& c) noexcept { return a & b & ~c; },
+                        static_edges,
+                        full_affected_dst,
+                        full_edges);
+                }
+            };
+
+            expand_from_new_vertices(pi,
+                                     pj,
+                                     info_i,
+                                     info_j,
+                                     delta_delta_partition_i,
+                                     full_affected_partition_i,
+                                     delta_affected_partition_i,
+                                     full_affected_partition_j,
+                                     delta_affected_partition_j);
+
+            expand_from_new_vertices(pj,
+                                     pi,
+                                     info_j,
+                                     info_i,
+                                     delta_delta_partition_j,
+                                     full_affected_partition_j,
+                                     delta_affected_partition_j,
+                                     full_affected_partition_i,
+                                     delta_affected_partition_i);
+        }
+    }
+}
+
+void StaticConsistencyGraph::initialize_dynamic_consistency_graphs2(const AssignmentSets& assignment_sets,
+                                                                    const TaggedFactSets<f::FluentTag>& delta_fact_sets,
+                                                                    const kpkc::GraphLayout& layout,
+                                                                    kpkc::Graph& delta_graph,
+                                                                    kpkc::Graph& full_graph,
+                                                                    std::vector<kpkc::Edge>& delta_edges,
+                                                                    bool bootstrap_filter_only_regions) const
+{
+    delta_graph.reset();
+    delta_edges.clear();
+
+    if (bootstrap_filter_only_regions)
+    {
+        /**
+         * Phase A (first semi-naive iteration only): Bootstrap filter-only regions.
+         *
+         * Initialize vertices and edges for partitions and partition pairs that
+         * have no positive anchor and therefore cannot be discovered from delta
+         * facts alone. This mainly covers dependencies induced only by negative
+         * literals and, for now, numeric constraints.
+         *
+         * Validation and graph updates happen immediately during this phase.
+         */
+
+        bootstrap_vertices_from_filter_only_regions(assignment_sets, layout, delta_graph, full_graph);
+        bootstrap_edges_from_filter_only_regions(assignment_sets, layout, delta_graph, full_graph, delta_edges);
+    }
+
+    /**
+     * Phase B (every iteration): Delta-driven expansion from positive literals.
+     *
+     * Use newly added positive facts to induce candidate vertices and edges
+     * for positively anchored partitions and partition pairs.
+     *
+     * Validation and graph updates happen immediately during this phase.
+     */
+
+    expand_vertices_from_positive_deltas(assignment_sets, delta_fact_sets, layout, delta_graph, full_graph);
+    expand_edges_from_positive_deltas(assignment_sets, delta_fact_sets, layout, delta_graph, full_graph, delta_edges);
+
+    /**
+     * Propagate delta through implicit binary blocks.
+     *
+     * If (pi, pj) has no binary dependency, then every consistent vertex in pi
+     * is implicitly adjacent to every consistent vertex in pj. Hence, if one side
+     * gains new vertices in the current iteration, the other side becomes newly
+     * affected as well.
+     */
+
+    expand_nonpositive_binary_blocks_from_new_vertices(assignment_sets, layout, delta_graph, full_graph, delta_edges);
+    propagate_implicit_binary_blocks(layout, delta_graph, full_graph);
 }
 
 void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
@@ -1922,5 +2071,4 @@ std::pair<fd::RuleView, bool> create_overapproximation_conflicting_rule(size_t k
     canonicalize(rule);
     return context.get_or_create(rule);
 }
-
 }
