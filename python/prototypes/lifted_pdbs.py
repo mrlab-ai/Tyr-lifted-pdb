@@ -81,19 +81,10 @@ def main():
         args.max_pattern_count,
     )
 
-    #patterns = GoalPatternGenerator(lifted_task).generate()
-
-    #sys.exit(0)  # Exit after printing the generated patterns. Remove this line to run the search.
 
     projections = ProjectionGenerator(lifted_task, patterns).generate()
 
     # BELOW: A hack to filter out projections whose PDBs report the initial state as a dead-end. 
-    # TODO FIX: Refine causal graph creation such to take typing into account.
-    # Before building the canonical heuristic, test each projection
-    # individually with a projection-abstraction heuristic. If a single
-    # projection yields h(s0) = inf on the initial state, we drop it from
-    # the final canonical combination. This lets us experiment with
-    # non-trivial patterns while avoiding obviously pathological PDBs.
     initial_node = successor_generator.get_initial_node()
     initial_state = initial_node.get_state()
 

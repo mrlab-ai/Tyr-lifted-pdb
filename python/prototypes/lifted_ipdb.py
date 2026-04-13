@@ -468,9 +468,11 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
         return patterns
     
     """
-    G
+    Generate a iPDB-style pattern from the causal graph.
     """
-
+    def ipdb_generation(self, goal_atom, causal_graph, max_pattern_size, max_pattern_count) -> List[Pattern]:
+        # Placeholder for actual iPDB-style pattern generation logic.
+        return self.simple_generation(goal_atom, causal_graph, max_pattern_size, max_pattern_count)
     
     """
     Generate all systematic patterns of size 2, given a goal atom.
@@ -487,7 +489,7 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                     facts = [self._fdr_context.get_fact(goal_atom), self._fdr_context.get_fact(candidate_atom)]
                     pattern = Pattern(facts)
                     patterns.append(pattern)
-                    #print("Generating sys2 pattern with atoms:", [str(atom) for atom in [goal_atom, candidate_atom]])
+                    print("Generating sys2 pattern with atoms:", [str(atom) for atom in [goal_atom, candidate_atom]])
                     if len(patterns) >= max_pattern_count:
                         break
             if len(patterns) >= max_pattern_count:
