@@ -515,13 +515,38 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
         else:
             # Placeholder for larger systematic patterns.
             return self.simple_generation(goal_atom, {}, max_pattern_size, max_pattern_count)
+        
+
+    # Generate all interesting systematic patterns, which uses the causal graph.
+    def generate_systematic_interesting_patterns(self, goal_atom, causal_graph, max_pattern_size, max_pattern_count) -> List[Pattern]:
+        
+        patterns = []
+        count = 0
+
+        # Return all patterns of size max_pattern_size that can be formed from the goal atom and its causally linked atoms in the causal graph, up to a maximum count of max_pattern_count.
+
+        if max_pattern_size == 1:
+            patterns = self.sys1_generation(goal_atom)
+        elif max_pattern_size == 2:
+            # Then return all patterns whose non-goal variables has a direct link to the goal atom in the causal graph.
+            for linked_atom in causal_graph.get(goal_atom, []):
+                if count >= max_pattern_count:
+                    break
+                patterns.append(Pattern([self._fdr_context.get_fact(goal_atom), self._fdr_context.get_fact(linked_atom)]))
+                print("Generating systematic interesting pattern with atoms:", [str(atom) for atom in [goal_atom, linked_atom]])
+                count += 1
+        else:
+            # TODO: Logic for interesting sys-k patterns for k > 2 are not part of main baselines, but could be interesting for future exploration.
+            return self.simple_generation(goal_atom, causal_graph, max_pattern_size, max_pattern_count)
+
+        return patterns
 
     """
     Generate a set of interesting patterns from ``goal_atom``,
     using your choice of strategy.
     """
     def generate_interesting_patterns(self, goal_atom, causal_graph, max_pattern_size, max_pattern_count) -> List[Pattern]:
-        return self.simple_generation(goal_atom, causal_graph, max_pattern_size, max_pattern_count)
+        return self.generate_systematic_interesting_patterns(goal_atom, causal_graph, max_pattern_size, max_pattern_count)
 
 
     """
@@ -536,10 +561,10 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
 
         
 
-        goals = self._task.get_task().get_goal().get_fluent_facts()
+        goals = self._task.get_task().get_goal().get_positive_facts() + self._task.get_task().get_goal().get_negative_facts()
 
         patterns_count_per_goal = max_pattern_count // len(goals) if goals else 0
-        
+        """
         for inx, goal in enumerate(goals):
             goal_atom = goal.get_atom()
             pattern_collection.extend(self.generate_systematic_patterns(goal_atom, max_pattern_size, patterns_count_per_goal))
@@ -566,7 +591,7 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                 max_pattern_size,
                 patterns_count_per_goal,  # Adjust as needed, perhaps pass as command-line arguments
             ))
-        """
+        
         print(f"Generated {len(pattern_collection)} patterns.")
 
 
