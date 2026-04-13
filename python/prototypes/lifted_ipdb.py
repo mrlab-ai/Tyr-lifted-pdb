@@ -529,11 +529,12 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
             patterns = self.sys1_generation(goal_atom)
         elif max_pattern_size == 2:
             # Then return all patterns whose non-goal variables has a direct link to the goal atom in the causal graph.
-            for linked_atom in causal_graph.get(goal_atom, []):
+            #print(f"linked atoms of {goal_atom}: {set([str(atom) for atom in causal_graph.get(goal_atom, [])])}")
+            for linked_atom in set(causal_graph.get(goal_atom, [])):
                 if count >= max_pattern_count:
                     break
                 patterns.append(Pattern([self._fdr_context.get_fact(goal_atom), self._fdr_context.get_fact(linked_atom)]))
-                print("Generating systematic interesting pattern with atoms:", [str(atom) for atom in [goal_atom, linked_atom]])
+                #print("Generating systematic interesting pattern with atoms:", [str(atom) for atom in [goal_atom, linked_atom]])
                 count += 1
         else:
             # TODO: Logic for interesting sys-k patterns for k > 2 are not part of main baselines, but could be interesting for future exploration.
