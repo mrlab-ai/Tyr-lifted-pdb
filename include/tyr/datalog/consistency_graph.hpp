@@ -244,45 +244,6 @@ private:
                                                     const details::Vertices& vertices,
                                                     const std::vector<std::vector<uint_t>>& vertex_partitions);
 
-    enum class BootstrapMode
-    {
-        skip,
-        static_only,
-        filter_only
-    };
-
-    void bootstrap_vertices_from_filter_only_regions(const AssignmentSets& assignment_sets,
-                                                     const kpkc::GraphLayout& layout,
-                                                     kpkc::Graph& delta_graph,
-                                                     kpkc::Graph& full_graph) const;
-
-    void bootstrap_edges_from_filter_only_regions(const AssignmentSets& assignment_sets,
-                                                  const kpkc::GraphLayout& layout,
-                                                  kpkc::Graph& delta_graph,
-                                                  kpkc::Graph& full_graph,
-                                                  std::vector<kpkc::Edge>& delta_edges) const;
-
-    void expand_vertices_from_positive_deltas(const AssignmentSets& assignment_sets,
-                                              const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
-                                              const kpkc::GraphLayout& layout,
-                                              kpkc::Graph& delta_graph,
-                                              kpkc::Graph& full_graph) const;
-
-    void expand_edges_from_positive_deltas(const AssignmentSets& assignment_sets,
-                                           const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
-                                           const kpkc::GraphLayout& layout,
-                                           kpkc::Graph& delta_graph,
-                                           kpkc::Graph& full_graph,
-                                           std::vector<kpkc::Edge>& delta_edges) const;
-
-    void expand_edges_implicit(const kpkc::GraphLayout& layout, kpkc::Graph& delta_graph, const kpkc::Graph& full_graph) const;
-
-    void expand_edges_from_new_vertices(const AssignmentSets& assignment_sets,
-                                        const kpkc::GraphLayout& layout,
-                                        kpkc::Graph& delta_graph,
-                                        kpkc::Graph& full_graph,
-                                        std::vector<kpkc::Edge>& delta_edges) const;
-
 public:
     StaticConsistencyGraph(formalism::datalog::RuleView rule,
                            formalism::datalog::ConjunctiveConditionView condition,
