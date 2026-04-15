@@ -91,6 +91,8 @@ template<TaskKind Kind>
 using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Kind>>;
 }
 
+struct Pattern;
+
 template<TaskKind Kind>
 class ForwardProjectionAbstraction;
 template<TaskKind Kind>
