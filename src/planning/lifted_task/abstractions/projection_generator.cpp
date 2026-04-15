@@ -126,6 +126,52 @@ void append_projected_literal(fp::GroundLiteralView<T> element,
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
+auto remap_term(fp::TermView element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+{
+    return visit(
+        [&](auto&& arg) -> Data<f::Term>
+        {
+            using Alternative = std::decay_t<decltype(arg)>;
+
+            if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
+                return Data<f::Term> { mapping.at(arg) };
+            else if constexpr (std::is_same_v<Alternative, fp::ObjectView>)
+                return Data<f::Term> { arg.get_index() };
+            else
+                static_assert(dependent_false<Alternative>::value, "Missing case");
+        },
+        element.get_variant());
+}
+
+template<f::FactKind T>
+auto merge_projected_atom(fp::AtomView<T> element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping, fp::MergeContext& context)
+{
+    auto atom_ptr = context.builder.template get_builder<fp::Atom<T>>();
+    auto& atom = *atom_ptr;
+    atom.clear();
+
+    atom.predicate = merge_p2p(element.get_predicate(), context).first.get_index();
+    for (const auto term : element.get_terms())
+        atom.terms.push_back(remap_term(term, mapping));
+
+    canonicalize(atom);
+    return context.destination.get_or_create(atom);
+}
+
+template<f::FactKind T>
+auto merge_projected_literal(fp::LiteralView<T> element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping, fp::MergeContext& context)
+{
+    auto literal_ptr = context.builder.template get_builder<fp::Literal<T>>();
+    auto& literal = *literal_ptr;
+    literal.clear();
+
+    literal.polarity = element.get_polarity();
+    literal.atom = merge_projected_atom(element.get_atom(), mapping, context).first.get_index();
+
+    canonicalize(literal);
+    return context.destination.get_or_create(literal);
+}
+
 template<f::FactKind T>
 void append_projected_literal(fp::LiteralView<T> element,
                               const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping,
@@ -133,7 +179,7 @@ void append_projected_literal(fp::LiteralView<T> element,
                               fp::MergeContext& context)
 {
     if (should_keep(element, mapping))
-        ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
+        ref_projected_literal.push_back(merge_projected_literal(element, mapping, context).first.get_index());
 }
 
 template<f::FactKind T>
@@ -289,8 +335,12 @@ UnorderedMap<f::ParameterIndex, f::ParameterIndex> compute_variable_remapping(fp
     auto vdg = fp::VariableDependencyGraph(element);
 
     auto queue = std::vector<f::ParameterIndex> {};
+    auto visited = std::vector<bool>(element.get_arity(), false);
     for (const auto& [p, _] : result)
+    {
         queue.push_back(p);
+        visited[uint_t(p)] = true;
+    }
 
     while (!queue.empty())
     {
@@ -302,7 +352,11 @@ UnorderedMap<f::ParameterIndex, f::ParameterIndex> compute_variable_remapping(fp
             if (vdg.has_dependency<f::StaticTag>(pi, pj))
             {
                 result.try_emplace(f::ParameterIndex { pj }, f::ParameterIndex { static_cast<uint_t>(result.size()) });
-                queue.push_back(f::ParameterIndex { pj });
+                if (!visited[uint_t(pj)])
+                {
+                    queue.push_back(f::ParameterIndex { pj });
+                    visited[uint_t(pj)] = true;
+                }
             }
         }
     }
