@@ -355,12 +355,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
         //     for (const auto binding : set.get_bindings())
         //         std::cout << binding << std::endl;
         // }
-        // std::cout << "Delta facts: " << std::endl;
-        // for (const auto& set : facts.delta_fact_sets.predicate.get_sets())
-        // {
-        //     for (const auto binding : set.get_bindings())
-        //         std::cout << binding << std::endl;
-        // }
         // std::cout << std::endl;
 
         scheduler.on_start_iteration();
@@ -406,9 +400,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                                                }
                                            });
         }
-
-        // Clear delta facts
-        facts.delta_fact_sets.reset();
 
         // Clear current bucket to avoid duplicate handling
         cost_buckets.clear_current();
@@ -464,7 +455,6 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                     // Update fact sets
                     facts.fact_sets.predicate.insert(head);
                     facts.assignment_sets.predicate.insert(head);
-                    facts.delta_fact_sets.predicate.insert(head);
                 }
             }
         }

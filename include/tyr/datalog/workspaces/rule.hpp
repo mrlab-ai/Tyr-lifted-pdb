@@ -164,9 +164,7 @@ struct RuleWorkspace
                         const formalism::datalog::Repository& workspace_repository,
                         const StaticConsistencyGraph& static_consistency_graph);
 
-        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
-                                  const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
-                                  const AssignmentSets& assignment_sets);
+        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
 
         void clear() noexcept;
 
@@ -318,11 +316,9 @@ void RuleWorkspace<AndAP>::Common::clear() noexcept
 }
 
 template<typename AndAP>
-void RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph,
-                                                        const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
-                                                        const AssignmentSets& assignment_sets)
+void RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets)
 {
-    kpkc.set_next_assignment_sets(static_consistency_graph, delta_fact_sets, assignment_sets);
+    kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
 }
 
 template<typename AndAP>

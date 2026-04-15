@@ -144,46 +144,6 @@ struct RuleToRuleToConstraintInfos
 };
 
 /**
- * For mapping literal bindings to rule bindings
- */
-
-struct LiteralToRuleParameterMapping
-{
-    static constexpr uint_t NoParam = std::numeric_limits<uint_t>::max();
-
-    std::vector<uint_t> position_to_parameter;
-    std::vector<std::pair<uint_t, uint_t>> position_parameter_pairs;
-};
-
-struct LiteralToRuleInfo
-{
-    LiteralToRuleParameterMapping parameter_mappings;
-};
-
-struct LiteralToRuleInfos
-{
-    struct GroupInfo
-    {
-        Index<formalism::Predicate<formalism::FluentTag>> predicate;
-        uint_t start;
-        uint_t end;
-    };
-
-    std::vector<GroupInfo> groups;
-
-    std::vector<LiteralToRuleInfo> infos;
-
-    std::span<const LiteralToRuleInfo> operator[](const GroupInfo& pos) const noexcept
-    {
-        assert(pos.end > pos.start && pos.end <= infos.size());
-        return std::span<const LiteralToRuleInfo>(infos.data() + pos.start, pos.end - pos.start);
-    }
-
-    boost::dynamic_bitset<> bound_parameters;
-    boost::dynamic_bitset<> negated_bound_parameters;
-};
-
-/**
  * Vertex
  */
 
@@ -257,21 +217,11 @@ public:
                            uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
-    void initialize_dynamic_consistency_graphs2(const AssignmentSets& assignment_sets,
-                                                const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
-                                                const kpkc::GraphLayout& layout,
-                                                kpkc::Graph& delta_graph,
-                                                kpkc::Graph& full_graph,
-                                                std::vector<kpkc::Edge>& delta_edges,
-                                                bool bootstrap_filter_only_regions) const;
-
     void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
-                                               const TaggedFactSets<formalism::FluentTag>& delta_fact_sets,
                                                const kpkc::GraphLayout& layout,
                                                kpkc::Graph& delta_graph,
                                                kpkc::Graph& full_graph,
-                                               std::vector<kpkc::Edge>& delta_edges,
-                                               kpkc::VertexPartitions& fact_induced_candidates) const;
+                                               std::vector<kpkc::Edge>& delta_edges) const;
 
     auto get_vertices() const noexcept { return std::ranges::subrange(m_vertices.cbegin(), m_vertices.cend()); }
 
@@ -284,7 +234,6 @@ public:
     const formalism::datalog::VariableDependencyGraph& get_variable_dependeny_graph() const noexcept;
     const std::vector<std::vector<uint_t>>& get_vertex_partitions() const noexcept;
     const std::vector<std::vector<uint_t>>& get_object_to_vertex_per_partition() const noexcept;
-    const details::LiteralToRuleInfos& get_predicate_to_anchors() const noexcept;
     const kpkc::DeduplicatedAdjacencyMatrix& get_adjacency_matrix() const noexcept;
 
 private:
@@ -311,10 +260,6 @@ private:
 
     details::RuleToRuleToConstraintInfos m_unary_overapproximation_indexed_constraints;
     details::RuleToRuleToConstraintInfos m_binary_overapproximation_indexed_constraints;
-
-    details::LiteralToRuleInfos m_predicate_to_anchors;
-    details::LiteralToRuleInfos m_unary_overapproximation_predicate_to_anchors;
-    details::LiteralToRuleInfos m_binary_overapproximation_predicate_to_anchors;
 };
 
 extern std::pair<formalism::datalog::GroundConjunctiveConditionView, bool>

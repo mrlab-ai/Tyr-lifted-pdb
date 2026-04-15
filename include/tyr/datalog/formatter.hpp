@@ -38,12 +38,6 @@ extern std::ostream& print(std::ostream& os, const datalog::details::RuleToLiter
 
 extern std::ostream& print(std::ostream& os, const datalog::details::RuleToLiteralPositionMappings& el);
 
-extern std::ostream& print(std::ostream& os, const datalog::details::LiteralToRuleParameterMapping& el);
-
-extern std::ostream& print(std::ostream& os, const datalog::details::LiteralToRuleInfo& el);
-
-extern std::ostream& print(std::ostream& os, const datalog::details::LiteralToRuleInfos& el);
-
 template<formalism::FactKind T>
 std::ostream& print(std::ostream& os, const datalog::details::RuleToLiteralInfo<T>& el);
 
@@ -85,12 +79,6 @@ extern std::ostream& operator<<(std::ostream& os, const Edge& el);
 extern std::ostream& operator<<(std::ostream& os, const RuleToLiteralInfoMappings& el);
 
 extern std::ostream& operator<<(std::ostream& os, const RuleToLiteralPositionMappings& el);
-
-extern std::ostream& operator<<(std::ostream& os, const LiteralToRuleParameterMapping& el);
-
-extern std::ostream& operator<<(std::ostream& os, const LiteralToRuleInfo& el);
-
-extern std::ostream& operator<<(std::ostream& os, const LiteralToRuleInfos& el);
 
 template<formalism::FactKind T>
 std::ostream& operator<<(std::ostream& os, const RuleToLiteralInfo<T>& el);

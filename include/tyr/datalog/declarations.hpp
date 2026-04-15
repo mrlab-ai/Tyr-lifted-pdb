@@ -74,14 +74,11 @@ class Edge;
 
 struct RuleToLiteralInfoMappings;
 struct RuleToLiteralPositionMappings;
-struct LiteralToRuleParameterMapping;
 template<formalism::FactKind T>
 struct RuleToLiteralInfo;
 template<formalism::FactKind T>
 struct TaggedRuleToLiteralInfos;
 struct RuleToLiteralInfos;
-struct LiteralToRuleInfo;
-struct LiteralToRuleInfos;
 }
 
 struct VertexAssignment;
