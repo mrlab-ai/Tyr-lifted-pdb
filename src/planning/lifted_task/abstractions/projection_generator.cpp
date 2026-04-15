@@ -57,6 +57,58 @@ namespace tyr::planning
 {
 namespace
 {
+void project_variables(fp::VariableListView elements,
+                       uint_t parent_arity,
+                       const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping,
+                       IndexList<f::Variable>& ref_projected_variables,
+                       fp::MergeContext& context)
+{
+    ref_projected_variables.clear();
+
+    for (uint_t p = parent_arity; p < parent_arity + elements.size(); ++p)
+    {
+        if (mapping.contains(f::ParameterIndex { p }))
+        {
+            assert(p - parent_arity < elements.size());
+            ref_projected_variables.push_back(merge_p2p(elements[p - parent_arity], context).first.get_index());
+        }
+    }
+}
+
+bool should_keep(fp::TermView element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+{
+    return visit(
+        [&](auto&& arg)
+        {
+            using Alternative = std::decay_t<decltype(arg)>;
+
+            if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
+                return mapping.contains(arg);
+            else if constexpr (std::is_same_v<Alternative, fp::ObjectView>)
+                return true;
+            else
+                static_assert(dependent_false<Alternative>::value, "Missing case");
+        },
+        element.get_variant());
+}
+
+bool should_keep(fp::TermListView element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+{
+    return std::all_of(element.begin(), element.end(), [&](const auto& arg) { return should_keep(arg, mapping); });
+}
+
+template<f::FactKind T>
+bool should_keep(fp::AtomView<T> element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+{
+    return should_keep(element.get_terms(), mapping);
+}
+
+template<f::FactKind T>
+bool should_keep(fp::LiteralView<T> element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+{
+    return should_keep(element.get_atom(), mapping);
+}
+
 template<f::FactKind T>
 void append_projected_atom(fp::GroundAtomView<T> element, const Pattern& pattern, IndexList<fp::GroundAtom<T>>& ref_projected_atoms, fp::MergeContext& context)
 {
@@ -66,18 +118,21 @@ void append_projected_atom(fp::GroundAtomView<T> element, const Pattern& pattern
 
 template<f::FactKind T>
 void append_projected_literal(fp::GroundLiteralView<T> element,
-                              const Pattern& pattern,
+                              const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping,
                               IndexList<fp::GroundLiteral<T>>& ref_projected_literal,
                               fp::MergeContext& context)
 {
-    if (pattern.predicates_set.contains(element.get_atom().get_predicate()))
+    if (should_keep(element, mapping))
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
 template<f::FactKind T>
-void append_projected_literal(fp::LiteralView<T> element, const Pattern& pattern, IndexList<fp::Literal<T>>& ref_projected_literal, fp::MergeContext& context)
+void append_projected_literal(fp::LiteralView<T> element,
+                              const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping,
+                              IndexList<fp::Literal<T>>& ref_projected_literal,
+                              fp::MergeContext& context)
 {
-    if (pattern.predicates_set.contains(element.get_atom().get_predicate()))
+    if (should_keep(element, mapping))
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
@@ -113,16 +168,18 @@ auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pat
     return context.destination.get_or_create(conj_cond);
 }
 
-auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element, fp::MergeContext& context, const Pattern& pattern)
+auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element,
+                                            uint_t parent_arity,
+                                            fp::MergeContext& context,
+                                            const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     auto conj_cond_ptr = context.builder.template get_builder<fp::ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
-    for (const auto variable : element.get_variables())
-        conj_cond.variables.push_back(merge_p2p(variable, context).first.get_index());
-    for (const auto literal : element.template get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2p(literal, context).first.get_index());
+    project_variables(element.get_variables(), parent_arity, mapping, conj_cond.variables, context);
+    for (const auto literal : element.get_literals<f::StaticTag>())
+        append_projected_literal(literal, mapping, conj_cond.static_literals, context);
     // We overapproximate by excluding **all** fluent literals.
     // Explanation: The off-the-shelf successor generator cannot distinguish between facts in and outside the pattern.
     // Axioms could be used to encode don't care condition but would result in a blowup in ground atoms
@@ -132,32 +189,34 @@ auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element
     return context.destination.get_or_create(conj_cond);
 }
 
-auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element, fp::MergeContext& context, const Pattern& pattern)
+auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element,
+                                         fp::MergeContext& context,
+                                         const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     auto conj_effect_ptr = context.builder.template get_builder<fp::ConjunctiveEffect>();
     auto& conj_eff = *conj_effect_ptr;
     conj_eff.clear();
 
     for (const auto literal : element.get_literals())
-        append_projected_literal(literal, pattern, conj_eff.literals, context);
+        append_projected_literal(literal, mapping, conj_eff.literals, context);
 
     canonicalize(conj_eff);
     return context.destination.get_or_create(conj_eff);
 }
 
 void append_projected_conditional_effect(fp::ConditionalEffectView element,
+                                         uint_t parent_arity,
                                          fp::MergeContext& context,
                                          IndexList<fp::ConditionalEffect>& ref_projected_cond_effect,
-                                         const Pattern& pattern)
+                                         const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     auto cond_effect_ptr = context.builder.template get_builder<fp::ConditionalEffect>();
     auto& cond_effect = *cond_effect_ptr;
     cond_effect.clear();
 
-    for (const auto variable : element.get_variables())
-        cond_effect.variables.push_back(merge_p2p(variable, context).first.get_index());
-    cond_effect.condition = create_projected_conjunctive_condition(element.get_condition(), context, pattern).first.get_index();
-    cond_effect.effect = create_projected_conjunctive_effect(element.get_effect(), context, pattern).first.get_index();
+    project_variables(element.get_variables(), parent_arity, mapping, cond_effect.variables, context);
+    cond_effect.condition = create_projected_conjunctive_condition(element.get_condition(), parent_arity, context, mapping).first.get_index();
+    cond_effect.effect = create_projected_conjunctive_effect(element.get_effect(), context, mapping).first.get_index();
 
     canonicalize(cond_effect);
     ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect).first.get_index());
@@ -276,16 +335,18 @@ void append_projected_action(fp::ActionView element,
     std::cout << variable_remapping << std::endl;
 
     action.name = element.get_name();
-    action.original_arity = element.get_original_arity();
-    for (const auto variable : element.get_variables())
-        action.variables.push_back(merge_p2p(variable, context).first.get_index());
-    action.condition = create_projected_conjunctive_condition(element.get_condition(), context, pattern).first.get_index();
+    project_variables(element.get_variables(), uint_t(0), variable_remapping, action.variables, context);
+    action.original_arity = action.variables.size();
+    action.condition = create_projected_conjunctive_condition(element.get_condition(), uint_t(0), context, variable_remapping).first.get_index();
     for (const auto effect : element.get_effects())
-        append_projected_conditional_effect(effect, context, action.effects, pattern);
+        append_projected_conditional_effect(effect, element.get_arity(), context, action.effects, variable_remapping);
 
     canonicalize(action);
     const auto new_action = context.destination.get_or_create(action).first;
     projected_to_original_action.emplace(new_action, element);
+
+    std::cout << new_action << std::endl;
+
     ref_projected_actions.push_back(new_action.get_index());
 }
 
@@ -538,12 +599,16 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
     auto [transitions, adj_lists] =
         create_abstract_transitions(astates, pattern, projected_to_original_action, *projected_task, successor_generator, *fdr_context);
 
-    return ProjectionAbstraction(
+    auto result = ProjectionAbstraction(
         std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern, std::move(projected_to_original_action)),
                                                                         std::move(astates),
                                                                         std::move(transitions),
                                                                         std::move(adj_lists),
                                                                         std::move(goal_vertices)));
+
+    std::cout << result << std::endl;
+
+    return result;
 }
 }
 
