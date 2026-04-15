@@ -20,6 +20,8 @@
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/block_array_set.hpp"
 #include "tyr/common/declarations.hpp"
+#include "tyr/common/equal_to.hpp"
+#include "tyr/common/hash.hpp"
 #include "tyr/common/itertools.hpp"
 #include "tyr/common/onetbb.hpp"
 #include "tyr/database/database.hpp"
@@ -161,6 +163,98 @@ void append_projected_conditional_effect(fp::ConditionalEffectView element,
     ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect).first.get_index());
 }
 
+/**
+ * compute_variable_remapping
+ */
+
+void compute_variable_remapping(fp::TermView element, UnorderedMap<f::ParameterIndex, f::ParameterIndex>& result)
+{
+    visit(
+        [&](auto&& arg)
+        {
+            using Alternative = std::decay_t<decltype(arg)>;
+
+            if constexpr (std::is_same_v<Alternative, f::ParameterIndex>)
+                result.try_emplace(arg, f::ParameterIndex { static_cast<uint_t>(result.size()) });
+            else if constexpr (std::is_same_v<Alternative, fp::ObjectView>) {}
+            else
+                static_assert(dependent_false<Alternative>::value, "Missing case");
+        },
+        element.get_variant());
+}
+
+void compute_variable_remapping(fp::TermListView element, UnorderedMap<f::ParameterIndex, f::ParameterIndex>& result)
+{
+    for (const auto term : element)
+        compute_variable_remapping(term, result);
+}
+
+void compute_variable_remapping(fp::ConjunctiveConditionView element, const Pattern& pattern, UnorderedMap<f::ParameterIndex, f::ParameterIndex>& result)
+{
+    for (const auto literal : element.get_literals<f::FluentTag>())
+    {
+        if (pattern.predicates_set.contains(literal.get_atom().get_predicate()))
+        {
+            compute_variable_remapping(literal.get_atom().get_terms(), result);
+        }
+    }
+}
+
+void compute_variable_remapping(fp::ConjunctiveEffectView element, const Pattern& pattern, UnorderedMap<f::ParameterIndex, f::ParameterIndex>& result)
+{
+    for (const auto literal : element.get_literals())
+    {
+        if (pattern.predicates_set.contains(literal.get_atom().get_predicate()))
+        {
+            compute_variable_remapping(literal.get_atom().get_terms(), result);
+        }
+    }
+}
+
+UnorderedMap<f::ParameterIndex, f::ParameterIndex> compute_variable_remapping(fp::ActionView element, const Pattern& pattern)
+{
+    auto result = UnorderedMap<f::ParameterIndex, f::ParameterIndex> {};
+
+    // Base case: keep all variable of atoms over predicates in the pattern.
+
+    compute_variable_remapping(element.get_condition(), pattern, result);
+
+    for (const auto effect : element.get_effects())
+    {
+        compute_variable_remapping(effect.get_condition(), pattern, result);
+        compute_variable_remapping(effect.get_effect(), pattern, result);
+    }
+
+    // Inductive case: keep all variable connected via a static dependency.
+
+    auto vdg = fp::VariableDependencyGraph(element);
+
+    auto queue = std::vector<f::ParameterIndex> {};
+    for (const auto& [p, _] : result)
+        queue.push_back(p);
+
+    while (!queue.empty())
+    {
+        const auto pi = static_cast<uint_t>(queue.back());
+        queue.pop_back();
+
+        for (uint_t pj = 0; pj < vdg.k(); ++pj)
+        {
+            if (vdg.has_dependency<f::StaticTag>(pi, pj))
+            {
+                result.try_emplace(f::ParameterIndex { pj }, f::ParameterIndex { static_cast<uint_t>(result.size()) });
+                queue.push_back(f::ParameterIndex { pj });
+            }
+        }
+    }
+
+    return result;
+}
+
+/**
+ * append_projected_action
+ */
+
 void append_projected_action(fp::ActionView element,
                              fp::MergeContext& context,
                              IndexList<fp::Action>& ref_projected_actions,
@@ -170,6 +264,16 @@ void append_projected_action(fp::ActionView element,
     auto action_ptr = context.builder.template get_builder<fp::Action>();
     auto& action = *action_ptr;
     action.clear();
+
+    // TODO: decide which variables to keep.
+
+    auto variable_remapping = compute_variable_remapping(element, pattern);
+
+    std::cout << pattern << std::endl;
+
+    std::cout << element << std::endl;
+
+    std::cout << variable_remapping << std::endl;
 
     action.name = element.get_name();
     action.original_arity = element.get_original_arity();

@@ -198,6 +198,19 @@ std::ostream& print(std::ostream& os, const planning::Plan<Kind>& el)
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::LiftedTag>& el);
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::GroundTag>& el);
 
+std::ostream& print(std::ostream& os, const planning::Pattern& el)
+{
+    os << "Pattern(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "facts = " << el.facts_set << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
 template<planning::TaskKind Kind>
 std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Kind>& el)
 {
@@ -279,6 +292,8 @@ std::ostream& operator<<(std::ostream& os, const Plan<Kind>& el)
 
 template std::ostream& operator<<(std::ostream& os, const Plan<LiftedTag>& el);
 template std::ostream& operator<<(std::ostream& os, const Plan<GroundTag>& el);
+
+std::ostream& operator<<(std::ostream& os, const Pattern& el) { return tyr::print(os, el); }
 
 template<TaskKind Kind>
 std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<Kind>& el)
