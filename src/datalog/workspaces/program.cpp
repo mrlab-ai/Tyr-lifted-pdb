@@ -44,7 +44,6 @@ ProgramWorkspace<OrAP, AndAP, TP>::ProgramWorkspace(ProgramContext& context, con
     and_annot(),
     tp(tp),
     rules(),
-    d2p(),
     planning_builder(),
     datalog_builder(),
     schedulers(create_schedulers(context.get_strata(), context.get_listeners(), program_repository)),

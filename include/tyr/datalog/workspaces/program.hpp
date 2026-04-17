@@ -25,7 +25,6 @@
 #include "tyr/datalog/program_context.hpp"
 #include "tyr/datalog/rule_scheduler.hpp"
 #include "tyr/datalog/statistics/program.hpp"
-#include "tyr/datalog/workspaces/d2p.hpp"
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
@@ -135,8 +134,6 @@ struct ProgramWorkspace
     TP tp;
 
     std::vector<std::unique_ptr<RuleWorkspace<AndAP>>> rules;
-
-    D2PWorkspace d2p;
 
     formalism::planning::Builder planning_builder;
     formalism::datalog::Builder datalog_builder;
