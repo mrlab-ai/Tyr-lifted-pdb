@@ -32,10 +32,10 @@
 namespace tyr::datalog
 {
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
 struct ProgramExecutionContext
 {
-    ProgramExecutionContext(ProgramWorkspace<OrAP, AndAP, TP>& ws, const ConstProgramWorkspace& cws) : ws(ws), cws(cws) {}
+    ProgramExecutionContext(ProgramWorkspace<OrAP, AndAP, TP, CP>& ws, const ConstProgramWorkspace& cws) : ws(ws), cws(cws) {}
 
     /**
      * Initialization
@@ -80,10 +80,10 @@ struct ProgramExecutionContext
     auto get_stratum_execution_contexts()
     {
         return ws.schedulers.data
-               | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<OrAP, AndAP, TP> { scheduler, *this }; });
+               | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<OrAP, AndAP, TP, CP> { scheduler, *this }; });
     }
 
-    ProgramWorkspace<OrAP, AndAP, TP>& ws;
+    ProgramWorkspace<OrAP, AndAP, TP, CP>& ws;
     const ConstProgramWorkspace& cws;
 };
 }

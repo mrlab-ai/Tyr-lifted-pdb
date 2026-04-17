@@ -23,6 +23,7 @@
 #include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/care.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/ground_atom_index.hpp"
@@ -32,10 +33,8 @@
 
 namespace tyr::datalog
 {
-
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP>& ctx);
-
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
+void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP, CP>& ctx);
 }
 
 #endif
