@@ -218,8 +218,8 @@ public:
                            uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
-    template<AssignmentSetCareAccessorConcept CP>
-    void initialize_dynamic_consistency_graphs(const CP& policy,
+    template<AssignmentSetCareAccessorConcept CA>
+    void initialize_dynamic_consistency_graphs(const CA& accessor,
                                                const kpkc::GraphLayout& layout,
                                                kpkc::Graph& delta_graph,
                                                kpkc::Graph& full_graph,

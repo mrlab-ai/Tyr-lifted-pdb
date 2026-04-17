@@ -114,12 +114,12 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
     }
 }
 
-template<FactSetCareAccessorConcept CP>
-[[maybe_unused]] static bool ensure_applicability(fd::RuleView rule, fd::GrounderContext& context, const CP& policy)
+template<FactSetCareAccessorConcept CA>
+[[maybe_unused]] static bool ensure_applicability(fd::RuleView rule, fd::GrounderContext& context, const CA& accessor)
 {
     const auto ground_rule = ground(rule, context).first;
 
-    const auto applicable = is_applicable(ground_rule, policy);
+    const auto applicable = is_applicable(ground_rule, accessor);
 
     if (!applicable)
     {

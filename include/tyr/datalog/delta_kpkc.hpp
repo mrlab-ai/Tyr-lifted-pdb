@@ -61,8 +61,8 @@ public:
 
     /// @brief Set new fact set to compute deltas.
     /// @param assignment_sets
-    template<AssignmentSetCareAccessorConcept CP>
-    void set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CP& policy);
+    template<AssignmentSetCareAccessorConcept CA>
+    void set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CA& accessor);
 
     /// @brief Reset should be called before first iteration.
     void reset();

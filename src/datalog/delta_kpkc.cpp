@@ -33,16 +33,16 @@ DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
 {
 }
 
-template<AssignmentSetCareAccessorConcept CP>
-void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CP& policy)
+template<AssignmentSetCareAccessorConcept CA>
+void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CA& accessor)
 {
-    static_graph.initialize_dynamic_consistency_graphs(policy, m_layout, m_delta_graph, m_full_graph, m_delta_edges);
+    static_graph.initialize_dynamic_consistency_graphs(accessor, m_layout, m_delta_graph, m_full_graph, m_delta_edges);
 
     ++m_iteration;
 }
 
-template void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const NoCareAssignmentSetAccessor& policy);
-template void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CareAssignmentSetAccessor& policy);
+template void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const NoCareAssignmentSetAccessor& accessor);
+template void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CareAssignmentSetAccessor& accessor);
 
 void DeltaKPKC::reset()
 {

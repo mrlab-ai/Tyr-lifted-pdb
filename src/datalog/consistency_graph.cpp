@@ -54,9 +54,9 @@ namespace details
  * Vertex
  */
 
-template<f::FactKind T, typename CP>
-    requires TaggedAssignmentSetCareAccessorForKind<CP, T>
-inline bool consistent_literals(const Vertex& vertex, const TaggedRuleToLiteralInfos<T>& indexed_literals, const CP& policy) noexcept
+template<f::FactKind T, typename CA>
+    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
+inline bool consistent_literals(const Vertex& vertex, const TaggedRuleToLiteralInfos<T>& indexed_literals, const CA& accessor) noexcept
 {
     const auto object_index = vertex.get_object_index();
     const auto parameter_index = vertex.get_parameter_index();
@@ -71,7 +71,7 @@ inline bool consistent_literals(const Vertex& vertex, const TaggedRuleToLiteralI
 
         assert(polarity || info.kpkc_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
 
-        auto predicate_checker = policy.predicate.make_checker(predicate);
+        auto predicate_checker = accessor.predicate.make_checker(predicate);
 
         for (const auto position : info.position_mappings.parameter_to_positions[uint_t(parameter_index)])
         {
@@ -133,58 +133,58 @@ inline bool consistent_literals(const Vertex& vertex, const TaggedRuleToLiteralI
     return true;
 }
 
-template<f::FactKind T, typename CP>
-    requires TaggedAssignmentSetCareAccessorForKind<CP, T>
-ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const CP& policy) noexcept;
+template<f::FactKind T, typename CA>
+    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
+ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const CA& accessor) noexcept;
 
-template<f::FactKind T, typename CP>
-    requires TaggedAssignmentSetCareAccessorForKind<CP, T>
-ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const CP& policy) noexcept;
+template<f::FactKind T, typename CA>
+    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
+ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const CA& accessor) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 ClosedInterval<float_t> consistent_interval(fd::LiftedUnaryOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CP& policy) noexcept;
+                                            const CA& accessor) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 ClosedInterval<float_t> consistent_interval(fd::LiftedBinaryOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CP& policy) noexcept;
+                                            const CA& accessor) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 ClosedInterval<float_t> consistent_interval(fd::LiftedMultiOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CP& policy) noexcept;
+                                            const CA& accessor) noexcept;
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 ClosedInterval<float_t> consistent_interval(fd::FunctionExpressionView element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CP& policy) noexcept;
+                                            const CA& accessor) noexcept;
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 ClosedInterval<float_t> consistent_interval(fd::LiftedArithmeticOperatorView element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CP& policy) noexcept;
+                                            const CA& accessor) noexcept;
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
                                    const GraphStructure& structure,
                                    const RuleToConstraintInfo& constraint_info,
-                                   const CP& policy) noexcept;
+                                   const CA& accessor) noexcept;
 
-template<f::FactKind T, typename CP>
-    requires TaggedAssignmentSetCareAccessorForKind<CP, T>
-inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const CP& policy) noexcept
+template<f::FactKind T, typename CA>
+    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
+inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const CA& accessor) noexcept
 {
     const auto object_index = vertex.get_object_index();
     const auto parameter_index = vertex.get_parameter_index();
 
-    auto function_checker = policy.function.make_checker(info.function);
+    auto function_checker = accessor.function.make_checker(info.function);
 
     auto bounds = function_checker.set.at(EmptyAssignment());
     if (empty(bounds))
@@ -242,9 +242,9 @@ inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<
     return bounds;
 }
 
-template<f::FactKind T, typename CP>
-    requires TaggedAssignmentSetCareAccessorForKind<CP, T>
-inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const CP& policy) noexcept
+template<f::FactKind T, typename CA>
+    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
+inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const CA& accessor) noexcept
 {
     auto p = uint_t(edge.vi().get_parameter_index());
     auto q = uint_t(edge.vj().get_parameter_index());
@@ -257,17 +257,17 @@ inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<
         std::swap(obj_p, obj_q);
     }
 
-    auto function_checker = policy.function.make_checker(info.function);
+    auto function_checker = accessor.function.make_checker(info.function);
 
     auto bounds = function_checker.set.at(EmptyAssignment());
     if (empty(bounds))
         return bounds;
 
-    bounds = intersect(bounds, consistent_interval(info, edge.vi(), policy));
+    bounds = intersect(bounds, consistent_interval(info, edge.vi(), accessor));
     if (empty(bounds))
         return bounds;
 
-    bounds = intersect(bounds, consistent_interval(info, edge.vj(), policy));
+    bounds = intersect(bounds, consistent_interval(info, edge.vj(), accessor));
     if (empty(bounds))
         return bounds;
 
@@ -378,44 +378,46 @@ inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<
     return bounds;
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedUnaryOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CP& policy) noexcept
+                                                   const CA& accessor) noexcept
 {
-    return apply(O {}, consistent_interval(element.get_arg(), structure, constraint_info, policy));
+    return apply(O {}, consistent_interval(element.get_arg(), structure, constraint_info, accessor));
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedBinaryOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CP& policy) noexcept
+                                                   const CA& accessor) noexcept
 {
     return apply(O {},
-                 consistent_interval(element.get_lhs(), structure, constraint_info, policy),
-                 consistent_interval(element.get_rhs(), structure, constraint_info, policy));
+                 consistent_interval(element.get_lhs(), structure, constraint_info, accessor),
+                 consistent_interval(element.get_rhs(), structure, constraint_info, accessor));
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedMultiOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CP& policy) noexcept
+                                                   const CA& accessor) noexcept
 {
     const auto child_fexprs = element.get_args();
 
     return std::accumulate(std::next(child_fexprs.begin()),
                            child_fexprs.end(),
-                           consistent_interval(child_fexprs.front(), structure, constraint_info, policy),
+                           consistent_interval(child_fexprs.front(), structure, constraint_info, accessor),
                            [&](const auto& value, const auto& child_expr)
-                           { return apply(O {}, value, consistent_interval(child_expr, structure, constraint_info, policy)); });
+                           { return apply(O {}, value, consistent_interval(child_expr, structure, constraint_info, accessor)); });
 }
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CP>
-inline ClosedInterval<float_t>
-consistent_interval(fd::FunctionExpressionView element, const GraphStructure& structure, const RuleToConstraintInfo& constraint_info, const CP& policy) noexcept
+template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+inline ClosedInterval<float_t> consistent_interval(fd::FunctionExpressionView element,
+                                                   const GraphStructure& structure,
+                                                   const RuleToConstraintInfo& constraint_info,
+                                                   const CA& accessor) noexcept
 {
     return visit(
         [&](auto&& arg)
@@ -425,31 +427,31 @@ consistent_interval(fd::FunctionExpressionView element, const GraphStructure& st
             if constexpr (std::is_same_v<Alternative, float_t>)
                 return ClosedInterval<float_t>(arg, arg);
             else if constexpr (std::is_same_v<Alternative, fd::LiftedArithmeticOperatorView>)
-                return consistent_interval(arg, structure, constraint_info, policy);
+                return consistent_interval(arg, structure, constraint_info, accessor);
             else if constexpr (std::is_same_v<Alternative, fd::FunctionTermView<f::StaticTag>>)
-                return consistent_interval(constraint_info.static_infos.infos.at(arg.get_index()), structure, policy.template get<f::StaticTag>());
+                return consistent_interval(constraint_info.static_infos.infos.at(arg.get_index()), structure, accessor.template get<f::StaticTag>());
             else if constexpr (std::is_same_v<Alternative, fd::FunctionTermView<f::FluentTag>>)
-                return consistent_interval(constraint_info.fluent_infos.infos.at(arg.get_index()), structure, policy.template get<f::FluentTag>());
+                return consistent_interval(constraint_info.fluent_infos.infos.at(arg.get_index()), structure, accessor.template get<f::FluentTag>());
             else
                 static_assert(dependent_false<Alternative>::value, "Missing case");
         },
         element.get_variant());
 }
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedArithmeticOperatorView element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CP& policy) noexcept
+                                                   const CA& accessor) noexcept
 {
-    return visit([&](auto&& arg) { return consistent_interval(arg, structure, constraint_info, policy); }, element.get_variant());
+    return visit([&](auto&& arg) { return consistent_interval(arg, structure, constraint_info, accessor); }, element.get_variant());
 }
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CP>
+template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
 inline bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
                                           const GraphStructure& structure,
                                           const RuleToConstraintInfo& constraint_info,
-                                          const CP& policy) noexcept
+                                          const CA& accessor) noexcept
 {
     return visit(
         [&](auto&& arg) -> bool
@@ -457,17 +459,17 @@ inline bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
             using Alternative = std::decay_t<decltype(arg)>;
 
             return apply_existential(typename Alternative::OpType {},
-                                     consistent_interval(arg.get_lhs(), structure, constraint_info, policy),
-                                     consistent_interval(arg.get_rhs(), structure, constraint_info, policy));
+                                     consistent_interval(arg.get_lhs(), structure, constraint_info, accessor),
+                                     consistent_interval(arg.get_rhs(), structure, constraint_info, accessor));
         },
         element.get_variant());
 }
 
-template<AssignmentSetCareAccessorConcept CP>
+template<AssignmentSetCareAccessorConcept CA>
 inline bool consistent_numeric_constraints(const Vertex& vertex,
                                            fd::LiftedBooleanOperatorListView numeric_constraints,
                                            const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const CP& policy) noexcept
+                                           const CA& accessor) noexcept
 {
     assert(numeric_constraints.size() == indexed_constraints.infos.size());
 
@@ -478,7 +480,7 @@ inline bool consistent_numeric_constraints(const Vertex& vertex,
 
         assert(kpkc_arity(numeric_constraint) > 0);
 
-        if (!consistent_numeric_constraint(numeric_constraint, vertex, info, policy))
+        if (!consistent_numeric_constraint(numeric_constraint, vertex, info, accessor))
             return false;
     }
 
@@ -489,9 +491,9 @@ inline bool consistent_numeric_constraints(const Vertex& vertex,
  * Edge
  */
 
-template<f::FactKind T, typename CP>
-    requires TaggedAssignmentSetCareAccessorForKind<CP, T>
-inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const CP& policy) noexcept
+template<f::FactKind T, typename CA>
+    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
+inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const CA& accessor) noexcept
 {
     auto p = uint_t(edge.vi().get_parameter_index());
     auto q = uint_t(edge.vj().get_parameter_index());
@@ -510,7 +512,7 @@ inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos
     for (const auto lit_id : indexed_literals.info_mappings.parameter_pairs_to_infos[p][q])
     {
         const auto& info = indexed_literals.infos[lit_id];
-        auto predicate_checker = policy.predicate.make_checker(info.predicate);
+        auto predicate_checker = accessor.predicate.make_checker(info.predicate);
         const auto polarity = info.polarity;
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
@@ -547,7 +549,7 @@ inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos
     for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[p])
     {
         const auto& info = indexed_literals.infos[lit_id];
-        auto predicate_checker = policy.predicate.make_checker(info.predicate);
+        auto predicate_checker = accessor.predicate.make_checker(info.predicate);
         const auto polarity = info.polarity;
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
@@ -584,7 +586,7 @@ inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos
     for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[q])
     {
         const auto& info = indexed_literals.infos[lit_id];
-        auto predicate_checker = policy.predicate.make_checker(info.predicate);
+        auto predicate_checker = accessor.predicate.make_checker(info.predicate);
         const auto polarity = info.polarity;
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
@@ -620,11 +622,11 @@ inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos
     return true;
 }
 
-template<AssignmentSetCareAccessorConcept CP>
+template<AssignmentSetCareAccessorConcept CA>
 inline bool consistent_numeric_constraints(const Edge& edge,
                                            fd::LiftedBooleanOperatorListView numeric_constraints,
                                            const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const CP& policy) noexcept
+                                           const CA& accessor) noexcept
 {
     assert(numeric_constraints.size() == indexed_constraints.infos.size());
 
@@ -635,7 +637,7 @@ inline bool consistent_numeric_constraints(const Edge& edge,
 
         assert(kpkc_arity(numeric_constraint) > 1);
 
-        if (!consistent_numeric_constraint(numeric_constraint, edge, info, policy))
+        if (!consistent_numeric_constraint(numeric_constraint, edge, info, accessor))
             return false;
     }
 
@@ -661,7 +663,7 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedRuleToLiteralInfos
     auto vertex_partitions = std::vector<std::vector<uint_t>> {};
     auto object_to_vertex_per_partition = std::vector<std::vector<uint_t>> {};
 
-    const auto policy = TaggedNoCareAssignmentSetAccessor<f::StaticTag> { static_assignment_sets };
+    const auto accessor = TaggedNoCareAssignmentSetAccessor<f::StaticTag> { static_assignment_sets };
 
     for (uint_t parameter_index = begin_parameter_index; parameter_index < end_parameter_index; ++parameter_index)
     {
@@ -676,7 +678,7 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedRuleToLiteralInfos
 
             auto vertex = details::Vertex(f::ParameterIndex(parameter_index), Index<f::Object>(object_index));
 
-            if (consistent_literals(vertex, indexed_literals, policy))
+            if (consistent_literals(vertex, indexed_literals, accessor))
             {
                 vertices.push_back(std::move(vertex));
                 vertex_partition.push_back(vertex_index);
@@ -702,7 +704,7 @@ kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const de
 
     auto offset_i = 0;
 
-    const auto policy = TaggedNoCareAssignmentSetAccessor<f::StaticTag> { static_assignment_sets };
+    const auto accessor = TaggedNoCareAssignmentSetAccessor<f::StaticTag> { static_assignment_sets };
 
     for (uint_t pi = 0; pi < k; ++pi)
     {
@@ -725,7 +727,7 @@ kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const de
 
                     const auto edge = details::Edge(vertex_i, vertex_j);
 
-                    if (consistent_literals(edge, indexed_literals, policy))
+                    if (consistent_literals(edge, indexed_literals, accessor))
                     {
                         matrix.get_bitset(vi, pj).set(bj);
                         matrix.get_bitset(vj, pi).set(bi);
@@ -1011,8 +1013,8 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
     // std::cout << m_binary_overapproximation_indexed_literals << std::endl;
 }
 
-template<AssignmentSetCareAccessorConcept CP>
-void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CP& policy,
+template<AssignmentSetCareAccessorConcept CA>
+void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CA& accessor,
                                                                    const kpkc::GraphLayout& layout,
                                                                    kpkc::Graph& delta_graph,
                                                                    kpkc::Graph& full_graph,
@@ -1067,8 +1069,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CP& pol
                     const auto v = info.bit_offset + bit;
                     const auto& vertex = get_vertex(v);
 
-                    if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, policy.template get<f::FluentTag>())
-                        && consistent_numeric_constraints(vertex, unary_overapproximation_constraints, m_unary_overapproximation_indexed_constraints, policy))
+                    if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, accessor.template get<f::FluentTag>())
+                        && consistent_numeric_constraints(vertex, unary_overapproximation_constraints, m_unary_overapproximation_indexed_constraints, accessor))
                     {
                         /// Process delta consistent vertex.
                         full_affected_partition.set(bit);
@@ -1142,11 +1144,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CP& pol
 
                             const auto edge = details::Edge(vertex_i, vertex_j);
 
-                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, policy.template get<f::FluentTag>())
+                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, accessor.template get<f::FluentTag>())
                                 && consistent_numeric_constraints(edge,
                                                                   binary_overapproximation_constraints,
                                                                   m_binary_overapproximation_indexed_constraints,
-                                                                  policy))
+                                                                  accessor))
                             {
                                 /// Process delta consistent edge.
 
@@ -1194,13 +1196,13 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CP& pol
     // }
 }
 
-template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs<NoCareAssignmentSetAccessor>(const NoCareAssignmentSetAccessor& policy,
+template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs<NoCareAssignmentSetAccessor>(const NoCareAssignmentSetAccessor& accessor,
                                                                                                          const kpkc::GraphLayout& layout,
                                                                                                          kpkc::Graph& delta_graph,
                                                                                                          kpkc::Graph& full_graph,
                                                                                                          std::vector<kpkc::Edge>& delta_edges) const;
 
-template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs<CareAssignmentSetAccessor>(const CareAssignmentSetAccessor& policy,
+template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs<CareAssignmentSetAccessor>(const CareAssignmentSetAccessor& accessor,
                                                                                                        const kpkc::GraphLayout& layout,
                                                                                                        kpkc::Graph& delta_graph,
                                                                                                        kpkc::Graph& full_graph,
