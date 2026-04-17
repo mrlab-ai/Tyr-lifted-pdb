@@ -45,7 +45,6 @@
 namespace tyr::datalog
 {
 
-// TODO: this doesnt respect dont cares
 struct NullaryApplicabilityCheck
 {
 private:

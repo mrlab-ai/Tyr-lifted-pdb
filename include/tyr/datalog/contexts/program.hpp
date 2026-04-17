@@ -39,6 +39,7 @@ struct ProgramExecutionContext
     ProgramExecutionContext(ProgramWorkspace<OrAP, AndAP, TP>& ws, const ConstProgramWorkspace& cws) :
         ws(ws),
         cws(cws),
+        fact_set_cp(CP::make_fact_set_policy(cws.facts, ws.facts)),
         assignment_set_cp(CP::make_assignment_set_policy(cws.facts, ws.facts))
     {
     }
@@ -92,6 +93,7 @@ struct ProgramExecutionContext
     ProgramWorkspace<OrAP, AndAP, TP>& ws;
     const ConstProgramWorkspace& cws;
 
+    const CP::FactSetPolicy fact_set_cp;
     const CP::AssignmentSetPolicy assignment_set_cp;
 };
 }

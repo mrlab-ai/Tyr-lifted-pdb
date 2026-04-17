@@ -50,7 +50,7 @@ public:
             m_and_ap(ws_worker.solve.and_ap),
             m_ws_rule(rctx.ws_rule),
             m_cws_rule(rctx.cws_rule),
-            m_fact_set_cp(CP::make_fact_set_policy(rctx.ctx.ctx.cws.facts, rctx.ctx.ctx.ws.facts))
+            m_fact_set_cp(rctx.ctx.ctx.fact_set_cp)
         {
         }
 
@@ -77,7 +77,7 @@ public:
         const RuleWorkspace<AndAP>& m_ws_rule;
         const ConstRuleWorkspace& m_cws_rule;
 
-        const CP::FactSetPolicy m_fact_set_cp;
+        const CP::FactSetPolicy& m_fact_set_cp;
     };
 
     class Out

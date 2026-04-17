@@ -165,6 +165,12 @@ const std::vector<PredicateFactSet<T>>& PredicateFactSets<T>::get_sets() const n
     return m_sets;
 }
 
+template<f::FactKind T>
+const PredicateFactSet<T>& PredicateFactSets<T>::at(Index<formalism::Predicate<T>> predicate) const noexcept
+{
+    return m_sets.at(uint_t(predicate));
+}
+
 template class PredicateFactSets<f::StaticTag>;
 template class PredicateFactSets<f::FluentTag>;
 
@@ -363,6 +369,12 @@ template<f::FactKind T>
 const std::vector<FunctionFactSet<T>>& FunctionFactSets<T>::get_sets() const noexcept
 {
     return m_sets;
+}
+
+template<f::FactKind T>
+const FunctionFactSet<T>& FunctionFactSets<T>::at(Index<formalism::Function<T>> function) const noexcept
+{
+    return m_sets.at(uint_t(function));
 }
 
 template class FunctionFactSets<f::StaticTag>;

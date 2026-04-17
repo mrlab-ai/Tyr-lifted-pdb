@@ -82,7 +82,7 @@ float_t evaluate(formalism::datalog::GroundMultiOperatorView<O> element, const P
 template<formalism::FactKind T, FactSetCarePolicyConcept P>
 float_t evaluate(formalism::datalog::GroundFunctionTermView<T> element, const P& policy)
 {
-    return policy.template check_function_term<T>(element);
+    return policy.template get<T>().function.check(element);
 }
 
 template<FactSetCarePolicyConcept P>
@@ -110,7 +110,7 @@ bool evaluate(formalism::datalog::GroundBooleanOperatorView element, const P& po
 template<formalism::FactKind T, FactSetCarePolicyConcept P>
 bool is_applicable(formalism::datalog::GroundLiteralView<T> element, const P& policy)
 {
-    return policy.template check_literal<T>(element);
+    return policy.template get<T>().predicate.check(element);
 }
 
 template<formalism::FactKind T, FactSetCarePolicyConcept P>
@@ -181,7 +181,7 @@ float_t evaluate(formalism::datalog::LiftedMultiOperatorView<O> element, const P
 template<formalism::FactKind T, FactSetCarePolicyConcept P>
 float_t evaluate(formalism::datalog::FunctionTermView<T> element, const P& policy, const formalism::datalog::GrounderContext& context)
 {
-    return policy.template check_function_term<T>(element, context);
+    return policy.template get<T>().function.check(element, context);
 }
 
 template<FactSetCarePolicyConcept P>
@@ -209,7 +209,7 @@ bool evaluate(formalism::datalog::LiftedBooleanOperatorView element, const P& po
 template<formalism::FactKind T, FactSetCarePolicyConcept P>
 bool is_valid_binding(formalism::datalog::LiteralView<T> element, const P& policy, const formalism::datalog::GrounderContext& context)
 {
-    return policy.template check_literal<T>(element, context);
+    return policy.template get<T>().predicate.check(element, context);
 }
 
 template<formalism::FactKind T, FactSetCarePolicyConcept P>

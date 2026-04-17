@@ -108,11 +108,10 @@ public:
     void insert(formalism::datalog::PredicateBindingView<T> binding);
     void insert(formalism::datalog::PredicateBindingForwardRangeView<T> bindings);
 
-    const PredicateAssignmentSet<T>& get_set(Index<formalism::Predicate<T>> index) const noexcept;
-
     size_t size() const noexcept;
 
     const std::vector<PredicateAssignmentSet<T>>& get_sets() const noexcept;
+    const PredicateAssignmentSet<T>& at(Index<formalism::Predicate<T>> index) const noexcept;
 };
 
 template<formalism::FactKind T>
@@ -161,9 +160,9 @@ public:
     void insert(formalism::datalog::GroundFunctionTermListView<T> function_terms, const std::vector<float_t>& values);
     void insert(formalism::datalog::GroundFunctionTermValueListView<T> fterm_values);
 
-    const FunctionAssignmentSet<T>& get_set(Index<formalism::Function<T>> index) const noexcept;
     std::vector<FunctionAssignmentSet<T>>& get_sets() noexcept;
     const std::vector<FunctionAssignmentSet<T>>& get_sets() const noexcept;
+    const FunctionAssignmentSet<T>& at(Index<formalism::Function<T>> index) const noexcept;
 
     size_t size() const noexcept;
 };

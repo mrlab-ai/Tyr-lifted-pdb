@@ -37,6 +37,15 @@ template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism:
 template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism::StaticTag> elements, const CareFactSetPolicy& policy);
 template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism::FluentTag> elements, const CareFactSetPolicy& policy);
 
+template bool is_applicable(formalism::datalog::GroundBooleanOperatorListView elements, const NoCareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundBooleanOperatorListView elements, const CareFactSetPolicy& policy);
+
+template bool is_applicable(formalism::datalog::GroundConjunctiveConditionView element, const NoCareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundConjunctiveConditionView element, const CareFactSetPolicy& policy);
+
+template bool is_applicable(formalism::datalog::GroundRuleView element, const NoCareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundRuleView element, const CareFactSetPolicy& policy);
+
 /**
  * is_valid_binding
  */
@@ -66,6 +75,18 @@ template bool is_valid_binding(formalism::datalog::LiteralListView<formalism::St
 template bool is_valid_binding(formalism::datalog::LiteralListView<formalism::FluentTag> elements,
                                const CareFactSetPolicy& policy,
                                const formalism::datalog::GrounderContext& context);
+
+template bool is_valid_binding(formalism::datalog::LiftedBooleanOperatorListView elements,
+                               const NoCareFactSetPolicy& policy,
+                               const formalism::datalog::GrounderContext& context);
+template bool is_valid_binding(formalism::datalog::LiftedBooleanOperatorListView elements,
+                               const CareFactSetPolicy& policy,
+                               const formalism::datalog::GrounderContext& context);
+
+template bool
+is_valid_binding(formalism::datalog::ConjunctiveConditionView element, const NoCareFactSetPolicy& policy, const formalism::datalog::GrounderContext& context);
+template bool
+is_valid_binding(formalism::datalog::ConjunctiveConditionView element, const CareFactSetPolicy& policy, const formalism::datalog::GrounderContext& context);
 
 }
 

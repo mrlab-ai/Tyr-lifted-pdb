@@ -278,12 +278,6 @@ void PredicateAssignmentSets<T>::insert(formalism::datalog::PredicateBindingForw
 }
 
 template<formalism::FactKind T>
-const PredicateAssignmentSet<T>& PredicateAssignmentSets<T>::get_set(Index<formalism::Predicate<T>> index) const noexcept
-{
-    return m_sets[uint_t(index)];
-}
-
-template<formalism::FactKind T>
 size_t PredicateAssignmentSets<T>::size() const noexcept
 {
     return std::accumulate(m_sets.begin(), m_sets.end(), size_t { 0 }, [](auto&& lhs, auto&& rhs) { return lhs + rhs.size(); });
@@ -293,6 +287,12 @@ template<formalism::FactKind T>
 const std::vector<PredicateAssignmentSet<T>>& PredicateAssignmentSets<T>::get_sets() const noexcept
 {
     return m_sets;
+}
+
+template<formalism::FactKind T>
+const PredicateAssignmentSet<T>& PredicateAssignmentSets<T>::at(Index<formalism::Predicate<T>> index) const noexcept
+{
+    return m_sets.at(uint_t(index));
 }
 
 template class PredicateAssignmentSets<f::StaticTag>;
@@ -472,12 +472,6 @@ void FunctionAssignmentSets<T>::insert(formalism::datalog::GroundFunctionTermVal
 }
 
 template<formalism::FactKind T>
-const FunctionAssignmentSet<T>& FunctionAssignmentSets<T>::get_set(Index<formalism::Function<T>> index) const noexcept
-{
-    return m_sets[index.get_value()];
-}
-
-template<formalism::FactKind T>
 std::vector<FunctionAssignmentSet<T>>& FunctionAssignmentSets<T>::get_sets() noexcept
 {
     return m_sets;
@@ -487,6 +481,12 @@ template<formalism::FactKind T>
 const std::vector<FunctionAssignmentSet<T>>& FunctionAssignmentSets<T>::get_sets() const noexcept
 {
     return m_sets;
+}
+
+template<formalism::FactKind T>
+const FunctionAssignmentSet<T>& FunctionAssignmentSets<T>::at(Index<formalism::Function<T>> index) const noexcept
+{
+    return m_sets.at(uint_t(index));
 }
 
 template<formalism::FactKind T>

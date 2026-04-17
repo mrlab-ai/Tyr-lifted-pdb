@@ -30,8 +30,8 @@ struct FactsWorkspace
     TaggedFactSets<formalism::FluentTag> fact_sets;
     TaggedAssignmentSets<formalism::FluentTag> assignment_sets;
 
-    TaggedFactSets<formalism::FluentTag> care_fact_sets;
-    TaggedAssignmentSets<formalism::FluentTag> care_assignment_sets;
+    PredicateFactSets<formalism::FluentTag> care_fact_sets;
+    PredicateAssignmentSets<formalism::FluentTag> care_assignment_sets;
 
     PredicateFactSets<formalism::FluentTag> goal_fact_sets;
 
@@ -51,9 +51,6 @@ struct ConstFactsWorkspace
 {
     const TaggedFactSets<formalism::StaticTag> fact_sets;
     const TaggedAssignmentSets<formalism::StaticTag> assignment_sets;
-
-    const TaggedFactSets<formalism::StaticTag> care_fact_sets;
-    const TaggedAssignmentSets<formalism::StaticTag> care_assignment_sets;
 
     explicit ConstFactsWorkspace(formalism::datalog::PredicateListView<formalism::StaticTag> predicates,
                                  formalism::datalog::FunctionListView<formalism::StaticTag> functions,

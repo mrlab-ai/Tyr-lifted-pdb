@@ -77,6 +77,7 @@ public:
     bool contains(formalism::datalog::PredicateBindingView<T> binding) const noexcept;
 
     const std::vector<PredicateFactSet<T>>& get_sets() const noexcept;
+    const PredicateFactSet<T>& at(Index<formalism::Predicate<T>> predicate) const noexcept;
 };
 
 template<formalism::FactKind T>
@@ -133,6 +134,7 @@ public:
     float_t operator[](formalism::datalog::GroundFunctionTermView<T> fterm) const noexcept;
 
     const std::vector<FunctionFactSet<T>>& get_sets() const noexcept;
+    const FunctionFactSet<T>& at(Index<formalism::Function<T>> function) const noexcept;
 };
 
 template<formalism::FactKind T>

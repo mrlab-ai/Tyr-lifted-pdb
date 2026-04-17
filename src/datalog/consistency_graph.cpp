@@ -23,6 +23,7 @@
 #include "tyr/datalog/assignment_sets.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/formatter.hpp"
+#include "tyr/datalog/policies/care.hpp"
 #include "tyr/formalism/arithmetic_operator_utils.hpp"
 #include "tyr/formalism/boolean_operator_utils.hpp"
 #include "tyr/formalism/datalog/builder.hpp"
@@ -53,10 +54,9 @@ namespace details
  * Vertex
  */
 
-template<f::FactKind T>
-inline bool consistent_literals(const Vertex& vertex,
-                                const TaggedRuleToLiteralInfos<T>& indexed_literals,
-                                const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
+template<f::FactKind T, typename CP>
+    requires TaggedAssignmentSetCarePolicyForKind<CP, T>
+inline bool consistent_literals(const Vertex& vertex, const TaggedRuleToLiteralInfos<T>& indexed_literals, const CP& policy) noexcept
 {
     const auto object_index = vertex.get_object_index();
     const auto parameter_index = vertex.get_parameter_index();
@@ -71,7 +71,7 @@ inline bool consistent_literals(const Vertex& vertex,
 
         assert(polarity || info.kpkc_arity == 1);  ///< Can only handly unary negated literals due to overapproximation
 
-        const auto& pred_set = predicate_assignment_sets.get_set(predicate);
+        auto predicate_checker = policy.predicate.make_checker(predicate);
 
         for (const auto position : info.position_mappings.parameter_to_positions[uint_t(parameter_index)])
         {
@@ -81,9 +81,7 @@ inline bool consistent_literals(const Vertex& vertex,
 
                 // std::cout << assignment << std::endl;
 
-                const auto true_assignment = pred_set.at(assignment);
-
-                if (polarity != true_assignment)
+                if (predicate_checker.is_consistent(assignment, polarity) == false)
                     return false;
             }
 
@@ -110,7 +108,7 @@ inline bool consistent_literals(const Vertex& vertex,
 
                     // std::cout << assignment << std::endl;
 
-                    if (polarity != pred_set.at(assignment))
+                    if (predicate_checker.is_consistent(assignment, polarity) == false)
                         return false;
                 }
             }
@@ -126,7 +124,7 @@ inline bool consistent_literals(const Vertex& vertex,
 
                 // std::cout << assignment << std::endl;
 
-                if (polarity != pred_set.at(assignment))
+                if (predicate_checker.is_consistent(assignment, polarity) == false)
                     return false;
             }
         }
@@ -135,63 +133,62 @@ inline bool consistent_literals(const Vertex& vertex,
     return true;
 }
 
-template<f::FactKind T>
-ClosedInterval<float_t>
-consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept;
+template<f::FactKind T, typename CP>
+    requires TaggedAssignmentSetCarePolicyForKind<CP, T>
+ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const CP& policy) noexcept;
 
-template<f::FactKind T>
-ClosedInterval<float_t>
-consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept;
+template<f::FactKind T, typename CP>
+    requires TaggedAssignmentSetCarePolicyForKind<CP, T>
+ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const CP& policy) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 ClosedInterval<float_t> consistent_interval(fd::LiftedUnaryOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const AssignmentSets& assignment_sets) noexcept;
+                                            const CP& policy) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 ClosedInterval<float_t> consistent_interval(fd::LiftedBinaryOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const AssignmentSets& assignment_sets) noexcept;
+                                            const CP& policy) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 ClosedInterval<float_t> consistent_interval(fd::LiftedMultiOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const AssignmentSets& assignment_sets) noexcept;
+                                            const CP& policy) noexcept;
 
-template<typename GraphStructure>
+template<typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 ClosedInterval<float_t> consistent_interval(fd::FunctionExpressionView element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const AssignmentSets& assignment_sets) noexcept;
+                                            const CP& policy) noexcept;
 
-template<typename GraphStructure>
+template<typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 ClosedInterval<float_t> consistent_interval(fd::LiftedArithmeticOperatorView element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const AssignmentSets& assignment_sets) noexcept;
+                                            const CP& policy) noexcept;
 
-template<typename GraphStructure>
+template<typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
                                    const GraphStructure& structure,
                                    const RuleToConstraintInfo& constraint_info,
-                                   const AssignmentSets& assignment_sets) noexcept;
+                                   const CP& policy) noexcept;
 
-template<f::FactKind T>
-inline ClosedInterval<float_t>
-consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
+template<f::FactKind T, typename CP>
+    requires TaggedAssignmentSetCarePolicyForKind<CP, T>
+inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const CP& policy) noexcept
 {
     const auto object_index = vertex.get_object_index();
     const auto parameter_index = vertex.get_parameter_index();
 
-    const auto function = info.function;
-    const auto& func_set = function_assignment_sets.get_set(function);
+    auto function_checker = policy.function.make_checker(info.function);
 
-    auto bounds = func_set.at(EmptyAssignment());
+    auto bounds = function_checker.set.at(EmptyAssignment());
     if (empty(bounds))
-        return bounds;  // early exit
+        return bounds;
 
     if (info.num_parameters >= 1)
     {
@@ -200,11 +197,8 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex,
             auto assignment = VertexAssignment(f::ParameterIndex(position), object_index);
             assert(assignment.is_valid());
 
-            // std::cout << assignment << std::endl;
-
-            bounds = intersect(bounds, func_set.at(assignment));
-            if (empty(bounds))
-                return bounds;  // early exit
+            if (!function_checker.intersect_interval(assignment, bounds))
+                return bounds;
 
             if (info.num_constants >= 1)
             {
@@ -223,14 +217,11 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex,
                         std::swap(first_obj, second_obj);
                     }
 
-                    auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
-                    assert(assignment.is_valid());
+                    auto edge_assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
+                    assert(edge_assignment.is_valid());
 
-                    // std::cout << assignment << std::endl;
-
-                    bounds = intersect(bounds, func_set.at(assignment));
-                    if (empty(bounds))
-                        return bounds;  // early exit
+                    if (!function_checker.intersect_interval(edge_assignment, bounds))
+                        return bounds;
                 }
             }
         }
@@ -243,20 +234,17 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex,
             auto assignment = VertexAssignment(f::ParameterIndex(pos_c), obj_c);
             assert(assignment.is_valid());
 
-            // std::cout << assignment << std::endl;
-
-            bounds = intersect(bounds, func_set.at(assignment));
-            if (empty(bounds))
-                return bounds;  // early exit
+            if (!function_checker.intersect_interval(assignment, bounds))
+                return bounds;
         }
     }
 
     return bounds;
 }
 
-template<f::FactKind T>
-inline ClosedInterval<float_t>
-consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const FunctionAssignmentSets<T>& function_assignment_sets) noexcept
+template<f::FactKind T, typename CP>
+    requires TaggedAssignmentSetCarePolicyForKind<CP, T>
+inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const CP& policy) noexcept
 {
     auto p = uint_t(edge.vi().get_parameter_index());
     auto q = uint_t(edge.vj().get_parameter_index());
@@ -269,23 +257,20 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, con
         std::swap(obj_p, obj_q);
     }
 
-    // std::cout << "Edge: " << p << " " << q << std::endl;
+    auto function_checker = policy.function.make_checker(info.function);
 
-    const auto& func_set = function_assignment_sets.get_set(info.function);
-
-    auto bounds = func_set.at(EmptyAssignment());
+    auto bounds = function_checker.set.at(EmptyAssignment());
     if (empty(bounds))
-        return bounds;  // early exit
+        return bounds;
 
-    bounds = intersect(bounds, consistent_interval(info, edge.vi(), function_assignment_sets));
+    bounds = intersect(bounds, consistent_interval(info, edge.vi(), policy));
     if (empty(bounds))
-        return bounds;  // early exit
+        return bounds;
 
-    bounds = intersect(bounds, consistent_interval(info, edge.vj(), function_assignment_sets));
+    bounds = intersect(bounds, consistent_interval(info, edge.vj(), policy));
     if (empty(bounds))
-        return bounds;  // early exit
+        return bounds;
 
-    /// positions where p/q occur in that literal
     if (info.num_parameters >= 2)
     {
         for (auto pos_p : info.position_mappings.parameter_to_positions[p])
@@ -308,16 +293,12 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, con
                 auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
                 assert(assignment.is_valid());
 
-                // std::cout << assignment << std::endl;
-
-                bounds = intersect(bounds, func_set.at(assignment));
-                if (empty(bounds))
-                    return bounds;  // early exit
+                if (!function_checker.intersect_interval(assignment, bounds))
+                    return bounds;
             }
         }
     }
 
-    /// constant c with position pos_c < pos_p or pos_c > pos_p
     if (info.num_parameters >= 1 && info.num_constants >= 1)
     {
         for (auto pos_p : info.position_mappings.parameter_to_positions[p])
@@ -340,16 +321,12 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, con
                 auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
                 assert(assignment.is_valid());
 
-                // std::cout << assignment << std::endl;
-
-                bounds = intersect(bounds, func_set.at(assignment));
-                if (empty(bounds))
-                    return bounds;  // early exit
+                if (!function_checker.intersect_interval(assignment, bounds))
+                    return bounds;
             }
         }
     }
 
-    /// constant c with position pos_c < pos_q or pos_c > pos_q
     if (info.num_parameters >= 1 && info.num_constants >= 1)
     {
         for (auto pos_q : info.position_mappings.parameter_to_positions[q])
@@ -372,16 +349,12 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, con
                 auto assignment = EdgeAssignment(f::ParameterIndex(first_pos), first_obj, f::ParameterIndex(second_pos), second_obj);
                 assert(assignment.is_valid());
 
-                // std::cout << assignment << std::endl;
-
-                bounds = intersect(bounds, func_set.at(assignment));
-                if (empty(bounds))
-                    return bounds;  // early exit
+                if (!function_checker.intersect_interval(assignment, bounds))
+                    return bounds;
             }
         }
     }
 
-    /// constants c,c' with position pos_c < pos_c'
     if (info.num_constants >= 2)
     {
         for (uint_t i = 0; i < info.position_mappings.constant_positions.size(); ++i)
@@ -396,11 +369,8 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, con
                 auto assignment = EdgeAssignment(f::ParameterIndex(first_pos_c), first_obj_c, f::ParameterIndex(second_pos_c), second_obj_c);
                 assert(assignment.is_valid());
 
-                // std::cout << assignment << std::endl;
-
-                bounds = intersect(bounds, func_set.at(assignment));
-                if (empty(bounds))
-                    return bounds;  // early exit
+                if (!function_checker.intersect_interval(assignment, bounds))
+                    return bounds;
             }
         }
     }
@@ -408,46 +378,44 @@ consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, con
     return bounds;
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedUnaryOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const AssignmentSets& assignment_sets) noexcept
+                                                   const CP& policy) noexcept
 {
-    return apply(O {}, consistent_interval(element.get_arg(), structure, constraint_info, assignment_sets));
+    return apply(O {}, consistent_interval(element.get_arg(), structure, constraint_info, policy));
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedBinaryOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const AssignmentSets& assignment_sets) noexcept
+                                                   const CP& policy) noexcept
 {
     return apply(O {},
-                 consistent_interval(element.get_lhs(), structure, constraint_info, assignment_sets),
-                 consistent_interval(element.get_rhs(), structure, constraint_info, assignment_sets));
+                 consistent_interval(element.get_lhs(), structure, constraint_info, policy),
+                 consistent_interval(element.get_rhs(), structure, constraint_info, policy));
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure>
+template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedMultiOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const AssignmentSets& assignment_sets) noexcept
+                                                   const CP& policy) noexcept
 {
     const auto child_fexprs = element.get_args();
 
-    return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
+    return std::accumulate(std::next(child_fexprs.begin()),
                            child_fexprs.end(),
-                           consistent_interval(child_fexprs.front(), structure, constraint_info, assignment_sets),
+                           consistent_interval(child_fexprs.front(), structure, constraint_info, policy),
                            [&](const auto& value, const auto& child_expr)
-                           { return apply(O {}, value, consistent_interval(child_expr, structure, constraint_info, assignment_sets)); });
+                           { return apply(O {}, value, consistent_interval(child_expr, structure, constraint_info, policy)); });
 }
 
-template<typename GraphStructure>
-inline ClosedInterval<float_t> consistent_interval(fd::FunctionExpressionView element,
-                                                   const GraphStructure& structure,
-                                                   const RuleToConstraintInfo& constraint_info,
-                                                   const AssignmentSets& assignment_sets) noexcept
+template<typename GraphStructure, AssignmentSetCarePolicyConcept CP>
+inline ClosedInterval<float_t>
+consistent_interval(fd::FunctionExpressionView element, const GraphStructure& structure, const RuleToConstraintInfo& constraint_info, const CP& policy) noexcept
 {
     return visit(
         [&](auto&& arg)
@@ -457,31 +425,31 @@ inline ClosedInterval<float_t> consistent_interval(fd::FunctionExpressionView el
             if constexpr (std::is_same_v<Alternative, float_t>)
                 return ClosedInterval<float_t>(arg, arg);
             else if constexpr (std::is_same_v<Alternative, fd::LiftedArithmeticOperatorView>)
-                return consistent_interval(arg, structure, constraint_info, assignment_sets);
+                return consistent_interval(arg, structure, constraint_info, policy);
             else if constexpr (std::is_same_v<Alternative, fd::FunctionTermView<f::StaticTag>>)
-                return consistent_interval(constraint_info.static_infos.infos.at(arg.get_index()), structure, assignment_sets.static_sets.function);
+                return consistent_interval(constraint_info.static_infos.infos.at(arg.get_index()), structure, policy.template get<f::StaticTag>());
             else if constexpr (std::is_same_v<Alternative, fd::FunctionTermView<f::FluentTag>>)
-                return consistent_interval(constraint_info.fluent_infos.infos.at(arg.get_index()), structure, assignment_sets.fluent_sets.function);
+                return consistent_interval(constraint_info.fluent_infos.infos.at(arg.get_index()), structure, policy.template get<f::FluentTag>());
             else
                 static_assert(dependent_false<Alternative>::value, "Missing case");
         },
         element.get_variant());
 }
 
-template<typename GraphStructure>
+template<typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedArithmeticOperatorView element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const AssignmentSets& assignment_sets) noexcept
+                                                   const CP& policy) noexcept
 {
-    return visit([&](auto&& arg) { return consistent_interval(arg, structure, constraint_info, assignment_sets); }, element.get_variant());
+    return visit([&](auto&& arg) { return consistent_interval(arg, structure, constraint_info, policy); }, element.get_variant());
 }
 
-template<typename GraphStructure>
+template<typename GraphStructure, AssignmentSetCarePolicyConcept CP>
 inline bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
                                           const GraphStructure& structure,
                                           const RuleToConstraintInfo& constraint_info,
-                                          const AssignmentSets& assignment_sets) noexcept
+                                          const CP& policy) noexcept
 {
     return visit(
         [&](auto&& arg) -> bool
@@ -489,16 +457,17 @@ inline bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
             using Alternative = std::decay_t<decltype(arg)>;
 
             return apply_existential(typename Alternative::OpType {},
-                                     consistent_interval(arg.get_lhs(), structure, constraint_info, assignment_sets),
-                                     consistent_interval(arg.get_rhs(), structure, constraint_info, assignment_sets));
+                                     consistent_interval(arg.get_lhs(), structure, constraint_info, policy),
+                                     consistent_interval(arg.get_rhs(), structure, constraint_info, policy));
         },
         element.get_variant());
 }
 
+template<AssignmentSetCarePolicyConcept CP>
 inline bool consistent_numeric_constraints(const Vertex& vertex,
                                            fd::LiftedBooleanOperatorListView numeric_constraints,
                                            const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const AssignmentSets& assignment_sets) noexcept
+                                           const CP& policy) noexcept
 {
     assert(numeric_constraints.size() == indexed_constraints.infos.size());
 
@@ -507,9 +476,9 @@ inline bool consistent_numeric_constraints(const Vertex& vertex,
         const auto numeric_constraint = numeric_constraints[i];
         const auto& info = indexed_constraints.infos[i];
 
-        assert(kpkc_arity(numeric_constraint) > 0);  ///< We test nullary constraints separately.
+        assert(kpkc_arity(numeric_constraint) > 0);
 
-        if (!consistent_numeric_constraint(numeric_constraint, vertex, info, assignment_sets))
+        if (!consistent_numeric_constraint(numeric_constraint, vertex, info, policy))
             return false;
     }
 
@@ -520,9 +489,9 @@ inline bool consistent_numeric_constraints(const Vertex& vertex,
  * Edge
  */
 
-template<f::FactKind T>
-inline bool
-consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const PredicateAssignmentSets<T>& predicate_assignment_sets) noexcept
+template<f::FactKind T, typename CP>
+    requires TaggedAssignmentSetCarePolicyForKind<CP, T>
+inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const CP& policy) noexcept
 {
     auto p = uint_t(edge.vi().get_parameter_index());
     auto q = uint_t(edge.vj().get_parameter_index());
@@ -541,7 +510,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
     for (const auto lit_id : indexed_literals.info_mappings.parameter_pairs_to_infos[p][q])
     {
         const auto& info = indexed_literals.infos[lit_id];
-        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
+        auto predicate_checker = policy.predicate.make_checker(info.predicate);
         const auto polarity = info.polarity;
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
@@ -568,8 +537,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
 
                 // std::cout << assignment << std::endl;
 
-                const auto true_assignment = pred_set.at(assignment);
-                if (polarity != true_assignment)
+                if (predicate_checker.is_consistent(assignment, polarity) == false)
                     return false;
             }
         }
@@ -579,7 +547,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
     for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[p])
     {
         const auto& info = indexed_literals.infos[lit_id];
-        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
+        auto predicate_checker = policy.predicate.make_checker(info.predicate);
         const auto polarity = info.polarity;
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
@@ -606,7 +574,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
 
                 // std::cout << assignment << std::endl;
 
-                if (polarity != pred_set.at(assignment))
+                if (predicate_checker.is_consistent(assignment, polarity) == false)
                     return false;
             }
         }
@@ -616,7 +584,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
     for (const auto lit_id : indexed_literals.info_mappings.parameter_to_infos_with_constants[q])
     {
         const auto& info = indexed_literals.infos[lit_id];
-        const auto& pred_set = predicate_assignment_sets.get_set(info.predicate);
+        auto predicate_checker = policy.predicate.make_checker(info.predicate);
         const auto polarity = info.polarity;
 
         assert(polarity || info.kpkc_arity == 2);  ///< Can only handly binary negated literals due to overapproximation
@@ -643,7 +611,7 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
 
                 // std::cout << assignment << std::endl;
 
-                if (polarity != pred_set.at(assignment))
+                if (predicate_checker.is_consistent(assignment, polarity) == false)
                     return false;
             }
         }
@@ -652,10 +620,11 @@ consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed
     return true;
 }
 
+template<AssignmentSetCarePolicyConcept CP>
 inline bool consistent_numeric_constraints(const Edge& edge,
                                            fd::LiftedBooleanOperatorListView numeric_constraints,
                                            const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const AssignmentSets& assignment_sets) noexcept
+                                           const CP& policy) noexcept
 {
     assert(numeric_constraints.size() == indexed_constraints.infos.size());
 
@@ -664,9 +633,9 @@ inline bool consistent_numeric_constraints(const Edge& edge,
         const auto numeric_constraint = numeric_constraints[i];
         const auto& info = indexed_constraints.infos[i];
 
-        assert(kpkc_arity(numeric_constraint) > 1);  ///< We test nullary constraints separately.
+        assert(kpkc_arity(numeric_constraint) > 1);
 
-        if (!consistent_numeric_constraint(numeric_constraint, edge, info, assignment_sets))
+        if (!consistent_numeric_constraint(numeric_constraint, edge, info, policy))
             return false;
     }
 
@@ -692,6 +661,8 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedRuleToLiteralInfos
     auto vertex_partitions = std::vector<std::vector<uint_t>> {};
     auto object_to_vertex_per_partition = std::vector<std::vector<uint_t>> {};
 
+    const auto policy = TaggedNoCareAssignmentSetPolicy<f::StaticTag> { static_assignment_sets };
+
     for (uint_t parameter_index = begin_parameter_index; parameter_index < end_parameter_index; ++parameter_index)
     {
         auto& parameter_domain = parameter_domains[parameter_index];
@@ -705,7 +676,7 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedRuleToLiteralInfos
 
             auto vertex = details::Vertex(f::ParameterIndex(parameter_index), Index<f::Object>(object_index));
 
-            if (consistent_literals(vertex, indexed_literals, static_assignment_sets.predicate))
+            if (consistent_literals(vertex, indexed_literals, policy))
             {
                 vertices.push_back(std::move(vertex));
                 vertex_partition.push_back(vertex_index);
@@ -731,6 +702,8 @@ kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const de
 
     auto offset_i = 0;
 
+    const auto policy = TaggedNoCareAssignmentSetPolicy<f::StaticTag> { static_assignment_sets };
+
     for (uint_t pi = 0; pi < k; ++pi)
     {
         const auto pi_size = vertex_partitions[pi].size();
@@ -752,7 +725,7 @@ kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const de
 
                     const auto edge = details::Edge(vertex_i, vertex_j);
 
-                    if (consistent_literals(edge, indexed_literals, static_assignment_sets.predicate))
+                    if (consistent_literals(edge, indexed_literals, policy))
                     {
                         matrix.get_bitset(vi, pj).set(bj);
                         matrix.get_bitset(vj, pi).set(bi);
@@ -1094,11 +1067,8 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CP& pol
                     const auto v = info.bit_offset + bit;
                     const auto& vertex = get_vertex(v);
 
-                    if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
-                        && consistent_numeric_constraints(vertex,
-                                                          unary_overapproximation_constraints,
-                                                          m_unary_overapproximation_indexed_constraints,
-                                                          assignment_sets))
+                    if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, policy.template get<f::FluentTag>())
+                        && consistent_numeric_constraints(vertex, unary_overapproximation_constraints, m_unary_overapproximation_indexed_constraints, policy))
                     {
                         /// Process delta consistent vertex.
                         full_affected_partition.set(bit);
@@ -1172,11 +1142,11 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CP& pol
 
                             const auto edge = details::Edge(vertex_i, vertex_j);
 
-                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, policy.template get<f::FluentTag>())
                                 && consistent_numeric_constraints(edge,
                                                                   binary_overapproximation_constraints,
                                                                   m_binary_overapproximation_indexed_constraints,
-                                                                  assignment_sets))
+                                                                  policy))
                             {
                                 /// Process delta consistent edge.
 
@@ -1223,6 +1193,18 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CP& pol
     //               << " executions: " << std::chrono::duration_cast<std::chrono::milliseconds>(statistics.total_time).count() << " ms\n";
     // }
 }
+
+template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs<NoCareAssignmentSetPolicy>(const NoCareAssignmentSetPolicy& policy,
+                                                                                                       const kpkc::GraphLayout& layout,
+                                                                                                       kpkc::Graph& delta_graph,
+                                                                                                       kpkc::Graph& full_graph,
+                                                                                                       std::vector<kpkc::Edge>& delta_edges) const;
+
+template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs<CareAssignmentSetPolicy>(const CareAssignmentSetPolicy& policy,
+                                                                                                     const kpkc::GraphLayout& layout,
+                                                                                                     kpkc::Graph& delta_graph,
+                                                                                                     kpkc::Graph& full_graph,
+                                                                                                     std::vector<kpkc::Edge>& delta_edges) const;
 
 const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices[index]; }
 

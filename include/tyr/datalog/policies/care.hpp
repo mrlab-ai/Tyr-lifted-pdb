@@ -32,123 +32,302 @@ namespace tyr::datalog
 {
 
 /**
- * FactSets
+ * Fact-set subpolicies
  */
 
-struct NoCareFactSetPolicy
+template<formalism::FactKind T>
+struct NoCarePredicateFactSetsPolicy
 {
-    FactSets fact_sets;
+    const PredicateFactSets<T>& fact_sets;
 
-    template<formalism::FactKind T>
-    bool check_literal(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const;
+    bool check(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const;
 
-    template<formalism::FactKind T>
-    float_t check_function_term(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const;
-
-    template<formalism::FactKind T>
-    bool check_literal(formalism::datalog::GroundLiteralView<T> element) const;
-
-    template<formalism::FactKind T>
-    float_t check_function_term(formalism::datalog::GroundFunctionTermView<T> element) const;
+    bool check(formalism::datalog::GroundLiteralView<T> element) const;
 };
 
-struct CareFactSetPolicy
+template<formalism::FactKind T>
+struct NoCareFunctionFactSetsPolicy
 {
-    FactSets fact_sets;
-    FactSets care_fact_sets;
+    const FunctionFactSets<T>& fact_sets;
 
-    template<formalism::FactKind T>
-    bool check_literal(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const;
+    float_t check(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const;
 
-    template<formalism::FactKind T>
-    float_t check_function_term(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const;
-
-    template<formalism::FactKind T>
-    bool check_literal(formalism::datalog::GroundLiteralView<T> element) const;
-
-    template<formalism::FactKind T>
-    float_t check_function_term(formalism::datalog::GroundFunctionTermView<T> element) const;
+    float_t check(formalism::datalog::GroundFunctionTermView<T> element) const;
 };
+
+template<formalism::FactKind T>
+struct CarePredicateFactSetsPolicy
+{
+    const PredicateFactSets<T>& fact_sets;
+
+    bool check(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const
+    {
+        return NoCarePredicateFactSetsPolicy<T> { fact_sets }.check(element, context);
+    }
+
+    bool check(formalism::datalog::GroundLiteralView<T> element) const { return NoCarePredicateFactSetsPolicy<T> { fact_sets }.check(element); }
+};
+
+template<>
+struct CarePredicateFactSetsPolicy<formalism::FluentTag>
+{
+    const PredicateFactSets<formalism::FluentTag>& fact_sets;
+    const PredicateFactSets<formalism::FluentTag>& care_fact_sets;
+
+    bool check(formalism::datalog::LiteralView<formalism::FluentTag> element, const formalism::datalog::GrounderContext& context) const;
+
+    bool check(formalism::datalog::GroundLiteralView<formalism::FluentTag> element) const;
+};
+
+template<formalism::FactKind T>
+using CareFunctionFactSetsPolicy = NoCareFunctionFactSetsPolicy<T>;
 
 /**
- * AssignmentSets
+ * Assignment-set subpolicies
  */
 
-struct NoCareAssignmentSetPolicy
+template<formalism::FactKind T>
+struct NoCarePredicateAssignmentSetPolicy
 {
-    AssignmentSets assignment_sets;
+    const PredicateAssignmentSets<T>& assignment_sets;
 
-    template<formalism::FactKind T>
-    struct PredicateChecker
+    struct Checker
     {
-        const PredicateAssignmentSet<T>& pred_set;
+        const PredicateAssignmentSet<T>& set;
 
         template<typename Assignment>
         bool is_consistent(const Assignment& assignment, bool polarity) const;
     };
 
-    template<formalism::FactKind T>
-    struct FunctionChecker
+    Checker make_checker(Index<formalism::Predicate<T>> predicate) const { return Checker { assignment_sets.at(predicate) }; }
+};
+
+template<formalism::FactKind T>
+struct CarePredicateAssignmentSetPolicy
+{
+    const PredicateAssignmentSets<T>& assignment_sets;
+
+    struct Checker
     {
-        const FunctionAssignmentSet<T>& func_set;
+        const PredicateAssignmentSet<T>& set;
+
+        template<typename Assignment>
+        bool is_consistent(const Assignment& assignment, bool polarity) const;
+    };
+
+    Checker make_checker(Index<formalism::Predicate<T>> predicate) const { return Checker { assignment_sets.at(predicate) }; }
+};
+
+template<>
+struct CarePredicateAssignmentSetPolicy<formalism::FluentTag>
+{
+    const PredicateAssignmentSets<formalism::FluentTag>& assignment_sets;
+    const PredicateAssignmentSets<formalism::FluentTag>& care_assignment_sets;
+
+    struct Checker
+    {
+        const PredicateAssignmentSet<formalism::FluentTag>& set;
+        const PredicateAssignmentSet<formalism::FluentTag>& care_set;
+
+        template<typename Assignment>
+        bool is_consistent(const Assignment& assignment, bool polarity) const;
+    };
+
+    Checker make_checker(Index<formalism::Predicate<formalism::FluentTag>> predicate) const
+    {
+        return Checker { assignment_sets.at(predicate), care_assignment_sets.at(predicate) };
+    }
+};
+
+template<formalism::FactKind T>
+struct NoCareFunctionAssignmentSetPolicy
+{
+    const FunctionAssignmentSets<T>& assignment_sets;
+
+    struct Checker
+    {
+        const FunctionAssignmentSet<T>& set;
 
         bool intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& interval) const;
+
         bool intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& interval) const;
     };
 
-    template<formalism::FactKind T>
-    PredicateChecker<T> make_predicate_checker(Index<formalism::Predicate<T>> predicate) const
+    Checker make_checker(Index<formalism::Function<T>> function) const { return Checker { assignment_sets.at(function) }; }
+};
+
+template<formalism::FactKind T>
+using CareFunctionAssignmentSetPolicy = NoCareFunctionAssignmentSetPolicy<T>;
+
+/**
+ * Tagged wrappers
+ */
+
+template<formalism::FactKind T>
+struct TaggedNoCareFactSetPolicy
+{
+    NoCarePredicateFactSetsPolicy<T> predicate;
+    NoCareFunctionFactSetsPolicy<T> function;
+
+    explicit TaggedNoCareFactSetPolicy(const TaggedFactSets<T>& fact_sets) : predicate { fact_sets.predicate }, function { fact_sets.function } {}
+};
+
+template<formalism::FactKind T>
+struct TaggedNoCareAssignmentSetPolicy
+{
+    NoCarePredicateAssignmentSetPolicy<T> predicate;
+    NoCareFunctionAssignmentSetPolicy<T> function;
+
+    explicit TaggedNoCareAssignmentSetPolicy(const TaggedAssignmentSets<T>& assignment_sets) :
+        predicate { assignment_sets.predicate },
+        function { assignment_sets.function }
     {
-        return PredicateChecker<T> { assignment_sets.template get<T>().predicate.at(predicate) };
+    }
+};
+
+template<formalism::FactKind T>
+struct TaggedCareFactSetPolicy;
+
+template<>
+struct TaggedCareFactSetPolicy<formalism::StaticTag>
+{
+    NoCarePredicateFactSetsPolicy<formalism::StaticTag> predicate;
+    NoCareFunctionFactSetsPolicy<formalism::StaticTag> function;
+
+    explicit TaggedCareFactSetPolicy(const TaggedFactSets<formalism::StaticTag>& fact_sets) : predicate { fact_sets.predicate }, function { fact_sets.function }
+    {
+    }
+};
+
+template<>
+struct TaggedCareFactSetPolicy<formalism::FluentTag>
+{
+    CarePredicateFactSetsPolicy<formalism::FluentTag> predicate;
+    NoCareFunctionFactSetsPolicy<formalism::FluentTag> function;
+
+    TaggedCareFactSetPolicy(const TaggedFactSets<formalism::FluentTag>& fact_sets, const PredicateFactSets<formalism::FluentTag>& care_fact_sets) :
+        predicate { fact_sets.predicate, care_fact_sets },
+        function { fact_sets.function }
+    {
+    }
+};
+
+template<formalism::FactKind T>
+struct TaggedCareAssignmentSetPolicy;
+
+template<>
+struct TaggedCareAssignmentSetPolicy<formalism::StaticTag>
+{
+    NoCarePredicateAssignmentSetPolicy<formalism::StaticTag> predicate;
+    NoCareFunctionAssignmentSetPolicy<formalism::StaticTag> function;
+
+    explicit TaggedCareAssignmentSetPolicy(const TaggedAssignmentSets<formalism::StaticTag>& assignment_sets) :
+        predicate { assignment_sets.predicate },
+        function { assignment_sets.function }
+    {
+    }
+};
+
+template<>
+struct TaggedCareAssignmentSetPolicy<formalism::FluentTag>
+{
+    CarePredicateAssignmentSetPolicy<formalism::FluentTag> predicate;
+    NoCareFunctionAssignmentSetPolicy<formalism::FluentTag> function;
+
+    TaggedCareAssignmentSetPolicy(const TaggedAssignmentSets<formalism::FluentTag>& assignment_sets,
+                                  const PredicateAssignmentSets<formalism::FluentTag>& care_assignment_sets) :
+        predicate { assignment_sets.predicate, care_assignment_sets },
+        function { assignment_sets.function }
+    {
+    }
+};
+
+/**
+ * Combined wrappers
+ */
+
+struct NoCareFactSetPolicy
+{
+    TaggedNoCareFactSetPolicy<formalism::StaticTag> static_policy;
+    TaggedNoCareFactSetPolicy<formalism::FluentTag> fluent_policy;
+
+    NoCareFactSetPolicy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) : static_policy { cws.fact_sets }, fluent_policy { ws.fact_sets } {}
+
+    template<formalism::FactKind T>
+    const auto& get() const noexcept
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_policy;
+        else
+            return fluent_policy;
+    }
+};
+
+struct CareFactSetPolicy
+{
+    TaggedCareFactSetPolicy<formalism::StaticTag> static_policy;
+    TaggedCareFactSetPolicy<formalism::FluentTag> fluent_policy;
+
+    CareFactSetPolicy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
+        static_policy { cws.fact_sets },
+        fluent_policy { ws.fact_sets, ws.care_fact_sets }
+    {
     }
 
     template<formalism::FactKind T>
-    FunctionChecker<T> make_function_checker(Index<formalism::Function<T>> function) const
+    const auto& get() const noexcept
     {
-        return FunctionChecker<T> { assignment_sets.template get<T>().function.at(function) };
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_policy;
+        else
+            return fluent_policy;
+    }
+};
+
+struct NoCareAssignmentSetPolicy
+{
+    TaggedNoCareAssignmentSetPolicy<formalism::StaticTag> static_policy;
+    TaggedNoCareAssignmentSetPolicy<formalism::FluentTag> fluent_policy;
+
+    NoCareAssignmentSetPolicy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
+        static_policy { cws.assignment_sets },
+        fluent_policy { ws.assignment_sets }
+    {
+    }
+
+    template<formalism::FactKind T>
+    const auto& get() const noexcept
+    {
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_policy;
+        else
+            return fluent_policy;
     }
 };
 
 struct CareAssignmentSetPolicy
 {
-    AssignmentSets assignment_sets;
-    AssignmentSets care_assignment_sets;
+    TaggedCareAssignmentSetPolicy<formalism::StaticTag> static_policy;
+    TaggedCareAssignmentSetPolicy<formalism::FluentTag> fluent_policy;
 
-    template<formalism::FactKind T>
-    struct PredicateChecker
+    CareAssignmentSetPolicy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
+        static_policy { cws.assignment_sets },
+        fluent_policy { ws.assignment_sets, ws.care_assignment_sets }
     {
-        const PredicateAssignmentSet<T>& pred_set;
-        const PredicateAssignmentSet<T>& care_pred_set;
-
-        template<typename Assignment>
-        bool is_consistent(const Assignment& assignment, bool polarity) const;
-    };
-
-    template<formalism::FactKind T>
-    struct FunctionChecker
-    {
-        const FunctionAssignmentSet<T>& func_set;
-
-        bool intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& interval) const;
-        bool intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& interval) const;
-    };
-
-    template<formalism::FactKind T>
-    PredicateChecker<T> make_predicate_checker(Index<formalism::Predicate<T>> predicate) const
-    {
-        return PredicateChecker<T> { assignment_sets.template get<T>().predicate.at(predicate),
-                                     care_assignment_sets.template get<T>().predicate.at(predicate) };
     }
 
     template<formalism::FactKind T>
-    FunctionChecker<T> make_function_checker(Index<formalism::Function<T>> function) const
+    const auto& get() const noexcept
     {
-        return FunctionChecker<T> { assignment_sets.template get<T>().function.at(function) };
+        if constexpr (std::is_same_v<T, formalism::StaticTag>)
+            return static_policy;
+        else
+            return fluent_policy;
     }
 };
 
 /**
- * Combined
+ * Top-level bundles
  */
 
 struct NoCarePolicy
@@ -156,15 +335,9 @@ struct NoCarePolicy
     using FactSetPolicy = NoCareFactSetPolicy;
     using AssignmentSetPolicy = NoCareAssignmentSetPolicy;
 
-    static FactSetPolicy make_fact_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws)
-    {
-        return FactSetPolicy { FactSets { cws.fact_sets, ws.fact_sets } };
-    }
+    static FactSetPolicy make_fact_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) { return FactSetPolicy { cws, ws }; }
 
-    static AssignmentSetPolicy make_assignment_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws)
-    {
-        return AssignmentSetPolicy { AssignmentSets { cws.assignment_sets, ws.assignment_sets } };
-    }
+    static AssignmentSetPolicy make_assignment_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) { return AssignmentSetPolicy { cws, ws }; }
 };
 
 struct CarePolicy
@@ -172,16 +345,9 @@ struct CarePolicy
     using FactSetPolicy = CareFactSetPolicy;
     using AssignmentSetPolicy = CareAssignmentSetPolicy;
 
-    static FactSetPolicy make_fact_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws)
-    {
-        return FactSetPolicy { FactSets { cws.fact_sets, ws.fact_sets }, FactSets { cws.care_fact_sets, ws.care_fact_sets } };
-    }
+    static FactSetPolicy make_fact_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) { return FactSetPolicy { cws, ws }; }
 
-    static AssignmentSetPolicy make_assignment_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws)
-    {
-        return AssignmentSetPolicy { AssignmentSets { cws.assignment_sets, ws.assignment_sets },
-                                     AssignmentSets { cws.care_assignment_sets, ws.care_assignment_sets } };
-    }
+    static AssignmentSetPolicy make_assignment_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) { return AssignmentSetPolicy { cws, ws }; }
 };
 
 /**
@@ -217,174 +383,118 @@ auto find_relation_binding(Index<Relation> relation, Terms terms, const formalis
     return context.destination.find(binding);
 }
 
+/**
+ * NoCarePredicateFactSetsPolicy
+ */
+
 template<formalism::FactKind T>
-bool NoCareFactSetPolicy::check_literal(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const
+bool NoCarePredicateFactSetsPolicy<T>::check(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const
 {
-    auto binding_or_nullopt = find_relation_binding(element.get_atom().get_predicate().get_index(), element.get_atom().get_terms(), context);
+    const auto binding_or_nullopt = find_relation_binding(element.get_atom().get_predicate().get_index(), element.get_atom().get_terms(), context);
+
     if (!binding_or_nullopt)
-        return element.get_polarity() == false;
+        return !element.get_polarity();
 
-    return fact_sets.template get<T>().predicate.contains(*binding_or_nullopt) == element.get_polarity();
+    return fact_sets.contains(*binding_or_nullopt) == element.get_polarity();
 }
 
 template<formalism::FactKind T>
-float_t NoCareFactSetPolicy::check_function_term(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const
+bool NoCarePredicateFactSetsPolicy<T>::check(formalism::datalog::GroundLiteralView<T> element) const
 {
-    auto binding_or_nullopt = find_relation_binding(element.get_function().get_index(), element.get_terms(), context);
-    if (!binding_or_nullopt)
-        return std::numeric_limits<float_t>::quiet_NaN();  // Indicate invalid binding with NaN
-
-    return fact_sets.template get<T>().function[*binding_or_nullopt];
+    return fact_sets.contains(element.get_atom().get_row()) == element.get_polarity();
 }
 
-template<formalism::FactKind T>
-bool NoCareFactSetPolicy::check_literal(formalism::datalog::GroundLiteralView<T> element) const
-{
-    return fact_sets.template get<T>().predicate.contains(element.get_atom().get_row()) == element.get_polarity();
-}
+/**
+ * NoCareFunctionFactSetsPolicy
+ */
 
 template<formalism::FactKind T>
-float_t NoCareFactSetPolicy::check_function_term(formalism::datalog::GroundFunctionTermView<T> element) const
+float_t NoCareFunctionFactSetsPolicy<T>::check(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const
 {
-    return fact_sets.template get<T>().function[element.get_row()];
-}
+    const auto binding_or_nullopt = find_relation_binding(element.get_function().get_index(), element.get_terms(), context);
 
-template<formalism::FactKind T>
-bool CareFactSetPolicy::check_literal(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const
-{
-    auto binding_or_nullopt = find_relation_binding(element.get_atom().get_predicate().get_index(), element.get_atom().get_terms(), context);
-
-    if constexpr (std::is_same_v<T, formalism::StaticTag>)
-    {
-        if (!binding_or_nullopt)
-            return !element.get_polarity();
-
-        return fact_sets.template get<T>().predicate.contains(*binding_or_nullopt) == element.get_polarity();
-    }
-    else
-    {
-        // Outside care => don't care => satisfied regardless of polarity.
-        if (!binding_or_nullopt)
-            return true;
-
-        if (!care_fact_sets.template get<formalism::FluentTag>().predicate.contains(*binding_or_nullopt))
-            return true;
-
-        return fact_sets.template get<formalism::FluentTag>().predicate.contains(*binding_or_nullopt) == element.get_polarity();
-    }
-}
-
-template<formalism::FactKind T>
-float_t CareFactSetPolicy::check_function_term(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const
-{
-    auto binding_or_nullopt = find_relation_binding(element.get_function().get_index(), element.get_terms(), context);
     if (!binding_or_nullopt)
         return std::numeric_limits<float_t>::quiet_NaN();
 
-    return fact_sets.template get<T>().function[*binding_or_nullopt];
+    return fact_sets[*binding_or_nullopt];
 }
 
 template<formalism::FactKind T>
-bool CareFactSetPolicy::check_literal(formalism::datalog::GroundLiteralView<T> element) const
+float_t NoCareFunctionFactSetsPolicy<T>::check(formalism::datalog::GroundFunctionTermView<T> element) const
 {
-    if constexpr (std::is_same_v<T, formalism::StaticTag>)
-    {
-        const auto binding = element.get_atom().get_row();
-
-        return fact_sets.template get<T>().predicate.contains(binding) == element.get_polarity();
-    }
-    else
-    {
-        const auto binding = element.get_atom().get_row();
-
-        if (!care_fact_sets.template get<formalism::FluentTag>().predicate.contains(binding))
-            return true;
-
-        return fact_sets.template get<formalism::FluentTag>().predicate.contains(binding) == element.get_polarity();
-    }
-}
-
-template<formalism::FactKind T>
-float_t CareFactSetPolicy::check_function_term(formalism::datalog::GroundFunctionTermView<T> element) const
-{
-    return fact_sets.template get<T>().function[element.get_row()];
+    return fact_sets[element.get_row()];
 }
 
 /**
- * AssignmentSetPolicy
+ * CarePredicateFactSetsPolicy<FluentTag>
  */
 
-/**
- * NoCareAssignmentSetPolicy::PredicateChecker
- */
-
-template<formalism::FactKind T>
-template<typename Assignment>
-bool NoCareAssignmentSetPolicy::PredicateChecker<T>::is_consistent(const Assignment& assignment, bool polarity) const
+inline bool CarePredicateFactSetsPolicy<formalism::FluentTag>::check(formalism::datalog::LiteralView<formalism::FluentTag> element,
+                                                                     const formalism::datalog::GrounderContext& context) const
 {
-    return polarity == pred_set.at(assignment);
+    const auto binding_or_nullopt = find_relation_binding(element.get_atom().get_predicate().get_index(), element.get_atom().get_terms(), context);
+
+    // Outside represented universe => outside care => don't care.
+    if (!binding_or_nullopt)
+        return true;
+
+    if (!care_fact_sets.contains(*binding_or_nullopt))
+        return true;
+
+    return fact_sets.contains(*binding_or_nullopt) == element.get_polarity();
+}
+
+inline bool CarePredicateFactSetsPolicy<formalism::FluentTag>::check(formalism::datalog::GroundLiteralView<formalism::FluentTag> element) const
+{
+    const auto binding = element.get_atom().get_row();
+
+    if (!care_fact_sets.contains(binding))
+        return true;
+
+    return fact_sets.contains(binding) == element.get_polarity();
 }
 
 /**
- * CareAssignmentSetPolicy::PredicateChecker
+ * NoCarePredicateAssignmentSetPolicy
  */
 
 template<formalism::FactKind T>
 template<typename Assignment>
-bool CareAssignmentSetPolicy::PredicateChecker<T>::is_consistent(const Assignment& assignment, bool polarity) const
+bool NoCarePredicateAssignmentSetPolicy<T>::Checker::is_consistent(const Assignment& assignment, bool polarity) const
 {
-    if constexpr (std::is_same_v<T, formalism::StaticTag>)
-    {
-        return pred_set.at(assignment) == polarity;
-    }
-    else
-    {
-        // If this projected assignment cannot be extended to any care fact,
-        // then it is outside the pattern and hence don't care.
-        if (!care_pred_set.at(assignment))
-            return true;
-
-        // Otherwise fall back to the ordinary projected truth test.
-        return pred_set.at(assignment) == polarity;
-    }
+    return set.at(assignment) == polarity;
 }
 
 /**
- * NoCareAssignmentSetPolicy::FunctionChecker
+ * CarePredicateAssignmentSetPolicy<FluentTag>
  */
 
-template<formalism::FactKind T>
-bool NoCareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& bounds) const
+template<typename Assignment>
+bool CarePredicateAssignmentSetPolicy<formalism::FluentTag>::Checker::is_consistent(const Assignment& assignment, bool polarity) const
 {
-    bounds = intersect(bounds, func_set.at(assignment));
-    return !empty(bounds);
-}
+    // Outside care => don't care.
+    if (!care_set.at(assignment))
+        return true;
 
-template<formalism::FactKind T>
-bool NoCareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& bounds) const
-{
-    bounds = intersect(bounds, func_set.at(assignment));
-    return !empty(bounds);
+    return set.at(assignment) == polarity;
 }
 
 /**
- * CareAssignmentSetPolicy::FunctionChecker
- *
- * Currently identical to NoCare, since don't-care semantics are only applied to predicates.
+ * NoCareFunctionAssignmentSetPolicy
  */
 
 template<formalism::FactKind T>
-bool CareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& bounds) const
+bool NoCareFunctionAssignmentSetPolicy<T>::Checker::intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& interval) const
 {
-    bounds = intersect(bounds, func_set.at(assignment));
-    return !empty(bounds);
+    interval = intersect(interval, set.at(assignment));
+    return !empty(interval);
 }
 
 template<formalism::FactKind T>
-bool CareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& bounds) const
+bool NoCareFunctionAssignmentSetPolicy<T>::Checker::intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& interval) const
 {
-    bounds = intersect(bounds, func_set.at(assignment));
-    return !empty(bounds);
+    interval = intersect(interval, set.at(assignment));
+    return !empty(interval);
 }
 }
 
