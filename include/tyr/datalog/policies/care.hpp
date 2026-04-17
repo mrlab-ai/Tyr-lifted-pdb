@@ -22,6 +22,7 @@
 #include "tyr/datalog/assignment.hpp"
 #include "tyr/datalog/assignment_sets.hpp"
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/datalog/policies/care_concept.hpp"
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/grounder_decl.hpp"
@@ -43,6 +44,12 @@ struct NoCareFactSetPolicy
 
     template<formalism::FactKind T>
     float_t check_function_term(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const;
+
+    template<formalism::FactKind T>
+    bool check_literal(formalism::datalog::GroundLiteralView<T> element) const;
+
+    template<formalism::FactKind T>
+    float_t check_function_term(formalism::datalog::GroundFunctionTermView<T> element) const;
 };
 
 struct CareFactSetPolicy
@@ -55,20 +62,13 @@ struct CareFactSetPolicy
 
     template<formalism::FactKind T>
     float_t check_function_term(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const;
-};
 
-template<typename P, typename T>
-concept FactSetPolicyForKind = requires(const P& policy,
-                                        formalism::datalog::LiteralView<T> lit,
-                                        formalism::datalog::FunctionTermView<T> fterm,
-                                        const formalism::datalog::GrounderContext& context) {
-    requires formalism::FactKind<T>;
-    { policy.template check_literal<T>(lit, context) } -> std::same_as<bool>;
-    { policy.template check_function_term<T>(fterm, context) } -> std::same_as<float_t>;
-};
+    template<formalism::FactKind T>
+    bool check_literal(formalism::datalog::GroundLiteralView<T> element) const;
 
-template<typename P>
-concept FactSetPolicyConcept = FactSetPolicyForKind<P, formalism::StaticTag> && FactSetPolicyForKind<P, formalism::FluentTag>;
+    template<formalism::FactKind T>
+    float_t check_function_term(formalism::datalog::GroundFunctionTermView<T> element) const;
+};
 
 /**
  * AssignmentSets
@@ -147,16 +147,6 @@ struct CareAssignmentSetPolicy
     }
 };
 
-template<typename P, typename T>
-concept AssignmentSetPolicyForKind = requires(const P& policy, Index<formalism::Predicate<T>> predicate, Index<formalism::Function<T>> function) {
-    requires formalism::FactKind<T>;
-    { policy.template make_predicate_checker<T>(predicate) } -> std::same_as<typename P::template PredicateChecker<T>>;
-    { policy.template make_function_checker<T>(function) } -> std::same_as<typename P::template FunctionChecker<T>>;
-};
-
-template<typename P>
-concept AssignmentSetConcept = AssignmentSetPolicyForKind<P, formalism::StaticTag> && AssignmentSetPolicyForKind<P, formalism::FluentTag>;
-
 /**
  * Combined
  */
@@ -166,12 +156,12 @@ struct NoCarePolicy
     using FactSetPolicy = NoCareFactSetPolicy;
     using AssignmentSetPolicy = NoCareAssignmentSetPolicy;
 
-    static FactSetPolicy make_fact_set_policy(const FactsWorkspace& ws, const ConstFactsWorkspace& cws)
+    static FactSetPolicy make_fact_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws)
     {
         return FactSetPolicy { FactSets { cws.fact_sets, ws.fact_sets } };
     }
 
-    static AssignmentSetPolicy make_assignment_set_policy(const FactsWorkspace& ws, const ConstFactsWorkspace& cws)
+    static AssignmentSetPolicy make_assignment_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws)
     {
         return AssignmentSetPolicy { AssignmentSets { cws.assignment_sets, ws.assignment_sets } };
     }
@@ -182,23 +172,16 @@ struct CarePolicy
     using FactSetPolicy = CareFactSetPolicy;
     using AssignmentSetPolicy = CareAssignmentSetPolicy;
 
-    static FactSetPolicy make_fact_set_policy(const FactsWorkspace& ws, const ConstFactsWorkspace& cws)
+    static FactSetPolicy make_fact_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws)
     {
         return FactSetPolicy { FactSets { cws.fact_sets, ws.fact_sets }, FactSets { cws.care_fact_sets, ws.care_fact_sets } };
     }
 
-    static AssignmentSetPolicy make_assignment_set_policy(const FactsWorkspace& ws, const ConstFactsWorkspace& cws)
+    static AssignmentSetPolicy make_assignment_set_policy(const ConstFactsWorkspace& cws, const FactsWorkspace& ws)
     {
-        return AssignmentSetPolicy { AssignmentSets { cws.assignment_sets, ws.assignment_sets } };
+        return AssignmentSetPolicy { AssignmentSets { cws.assignment_sets, ws.assignment_sets },
+                                     AssignmentSets { cws.care_assignment_sets, ws.care_assignment_sets } };
     }
-};
-
-template<typename P>
-concept CarePolicyConcept = requires(const P& policy, const FactsWorkspace& ws, const ConstFactsWorkspace& cws) {
-    typename P::FactSetPolicy;
-    typename P::AssignmentSetPolicy;
-    { P::template make_fact_set_policy(ws, cws) } -> std::same_as<typename P::FactSetPolicy>;
-    { P::template make_assignment_set_policy(ws, cws) } -> std::same_as<typename P::AssignmentSetPolicy>;
 };
 
 /**
@@ -255,6 +238,18 @@ float_t NoCareFactSetPolicy::check_function_term(formalism::datalog::FunctionTer
 }
 
 template<formalism::FactKind T>
+bool NoCareFactSetPolicy::check_literal(formalism::datalog::GroundLiteralView<T> element) const
+{
+    return fact_sets.template get<T>().predicate.contains(element.get_atom().get_row()) == element.get_polarity();
+}
+
+template<formalism::FactKind T>
+float_t NoCareFactSetPolicy::check_function_term(formalism::datalog::GroundFunctionTermView<T> element) const
+{
+    return fact_sets.template get<T>().function[element.get_row()];
+}
+
+template<formalism::FactKind T>
 bool CareFactSetPolicy::check_literal(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const
 {
     auto binding_or_nullopt = find_relation_binding(element.get_atom().get_predicate().get_index(), element.get_atom().get_terms(), context);
@@ -287,6 +282,32 @@ float_t CareFactSetPolicy::check_function_term(formalism::datalog::FunctionTermV
         return std::numeric_limits<float_t>::quiet_NaN();
 
     return fact_sets.template get<T>().function[*binding_or_nullopt];
+}
+
+template<formalism::FactKind T>
+bool CareFactSetPolicy::check_literal(formalism::datalog::GroundLiteralView<T> element) const
+{
+    if constexpr (std::is_same_v<T, formalism::StaticTag>)
+    {
+        const auto binding = element.get_atom().get_row();
+
+        return fact_sets.template get<T>().predicate.contains(binding) == element.get_polarity();
+    }
+    else
+    {
+        const auto binding = element.get_atom().get_row();
+
+        if (!care_fact_sets.template get<formalism::FluentTag>().predicate.contains(binding))
+            return true;
+
+        return fact_sets.template get<formalism::FluentTag>().predicate.contains(binding) == element.get_polarity();
+    }
+}
+
+template<formalism::FactKind T>
+float_t CareFactSetPolicy::check_function_term(formalism::datalog::GroundFunctionTermView<T> element) const
+{
+    return fact_sets.template get<T>().function[element.get_row()];
 }
 
 /**
@@ -333,14 +354,14 @@ bool CareAssignmentSetPolicy::PredicateChecker<T>::is_consistent(const Assignmen
  */
 
 template<formalism::FactKind T>
-bool NoCareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(ClosedInterval<float_t>& bounds, const VertexAssignment& assignment) const
+bool NoCareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& bounds) const
 {
     bounds = intersect(bounds, func_set.at(assignment));
     return !empty(bounds);
 }
 
 template<formalism::FactKind T>
-bool NoCareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(ClosedInterval<float_t>& bounds, const EdgeAssignment& assignment) const
+bool NoCareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& bounds) const
 {
     bounds = intersect(bounds, func_set.at(assignment));
     return !empty(bounds);
@@ -353,14 +374,14 @@ bool NoCareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(ClosedInt
  */
 
 template<formalism::FactKind T>
-bool CareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(ClosedInterval<float_t>& bounds, const VertexAssignment& assignment) const
+bool CareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& bounds) const
 {
     bounds = intersect(bounds, func_set.at(assignment));
     return !empty(bounds);
 }
 
 template<formalism::FactKind T>
-bool CareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(ClosedInterval<float_t>& bounds, const EdgeAssignment& assignment) const
+bool CareAssignmentSetPolicy::FunctionChecker<T>::intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& bounds) const
 {
     bounds = intersect(bounds, func_set.at(assignment));
     return !empty(bounds);

@@ -25,6 +25,7 @@
 #include "tyr/datalog/bottom_up.hpp"
 #include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/policies/care.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/formalism/canonicalization.hpp"
@@ -407,7 +408,8 @@ GroundTaskInstantiationResult instantiate_ground_task(LiftedTask& lifted_task,  
                                                                                                                     d::NoOrAnnotationPolicy(),
                                                                                                                     d::NoAndAnnotationPolicy(),
                                                                                                                     d::NoTerminationPolicy());
-    auto ctx = d::ProgramExecutionContext(workspace, const_workspace);
+    auto ctx =
+        d::ProgramExecutionContext<d::NoOrAnnotationPolicy, d::NoAndAnnotationPolicy, d::NoTerminationPolicy, d::NoCarePolicy>(workspace, const_workspace);
     ctx.clear();
 
     execution_context.arena().execute([&] { d::solve_bottom_up(ctx); });

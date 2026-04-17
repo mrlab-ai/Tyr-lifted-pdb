@@ -24,66 +24,18 @@ namespace tyr::datalog
 {
 
 /**
- * evaluate
- */
-
-template float_t evaluate(formalism::datalog::GroundUnaryOperatorView<formalism::OpSub> element, const FactSets& fact_sets);
-
-template float_t evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpAdd> element, const FactSets& fact_sets);
-template float_t evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpSub> element, const FactSets& fact_sets);
-template float_t evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpMul> element, const FactSets& fact_sets);
-template float_t evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpDiv> element, const FactSets& fact_sets);
-
-template bool evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpEq> element, const FactSets& fact_sets);
-template bool evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpNe> element, const FactSets& fact_sets);
-template bool evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpGe> element, const FactSets& fact_sets);
-template bool evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpGt> element, const FactSets& fact_sets);
-template bool evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpLe> element, const FactSets& fact_sets);
-template bool evaluate(formalism::datalog::GroundBinaryOperatorView<formalism::OpLt> element, const FactSets& fact_sets);
-
-template float_t evaluate(formalism::datalog::GroundMultiOperatorView<formalism::OpAdd> element, const FactSets& fact_sets);
-template float_t evaluate(formalism::datalog::GroundMultiOperatorView<formalism::OpMul> element, const FactSets& fact_sets);
-
-template float_t evaluate(formalism::datalog::GroundFunctionTermView<formalism::StaticTag> element, const FactSets& fact_sets);
-template float_t evaluate(formalism::datalog::GroundFunctionTermView<formalism::FluentTag> element, const FactSets& fact_sets);
-
-/**
  * is_applicable
  */
 
-template bool is_applicable(formalism::datalog::GroundLiteralView<formalism::StaticTag> element, const FactSets& fact_sets);
-template bool is_applicable(formalism::datalog::GroundLiteralView<formalism::FluentTag> element, const FactSets& fact_sets);
+template bool is_applicable(formalism::datalog::GroundLiteralView<formalism::StaticTag> element, const NoCareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundLiteralView<formalism::FluentTag> element, const NoCareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundLiteralView<formalism::StaticTag> element, const CareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundLiteralView<formalism::FluentTag> element, const CareFactSetPolicy& policy);
 
-template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism::StaticTag> elements, const FactSets& fact_sets);
-template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism::FluentTag> elements, const FactSets& fact_sets);
-
-// GroundConjunctiveCondition
-
-// GroundRule
-
-/**
- * FactSetPolicy
- */
-
-template bool NoCareFactSetPolicy::check_literal(formalism::datalog::LiteralView<formalism::StaticTag> element,
-                                                 const formalism::datalog::GrounderContext& context) const;
-template bool NoCareFactSetPolicy::check_literal(formalism::datalog::LiteralView<formalism::FluentTag> element,
-                                                 const formalism::datalog::GrounderContext& context) const;
-
-template float_t NoCareFactSetPolicy::check_function_term(formalism::datalog::FunctionTermView<formalism::StaticTag> element,
-                                                          const formalism::datalog::GrounderContext& context) const;
-template float_t NoCareFactSetPolicy::check_function_term(formalism::datalog::FunctionTermView<formalism::FluentTag> element,
-                                                          const formalism::datalog::GrounderContext& context) const;
-
-template bool CareFactSetPolicy::check_literal(formalism::datalog::LiteralView<formalism::StaticTag> element,
-                                               const formalism::datalog::GrounderContext& context) const;
-template bool CareFactSetPolicy::check_literal(formalism::datalog::LiteralView<formalism::FluentTag> element,
-                                               const formalism::datalog::GrounderContext& context) const;
-
-template float_t CareFactSetPolicy::check_function_term(formalism::datalog::FunctionTermView<formalism::StaticTag> element,
-                                                        const formalism::datalog::GrounderContext& context) const;
-template float_t CareFactSetPolicy::check_function_term(formalism::datalog::FunctionTermView<formalism::FluentTag> element,
-                                                        const formalism::datalog::GrounderContext& context) const;
+template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism::StaticTag> elements, const NoCareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism::FluentTag> elements, const NoCareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism::StaticTag> elements, const CareFactSetPolicy& policy);
+template bool is_applicable(formalism::datalog::GroundLiteralListView<formalism::FluentTag> elements, const CareFactSetPolicy& policy);
 
 /**
  * is_valid_binding

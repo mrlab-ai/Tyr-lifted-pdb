@@ -1038,7 +1038,8 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
     // std::cout << m_binary_overapproximation_indexed_literals << std::endl;
 }
 
-void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
+template<AssignmentSetCarePolicyConcept CP>
+void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CP& policy,
                                                                    const kpkc::GraphLayout& layout,
                                                                    kpkc::Graph& delta_graph,
                                                                    kpkc::Graph& full_graph,

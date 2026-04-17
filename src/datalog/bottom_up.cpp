@@ -34,6 +34,7 @@
 #include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/policies/aggregation.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
+#include "tyr/datalog/policies/care.hpp"
 #include "tyr/datalog/policies/termination.hpp"
 #include "tyr/datalog/rule_scheduler.hpp"  // for RuleSchedulerStratum
 #include "tyr/datalog/workspaces/facts.hpp"
@@ -80,8 +81,8 @@ static void create_general_binding(std::span<const kpkc::Vertex> clique, const S
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
+void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 {
     auto wrctx = rctx.get_rule_worker_execution_context();
 
@@ -93,8 +94,8 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     create_nullary_binding(out.ground_context_solve().binding);
 
     // Note: we never go through the consistency graph, and hence, have to check validity on the entire rule body.
-    if (is_applicable(in.cws_rule().get_nullary_condition(), in.fact_sets())
-        && is_valid_binding(in.cws_rule().get_rule().get_body(), in.fact_sets(), out.ground_context_iteration()))
+    if (is_applicable(in.cws_rule().get_nullary_condition(), in.fact_sets_cp())
+        && is_valid_binding(in.cws_rule().get_rule().get_body(), in.fact_sets_cp(), out.ground_context_iteration()))
     {
         const auto program_head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context_iteration()).first;
         const auto worker_head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context_solve()).first;
@@ -113,11 +114,12 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     }
 }
 
-[[maybe_unused]] static bool ensure_applicability(fd::RuleView rule, fd::GrounderContext& context, const FactSets& fact_sets)
+template<FactSetCarePolicyConcept CP>
+[[maybe_unused]] static bool ensure_applicability(fd::RuleView rule, fd::GrounderContext& context, const CP& policy)
 {
     const auto ground_rule = ground(rule, context).first;
 
-    const auto applicable = is_applicable(ground_rule, fact_sets);
+    const auto applicable = is_applicable(ground_rule, policy);
 
     if (!applicable)
     {
@@ -141,8 +143,8 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     return inserted;
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::span<const kpkc::Vertex> clique)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
+void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx, std::span<const kpkc::Vertex> clique)
 {
     const auto& in = wrctx.in();
     auto& out = wrctx.out();
@@ -154,12 +156,12 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
     ++out.statistics().num_generated_rules;
 
     const auto program_head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context_iteration()).first;
-    if (in.fact_sets().template get<f::FluentTag>().predicate.contains(program_head))
+    if (in.fact_sets_cp().fact_sets.template get<f::FluentTag>().predicate.contains(program_head))
         return;  ///< optimal cost proven
 
     auto applicability_check = out.applicability_check_pool().get_or_allocate(in.cws_rule().get_nullary_condition(),
                                                                               in.cws_rule().get_conflicting_overapproximation_rule().get_body(),
-                                                                              in.fact_sets(),
+                                                                              in.fact_sets_cp(),
                                                                               out.ground_context_iteration());
 
     if (!applicability_check->is_statically_applicable())
@@ -168,9 +170,9 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
     // IMPORTANT: A binding can fail the nullary part (e.g., arm-empty) even though the clique already exists.
     // Later, nullary may become true without any new kPKC edges/vertices, so delta-kPKC will NOT re-enumerate this binding.
     // Therefore we must store it as pending (keyed by binding) and recheck in the next fact envelope.
-    if (applicability_check->is_dynamically_applicable(in.fact_sets(), out.ground_context_iteration()))
+    if (applicability_check->is_dynamically_applicable(in.fact_sets_cp(), out.ground_context_iteration()))
     {
-        assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
+        assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets_cp().fact_sets));
 
         // std::cout << rctx.cws_rule.rule << " " << rctx.out.ground_context_solve().binding << std::endl;
 
@@ -201,8 +203,8 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
+void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 {
     const auto& kpkc_algorithm = rctx.ws_rule.common.kpkc;
 
@@ -265,8 +267,8 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 #endif
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void generate(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
+void generate(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 {
     const auto arity = rctx.cws_rule.get_rule().get_arity();
 
@@ -276,8 +278,8 @@ void generate(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
         generate_general_case(rctx);
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void process_pending(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
+void process_pending(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 {
     for (auto& worker : rctx.ws_rule.worker)
     {
@@ -295,13 +297,13 @@ void process_pending(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
             assert(out.ground_context_solve().binding == out.ground_context_iteration().binding);
             const auto program_head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context_iteration()).first;
 
-            if (in.fact_sets().template get<f::FluentTag>().predicate.contains(program_head))  ///< optimal cost proven
+            if (in.fact_sets_cp().fact_sets.template get<f::FluentTag>().predicate.contains(program_head))  ///< optimal cost proven
             {
                 it = out.pending_rules().erase(it);
             }
-            else if (it->second->is_dynamically_applicable(in.fact_sets(), out.ground_context_iteration()))
+            else if (it->second->is_dynamically_applicable(in.fact_sets_cp(), out.ground_context_iteration()))
             {
-                assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
+                assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets_cp().fact_sets));
 
                 const auto worker_head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context_solve()).first;
 
@@ -327,8 +329,8 @@ void process_pending(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
+void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
 {
     auto& scheduler = ctx.scheduler;
     auto& facts = ctx.ctx.ws.facts;
@@ -466,8 +468,8 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
-void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP>& ctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
+void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP, CP>& ctx)
 {
     const auto program_stopwatch = StopwatchScope(ctx.ws.statistics.total_time);
     ++ctx.ws.statistics.num_executions;
@@ -478,9 +480,19 @@ void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP>& ctx)
     }
 }
 
-template void solve_bottom_up(ProgramExecutionContext<NoOrAnnotationPolicy, NoAndAnnotationPolicy, NoTerminationPolicy>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, NoTerminationPolicy>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, NoTerminationPolicy>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<NoOrAnnotationPolicy, NoAndAnnotationPolicy, NoTerminationPolicy, CarePolicy>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, NoTerminationPolicy, CarePolicy>& ctx);
+template void
+solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, CarePolicy>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, CarePolicy>& ctx);
+template void
+solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, CarePolicy>& ctx);
+
+template void solve_bottom_up(ProgramExecutionContext<NoOrAnnotationPolicy, NoAndAnnotationPolicy, NoTerminationPolicy, NoCarePolicy>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, NoTerminationPolicy, NoCarePolicy>& ctx);
+template void
+solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, NoCarePolicy>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, NoCarePolicy>& ctx);
+template void
+solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, NoCarePolicy>& ctx);
 }

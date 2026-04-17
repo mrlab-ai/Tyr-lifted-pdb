@@ -34,6 +34,8 @@ FactsWorkspace::FactsWorkspace(fd::PredicateListView<f::FluentTag> predicates,
                                const formalism::datalog::Repository& workspace_repository) :
     fact_sets(predicates, functions, atoms, fterm_values, workspace_repository),
     assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects, fact_sets),
+    care_fact_sets(predicates, functions, workspace_repository),
+    care_assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects),
     goal_fact_sets(predicates, workspace_repository)
 {
 }
@@ -53,7 +55,9 @@ ConstFactsWorkspace::ConstFactsWorkspace(fd::PredicateListView<f::StaticTag> pre
                                          fd::GroundFunctionTermValueListView<f::StaticTag> fterm_values,
                                          const formalism::datalog::Repository& program_repository) :
     fact_sets(predicates, functions, atoms, fterm_values, program_repository),
-    assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects, fact_sets)
+    assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects, fact_sets),
+    care_fact_sets(predicates, functions, program_repository),
+    care_assignment_sets(predicates, functions, predicate_domains, function_domains, num_objects)
 {
 }
 

@@ -23,6 +23,7 @@
 #include "tyr/datalog/assignment_sets.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc_graph.hpp"
+#include "tyr/datalog/policies/care_concept.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
 
@@ -217,7 +218,8 @@ public:
                            uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
-    void initialize_dynamic_consistency_graphs(const AssignmentSets& assignment_sets,
+    template<AssignmentSetCarePolicyConcept CP>
+    void initialize_dynamic_consistency_graphs(const CP& policy,
                                                const kpkc::GraphLayout& layout,
                                                kpkc::Graph& delta_graph,
                                                kpkc::Graph& full_graph,

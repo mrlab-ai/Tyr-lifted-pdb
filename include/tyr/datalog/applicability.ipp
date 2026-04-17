@@ -44,178 +44,187 @@ namespace tyr::datalog
  * evaluate
  */
 
-TYR_INLINE_IMPL float_t evaluate(float_t element, const FactSets& fact_sets) { return element; }
-
-template<formalism::ArithmeticOpKind O>
-float_t evaluate(formalism::datalog::GroundUnaryOperatorView<O> element, const FactSets& fact_sets)
+template<FactSetCarePolicyConcept P>
+float_t evaluate(float_t element, const P& policy)
 {
-    return formalism::apply(O {}, evaluate(element.get_arg(), fact_sets));
+    return element;
 }
 
-template<formalism::ArithmeticOpKind O>
-float_t evaluate(formalism::datalog::GroundBinaryOperatorView<O> element, const FactSets& fact_sets)
+template<formalism::ArithmeticOpKind O, FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::GroundUnaryOperatorView<O> element, const P& policy)
 {
-    return formalism::apply(O {}, evaluate(element.get_lhs(), fact_sets), evaluate(element.get_rhs(), fact_sets));
+    return formalism::apply(O {}, evaluate(element.get_arg(), policy));
 }
 
-template<formalism::BooleanOpKind O>
-bool evaluate(formalism::datalog::GroundBinaryOperatorView<O> element, const FactSets& fact_sets)
+template<formalism::ArithmeticOpKind O, FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::GroundBinaryOperatorView<O> element, const P& policy)
 {
-    return formalism::apply(O {}, evaluate(element.get_lhs(), fact_sets), evaluate(element.get_rhs(), fact_sets));
+    return formalism::apply(O {}, evaluate(element.get_lhs(), policy), evaluate(element.get_rhs(), policy));
 }
 
-template<formalism::ArithmeticOpKind O>
-float_t evaluate(formalism::datalog::GroundMultiOperatorView<O> element, const FactSets& fact_sets)
+template<formalism::BooleanOpKind O, FactSetCarePolicyConcept P>
+bool evaluate(formalism::datalog::GroundBinaryOperatorView<O> element, const P& policy)
+{
+    return formalism::apply(O {}, evaluate(element.get_lhs(), policy), evaluate(element.get_rhs(), policy));
+}
+
+template<formalism::ArithmeticOpKind O, FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::GroundMultiOperatorView<O> element, const P& policy)
 {
     const auto child_fexprs = element.get_args();
 
     return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
                            child_fexprs.end(),
-                           evaluate(child_fexprs.front(), fact_sets),
-                           [&](const auto& value, const auto& child_expr) { return formalism::apply(O {}, value, evaluate(child_expr, fact_sets)); });
+                           evaluate(child_fexprs.front(), policy),
+                           [&](const auto& value, const auto& child_expr) { return formalism::apply(O {}, value, evaluate(child_expr, policy)); });
 }
 
-template<formalism::FactKind T>
-float_t evaluate(formalism::datalog::GroundFunctionTermView<T> element, const FactSets& fact_sets)
+template<formalism::FactKind T, FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::GroundFunctionTermView<T> element, const P& policy)
 {
-    return fact_sets.template get<T>().function[element];
+    return policy.template check_function_term<T>(element);
 }
 
-TYR_INLINE_IMPL float_t evaluate(formalism::datalog::GroundFunctionExpressionView element, const FactSets& fact_sets)
+template<FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::GroundFunctionExpressionView element, const P& policy)
 {
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
+    return visit([&](auto&& arg) { return evaluate(arg, policy); }, element.get_variant());
 }
 
-TYR_INLINE_IMPL float_t evaluate(formalism::datalog::GroundArithmeticOperatorView element, const FactSets& fact_sets)
+template<FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::GroundArithmeticOperatorView element, const P& policy)
 {
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
+    return visit([&](auto&& arg) { return evaluate(arg, policy); }, element.get_variant());
 }
 
-TYR_INLINE_IMPL bool evaluate(formalism::datalog::GroundBooleanOperatorView element, const FactSets& fact_sets)
+template<FactSetCarePolicyConcept P>
+bool evaluate(formalism::datalog::GroundBooleanOperatorView element, const P& policy)
 {
-    return visit([&](auto&& arg) { return evaluate(arg, fact_sets); }, element.get_variant());
+    return visit([&](auto&& arg) { return evaluate(arg, policy); }, element.get_variant());
 }
 
 /**
  * is_applicable
  */
 
-template<formalism::FactKind T>
-bool is_applicable(formalism::datalog::GroundLiteralView<T> element, const FactSets& fact_sets)
+template<formalism::FactKind T, FactSetCarePolicyConcept P>
+bool is_applicable(formalism::datalog::GroundLiteralView<T> element, const P& policy)
 {
-    return fact_sets.template get<T>().predicate.contains(element.get_atom().get_row()) == element.get_polarity();
+    return policy.template check_literal<T>(element);
 }
 
-template<formalism::FactKind T>
-bool is_applicable(formalism::datalog::GroundLiteralListView<T> elements, const FactSets& fact_sets)
+template<formalism::FactKind T, FactSetCarePolicyConcept P>
+bool is_applicable(formalism::datalog::GroundLiteralListView<T> elements, const P& policy)
 {
-    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, fact_sets); });
+    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_applicable(arg, policy); });
 }
 
-TYR_INLINE_IMPL bool is_applicable(formalism::datalog::GroundBooleanOperatorListView elements, const FactSets& fact_sets)
+template<FactSetCarePolicyConcept P>
+bool is_applicable(formalism::datalog::GroundBooleanOperatorListView elements, const P& policy)
 {
-    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return evaluate(arg, fact_sets); });
+    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return evaluate(arg, policy); });
 }
 
-// GroundConjunctiveCondition
-
-TYR_INLINE_IMPL bool is_applicable(formalism::datalog::GroundConjunctiveConditionView element, const FactSets& fact_sets)
+template<FactSetCarePolicyConcept P>
+bool is_applicable(formalism::datalog::GroundConjunctiveConditionView element, const P& policy)
 {
-    return is_applicable(element.template get_literals<formalism::StaticTag>(), fact_sets)     //
-           && is_applicable(element.template get_literals<formalism::FluentTag>(), fact_sets)  //
-           && is_applicable(element.get_numeric_constraints(), fact_sets);
+    return is_applicable(element.template get_literals<formalism::StaticTag>(), policy)     //
+           && is_applicable(element.template get_literals<formalism::FluentTag>(), policy)  //
+           && is_applicable(element.get_numeric_constraints(), policy);
 }
 
-// GroundRule
-
-TYR_INLINE_IMPL bool is_applicable(formalism::datalog::GroundRuleView element, const FactSets& fact_sets)
+template<FactSetCarePolicyConcept P>
+bool is_applicable(formalism::datalog::GroundRuleView element, const P& policy)
 {
-    return is_applicable(element.get_body(), fact_sets);
+    return is_applicable(element.get_body(), policy);
+}
+
+/**
+ * evaluate
+ */
+
+template<FactSetCarePolicyConcept P>
+float_t evaluate(float_t element, const P&, const formalism::datalog::GrounderContext&)
+{
+    return element;
+}
+
+template<formalism::ArithmeticOpKind O, FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::LiftedUnaryOperatorView<O> element, const P& policy, const formalism::datalog::GrounderContext& context)
+{
+    return formalism::apply(O {}, evaluate(element.get_arg(), policy, context));
+}
+
+template<formalism::ArithmeticOpKind O, FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::LiftedBinaryOperatorView<O> element, const P& policy, const formalism::datalog::GrounderContext& context)
+{
+    return formalism::apply(O {}, evaluate(element.get_lhs(), policy, context), evaluate(element.get_rhs(), policy, context));
+}
+
+template<formalism::BooleanOpKind O, FactSetCarePolicyConcept P>
+bool evaluate(formalism::datalog::LiftedBinaryOperatorView<O> element, const P& policy, const formalism::datalog::GrounderContext& context)
+{
+    return formalism::apply(O {}, evaluate(element.get_lhs(), policy, context), evaluate(element.get_rhs(), policy, context));
+}
+
+template<formalism::ArithmeticOpKind O, FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::LiftedMultiOperatorView<O> element, const P& policy, const formalism::datalog::GrounderContext& context)
+{
+    const auto child_fexprs = element.get_args();
+
+    return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
+                           child_fexprs.end(),
+                           evaluate(child_fexprs.front(), policy, context),
+                           [&](const auto& value, const auto& child_expr) { return formalism::apply(O {}, value, evaluate(child_expr, policy, context)); });
+}
+
+template<formalism::FactKind T, FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::FunctionTermView<T> element, const P& policy, const formalism::datalog::GrounderContext& context)
+{
+    return policy.template check_function_term<T>(element, context);
+}
+
+template<FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::FunctionExpressionView element, const P& policy, const formalism::datalog::GrounderContext& context)
+{
+    return visit([&](auto&& arg) { return evaluate(arg, policy, context); }, element.get_variant());
+}
+
+template<FactSetCarePolicyConcept P>
+float_t evaluate(formalism::datalog::LiftedArithmeticOperatorView element, const P& policy, const formalism::datalog::GrounderContext& context)
+{
+    return visit([&](auto&& arg) { return evaluate(arg, policy, context); }, element.get_variant());
+}
+
+template<FactSetCarePolicyConcept P>
+bool evaluate(formalism::datalog::LiftedBooleanOperatorView element, const P& policy, const formalism::datalog::GrounderContext& context)
+{
+    return visit([&](auto&& arg) { return evaluate(arg, policy, context); }, element.get_variant());
 }
 
 /**
  * is_valid_binding
  */
 
-template<FactSetPolicyConcept P>
-float_t is_valid_binding(float_t element, const P&, const formalism::datalog::GrounderContext&)
-{
-    return element;
-}
-
-template<formalism::ArithmeticOpKind O, FactSetPolicyConcept P>
-float_t is_valid_binding(formalism::datalog::LiftedUnaryOperatorView<O> element, const P& policy, const formalism::datalog::GrounderContext& context)
-{
-    return formalism::apply(O {}, is_valid_binding(element.get_arg(), policy, context));
-}
-
-template<formalism::ArithmeticOpKind O, FactSetPolicyConcept P>
-float_t is_valid_binding(formalism::datalog::LiftedBinaryOperatorView<O> element, const P& policy, const formalism::datalog::GrounderContext& context)
-{
-    return formalism::apply(O {}, is_valid_binding(element.get_lhs(), policy, context), is_valid_binding(element.get_rhs(), policy, context));
-}
-
-template<formalism::BooleanOpKind O, FactSetPolicyConcept P>
-bool is_valid_binding(formalism::datalog::LiftedBinaryOperatorView<O> element, const P& policy, const formalism::datalog::GrounderContext& context)
-{
-    return formalism::apply(O {}, is_valid_binding(element.get_lhs(), policy, context), is_valid_binding(element.get_rhs(), policy, context));
-}
-
-template<formalism::ArithmeticOpKind O, FactSetPolicyConcept P>
-float_t is_valid_binding(formalism::datalog::LiftedMultiOperatorView<O> element, const P& policy, const formalism::datalog::GrounderContext& context)
-{
-    const auto child_fexprs = element.get_args();
-
-    return std::accumulate(std::next(child_fexprs.begin()),  // Start from the second expression
-                           child_fexprs.end(),
-                           is_valid_binding(child_fexprs.front(), policy, context),
-                           [&](const auto& value, const auto& child_expr)
-                           { return formalism::apply(O {}, value, is_valid_binding(child_expr, policy, context)); });
-}
-
-template<formalism::FactKind T, FactSetPolicyConcept P>
-float_t is_valid_binding(formalism::datalog::FunctionTermView<T> element, const P& policy, const formalism::datalog::GrounderContext& context)
-{
-    return policy.template check_function_term<T>(element, context);
-}
-
-template<FactSetPolicyConcept P>
-float_t is_valid_binding(formalism::datalog::FunctionExpressionView element, const P& policy, const formalism::datalog::GrounderContext& context)
-{
-    return visit([&](auto&& arg) { return is_valid_binding(arg, policy, context); }, element.get_variant());
-}
-
-template<FactSetPolicyConcept P>
-float_t is_valid_binding(formalism::datalog::LiftedArithmeticOperatorView element, const P& policy, const formalism::datalog::GrounderContext& context)
-{
-    return visit([&](auto&& arg) { return is_valid_binding(arg, policy, context); }, element.get_variant());
-}
-
-template<FactSetPolicyConcept P>
-bool is_valid_binding(formalism::datalog::LiftedBooleanOperatorView element, const P& policy, const formalism::datalog::GrounderContext& context)
-{
-    return visit([&](auto&& arg) { return is_valid_binding(arg, policy, context); }, element.get_variant());
-}
-
-template<formalism::FactKind T, FactSetPolicyConcept P>
+template<formalism::FactKind T, FactSetCarePolicyConcept P>
 bool is_valid_binding(formalism::datalog::LiteralView<T> element, const P& policy, const formalism::datalog::GrounderContext& context)
 {
     return policy.template check_literal<T>(element, context);
 }
 
-template<formalism::FactKind T, FactSetPolicyConcept P>
+template<formalism::FactKind T, FactSetCarePolicyConcept P>
 bool is_valid_binding(formalism::datalog::LiteralListView<T> elements, const P& policy, const formalism::datalog::GrounderContext& context)
 {
     return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, policy, context); });
 }
 
-template<FactSetPolicyConcept P>
+template<FactSetCarePolicyConcept P>
 bool is_valid_binding(formalism::datalog::LiftedBooleanOperatorListView elements, const P& policy, const formalism::datalog::GrounderContext& context)
 {
-    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return is_valid_binding(arg, policy, context); });
+    return std::all_of(elements.begin(), elements.end(), [&](auto&& arg) { return evaluate(arg, policy, context); });
 }
 
-template<FactSetPolicyConcept P>
+template<FactSetCarePolicyConcept P>
 bool is_valid_binding(formalism::datalog::ConjunctiveConditionView element, const P& policy, const formalism::datalog::GrounderContext& context)
 {
     return is_valid_binding(element.template get_literals<formalism::StaticTag>(), policy, context)     //

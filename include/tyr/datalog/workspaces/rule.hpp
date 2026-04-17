@@ -45,6 +45,7 @@
 namespace tyr::datalog
 {
 
+// TODO: this doesnt respect dont cares
 struct NullaryApplicabilityCheck
 {
 private:
@@ -58,7 +59,8 @@ private:
 public:
     NullaryApplicabilityCheck() : m_condition(std::nullopt), m_unsat_fluent_literals(), m_unsat_numeric_constraints(), m_statically_applicable(false) {}
 
-    void initialize(formalism::datalog::GroundConjunctiveConditionView condition, const FactSets& fact_sets)
+    template<FactSetCarePolicyConcept CP>
+    void initialize(formalism::datalog::GroundConjunctiveConditionView condition, const CP& policy)
     {
         m_condition = condition;
         m_unsat_fluent_literals.clear();
@@ -68,20 +70,21 @@ public:
         m_statically_applicable = true;
 
         for (const auto literal : condition.get_literals<formalism::StaticTag>())
-            if (!tyr::datalog::is_applicable(literal, fact_sets))
+            if (!is_applicable(literal, policy))
                 m_statically_applicable = false;
     }
 
     bool is_statically_applicable() const noexcept { return m_statically_applicable; }
 
-    bool is_dynamically_applicable(const FactSets& fact_sets)
+    template<FactSetCarePolicyConcept CP>
+    bool is_dynamically_applicable(const CP& policy)
     {
         for (auto i = m_unsat_fluent_literals.find_first(); i != boost::dynamic_bitset<>::npos; i = m_unsat_fluent_literals.find_next(i))
-            if (is_applicable(m_condition->get_literals<formalism::FluentTag>()[i], fact_sets))
+            if (is_applicable(m_condition->get_literals<formalism::FluentTag>()[i], policy))
                 m_unsat_fluent_literals.reset(i);
 
         for (auto i = m_unsat_numeric_constraints.find_first(); i != boost::dynamic_bitset<>::npos; i = m_unsat_numeric_constraints.find_next(i))
-            if (evaluate(m_condition->get_numeric_constraints()[i], fact_sets))
+            if (evaluate(m_condition->get_numeric_constraints()[i], policy))
                 m_unsat_numeric_constraints.reset(i);
 
         return m_unsat_fluent_literals.none() && m_unsat_numeric_constraints.none();
@@ -101,7 +104,8 @@ private:
 public:
     ConflictingApplicabilityCheck() : m_condition(std::nullopt), m_unsat_fluent_literals(), m_unsat_numeric_constraints(), m_statically_applicable(false) {}
 
-    void initialize(formalism::datalog::ConjunctiveConditionView condition, const FactSets& fact_sets, formalism::datalog::GrounderContext& context)
+    template<FactSetCarePolicyConcept CP>
+    void initialize(formalism::datalog::ConjunctiveConditionView condition, const CP& policy, formalism::datalog::GrounderContext& context)
     {
         m_condition = condition;
         m_unsat_fluent_literals.clear();
@@ -111,20 +115,21 @@ public:
         m_statically_applicable = true;
 
         for (const auto literal : condition.get_literals<formalism::StaticTag>())
-            if (!is_valid_binding(literal, fact_sets, context))
+            if (!is_valid_binding(literal, policy, context))
                 m_statically_applicable = false;
     }
 
     bool is_statically_applicable() const noexcept { return m_statically_applicable; }
 
-    bool is_dynamically_applicable(const FactSets& fact_sets, formalism::datalog::GrounderContext& context)
+    template<FactSetCarePolicyConcept CP>
+    bool is_dynamically_applicable(const CP& policy, formalism::datalog::GrounderContext& context)
     {
         for (auto i = m_unsat_fluent_literals.find_first(); i != boost::dynamic_bitset<>::npos; i = m_unsat_fluent_literals.find_next(i))
-            if (is_valid_binding(m_condition->get_literals<formalism::FluentTag>()[i], fact_sets, context))
+            if (is_valid_binding(m_condition->get_literals<formalism::FluentTag>()[i], policy, context))
                 m_unsat_fluent_literals.reset(i);
 
         for (auto i = m_unsat_numeric_constraints.find_first(); i != boost::dynamic_bitset<>::npos; i = m_unsat_numeric_constraints.find_next(i))
-            if (is_valid_binding(m_condition->get_numeric_constraints()[i], fact_sets, context))
+            if (evaluate(m_condition->get_numeric_constraints()[i], policy, context))
                 m_unsat_numeric_constraints.reset(i);
 
         return m_unsat_fluent_literals.none() && m_unsat_numeric_constraints.none();
@@ -140,20 +145,22 @@ private:
 public:
     ApplicabilityCheck() : m_nullary(), m_conflicting() {}
 
+    template<FactSetCarePolicyConcept CP>
     void initialize(formalism::datalog::GroundConjunctiveConditionView nullary,
                     formalism::datalog::ConjunctiveConditionView conflicting,
-                    const FactSets& fact_sets,
+                    const CP& policy,
                     formalism::datalog::GrounderContext& context)
     {
-        m_nullary.initialize(nullary, fact_sets);
-        m_conflicting.initialize(conflicting, fact_sets, context);
+        m_nullary.initialize(nullary, policy);
+        m_conflicting.initialize(conflicting, policy, context);
     }
 
     bool is_statically_applicable() const noexcept { return m_nullary.is_statically_applicable() && m_conflicting.is_statically_applicable(); }
 
-    bool is_dynamically_applicable(const FactSets& fact_sets, formalism::datalog::GrounderContext& context) noexcept
+    template<FactSetCarePolicyConcept CP>
+    bool is_dynamically_applicable(const CP& policy, formalism::datalog::GrounderContext& context) noexcept
     {
-        return m_nullary.is_dynamically_applicable(fact_sets) && m_conflicting.is_dynamically_applicable(fact_sets, context);
+        return m_nullary.is_dynamically_applicable(policy) && m_conflicting.is_dynamically_applicable(policy, context);
     }
 };
 
@@ -166,7 +173,8 @@ struct RuleWorkspace
                         const formalism::datalog::Repository& workspace_repository,
                         const StaticConsistencyGraph& static_consistency_graph);
 
-        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets);
+        template<AssignmentSetCarePolicyConcept CP>
+        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const CP& policy);
 
         void clear() noexcept;
 
@@ -318,9 +326,10 @@ void RuleWorkspace<AndAP>::Common::clear() noexcept
 }
 
 template<typename AndAP>
-void RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSets& assignment_sets)
+template<AssignmentSetCarePolicyConcept CP>
+void RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const CP& policy)
 {
-    kpkc.set_next_assignment_sets(static_consistency_graph, assignment_sets);
+    kpkc.set_next_assignment_sets(static_consistency_graph, policy);
 }
 
 template<typename AndAP>

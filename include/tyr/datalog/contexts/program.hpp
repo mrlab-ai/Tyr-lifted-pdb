@@ -23,6 +23,7 @@
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
+#include "tyr/datalog/policies/care_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/datalog/workspaces/rule.hpp"
@@ -35,7 +36,12 @@ namespace tyr::datalog
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CarePolicyConcept CP>
 struct ProgramExecutionContext
 {
-    ProgramExecutionContext(ProgramWorkspace<OrAP, AndAP, TP, CP>& ws, const ConstProgramWorkspace& cws) : ws(ws), cws(cws) {}
+    ProgramExecutionContext(ProgramWorkspace<OrAP, AndAP, TP>& ws, const ConstProgramWorkspace& cws) :
+        ws(ws),
+        cws(cws),
+        assignment_set_cp(CP::make_assignment_set_policy(cws.facts, ws.facts))
+    {
+    }
 
     /**
      * Initialization
@@ -83,8 +89,10 @@ struct ProgramExecutionContext
                | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<OrAP, AndAP, TP, CP> { scheduler, *this }; });
     }
 
-    ProgramWorkspace<OrAP, AndAP, TP, CP>& ws;
+    ProgramWorkspace<OrAP, AndAP, TP>& ws;
     const ConstProgramWorkspace& cws;
+
+    const CP::AssignmentSetPolicy assignment_set_cp;
 };
 }
 

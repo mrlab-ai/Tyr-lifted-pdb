@@ -25,6 +25,7 @@
 #include "tyr/datalog/bottom_up.hpp"   // for solve_bottom_up
 #include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/fact_sets.hpp"  // for FactSets, Pre...
+#include "tyr/datalog/policies/care.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"   // for MergeContext
 #include "tyr/formalism/planning/merge_planning.hpp"  // for MergeContext
@@ -100,7 +101,9 @@ void AxiomEvaluator<LiftedTag>::compute_extended_state(UnpackedState<LiftedTag>&
                             m_workspace.facts.fact_sets,
                             m_workspace.facts.assignment_sets);
 
-    auto ctx = d::ProgramExecutionContext(m_workspace, program.get_const_program_workspace());
+    auto ctx = d::ProgramExecutionContext<d::NoOrAnnotationPolicy, d::NoAndAnnotationPolicy, d::NoTerminationPolicy, d::NoCarePolicy>(
+        m_workspace,
+        program.get_const_program_workspace());
     ctx.clear();
 
     m_execution_context->arena().execute([&] { d::solve_bottom_up(ctx); });
