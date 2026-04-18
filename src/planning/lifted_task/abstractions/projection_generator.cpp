@@ -380,11 +380,11 @@ void append_projected_action(fp::ActionView element,
 
     auto variable_remapping = compute_variable_remapping(element, pattern);
 
-    std::cout << pattern << std::endl;
+    // std::cout << pattern << std::endl;
 
-    std::cout << element << std::endl;
+    // std::cout << element << std::endl;
 
-    std::cout << variable_remapping << std::endl;
+    // std::cout << variable_remapping << std::endl;
 
     action.name = element.get_name();
     project_variables(element.get_variables(), uint_t(0), variable_remapping, action.variables, context);
@@ -397,7 +397,7 @@ void append_projected_action(fp::ActionView element,
     const auto new_action = context.destination.get_or_create(action).first;
     projected_to_original_action.emplace(new_action, element);
 
-    std::cout << new_action << std::endl;
+    // std::cout << new_action << std::endl;
 
     ref_projected_actions.push_back(new_action.get_index());
 }
@@ -472,21 +472,6 @@ auto create_projected_formalism_task(const fp::PlanningTask& planning_task,
                           std::move(projected_to_original_action));
 }
 
-/// @brief Project a state into the projection.
-auto project_state(const StateView<LiftedTag>& element, const Pattern& pattern, StateRepository<LiftedTag>& state_repository)
-{
-    auto uastate = state_repository.get_unregistered_state();
-    for (const auto& fact : element.get_fluent_facts_view())
-    {
-        if (!pattern.facts_set.contains(fact))
-            continue;
-
-        uastate->set(fact.get_data());
-    }
-
-    return state_repository.register_state(uastate);
-}
-
 /// @brief Create all 2^|pattern| abstract states.
 /// This ignores reachability but suffices for domains without unsolvable states.
 auto create_abstract_states(const Pattern& pattern, Task<LiftedTag>& task, StateRepository<LiftedTag>& state_repository)
@@ -530,14 +515,8 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astate
                                  fp::FDRContext& fdr_context)
 {
     auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTag>> {};
-
     auto transitions = TransitionList {};
     auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
-
-    auto& state_repository = *successor_generator.get_state_repository();
-
-    auto builder = fp::Builder();
-    auto binding = IndexList<f::Object> {};
     auto care_set = fp::CareSet {};
     for (const auto& fact : pattern.facts)
         care_set.predicate_bindings.insert(fact.get_atom().value().get_row());
@@ -545,26 +524,18 @@ auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astate
     for (const auto& astate : astates)
     {
         auto& adj_row = adj_lists[uint_t(astate.get_index())];
-
         auto anode = Node<LiftedTag>(astate, float_t { 0 });
 
         successor_generator.get_labeled_successor_nodes(anode, care_set, labeled_succ_nodes);
 
         for (const auto& labeled_succ_node : labeled_succ_nodes)
         {
-            const auto label = labeled_succ_node.label;
-            std::cout << labeled_succ_node.label << std::endl;
-
-            auto pastate = project_state(labeled_succ_node.node.get_state(), pattern, state_repository);
-
-            assert(uint_t(pastate.get_index()) < astates.size());
-
+            assert(uint_t(labeled_succ_node.node.get_state().get_index()) < astates.size());
             const auto t = transitions.size();
             const auto src = uint_t(astate.get_index());
-            const auto dst = uint_t(pastate.get_index());
+            const auto dst = uint_t(labeled_succ_node.node.get_state().get_index());
 
             transitions.emplace_back(labeled_succ_node.label, src, dst);
-
             adj_row.push_back(t);
         }
     }
@@ -606,7 +577,7 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
                                                                         std::move(adj_lists),
                                                                         std::move(goal_vertices)));
 
-    std::cout << result << std::endl;
+    // std::cout << result << std::endl;
 
     return result;
 }
