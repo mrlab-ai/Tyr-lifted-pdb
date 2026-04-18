@@ -17,9 +17,9 @@
 
 #include "tyr/datalog/delta_kpkc.hpp"
 
-#include "tyr/datalog/assignment_sets_accessor_concept.hpp"
-#include "tyr/datalog/care_accessor.hpp"
+#include "tyr/datalog/assignment_sets_accessor.hpp"
 #include "tyr/datalog/consistency_graph.hpp"
+#include "tyr/datalog/declarations.hpp"
 
 namespace tyr::datalog::kpkc
 {
@@ -33,16 +33,16 @@ DeltaKPKC::DeltaKPKC(const StaticConsistencyGraph& static_graph) :
 {
 }
 
-template<AssignmentSetCareAccessorConcept CA>
-void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CA& accessor)
+template<SemanticTag S>
+void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSetAccessor<S>& accessor)
 {
     static_graph.initialize_dynamic_consistency_graphs(accessor, m_layout, m_delta_graph, m_full_graph, m_delta_edges);
 
     ++m_iteration;
 }
 
-template void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const NoCareAssignmentSetAccessor& accessor);
-template void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CareAssignmentSetAccessor& accessor);
+template void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSetAccessor<StandardSemanticTag>& accessor);
+template void DeltaKPKC::set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSetAccessor<CareSemanticTag>& accessor);
 
 void DeltaKPKC::reset()
 {

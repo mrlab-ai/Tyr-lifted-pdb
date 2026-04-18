@@ -19,8 +19,8 @@
 #define TYR_DATALOG_FACT_SETS_ACCESSOR_HPP_
 
 #include "tyr/common/closed_interval.hpp"
+#include "tyr/common/semantics.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/fact_sets_accessor_concept.hpp"
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/grounder_decl.hpp"
@@ -33,8 +33,8 @@ namespace tyr::datalog
  * Fact-set subpolicies
  */
 
-template<formalism::FactKind T>
-struct NoCarePredicateFactSetsAccessor
+template<SemanticTag S, formalism::FactKind T>
+struct PredicateFactSetsAccessor
 {
     const PredicateFactSets<T>& fact_sets;
 
@@ -43,31 +43,8 @@ struct NoCarePredicateFactSetsAccessor
     bool check(formalism::datalog::GroundLiteralView<T> element) const;
 };
 
-template<formalism::FactKind T>
-struct NoCareFunctionFactSetsAccessor
-{
-    const FunctionFactSets<T>& fact_sets;
-
-    float_t check(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const;
-
-    float_t check(formalism::datalog::GroundFunctionTermView<T> element) const;
-};
-
-template<formalism::FactKind T>
-struct CarePredicateFactSetsAccessor
-{
-    const PredicateFactSets<T>& fact_sets;
-
-    bool check(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const
-    {
-        return NoCarePredicateFactSetsAccessor<T> { fact_sets }.check(element, context);
-    }
-
-    bool check(formalism::datalog::GroundLiteralView<T> element) const { return NoCarePredicateFactSetsAccessor<T> { fact_sets }.check(element); }
-};
-
 template<>
-struct CarePredicateFactSetsAccessor<formalism::FluentTag>
+struct PredicateFactSetsAccessor<CareSemanticTag, formalism::FluentTag>
 {
     const PredicateFactSets<formalism::FluentTag>& fact_sets;
     const PredicateFactSets<formalism::FluentTag>& care_fact_sets;
@@ -77,45 +54,36 @@ struct CarePredicateFactSetsAccessor<formalism::FluentTag>
     bool check(formalism::datalog::GroundLiteralView<formalism::FluentTag> element) const;
 };
 
-template<formalism::FactKind T>
-using CareFunctionFactSetsAccessor = NoCareFunctionFactSetsAccessor<T>;
+template<SemanticTag S, formalism::FactKind T>
+struct FunctionFactSetsAccessor
+{
+    const FunctionFactSets<T>& fact_sets;
+
+    float_t check(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const;
+
+    float_t check(formalism::datalog::GroundFunctionTermView<T> element) const;
+};
 
 /**
  * Tagged wrappers
  */
 
-template<formalism::FactKind T>
-struct TaggedNoCareFactSetAccessor
+template<SemanticTag S, formalism::FactKind T>
+struct TaggedFactSetAccessor
 {
-    NoCarePredicateFactSetsAccessor<T> predicate;
-    NoCareFunctionFactSetsAccessor<T> function;
+    PredicateFactSetsAccessor<S, T> predicate;
+    FunctionFactSetsAccessor<S, T> function;
 
-    explicit TaggedNoCareFactSetAccessor(const TaggedFactSets<T>& fact_sets) : predicate { fact_sets.predicate }, function { fact_sets.function } {}
-};
-
-template<formalism::FactKind T>
-struct TaggedCareFactSetAccessor;
-
-template<>
-struct TaggedCareFactSetAccessor<formalism::StaticTag>
-{
-    NoCarePredicateFactSetsAccessor<formalism::StaticTag> predicate;
-    NoCareFunctionFactSetsAccessor<formalism::StaticTag> function;
-
-    explicit TaggedCareFactSetAccessor(const TaggedFactSets<formalism::StaticTag>& fact_sets) :
-        predicate { fact_sets.predicate },
-        function { fact_sets.function }
-    {
-    }
+    explicit TaggedFactSetAccessor(const TaggedFactSets<T>& fact_sets) : predicate { fact_sets.predicate }, function { fact_sets.function } {}
 };
 
 template<>
-struct TaggedCareFactSetAccessor<formalism::FluentTag>
+struct TaggedFactSetAccessor<CareSemanticTag, formalism::FluentTag>
 {
-    CarePredicateFactSetsAccessor<formalism::FluentTag> predicate;
-    NoCareFunctionFactSetsAccessor<formalism::FluentTag> function;
+    PredicateFactSetsAccessor<CareSemanticTag, formalism::FluentTag> predicate;
+    FunctionFactSetsAccessor<CareSemanticTag, formalism::FluentTag> function;
 
-    TaggedCareFactSetAccessor(const TaggedFactSets<formalism::FluentTag>& fact_sets, const PredicateFactSets<formalism::FluentTag>& care_fact_sets) :
+    explicit TaggedFactSetAccessor(const TaggedFactSets<formalism::FluentTag>& fact_sets, const PredicateFactSets<formalism::FluentTag>& care_fact_sets) :
         predicate { fact_sets.predicate, care_fact_sets },
         function { fact_sets.function }
     {
@@ -126,12 +94,13 @@ struct TaggedCareFactSetAccessor<formalism::FluentTag>
  * Combined wrappers
  */
 
-struct NoCareFactSetAccessor
+template<SemanticTag S>
+struct FactSetAccessor
 {
-    TaggedNoCareFactSetAccessor<formalism::StaticTag> static_policy;
-    TaggedNoCareFactSetAccessor<formalism::FluentTag> fluent_policy;
+    TaggedFactSetAccessor<S, formalism::StaticTag> static_policy;
+    TaggedFactSetAccessor<S, formalism::FluentTag> fluent_policy;
 
-    NoCareFactSetAccessor(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) : static_policy { cws.fact_sets }, fluent_policy { ws.fact_sets } {}
+    FactSetAccessor(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) : static_policy { cws.fact_sets }, fluent_policy { ws.fact_sets } {}
 
     template<formalism::FactKind T>
     const auto& get() const noexcept
@@ -143,12 +112,13 @@ struct NoCareFactSetAccessor
     }
 };
 
-struct CareFactSetAccessor
+template<>
+struct FactSetAccessor<CareSemanticTag>
 {
-    TaggedCareFactSetAccessor<formalism::StaticTag> static_policy;
-    TaggedCareFactSetAccessor<formalism::FluentTag> fluent_policy;
+    TaggedFactSetAccessor<CareSemanticTag, formalism::StaticTag> static_policy;
+    TaggedFactSetAccessor<CareSemanticTag, formalism::FluentTag> fluent_policy;
 
-    CareFactSetAccessor(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
+    FactSetAccessor(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
         static_policy { cws.fact_sets },
         fluent_policy { ws.fact_sets, ws.care_fact_sets }
     {
@@ -198,11 +168,11 @@ auto find_relation_binding(Index<Relation> relation, Terms terms, const formalis
 }
 
 /**
- * NoCarePredicateFactSetsAccessor
+ * PredicateFactSetsAccessor
  */
 
-template<formalism::FactKind T>
-bool NoCarePredicateFactSetsAccessor<T>::check(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const
+template<SemanticTag S, formalism::FactKind T>
+bool PredicateFactSetsAccessor<S, T>::check(formalism::datalog::LiteralView<T> element, const formalism::datalog::GrounderContext& context) const
 {
     const auto binding_or_nullopt = find_relation_binding(element.get_atom().get_predicate().get_index(), element.get_atom().get_terms(), context);
 
@@ -212,18 +182,18 @@ bool NoCarePredicateFactSetsAccessor<T>::check(formalism::datalog::LiteralView<T
     return fact_sets.contains(*binding_or_nullopt) == element.get_polarity();
 }
 
-template<formalism::FactKind T>
-bool NoCarePredicateFactSetsAccessor<T>::check(formalism::datalog::GroundLiteralView<T> element) const
+template<SemanticTag S, formalism::FactKind T>
+bool PredicateFactSetsAccessor<S, T>::check(formalism::datalog::GroundLiteralView<T> element) const
 {
     return fact_sets.contains(element.get_atom().get_row()) == element.get_polarity();
 }
 
 /**
- * NoCareFunctionFactSetsAccessor
+ * FunctionFactSetsAccessor
  */
 
-template<formalism::FactKind T>
-float_t NoCareFunctionFactSetsAccessor<T>::check(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const
+template<SemanticTag S, formalism::FactKind T>
+float_t FunctionFactSetsAccessor<S, T>::check(formalism::datalog::FunctionTermView<T> element, const formalism::datalog::GrounderContext& context) const
 {
     const auto binding_or_nullopt = find_relation_binding(element.get_function().get_index(), element.get_terms(), context);
 
@@ -233,18 +203,18 @@ float_t NoCareFunctionFactSetsAccessor<T>::check(formalism::datalog::FunctionTer
     return fact_sets[*binding_or_nullopt];
 }
 
-template<formalism::FactKind T>
-float_t NoCareFunctionFactSetsAccessor<T>::check(formalism::datalog::GroundFunctionTermView<T> element) const
+template<SemanticTag S, formalism::FactKind T>
+float_t FunctionFactSetsAccessor<S, T>::check(formalism::datalog::GroundFunctionTermView<T> element) const
 {
     return fact_sets[element.get_row()];
 }
 
 /**
- * CarePredicateFactSetsAccessor<FluentTag>
+ * PredicateFactSetsAccessor<CareSemanticTag, FluentTag>
  */
 
-inline bool CarePredicateFactSetsAccessor<formalism::FluentTag>::check(formalism::datalog::LiteralView<formalism::FluentTag> element,
-                                                                       const formalism::datalog::GrounderContext& context) const
+inline bool PredicateFactSetsAccessor<CareSemanticTag, formalism::FluentTag>::check(formalism::datalog::LiteralView<formalism::FluentTag> element,
+                                                                                    const formalism::datalog::GrounderContext& context) const
 {
     const auto binding_or_nullopt = find_relation_binding(element.get_atom().get_predicate().get_index(), element.get_atom().get_terms(), context);
 
@@ -258,7 +228,7 @@ inline bool CarePredicateFactSetsAccessor<formalism::FluentTag>::check(formalism
     return fact_sets.contains(*binding_or_nullopt) == element.get_polarity();
 }
 
-inline bool CarePredicateFactSetsAccessor<formalism::FluentTag>::check(formalism::datalog::GroundLiteralView<formalism::FluentTag> element) const
+inline bool PredicateFactSetsAccessor<CareSemanticTag, formalism::FluentTag>::check(formalism::datalog::GroundLiteralView<formalism::FluentTag> element) const
 {
     const auto binding = element.get_atom().get_row();
 

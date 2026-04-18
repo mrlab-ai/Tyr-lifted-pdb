@@ -19,10 +19,11 @@
 #define TYR_DATALOG_CONTEXTS_PROGRAM_HPP_
 
 #include "tyr/common/onetbb.hpp"
-#include "tyr/datalog/care_accessor_concept.hpp"
+#include "tyr/datalog/assignment_sets_accessor.hpp"
 #include "tyr/datalog/contexts/stratum.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
+#include "tyr/datalog/fact_sets_accessor.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/policies/termination_concept.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
@@ -33,14 +34,14 @@
 namespace tyr::datalog
 {
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
 struct ProgramExecutionContext
 {
     ProgramExecutionContext(ProgramWorkspace<OrAP, AndAP, TP>& ws, const ConstProgramWorkspace& cws) :
         ws(ws),
         cws(cws),
-        fact_set_cp(CP::make_fact_set_policy(cws.facts, ws.facts)),
-        assignment_set_cp(CP::make_assignment_set_policy(cws.facts, ws.facts))
+        fact_set_cp(FactSetAccessor<S>(cws.facts, ws.facts)),
+        assignment_set_cp(AssignmentSetAccessor<S>(cws.facts, ws.facts))
     {
     }
 
@@ -87,14 +88,14 @@ struct ProgramExecutionContext
     auto get_stratum_execution_contexts()
     {
         return ws.schedulers.data
-               | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<OrAP, AndAP, TP, CP> { scheduler, *this }; });
+               | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<OrAP, AndAP, TP, S> { scheduler, *this }; });
     }
 
     ProgramWorkspace<OrAP, AndAP, TP>& ws;
     const ConstProgramWorkspace& cws;
 
-    const CP::FactSetAccessor fact_set_cp;
-    const CP::AssignmentSetAccessor assignment_set_cp;
+    const FactSetAccessor<S> fact_set_cp;
+    const AssignmentSetAccessor<S> assignment_set_cp;
 };
 }
 

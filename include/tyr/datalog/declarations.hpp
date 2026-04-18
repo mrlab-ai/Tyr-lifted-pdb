@@ -18,6 +18,7 @@
 #ifndef TYR_DATALOG_DECLARATIONS_HPP_
 #define TYR_DATALOG_DECLARATIONS_HPP_
 
+#include "tyr/common/semantics.hpp"
 #include "tyr/formalism/declarations.hpp"
 
 namespace tyr::datalog
@@ -66,6 +67,24 @@ struct RuleWorkerStatistics;
 struct AggregatedRuleWorkerStatistics;
 
 class ProgramContext;
+
+template<SemanticTag S, formalism::FactKind T>
+struct PredicateFactSetsAccessor;
+template<SemanticTag S, formalism::FactKind T>
+struct FunctionFactSetsAccessor;
+template<SemanticTag S, formalism::FactKind T>
+struct TaggedFactSetAccessor;
+template<SemanticTag S>
+struct FactSetAccessor;
+
+template<SemanticTag S, formalism::FactKind T>
+struct PredicateAssignmentSetAccessor;
+template<SemanticTag S, formalism::FactKind T>
+struct FunctionAssignmentSetAccessor;
+template<SemanticTag S, formalism::FactKind T>
+struct TaggedAssignmentSetAccessor;
+template<SemanticTag S>
+struct AssignmentSetAccessor;
 
 namespace details
 {

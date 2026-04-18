@@ -19,9 +19,9 @@
 #define TYR_DATALOG_CONSISTENCY_GRAPH_HPP_
 
 #include "tyr/analysis/declarations.hpp"
+#include "tyr/common/semantics.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/datalog/assignment_sets.hpp"
-#include "tyr/datalog/assignment_sets_accessor_concept.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc_graph.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
@@ -210,7 +210,6 @@ public:
                            formalism::datalog::ConjunctiveConditionView condition,
                            formalism::datalog::ConjunctiveConditionView unary_overapproximation_condition,
                            formalism::datalog::ConjunctiveConditionView binary_overapproximation_condition,
-                           formalism::datalog::ConjunctiveConditionView static_binary_overapproximation_condition,
                            const analysis::VariableDomainList& parameter_domains,
                            size_t num_objects,
                            size_t num_fluent_predicates,
@@ -218,8 +217,8 @@ public:
                            uint_t end_parameter_index,
                            const TaggedAssignmentSets<formalism::StaticTag>& static_assignment_sets);
 
-    template<AssignmentSetCareAccessorConcept CA>
-    void initialize_dynamic_consistency_graphs(const CA& accessor,
+    template<SemanticTag S>
+    void initialize_dynamic_consistency_graphs(const AssignmentSetAccessor<S>& accessor,
                                                const kpkc::GraphLayout& layout,
                                                kpkc::Graph& delta_graph,
                                                kpkc::Graph& full_graph,
@@ -269,9 +268,6 @@ create_ground_nullary_conjunctive_condition(formalism::datalog::ConjunctiveCondi
 
 extern std::pair<formalism::datalog::RuleView, bool>
 create_overapproximation_rule(size_t k, formalism::datalog::RuleView element, formalism::datalog::Repository& context);
-
-extern std::pair<formalism::datalog::RuleView, bool>
-create_static_overapproximation_rule(size_t k, formalism::datalog::RuleView element, formalism::datalog::Repository& context);
 
 extern std::pair<formalism::datalog::RuleView, bool>
 create_overapproximation_conflicting_rule(size_t k, formalism::datalog::RuleView element, formalism::datalog::Repository& context);

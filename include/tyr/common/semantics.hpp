@@ -15,25 +15,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_SOLVER_BOTTOM_UP_HPP_
-#define TYR_SOLVER_BOTTOM_UP_HPP_
-
-#include "tyr/common/config.hpp"
-#include "tyr/common/types.hpp"
-#include "tyr/datalog/contexts/program.hpp"
-#include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/policies/annotation_concept.hpp"
-#include "tyr/datalog/policies/termination_concept.hpp"
-#include "tyr/formalism/datalog/declarations.hpp"
-#include "tyr/formalism/datalog/ground_atom_index.hpp"
+#ifndef TYR_COMMON_SEMANTICS_HPP_
+#define TYR_COMMON_SEMANTICS_HPP_
 
 #include <concepts>
-#include <vector>
 
-namespace tyr::datalog
+namespace tyr
 {
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
-void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP, S>& ctx);
+struct CareSemanticTag
+{
+};
+
+struct StandardSemanticTag
+{
+};
+
+template<typename T>
+concept SemanticTag = std::same_as<T, CareSemanticTag> || std::same_as<T, StandardSemanticTag>;
 }
 
 #endif

@@ -19,7 +19,6 @@
 #define TYR_DATALOG_CONTEXTS_RULE_HPP_
 
 #include "tyr/datalog/assignment_sets.hpp"
-#include "tyr/datalog/care_accessor_concept.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
@@ -32,20 +31,20 @@
 
 namespace tyr::datalog
 {
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
 struct StratumExecutionContext;
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
 struct RuleExecutionContext;
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
 class RuleWorkerExecutionContext
 {
 public:
     class In
     {
     public:
-        explicit In(const RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx, const RuleWorkspace<AndAP>::Worker& ws_worker) :
+        explicit In(const RuleExecutionContext<OrAP, AndAP, TP, S>& rctx, const RuleWorkspace<AndAP>::Worker& ws_worker) :
             m_rctx(rctx),
             m_and_ap(ws_worker.solve.and_ap),
             m_ws_rule(rctx.ws_rule),
@@ -71,19 +70,19 @@ public:
         const auto& fact_sets_cp() const noexcept { return m_fact_set_cp; }
 
     private:
-        const RuleExecutionContext<OrAP, AndAP, TP, CP>& m_rctx;
+        const RuleExecutionContext<OrAP, AndAP, TP, S>& m_rctx;
 
         const AndAP& m_and_ap;
         const RuleWorkspace<AndAP>& m_ws_rule;
         const ConstRuleWorkspace& m_cws_rule;
 
-        const CP::FactSetAccessor& m_fact_set_cp;
+        const FactSetAccessor<S>& m_fact_set_cp;
     };
 
     class Out
     {
     public:
-        Out(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx, RuleWorkspace<AndAP>::Worker& ws_worker) :
+        Out(RuleExecutionContext<OrAP, AndAP, TP, S>& rctx, RuleWorkspace<AndAP>::Worker& ws_worker) :
             m_ws_worker(ws_worker),
             m_ground_context_solve(ws_worker.builder, ws_worker.solve.program_overlay_repository, ws_worker.binding),
             m_ground_context_iteration(ws_worker.builder, ws_worker.iteration.workspace_overlay_repository, ws_worker.binding)
@@ -109,7 +108,7 @@ public:
         formalism::datalog::GrounderContext m_ground_context_iteration;
     };
 
-    RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx, RuleWorkspace<AndAP>::Worker& ws_worker) :
+    RuleWorkerExecutionContext(RuleExecutionContext<OrAP, AndAP, TP, S>& rctx, RuleWorkspace<AndAP>::Worker& ws_worker) :
         m_rctx(rctx),
         m_ws_worker(ws_worker),
         m_in(rctx, ws_worker),
@@ -140,17 +139,17 @@ public:
     const auto& out() const noexcept { return m_out; }
 
 private:
-    RuleExecutionContext<OrAP, AndAP, TP, CP>& m_rctx;
+    RuleExecutionContext<OrAP, AndAP, TP, S>& m_rctx;
     RuleWorkspace<AndAP>::Worker& m_ws_worker;
 
     In m_in;
     Out m_out;
 };
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
 struct RuleExecutionContext
 {
-    RuleExecutionContext(Index<formalism::datalog::Rule> rule, StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx) :
+    RuleExecutionContext(Index<formalism::datalog::Rule> rule, StratumExecutionContext<OrAP, AndAP, TP, S>& ctx) :
         rule(rule),
         ctx(ctx),
         ws_rule(*ctx.ctx.ws.rules[uint_t(rule)]),
@@ -195,11 +194,11 @@ struct RuleExecutionContext
      * Subcontext
      */
 
-    auto get_rule_worker_execution_context() { return RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>(*this, ws_rule.worker.local()); }
+    auto get_rule_worker_execution_context() { return RuleWorkerExecutionContext<OrAP, AndAP, TP, S>(*this, ws_rule.worker.local()); }
 
     /// Inputs
     Index<formalism::datalog::Rule> rule;
-    const StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx;
+    const StratumExecutionContext<OrAP, AndAP, TP, S>& ctx;
 
     /// Workspaces
     RuleWorkspace<AndAP>& ws_rule;

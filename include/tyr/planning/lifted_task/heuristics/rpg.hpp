@@ -20,8 +20,8 @@
 
 #include "tyr/common/onetbb.hpp"
 #include "tyr/datalog/bottom_up.hpp"
-#include "tyr/datalog/care_accessor.hpp"
 #include "tyr/datalog/contexts/program.hpp"
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/heuristic.hpp"
@@ -80,8 +80,7 @@ public:
                                         merge_context,
                                         m_workspace.facts.fact_sets);
 
-        auto ctx =
-            datalog::ProgramExecutionContext<OrAP, AndAP, TP, datalog::NoCareAccessor>(m_workspace, m_task->get_rpg_program().get_const_program_workspace());
+        auto ctx = datalog::ProgramExecutionContext<OrAP, AndAP, TP, StandardSemanticTag>(m_workspace, m_task->get_rpg_program().get_const_program_workspace());
         ctx.clear();
 
         m_execution_context->arena().execute([&] { datalog::solve_bottom_up(ctx); });

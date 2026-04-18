@@ -24,6 +24,7 @@
 #include "tyr/common/unique_object_pool.hpp"
 #include "tyr/datalog/applicability.hpp"
 #include "tyr/datalog/consistency_graph.hpp"
+#include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
@@ -58,8 +59,8 @@ private:
 public:
     NullaryApplicabilityCheck() : m_condition(std::nullopt), m_unsat_fluent_literals(), m_unsat_numeric_constraints(), m_statically_applicable(false) {}
 
-    template<FactSetCareAccessorConcept CA>
-    void initialize(formalism::datalog::GroundConjunctiveConditionView condition, const CA& accessor)
+    template<SemanticTag S>
+    void initialize(formalism::datalog::GroundConjunctiveConditionView condition, const FactSetAccessor<S>& accessor)
     {
         m_condition = condition;
         m_unsat_fluent_literals.clear();
@@ -75,8 +76,8 @@ public:
 
     bool is_statically_applicable() const noexcept { return m_statically_applicable; }
 
-    template<FactSetCareAccessorConcept CA>
-    bool is_dynamically_applicable(const CA& accessor)
+    template<SemanticTag S>
+    bool is_dynamically_applicable(const FactSetAccessor<S>& accessor)
     {
         for (auto i = m_unsat_fluent_literals.find_first(); i != boost::dynamic_bitset<>::npos; i = m_unsat_fluent_literals.find_next(i))
             if (is_applicable(m_condition->get_literals<formalism::FluentTag>()[i], accessor))
@@ -103,8 +104,8 @@ private:
 public:
     ConflictingApplicabilityCheck() : m_condition(std::nullopt), m_unsat_fluent_literals(), m_unsat_numeric_constraints(), m_statically_applicable(false) {}
 
-    template<FactSetCareAccessorConcept CA>
-    void initialize(formalism::datalog::ConjunctiveConditionView condition, const CA& accessor, formalism::datalog::GrounderContext& context)
+    template<SemanticTag S>
+    void initialize(formalism::datalog::ConjunctiveConditionView condition, const FactSetAccessor<S>& accessor, formalism::datalog::GrounderContext& context)
     {
         m_condition = condition;
         m_unsat_fluent_literals.clear();
@@ -120,8 +121,8 @@ public:
 
     bool is_statically_applicable() const noexcept { return m_statically_applicable; }
 
-    template<FactSetCareAccessorConcept CA>
-    bool is_dynamically_applicable(const CA& accessor, formalism::datalog::GrounderContext& context)
+    template<SemanticTag S>
+    bool is_dynamically_applicable(const FactSetAccessor<S>& accessor, formalism::datalog::GrounderContext& context)
     {
         for (auto i = m_unsat_fluent_literals.find_first(); i != boost::dynamic_bitset<>::npos; i = m_unsat_fluent_literals.find_next(i))
             if (is_valid_binding(m_condition->get_literals<formalism::FluentTag>()[i], accessor, context))
@@ -144,10 +145,10 @@ private:
 public:
     ApplicabilityCheck() : m_nullary(), m_conflicting() {}
 
-    template<FactSetCareAccessorConcept CA>
+    template<SemanticTag S>
     void initialize(formalism::datalog::GroundConjunctiveConditionView nullary,
                     formalism::datalog::ConjunctiveConditionView conflicting,
-                    const CA& accessor,
+                    const FactSetAccessor<S>& accessor,
                     formalism::datalog::GrounderContext& context)
     {
         m_nullary.initialize(nullary, accessor);
@@ -156,8 +157,8 @@ public:
 
     bool is_statically_applicable() const noexcept { return m_nullary.is_statically_applicable() && m_conflicting.is_statically_applicable(); }
 
-    template<FactSetCareAccessorConcept CA>
-    bool is_dynamically_applicable(const CA& accessor, formalism::datalog::GrounderContext& context) noexcept
+    template<SemanticTag S>
+    bool is_dynamically_applicable(const FactSetAccessor<S>& accessor, formalism::datalog::GrounderContext& context) noexcept
     {
         return m_nullary.is_dynamically_applicable(accessor) && m_conflicting.is_dynamically_applicable(accessor, context);
     }
@@ -172,8 +173,8 @@ struct RuleWorkspace
                         const formalism::datalog::Repository& workspace_repository,
                         const StaticConsistencyGraph& static_consistency_graph);
 
-        template<AssignmentSetCareAccessorConcept CA>
-        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const CA& accessor);
+        template<SemanticTag S>
+        void initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSetAccessor<S>& accessor);
 
         void clear() noexcept;
 
@@ -280,7 +281,6 @@ public:
     auto get_nullary_condition() const noexcept { return nullary_condition; }
     auto get_unary_overapproximation_rule() const noexcept { return unary_overapproximation_rule; }
     auto get_binary_overapproximation_rule() const noexcept { return binary_overapproximation_rule; }
-    auto get_static_binary_overapproximation_rule() const noexcept { return static_binary_overapproximation_rule; }
     auto get_conflicting_overapproximation_rule() const noexcept { return conflicting_overapproximation_rule; }
     const auto& get_static_consistency_graph() const noexcept { return static_consistency_graph; }
 
@@ -297,7 +297,6 @@ private:
     formalism::datalog::GroundConjunctiveConditionView nullary_condition;
     formalism::datalog::RuleView unary_overapproximation_rule;
     formalism::datalog::RuleView binary_overapproximation_rule;
-    formalism::datalog::RuleView static_binary_overapproximation_rule;
     formalism::datalog::RuleView conflicting_overapproximation_rule;
 
     StaticConsistencyGraph static_consistency_graph;
@@ -325,8 +324,8 @@ void RuleWorkspace<AndAP>::Common::clear() noexcept
 }
 
 template<typename AndAP>
-template<AssignmentSetCareAccessorConcept CA>
-void RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const CA& accessor)
+template<SemanticTag S>
+void RuleWorkspace<AndAP>::Common::initialize_iteration(const StaticConsistencyGraph& static_consistency_graph, const AssignmentSetAccessor<S>& accessor)
 {
     kpkc.set_next_assignment_sets(static_consistency_graph, accessor);
 }

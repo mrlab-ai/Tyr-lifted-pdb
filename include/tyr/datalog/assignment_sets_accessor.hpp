@@ -15,14 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_SOLVER_POLICIES_CARE_HPP_
-#define TYR_SOLVER_POLICIES_CARE_HPP_
+#ifndef TYR_DATALOG_ASSIGNMENT_SETS_ACCESSOR_HPP_
+#define TYR_DATALOG_ASSIGNMENT_SETS_ACCESSOR_HPP_
 
 #include "tyr/common/closed_interval.hpp"
+#include "tyr/common/semantics.hpp"
 #include "tyr/datalog/assignment.hpp"
 #include "tyr/datalog/assignment_sets.hpp"
-#include "tyr/datalog/assignment_sets_accessor_concept.hpp"
-#include "tyr/datalog/fact_sets.hpp"
 #include "tyr/datalog/workspaces/facts.hpp"
 #include "tyr/formalism/datalog/declarations.hpp"
 #include "tyr/formalism/datalog/grounder_decl.hpp"
@@ -35,24 +34,8 @@ namespace tyr::datalog
  * Assignment-set subpolicies
  */
 
-template<formalism::FactKind T>
-struct NoCarePredicateAssignmentSetAccessor
-{
-    const PredicateAssignmentSets<T>& assignment_sets;
-
-    struct Checker
-    {
-        const PredicateAssignmentSet<T>& set;
-
-        template<typename Assignment>
-        bool is_consistent(const Assignment& assignment, bool polarity) const;
-    };
-
-    Checker make_checker(Index<formalism::Predicate<T>> predicate) const { return Checker { assignment_sets.at(predicate) }; }
-};
-
-template<formalism::FactKind T>
-struct CarePredicateAssignmentSetAccessor
+template<SemanticTag S, formalism::FactKind T>
+struct PredicateAssignmentSetAccessor
 {
     const PredicateAssignmentSets<T>& assignment_sets;
 
@@ -68,7 +51,7 @@ struct CarePredicateAssignmentSetAccessor
 };
 
 template<>
-struct CarePredicateAssignmentSetAccessor<formalism::FluentTag>
+struct PredicateAssignmentSetAccessor<CareSemanticTag, formalism::FluentTag>
 {
     const PredicateAssignmentSets<formalism::FluentTag>& assignment_sets;
     const PredicateAssignmentSets<formalism::FluentTag>& care_assignment_sets;
@@ -88,8 +71,8 @@ struct CarePredicateAssignmentSetAccessor<formalism::FluentTag>
     }
 };
 
-template<formalism::FactKind T>
-struct NoCareFunctionAssignmentSetAccessor
+template<SemanticTag S, formalism::FactKind T>
+struct FunctionAssignmentSetAccessor
 {
     const FunctionAssignmentSets<T>& assignment_sets;
 
@@ -105,36 +88,17 @@ struct NoCareFunctionAssignmentSetAccessor
     Checker make_checker(Index<formalism::Function<T>> function) const { return Checker { assignment_sets.at(function) }; }
 };
 
-template<formalism::FactKind T>
-using CareFunctionAssignmentSetAccessor = NoCareFunctionAssignmentSetAccessor<T>;
-
 /**
  * Tagged wrappers
  */
 
-template<formalism::FactKind T>
-struct TaggedNoCareAssignmentSetAccessor
+template<SemanticTag S, formalism::FactKind T>
+struct TaggedAssignmentSetAccessor
 {
-    NoCarePredicateAssignmentSetAccessor<T> predicate;
-    NoCareFunctionAssignmentSetAccessor<T> function;
+    PredicateAssignmentSetAccessor<S, T> predicate;
+    FunctionAssignmentSetAccessor<S, T> function;
 
-    explicit TaggedNoCareAssignmentSetAccessor(const TaggedAssignmentSets<T>& assignment_sets) :
-        predicate { assignment_sets.predicate },
-        function { assignment_sets.function }
-    {
-    }
-};
-
-template<formalism::FactKind T>
-struct TaggedCareAssignmentSetAccessor;
-
-template<>
-struct TaggedCareAssignmentSetAccessor<formalism::StaticTag>
-{
-    NoCarePredicateAssignmentSetAccessor<formalism::StaticTag> predicate;
-    NoCareFunctionAssignmentSetAccessor<formalism::StaticTag> function;
-
-    explicit TaggedCareAssignmentSetAccessor(const TaggedAssignmentSets<formalism::StaticTag>& assignment_sets) :
+    explicit TaggedAssignmentSetAccessor(const TaggedAssignmentSets<T>& assignment_sets) :
         predicate { assignment_sets.predicate },
         function { assignment_sets.function }
     {
@@ -142,13 +106,13 @@ struct TaggedCareAssignmentSetAccessor<formalism::StaticTag>
 };
 
 template<>
-struct TaggedCareAssignmentSetAccessor<formalism::FluentTag>
+struct TaggedAssignmentSetAccessor<CareSemanticTag, formalism::FluentTag>
 {
-    CarePredicateAssignmentSetAccessor<formalism::FluentTag> predicate;
-    NoCareFunctionAssignmentSetAccessor<formalism::FluentTag> function;
+    PredicateAssignmentSetAccessor<CareSemanticTag, formalism::FluentTag> predicate;
+    FunctionAssignmentSetAccessor<CareSemanticTag, formalism::FluentTag> function;
 
-    TaggedCareAssignmentSetAccessor(const TaggedAssignmentSets<formalism::FluentTag>& assignment_sets,
-                                    const PredicateAssignmentSets<formalism::FluentTag>& care_assignment_sets) :
+    TaggedAssignmentSetAccessor(const TaggedAssignmentSets<formalism::FluentTag>& assignment_sets,
+                                const PredicateAssignmentSets<formalism::FluentTag>& care_assignment_sets) :
         predicate { assignment_sets.predicate, care_assignment_sets },
         function { assignment_sets.function }
     {
@@ -159,12 +123,13 @@ struct TaggedCareAssignmentSetAccessor<formalism::FluentTag>
  * Combined wrappers
  */
 
-struct NoCareAssignmentSetAccessor
+template<SemanticTag S>
+struct AssignmentSetAccessor
 {
-    TaggedNoCareAssignmentSetAccessor<formalism::StaticTag> static_policy;
-    TaggedNoCareAssignmentSetAccessor<formalism::FluentTag> fluent_policy;
+    TaggedAssignmentSetAccessor<S, formalism::StaticTag> static_policy;
+    TaggedAssignmentSetAccessor<S, formalism::FluentTag> fluent_policy;
 
-    NoCareAssignmentSetAccessor(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
+    AssignmentSetAccessor(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
         static_policy { cws.assignment_sets },
         fluent_policy { ws.assignment_sets }
     {
@@ -180,12 +145,13 @@ struct NoCareAssignmentSetAccessor
     }
 };
 
-struct CareAssignmentSetAccessor
+template<>
+struct AssignmentSetAccessor<CareSemanticTag>
 {
-    TaggedCareAssignmentSetAccessor<formalism::StaticTag> static_policy;
-    TaggedCareAssignmentSetAccessor<formalism::FluentTag> fluent_policy;
+    TaggedAssignmentSetAccessor<CareSemanticTag, formalism::StaticTag> static_policy;
+    TaggedAssignmentSetAccessor<CareSemanticTag, formalism::FluentTag> fluent_policy;
 
-    CareAssignmentSetAccessor(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
+    AssignmentSetAccessor(const ConstFactsWorkspace& cws, const FactsWorkspace& ws) :
         static_policy { cws.assignment_sets },
         fluent_policy { ws.assignment_sets, ws.care_assignment_sets }
     {
@@ -206,24 +172,23 @@ struct CareAssignmentSetAccessor
  */
 
 /**
- * NoCarePredicateAssignmentSetAccessor
+ * PredicateAssignmentSetAccessor
  */
 
-template<formalism::FactKind T>
+template<SemanticTag S, formalism::FactKind T>
 template<typename Assignment>
-bool NoCarePredicateAssignmentSetAccessor<T>::Checker::is_consistent(const Assignment& assignment, bool polarity) const
+bool PredicateAssignmentSetAccessor<S, T>::Checker::is_consistent(const Assignment& assignment, bool polarity) const
 {
     return set.at(assignment) == polarity;
 }
 
 /**
- * CarePredicateAssignmentSetAccessor<FluentTag>
+ * PredicateAssignmentSetAccessor<CareSemanticTag, FluentTag>
  */
 
 template<typename Assignment>
-bool CarePredicateAssignmentSetAccessor<formalism::FluentTag>::Checker::is_consistent(const Assignment& assignment, bool polarity) const
+bool PredicateAssignmentSetAccessor<CareSemanticTag, formalism::FluentTag>::Checker::is_consistent(const Assignment& assignment, bool polarity) const
 {
-    // Outside care => don't care.
     if (!care_set.at(assignment))
         return true;
 
@@ -231,22 +196,23 @@ bool CarePredicateAssignmentSetAccessor<formalism::FluentTag>::Checker::is_consi
 }
 
 /**
- * NoCareFunctionAssignmentSetAccessor
+ * FunctionAssignmentSetAccessor
  */
 
-template<formalism::FactKind T>
-bool NoCareFunctionAssignmentSetAccessor<T>::Checker::intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& interval) const
+template<SemanticTag S, formalism::FactKind T>
+bool FunctionAssignmentSetAccessor<S, T>::Checker::intersect_interval(const VertexAssignment& assignment, ClosedInterval<float_t>& interval) const
 {
     interval = intersect(interval, set.at(assignment));
     return !empty(interval);
 }
 
-template<formalism::FactKind T>
-bool NoCareFunctionAssignmentSetAccessor<T>::Checker::intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& interval) const
+template<SemanticTag S, formalism::FactKind T>
+bool FunctionAssignmentSetAccessor<S, T>::Checker::intersect_interval(const EdgeAssignment& assignment, ClosedInterval<float_t>& interval) const
 {
     interval = intersect(interval, set.at(assignment));
     return !empty(interval);
 }
-}
+
+}  // namespace tyr::datalog
 
 #endif

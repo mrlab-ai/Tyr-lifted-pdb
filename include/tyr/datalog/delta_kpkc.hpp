@@ -21,7 +21,6 @@
 #include "tyr/common/dynamic_bitset.hpp"
 #include "tyr/common/formatter.hpp"
 #include "tyr/common/vector.hpp"
-#include "tyr/datalog/assignment_sets_accessor_concept.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc_graph.hpp"
 #include "tyr/datalog/formatter.hpp"
@@ -61,8 +60,8 @@ public:
 
     /// @brief Set new fact set to compute deltas.
     /// @param assignment_sets
-    template<AssignmentSetCareAccessorConcept CA>
-    void set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const CA& accessor);
+    template<SemanticTag S>
+    void set_next_assignment_sets(const StaticConsistencyGraph& static_graph, const AssignmentSetAccessor<S>& accessor);
 
     /// @brief Reset should be called before first iteration.
     void reset();

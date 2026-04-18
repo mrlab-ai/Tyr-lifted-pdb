@@ -18,7 +18,6 @@
 #ifndef TYR_DATALOG_CONTEXTS_STRATUM_HPP_
 #define TYR_DATALOG_CONTEXTS_STRATUM_HPP_
 
-#include "tyr/datalog/care_accessor_concept.hpp"
 #include "tyr/datalog/contexts/rule.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/policies/annotation_concept.hpp"
@@ -26,13 +25,13 @@
 
 namespace tyr::datalog
 {
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
 struct ProgramExecutionContext;
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
 struct StratumExecutionContext
 {
-    StratumExecutionContext(RuleSchedulerStratum& scheduler, const ProgramExecutionContext<OrAP, AndAP, TP, CP>& ctx) : scheduler(scheduler), ctx(ctx) {}
+    StratumExecutionContext(RuleSchedulerStratum& scheduler, const ProgramExecutionContext<OrAP, AndAP, TP, S>& ctx) : scheduler(scheduler), ctx(ctx) {}
 
     /**
      * Initialization
@@ -42,10 +41,10 @@ struct StratumExecutionContext
      * Subcontext
      */
 
-    auto get_rule_execution_context(Index<formalism::datalog::Rule> rule) { return RuleExecutionContext<OrAP, AndAP, TP, CP> { rule, *this }; }
+    auto get_rule_execution_context(Index<formalism::datalog::Rule> rule) { return RuleExecutionContext<OrAP, AndAP, TP, S> { rule, *this }; }
 
     RuleSchedulerStratum& scheduler;
-    const ProgramExecutionContext<OrAP, AndAP, TP, CP>& ctx;
+    const ProgramExecutionContext<OrAP, AndAP, TP, S>& ctx;
 };
 }
 

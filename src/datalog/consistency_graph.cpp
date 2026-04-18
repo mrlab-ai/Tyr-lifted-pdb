@@ -54,9 +54,9 @@ namespace details
  * Vertex
  */
 
-template<f::FactKind T, typename CA>
-    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
-inline bool consistent_literals(const Vertex& vertex, const TaggedRuleToLiteralInfos<T>& indexed_literals, const CA& accessor) noexcept
+template<f::FactKind T, SemanticTag S>
+inline bool
+consistent_literals(const Vertex& vertex, const TaggedRuleToLiteralInfos<T>& indexed_literals, const TaggedAssignmentSetAccessor<S, T>& accessor) noexcept
 {
     const auto object_index = vertex.get_object_index();
     const auto parameter_index = vertex.get_parameter_index();
@@ -133,53 +133,53 @@ inline bool consistent_literals(const Vertex& vertex, const TaggedRuleToLiteralI
     return true;
 }
 
-template<f::FactKind T, typename CA>
-    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
-ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const CA& accessor) noexcept;
+template<f::FactKind T, SemanticTag S>
+ClosedInterval<float_t>
+consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const TaggedAssignmentSetAccessor<S, T>& accessor) noexcept;
 
-template<f::FactKind T, typename CA>
-    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
-ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const CA& accessor) noexcept;
+template<f::FactKind T, SemanticTag S>
+ClosedInterval<float_t>
+consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const TaggedAssignmentSetAccessor<S, T>& accessor) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<f::ArithmeticOpKind O, typename GraphStructure, SemanticTag S>
 ClosedInterval<float_t> consistent_interval(fd::LiftedUnaryOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CA& accessor) noexcept;
+                                            const AssignmentSetAccessor<S>& accessor) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<f::ArithmeticOpKind O, typename GraphStructure, SemanticTag S>
 ClosedInterval<float_t> consistent_interval(fd::LiftedBinaryOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CA& accessor) noexcept;
+                                            const AssignmentSetAccessor<S>& accessor) noexcept;
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<f::ArithmeticOpKind O, typename GraphStructure, SemanticTag S>
 ClosedInterval<float_t> consistent_interval(fd::LiftedMultiOperatorView<O> element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CA& accessor) noexcept;
+                                            const AssignmentSetAccessor<S>& accessor) noexcept;
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<typename GraphStructure, SemanticTag S>
 ClosedInterval<float_t> consistent_interval(fd::FunctionExpressionView element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CA& accessor) noexcept;
+                                            const AssignmentSetAccessor<S>& accessor) noexcept;
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<typename GraphStructure, SemanticTag S>
 ClosedInterval<float_t> consistent_interval(fd::LiftedArithmeticOperatorView element,
                                             const GraphStructure& structure,
                                             const RuleToConstraintInfo& constraint_info,
-                                            const CA& accessor) noexcept;
+                                            const AssignmentSetAccessor<S>& accessor) noexcept;
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<typename GraphStructure, SemanticTag S>
 bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
                                    const GraphStructure& structure,
                                    const RuleToConstraintInfo& constraint_info,
-                                   const CA& accessor) noexcept;
+                                   const AssignmentSetAccessor<S>& accessor) noexcept;
 
-template<f::FactKind T, typename CA>
-    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
-inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const CA& accessor) noexcept
+template<f::FactKind T, SemanticTag S>
+inline ClosedInterval<float_t>
+consistent_interval(const RuleToFunctionTermInfo<T>& info, const Vertex& vertex, const TaggedAssignmentSetAccessor<S, T>& accessor) noexcept
 {
     const auto object_index = vertex.get_object_index();
     const auto parameter_index = vertex.get_parameter_index();
@@ -242,9 +242,9 @@ inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<
     return bounds;
 }
 
-template<f::FactKind T, typename CA>
-    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
-inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const CA& accessor) noexcept
+template<f::FactKind T, SemanticTag S>
+inline ClosedInterval<float_t>
+consistent_interval(const RuleToFunctionTermInfo<T>& info, const Edge& edge, const TaggedAssignmentSetAccessor<S, T>& accessor) noexcept
 {
     auto p = uint_t(edge.vi().get_parameter_index());
     auto q = uint_t(edge.vj().get_parameter_index());
@@ -378,31 +378,31 @@ inline ClosedInterval<float_t> consistent_interval(const RuleToFunctionTermInfo<
     return bounds;
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<f::ArithmeticOpKind O, typename GraphStructure, SemanticTag S>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedUnaryOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CA& accessor) noexcept
+                                                   const AssignmentSetAccessor<S>& accessor) noexcept
 {
     return apply(O {}, consistent_interval(element.get_arg(), structure, constraint_info, accessor));
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<f::ArithmeticOpKind O, typename GraphStructure, SemanticTag S>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedBinaryOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CA& accessor) noexcept
+                                                   const AssignmentSetAccessor<S>& accessor) noexcept
 {
     return apply(O {},
                  consistent_interval(element.get_lhs(), structure, constraint_info, accessor),
                  consistent_interval(element.get_rhs(), structure, constraint_info, accessor));
 }
 
-template<f::ArithmeticOpKind O, typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<f::ArithmeticOpKind O, typename GraphStructure, SemanticTag S>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedMultiOperatorView<O> element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CA& accessor) noexcept
+                                                   const AssignmentSetAccessor<S>& accessor) noexcept
 {
     const auto child_fexprs = element.get_args();
 
@@ -413,11 +413,11 @@ inline ClosedInterval<float_t> consistent_interval(fd::LiftedMultiOperatorView<O
                            { return apply(O {}, value, consistent_interval(child_expr, structure, constraint_info, accessor)); });
 }
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<typename GraphStructure, SemanticTag S>
 inline ClosedInterval<float_t> consistent_interval(fd::FunctionExpressionView element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CA& accessor) noexcept
+                                                   const AssignmentSetAccessor<S>& accessor) noexcept
 {
     return visit(
         [&](auto&& arg)
@@ -438,20 +438,20 @@ inline ClosedInterval<float_t> consistent_interval(fd::FunctionExpressionView el
         element.get_variant());
 }
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<typename GraphStructure, SemanticTag S>
 inline ClosedInterval<float_t> consistent_interval(fd::LiftedArithmeticOperatorView element,
                                                    const GraphStructure& structure,
                                                    const RuleToConstraintInfo& constraint_info,
-                                                   const CA& accessor) noexcept
+                                                   const AssignmentSetAccessor<S>& accessor) noexcept
 {
     return visit([&](auto&& arg) { return consistent_interval(arg, structure, constraint_info, accessor); }, element.get_variant());
 }
 
-template<typename GraphStructure, AssignmentSetCareAccessorConcept CA>
+template<typename GraphStructure, SemanticTag S>
 inline bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
                                           const GraphStructure& structure,
                                           const RuleToConstraintInfo& constraint_info,
-                                          const CA& accessor) noexcept
+                                          const AssignmentSetAccessor<S>& accessor) noexcept
 {
     return visit(
         [&](auto&& arg) -> bool
@@ -465,11 +465,11 @@ inline bool consistent_numeric_constraint(fd::LiftedBooleanOperatorView element,
         element.get_variant());
 }
 
-template<AssignmentSetCareAccessorConcept CA>
+template<SemanticTag S>
 inline bool consistent_numeric_constraints(const Vertex& vertex,
                                            fd::LiftedBooleanOperatorListView numeric_constraints,
                                            const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const CA& accessor) noexcept
+                                           const AssignmentSetAccessor<S>& accessor) noexcept
 {
     assert(numeric_constraints.size() == indexed_constraints.infos.size());
 
@@ -491,9 +491,9 @@ inline bool consistent_numeric_constraints(const Vertex& vertex,
  * Edge
  */
 
-template<f::FactKind T, typename CA>
-    requires TaggedAssignmentSetCareAccessorForKind<CA, T>
-inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const CA& accessor) noexcept
+template<f::FactKind T, SemanticTag S>
+inline bool
+consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos<T>& indexed_literals, const TaggedAssignmentSetAccessor<S, T>& accessor) noexcept
 {
     auto p = uint_t(edge.vi().get_parameter_index());
     auto q = uint_t(edge.vj().get_parameter_index());
@@ -622,11 +622,11 @@ inline bool consistent_literals(const Edge& edge, const TaggedRuleToLiteralInfos
     return true;
 }
 
-template<AssignmentSetCareAccessorConcept CA>
+template<SemanticTag S>
 inline bool consistent_numeric_constraints(const Edge& edge,
                                            fd::LiftedBooleanOperatorListView numeric_constraints,
                                            const RuleToRuleToConstraintInfos& indexed_constraints,
-                                           const CA& accessor) noexcept
+                                           const AssignmentSetAccessor<S>& accessor) noexcept
 {
     assert(numeric_constraints.size() == indexed_constraints.infos.size());
 
@@ -663,7 +663,7 @@ StaticConsistencyGraph::compute_vertices(const details::TaggedRuleToLiteralInfos
     auto vertex_partitions = std::vector<std::vector<uint_t>> {};
     auto object_to_vertex_per_partition = std::vector<std::vector<uint_t>> {};
 
-    const auto accessor = TaggedNoCareAssignmentSetAccessor<f::StaticTag> { static_assignment_sets };
+    const auto accessor = TaggedAssignmentSetAccessor<StandardSemanticTag, f::StaticTag> { static_assignment_sets };
 
     for (uint_t parameter_index = begin_parameter_index; parameter_index < end_parameter_index; ++parameter_index)
     {
@@ -704,7 +704,7 @@ kpkc::DeduplicatedAdjacencyMatrix StaticConsistencyGraph::compute_edges(const de
 
     auto offset_i = 0;
 
-    const auto accessor = TaggedNoCareAssignmentSetAccessor<f::StaticTag> { static_assignment_sets };
+    const auto accessor = TaggedAssignmentSetAccessor<StandardSemanticTag, f::StaticTag> { static_assignment_sets };
 
     for (uint_t pi = 0; pi < k; ++pi)
     {
@@ -951,7 +951,6 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
                                                fd::ConjunctiveConditionView condition,
                                                fd::ConjunctiveConditionView unary_overapproximation_condition,
                                                fd::ConjunctiveConditionView binary_overapproximation_condition,
-                                               fd::ConjunctiveConditionView static_binary_overapproximation_condition,
                                                const analysis::VariableDomainList& parameter_domains,
                                                size_t num_objects,
                                                size_t num_fluent_predicates,
@@ -1013,8 +1012,8 @@ StaticConsistencyGraph::StaticConsistencyGraph(fd::RuleView rule,
     // std::cout << m_binary_overapproximation_indexed_literals << std::endl;
 }
 
-template<AssignmentSetCareAccessorConcept CA>
-void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CA& accessor,
+template<SemanticTag S>
+void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSetAccessor<S>& accessor,
                                                                    const kpkc::GraphLayout& layout,
                                                                    kpkc::Graph& delta_graph,
                                                                    kpkc::Graph& full_graph,
@@ -1196,17 +1195,17 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const CA& acc
     // }
 }
 
-template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs<NoCareAssignmentSetAccessor>(const NoCareAssignmentSetAccessor& accessor,
-                                                                                                         const kpkc::GraphLayout& layout,
-                                                                                                         kpkc::Graph& delta_graph,
-                                                                                                         kpkc::Graph& full_graph,
-                                                                                                         std::vector<kpkc::Edge>& delta_edges) const;
+template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSetAccessor<CareSemanticTag>& accessor,
+                                                                            const kpkc::GraphLayout& layout,
+                                                                            kpkc::Graph& delta_graph,
+                                                                            kpkc::Graph& full_graph,
+                                                                            std::vector<kpkc::Edge>& delta_edges) const;
 
-template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs<CareAssignmentSetAccessor>(const CareAssignmentSetAccessor& accessor,
-                                                                                                       const kpkc::GraphLayout& layout,
-                                                                                                       kpkc::Graph& delta_graph,
-                                                                                                       kpkc::Graph& full_graph,
-                                                                                                       std::vector<kpkc::Edge>& delta_edges) const;
+template void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const AssignmentSetAccessor<StandardSemanticTag>& accessor,
+                                                                            const kpkc::GraphLayout& layout,
+                                                                            kpkc::Graph& delta_graph,
+                                                                            kpkc::Graph& full_graph,
+                                                                            std::vector<kpkc::Edge>& delta_edges) const;
 
 const details::Vertex& StaticConsistencyGraph::get_vertex(uint_t index) const { return m_vertices[index]; }
 
@@ -1248,25 +1247,6 @@ create_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditio
     for (const auto numeric_constraint : condition.get_numeric_constraints())
         if (kpkc_arity(numeric_constraint) >= k)
             conj_cond.numeric_constraints.push_back(numeric_constraint.get_data());
-
-    canonicalize(conj_cond);
-    return context.get_or_create(conj_cond);
-}
-
-std::pair<fd::ConjunctiveConditionView, bool>
-create_static_overapproximation_conjunctive_condition(size_t k, fd::ConjunctiveConditionView condition, fd::Repository& context)
-{
-    auto builder = fd::Builder {};
-    auto conj_cond_ptr = builder.get_builder<fd::ConjunctiveCondition>();
-    auto& conj_cond = *conj_cond_ptr;
-    conj_cond.clear();
-
-    for (const auto variable : condition.get_variables())
-        conj_cond.variables.push_back(variable.get_index());
-
-    for (const auto literal : condition.get_literals<f::StaticTag>())
-        if ((!literal.get_polarity() && kpkc_arity(literal) == k) || (literal.get_polarity() && kpkc_arity(literal) >= k))
-            conj_cond.static_literals.push_back(literal.get_index());
 
     canonicalize(conj_cond);
     return context.get_or_create(conj_cond);
@@ -1336,22 +1316,6 @@ std::pair<fd::RuleView, bool> create_overapproximation_rule(size_t k, fd::RuleVi
 
     rule.variables = element.get_variables().get_data();
     rule.body = create_overapproximation_conjunctive_condition(k, element.get_body(), context).first.get_index();
-    rule.head = merge_d2d(element.get_head(), merge_context).first.get_index();
-
-    canonicalize(rule);
-    return context.get_or_create(rule);
-}
-
-std::pair<fd::RuleView, bool> create_static_overapproximation_rule(size_t k, fd::RuleView element, fd::Repository& context)
-{
-    auto builder = fd::Builder {};
-    auto merge_context = fd::MergeContext { builder, context };
-    auto rule_ptr = builder.get_builder<fd::Rule>();
-    auto& rule = *rule_ptr;
-    rule.clear();
-
-    rule.variables = element.get_variables().get_data();
-    rule.body = create_static_overapproximation_conjunctive_condition(k, element.get_body(), context).first.get_index();
     rule.head = merge_d2d(element.get_head(), merge_context).first.get_index();
 
     canonicalize(rule);

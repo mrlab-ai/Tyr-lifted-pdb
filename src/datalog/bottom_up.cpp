@@ -22,12 +22,11 @@
 #include "tyr/common/config.hpp"       // for uint_t
 #include "tyr/common/equal_to.hpp"     // for EqualTo
 #include "tyr/common/formatter.hpp"
-#include "tyr/common/hash.hpp"              // for Hash
-#include "tyr/common/types.hpp"             // for View
-#include "tyr/common/vector.hpp"            // for View
-#include "tyr/datalog/applicability.hpp"    // for is_ap...
-#include "tyr/datalog/assignment_sets.hpp"  // for AssignmentSets
-#include "tyr/datalog/care_accessor.hpp"
+#include "tyr/common/hash.hpp"                // for Hash
+#include "tyr/common/types.hpp"               // for View
+#include "tyr/common/vector.hpp"              // for View
+#include "tyr/datalog/applicability.hpp"      // for is_ap...
+#include "tyr/datalog/assignment_sets.hpp"    // for AssignmentSets
 #include "tyr/datalog/consistency_graph.hpp"  // for Vertex
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc.hpp"  // for Works...
@@ -81,8 +80,8 @@ static void create_general_binding(std::span<const kpkc::Vertex> clique, const S
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
-void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
+void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP, S>& rctx)
 {
     auto wrctx = rctx.get_rule_worker_execution_context();
 
@@ -114,8 +113,8 @@ void generate_nullary_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
     }
 }
 
-template<FactSetCareAccessorConcept CA>
-[[maybe_unused]] static bool ensure_applicability(fd::RuleView rule, fd::GrounderContext& context, const CA& accessor)
+template<SemanticTag S>
+[[maybe_unused]] static bool ensure_applicability(fd::RuleView rule, fd::GrounderContext& context, const FactSetAccessor<S>& accessor)
 {
     const auto ground_rule = ground(rule, context).first;
 
@@ -143,8 +142,8 @@ template<FactSetCareAccessorConcept CA>
     return inserted;
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
-void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx, std::span<const kpkc::Vertex> clique)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
+void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, S>& wrctx, std::span<const kpkc::Vertex> clique)
 {
     const auto& in = wrctx.in();
     auto& out = wrctx.out();
@@ -203,8 +202,8 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP, CP>& wrctx, std:
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
-void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
+void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, S>& rctx)
 {
     const auto& kpkc_algorithm = rctx.ws_rule.common.kpkc;
 
@@ -267,8 +266,8 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
 #endif
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
-void generate(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
+void generate(RuleExecutionContext<OrAP, AndAP, TP, S>& rctx)
 {
     const auto arity = rctx.cws_rule.get_rule().get_arity();
 
@@ -278,8 +277,8 @@ void generate(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
         generate_general_case(rctx);
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
-void process_pending(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
+void process_pending(RuleExecutionContext<OrAP, AndAP, TP, S>& rctx)
 {
     for (auto& worker : rctx.ws_rule.worker)
     {
@@ -329,8 +328,8 @@ void process_pending(RuleExecutionContext<OrAP, AndAP, TP, CP>& rctx)
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
-void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& ctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
+void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, S>& ctx)
 {
     auto& scheduler = ctx.scheduler;
     auto& facts = ctx.ctx.ws.facts;
@@ -468,8 +467,8 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP, CP>& c
     }
 }
 
-template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, CareAccessorConcept CP>
-void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP, CP>& ctx)
+template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP, SemanticTag S>
+void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP, S>& ctx)
 {
     const auto program_stopwatch = StopwatchScope(ctx.ws.statistics.total_time);
     ++ctx.ws.statistics.num_executions;
@@ -480,19 +479,19 @@ void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP, CP>& ctx)
     }
 }
 
-template void solve_bottom_up(ProgramExecutionContext<NoOrAnnotationPolicy, NoAndAnnotationPolicy, NoTerminationPolicy, CareAccessor>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, NoTerminationPolicy, CareAccessor>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<NoOrAnnotationPolicy, NoAndAnnotationPolicy, NoTerminationPolicy, CareSemanticTag>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, NoTerminationPolicy, CareSemanticTag>& ctx);
 template void
-solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, CareAccessor>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, CareAccessor>& ctx);
+solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, CareSemanticTag>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, CareSemanticTag>& ctx);
 template void
-solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, CareAccessor>& ctx);
+solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, CareSemanticTag>& ctx);
 
-template void solve_bottom_up(ProgramExecutionContext<NoOrAnnotationPolicy, NoAndAnnotationPolicy, NoTerminationPolicy, NoCareAccessor>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, NoTerminationPolicy, NoCareAccessor>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<NoOrAnnotationPolicy, NoAndAnnotationPolicy, NoTerminationPolicy, StandardSemanticTag>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, NoTerminationPolicy, StandardSemanticTag>& ctx);
 template void
-solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, NoCareAccessor>& ctx);
-template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, NoCareAccessor>& ctx);
+solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<SumAggregation>, TerminationPolicy<SumAggregation>, StandardSemanticTag>& ctx);
+template void solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, NoTerminationPolicy, StandardSemanticTag>& ctx);
 template void
-solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, NoCareAccessor>& ctx);
+solve_bottom_up(ProgramExecutionContext<OrAnnotationPolicy, AndAnnotationPolicy<MaxAggregation>, TerminationPolicy<MaxAggregation>, StandardSemanticTag>& ctx);
 }
