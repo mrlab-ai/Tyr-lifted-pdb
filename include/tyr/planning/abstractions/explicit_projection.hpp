@@ -1,0 +1,333 @@
+/*
+ * Copyright (C) 2025 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TYR_PLANNING_ABSTRACTIONS_EXPLICIT_PROJECTION_HPP_
+#define TYR_PLANNING_ABSTRACTIONS_EXPLICIT_PROJECTION_HPP_
+
+#include "tyr/common/config.hpp"
+#include "tyr/common/declarations.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/unification/substitution.hpp"
+#include "tyr/graphs/concepts.hpp"
+#include "tyr/planning/abstractions/pattern_generator.hpp"
+#include "tyr/planning/state_view.hpp"
+#include "tyr/planning/task.hpp"
+
+#include <boost/graph/graph_concepts.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/iterator/counting_iterator.hpp>
+#include <ranges>
+
+namespace tyr::planning
+{
+
+struct Transition
+{
+    // The projected action is still useful for executing inside the projected task.
+    formalism::planning::ActionView projected_action;
+
+    // The original action is required for cross-projection label comparison.
+    formalism::planning::ActionView original_action;
+
+    // Substitution over the original action parameters.
+    // Unbound parameters represent "any".
+    formalism::unification::SubstitutionFunction<Index<formalism::Object>> substitution;
+
+    uint_t src;
+    uint_t dst;
+};
+
+using TransitionList = std::vector<Transition>;
+
+template<TaskKind Kind>
+class ProjectionMapping
+{
+public:
+    struct ProjectedActionInfo
+    {
+        formalism::planning::ActionView original_action;
+        std::vector<formalism::ParameterIndex> projected_to_original;
+    };
+
+    using ActionMapping = UnorderedMap<formalism::planning::ActionView, ProjectedActionInfo>;
+
+    explicit ProjectionMapping(Pattern pattern) : m_pattern(std::move(pattern)) {}
+
+    uint_t map_state(const StateView<Kind>& state) const noexcept
+    {
+        // Mimics the indexing obtained via itertools::for_each_boolean_vector used during construction of the ForwardProjectionAbstraction.
+        const auto k = m_pattern.size();
+        auto r = uint_t(0);
+        for (uint_t i = 0; i < k; ++i)
+        {
+            const auto fact = m_pattern.facts[i];
+            const auto variable = fact.get_variable();
+            const auto value = fact.get_value();
+            if (state.get(variable) == value)
+                r |= (uint_t(1) << i);
+        }
+        return r;
+    }
+
+private:
+    Pattern m_pattern;
+};
+
+template<TaskKind Kind>
+class ForwardProjectionAbstraction
+{
+public:
+    using IndexingMode = graphs::ContiguousIndexingTag;
+
+    static boost::dynamic_bitset<> compute_state_changing_transitions(const TransitionList& transitions)
+    {
+        auto result = boost::dynamic_bitset<>(transitions.size());
+        for (uint_t t = 0; t < transitions.size(); ++t)
+        {
+            const auto& transition = transitions[t];
+            if (transition.src != transition.dst)
+                result.set(t);
+        }
+        return result;
+    }
+
+    ForwardProjectionAbstraction(ProjectionMapping<Kind> mapping,
+                                 std::shared_ptr<StateRepository<Kind>> state_repository,
+                                 std::vector<StateView<Kind>> vertices,
+                                 TransitionList transitions,
+                                 std::vector<std::vector<uint_t>> adj_lists,
+                                 std::vector<uint_t> goal_vertices) :
+        m_mapping(std::move(mapping)),
+        m_state_repository(std::move(state_repository)),
+        m_vertices(std::move(vertices)),
+        m_transitions(std::move(transitions)),
+        m_adj_lists(std::move(adj_lists)),
+        m_goal_vertices(std::move(goal_vertices)),
+        m_state_changing_transitions(compute_state_changing_transitions(m_transitions))
+    {
+    }
+
+    const auto& get_mapping() const noexcept { return m_mapping; }
+    const auto& state_repository() const noexcept { return m_state_repository; }
+    auto num_vertices() const noexcept { return m_vertices.size(); }
+    auto num_edges() const noexcept { return m_transitions.size(); }
+    const auto& vertices() const noexcept { return m_vertices; }
+    const auto& transitions() const noexcept { return m_transitions; }
+    const auto& adj_lists() const noexcept { return m_adj_lists; }
+    const auto& goal_vertices() const noexcept { return m_goal_vertices; }
+    const auto& state_changing_transitions() const noexcept { return m_state_changing_transitions; }
+
+private:
+    ProjectionMapping<Kind> m_mapping;
+    std::shared_ptr<StateRepository<Kind>> m_state_repository;
+    std::vector<StateView<Kind>> m_vertices;
+    TransitionList m_transitions;
+    std::vector<std::vector<uint_t>> m_adj_lists;
+    std::vector<uint_t> m_goal_vertices;
+    boost::dynamic_bitset<> m_state_changing_transitions;
+};
+
+template<TaskKind Kind>
+class BackwardProjectionAbstraction
+{
+public:
+    using IndexingMode = graphs::ContiguousIndexingTag;
+
+    explicit BackwardProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Kind>> g) : m_g(g), m_adj_lists(g->num_vertices())
+    {
+        for (uint_t t = 0; t < g->num_edges(); ++t)
+            m_adj_lists[g->transitions()[t].dst].push_back(t);
+    }
+
+    auto num_vertices() const noexcept { return m_g->num_vertices(); }
+    auto num_edges() const noexcept { return m_g->num_edges(); }
+    const auto& vertices() const noexcept { return m_g->vertices(); }
+    const auto& transitions() const noexcept { return m_g->transitions(); }
+    const auto& goal_vertices() const noexcept { return m_g->goal_vertices(); }
+    const auto& adj_lists() const noexcept { return m_adj_lists; }
+    const auto& g() const noexcept { return *m_g; }
+
+private:
+    std::shared_ptr<const ForwardProjectionAbstraction<Kind>> m_g;
+
+    std::vector<std::vector<uint_t>> m_adj_lists;
+};
+
+template<TaskKind Kind>
+class ProjectionAbstraction
+{
+public:
+    using IndexingMode = graphs::ContiguousIndexingTag;
+
+    explicit ProjectionAbstraction(std::shared_ptr<const ForwardProjectionAbstraction<Kind>> forward) : m_forward(std::move(forward)), m_backward(m_forward) {}
+
+    const auto& get_mapping() const noexcept { return m_forward->get_mapping(); }
+    const auto& state_changing_transitions() const noexcept { return m_forward->state_changing_transitions(); }
+    const auto& transitions() const noexcept { return m_forward->transitions(); }
+    const auto& get_forward() const noexcept { return *m_forward; }
+    const auto& get_backward() const noexcept { return m_backward; }
+
+private:
+    std::shared_ptr<const ForwardProjectionAbstraction<Kind>> m_forward;
+    BackwardProjectionAbstraction<Kind> m_backward;
+};
+
+template<TaskKind Kind>
+using ProjectionAbstractionList = std::vector<ProjectionAbstraction<Kind>>;
+
+/**
+ * VertexListGraph
+ */
+
+template<TaskKind Kind>
+auto num_vertices(const ForwardProjectionAbstraction<Kind>& g)
+{
+    return g.num_vertices();
+}
+
+template<TaskKind Kind>
+auto vertices(const ForwardProjectionAbstraction<Kind>& g)
+{
+    using It = boost::counting_iterator<uint_t>;
+    return std::make_pair(It { 0 }, It { static_cast<uint_t>(num_vertices(g)) });
+}
+
+template<TaskKind Kind>
+auto num_vertices(const BackwardProjectionAbstraction<Kind>& g)
+{
+    return g.num_vertices();
+}
+
+template<TaskKind Kind>
+auto vertices(const BackwardProjectionAbstraction<Kind>& g)
+{
+    return vertices(g.g());
+}
+
+/**
+ * IncidenceGraph
+ */
+
+template<TaskKind Kind>
+auto out_edges(uint_t v, const ForwardProjectionAbstraction<Kind>& g)
+{
+    const auto& r = g.adj_lists().at(v);
+    return std::make_pair(r.begin(), r.end());
+}
+
+template<TaskKind Kind>
+auto source(uint_t e, const ForwardProjectionAbstraction<Kind>& g)
+{
+    return g.transitions().at(e).src;
+}
+
+template<TaskKind Kind>
+auto target(uint_t e, const ForwardProjectionAbstraction<Kind>& g)
+{
+    return g.transitions().at(e).dst;
+}
+
+template<TaskKind Kind>
+auto out_degree(uint_t v, const ForwardProjectionAbstraction<Kind>& g)
+{
+    return g.adj_lists().at(v).size();
+}
+
+template<TaskKind Kind>
+auto out_edges(uint_t v, const BackwardProjectionAbstraction<Kind>& g)
+{
+    const auto& r = g.adj_lists().at(v);
+    return std::make_pair(r.begin(), r.end());
+}
+
+template<TaskKind Kind>
+auto source(uint_t e, const BackwardProjectionAbstraction<Kind>& g)
+{
+    return g.transitions().at(e).dst;
+}
+
+template<TaskKind Kind>
+auto target(uint_t e, const BackwardProjectionAbstraction<Kind>& g)
+{
+    return g.transitions().at(e).src;
+}
+
+template<TaskKind Kind>
+auto out_degree(uint_t v, const BackwardProjectionAbstraction<Kind>& g)
+{
+    return g.adj_lists().at(v).size();
+}
+
+}
+
+namespace boost
+{
+
+/// @private
+/// Traits for a graph that are needed for the boost graph library.
+template<::tyr::planning::TaskKind Kind>
+struct graph_traits<::tyr::planning::ForwardProjectionAbstraction<Kind>>
+{
+    struct vertex_list_and_incidence_graph_tag : public vertex_list_graph_tag, public incidence_graph_tag
+    {
+    };
+
+    // boost::GraphConcept
+    using vertex_descriptor = ::tyr::uint_t;
+    using edge_descriptor = ::tyr::uint_t;
+    using directed_category = directed_tag;
+    using edge_parallel_category = allow_parallel_edge_tag;
+    using traversal_category = vertex_list_and_incidence_graph_tag;
+    // boost::VertexListGraph
+    using vertex_iterator = boost::counting_iterator<::tyr::uint_t>;
+    using vertices_size_type = size_t;
+    // boost::IncidenceGraph
+    using out_edge_iterator = typename std::vector<::tyr::uint_t>::const_iterator;
+    using degree_size_type = size_t;
+    // boost::strong_components
+    constexpr static vertex_descriptor null_vertex() { return std::numeric_limits<vertex_descriptor>::max(); }
+};
+
+/// @private
+/// Traits for a graph that are needed for the boost graph library.
+template<::tyr::planning::TaskKind Kind>
+struct graph_traits<::tyr::planning::BackwardProjectionAbstraction<Kind>>
+{
+    struct vertex_list_and_incidence_graph_tag : public vertex_list_graph_tag, public incidence_graph_tag
+    {
+    };
+
+    // boost::GraphConcept
+    using vertex_descriptor = ::tyr::uint_t;
+    using edge_descriptor = ::tyr::uint_t;
+    using directed_category = directed_tag;
+    using edge_parallel_category = allow_parallel_edge_tag;
+    using traversal_category = vertex_list_and_incidence_graph_tag;
+    // boost::VertexListGraph
+    using vertex_iterator = boost::counting_iterator<::tyr::uint_t>;
+    using vertices_size_type = size_t;
+    // boost::IncidenceGraph
+    using out_edge_iterator = typename std::vector<::tyr::uint_t>::const_iterator;
+    using degree_size_type = size_t;
+    // boost::strong_components
+    constexpr static vertex_descriptor null_vertex() { return std::numeric_limits<vertex_descriptor>::max(); }
+};
+
+}
+
+#endif

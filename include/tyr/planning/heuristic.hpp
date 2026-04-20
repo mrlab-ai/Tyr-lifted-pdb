@@ -37,7 +37,7 @@ class Heuristic
 public:
     virtual ~Heuristic() = default;
 
-    virtual void set_goal(formalism::planning::GroundConjunctiveConditionView goal) = 0;
+    virtual void set_goal(formalism::planning::GroundConjunctiveConditionView goal) {};
 
     virtual float_t evaluate(const StateView<Kind>& state) = 0;
 

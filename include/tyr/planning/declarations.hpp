@@ -106,6 +106,18 @@ class DefaultEventHandler;
 template<TaskKind Kind>
 using DefaultEventHandlerPtr = std::shared_ptr<DefaultEventHandler<Kind>>;
 }
+
+struct Pattern;
+
+template<TaskKind Kind>
+class ForwardProjectionAbstraction;
+template<TaskKind Kind>
+class BackwardProjectionAbstraction;
+template<TaskKind Kind>
+class ProjectionAbstraction;
+
+template<TaskKind Kind>
+class GoalPatternGenerator;
 }
 
 #endif

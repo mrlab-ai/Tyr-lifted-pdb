@@ -18,6 +18,8 @@
 #ifndef TYR_PLANNING_PLANNING_HPP_
 #define TYR_PLANNING_PLANNING_HPP_
 
+#include "tyr/planning/abstractions/goal_pattern_generator.hpp"
+#include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/algorithms/astar_eager.hpp"
 #include "tyr/planning/algorithms/astar_eager/event_handler.hpp"
 #include "tyr/planning/algorithms/gbfs_lazy.hpp"
@@ -37,8 +39,12 @@
 #include "tyr/planning/ground_task/successor_generator.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 #include "tyr/planning/heuristics/blind.hpp"
+#include "tyr/planning/heuristics/canonical.hpp"
 #include "tyr/planning/heuristics/goal_count.hpp"
+#include "tyr/planning/heuristics/max.hpp"
+#include "tyr/planning/heuristics/projection_abstraction.hpp"
 #include "tyr/planning/lifted_task.hpp"
+#include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 #include "tyr/planning/lifted_task/axiom_evaluator.hpp"
 #include "tyr/planning/lifted_task/heuristics/rpg_add.hpp"
 #include "tyr/planning/lifted_task/heuristics/rpg_ff.hpp"
