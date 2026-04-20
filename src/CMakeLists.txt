@@ -26,6 +26,8 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     analysis/task_domains.cpp
     analysis/domains_translation.cpp
 
+    graphs/bron_kerbosch.cpp
+
     formalism/datalog/builder.cpp
     formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
@@ -33,6 +35,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     formalism/datalog/repository.cpp
     formalism/datalog/views.cpp
     formalism/datalog/variable_dependency_graph.cpp
+    formalism/planning/variable_dependency_graph.cpp
 
     formalism/planning/mutable/formatter.cpp
 
@@ -77,6 +80,8 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/state_storage/tree_compression/numeric.cpp
 
     planning/heuristics/goal_count.cpp
+    planning/abstractions/explicit_projection.cpp
+    planning/abstractions/goal_pattern_generator.cpp
 
     planning/ground_task/state_storage/hash_set/atom.cpp
     planning/ground_task/state_storage/hash_set/fact.cpp
@@ -95,9 +100,15 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/lifted_task/state_storage/hash_set/fact.cpp
     planning/lifted_task/state_storage/tree_compression/atom.cpp
     planning/lifted_task/state_storage/tree_compression/fact.cpp
+    planning/heuristics/goal_count.cpp
+    planning/heuristics/canonical.cpp
+    planning/heuristics/max.cpp
+    planning/heuristics/projection_abstraction.cpp
+
     planning/lifted_task/heuristics/rpg_add.cpp
     planning/lifted_task/heuristics/rpg_max.cpp
     planning/lifted_task/heuristics/rpg_ff.cpp
+    planning/lifted_task/abstractions/projection_generator.cpp
     planning/lifted_task/axiom_evaluator.cpp
     planning/lifted_task/node.cpp
     planning/lifted_task/state_repository.cpp

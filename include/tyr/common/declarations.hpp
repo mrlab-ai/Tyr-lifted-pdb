@@ -26,7 +26,9 @@
 #include <cista/containers/vector.h>
 #include <concepts>
 #include <functional>
+#include <gtl/btree.hpp>
 #include <gtl/phmap.hpp>
+#include <ranges>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -62,6 +64,9 @@ template<typename T>
 struct EqualTo;
 
 template<typename T>
+struct Less;
+
+template<typename T>
 class ObserverPtr;
 
 template<typename T>
@@ -69,6 +74,9 @@ using UnorderedSet = gtl::flat_hash_set<T, Hash<T>, EqualTo<T>>;
 
 template<typename T, typename V>
 using UnorderedMap = gtl::flat_hash_map<T, V, Hash<T>, EqualTo<T>>;
+
+template<typename T, typename V>
+using Map = gtl::btree_map<T, V, Less<T>>;
 
 }
 

@@ -51,6 +51,9 @@
 namespace nb = nanobind;
 using namespace nb::literals;
 
+NB_MAKE_OPAQUE(tyr::planning::ProjectionAbstractionList<tyr::planning::LiftedTag>);
+NB_MAKE_OPAQUE(tyr::planning::ProjectionAbstractionList<tyr::planning::GroundTag>);
+
 namespace tyr
 {
 

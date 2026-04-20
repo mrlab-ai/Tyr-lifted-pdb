@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025-2026 Dominik Drexler
+ * Copyright (C) 2025 Dominik Drexler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,22 +15,27 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_STATE_DATA_HPP_
-#define TYR_PLANNING_STATE_DATA_HPP_
+#ifndef TYR_GRAPHS_BRON_KERBOSCH_HPP_
+#define TYR_GRAPHS_BRON_KERBOSCH_HPP_
 
 #include "tyr/common/config.hpp"
-#include "tyr/common/declarations.hpp"
-#include "tyr/common/types.hpp"
-#include "tyr/formalism/declarations.hpp"
-#include "tyr/planning/declarations.hpp"
-#include "tyr/planning/state_index.hpp"
 
-#include <concepts>
+#include <boost/dynamic_bitset.hpp>
+#include <vector>
 
-namespace tyr
+namespace tyr::graphs::bron_kerbosch
 {
-template<planning::TaskKind Kind>
-class Data<planning::State<Kind>>;
+
+struct Graph
+{
+    std::vector<boost::dynamic_bitset<>> matrix;
+
+    Graph();
+    explicit Graph(size_t nv);
+};
+
+std::vector<std::vector<uint_t>> compute_maximal_cliques(const Graph& graph);
+
 }
 
 #endif

@@ -52,6 +52,11 @@ std::ostream& print(std::ostream& os, const planning::Node<Kind>& el);
 template<planning::TaskKind Kind>
 std::ostream& print(std::ostream& os, const planning::Plan<Kind>& el);
 
+std::ostream& print(std::ostream& os, const planning::Pattern& el);
+
+template<planning::TaskKind Kind>
+std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Kind>& el);
+
 namespace planning
 {
 
@@ -79,6 +84,11 @@ std::ostream& operator<<(std::ostream& os, const Node<Kind>& el);
 
 template<TaskKind Kind>
 std::ostream& operator<<(std::ostream& os, const Plan<Kind>& el);
+
+std::ostream& operator<<(std::ostream& os, const Pattern& el);
+
+template<TaskKind Kind>
+std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<Kind>& el);
 
 }
 }

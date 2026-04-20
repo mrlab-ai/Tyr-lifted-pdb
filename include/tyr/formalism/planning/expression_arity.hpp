@@ -33,16 +33,75 @@ namespace tyr::formalism::planning
  * collect_parameters
  */
 
-void collect_parameters(TermView element, ParameterList& result);
+inline void collect_parameters(float_t element, UnorderedSet<ParameterIndex>& result);
 
-template<FactKind T>
-void collect_parameters(AtomView<T> element, ParameterList& result);
+template<Context C>
+void collect_parameters(View<Data<Term>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<FactKind T, Context C>
+void collect_parameters(View<Index<Atom<T>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<FactKind T, Context C>
+void collect_parameters(View<Index<Literal<T>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<FactKind T, Context C>
+void collect_parameters(View<Data<FDRFact<T>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<FactKind T, Context C>
+void collect_parameters(View<Index<FunctionTerm<T>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<Context C>
+void collect_parameters(View<Data<FunctionExpression>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<ArithmeticOpKind O, Context C>
+void collect_parameters(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<OpKind O, Context C>
+void collect_parameters(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<ArithmeticOpKind O, Context C>
+void collect_parameters(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<Context C>
+void collect_parameters(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<Context C>
+void collect_parameters(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<Context C>
+void collect_parameters(View<Index<ConjunctiveCondition>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<Context C>
+void collect_parameters(View<Index<ConjunctiveEffect>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<Context C>
+void collect_parameters(View<Index<ConditionalEffect>, C> element, UnorderedSet<ParameterIndex>& result);
+
+template<Context C>
+void collect_parameters(View<Index<Action>, C> element, UnorderedSet<ParameterIndex>& result);
+
+// top-level
+
+template<FactKind T, Context C>
+auto collect_parameters(View<Index<Literal<T>>, C> element);
+
+template<FactKind T, Context C>
+auto collect_parameters(View<Index<FunctionTerm<T>>, C> element);
+
+template<Context C>
+auto collect_parameters(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element);
+
+template<Context C>
+auto collect_parameters(View<Index<Action>, C> element);
 
 /**
  * Implementations
  */
 
-inline void collect_parameters(TermView element, ParameterList& result)
+inline void collect_parameters(float_t element, UnorderedSet<ParameterIndex>& result) {}
+
+template<Context C>
+void collect_parameters(View<Data<Term>, C> element, UnorderedSet<ParameterIndex>& result)
 {
     visit(
         [&](auto&& arg)
@@ -50,25 +109,154 @@ inline void collect_parameters(TermView element, ParameterList& result)
             using Alternative = std::decay_t<decltype(arg)>;
 
             if constexpr (std::is_same_v<Alternative, ParameterIndex>)
-                result.push_back(arg);
-            else if constexpr (std::is_same_v<Alternative, ObjectView>) {}
+                result.insert(arg);
+            else if constexpr (std::is_same_v<Alternative, View<Index<Object>, C>>) {}
             else
                 static_assert(dependent_false<Alternative>::value, "Missing case");
         },
         element.get_variant());
 }
 
-template<FactKind T>
-inline void collect_parameters(AtomView<T> element, ParameterList& result)
+template<FactKind T, Context C>
+void collect_parameters(View<Index<Atom<T>>, C> element, UnorderedSet<ParameterIndex>& result)
 {
     for (const auto term : element.get_terms())
         collect_parameters(term, result);
 }
 
-template<FactKind T>
-inline auto collect_parameters(AtomView<T> element)
+template<FactKind T, Context C>
+void collect_parameters(View<Index<Literal<T>>, C> element, UnorderedSet<ParameterIndex>& result)
 {
-    auto result = ParameterList {};
+    collect_parameters(element.get_atom(), result);
+}
+
+template<FactKind T, Context C>
+void collect_parameters(View<Data<FDRFact<T>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    if (element.has_value())
+        collect_parameters(element.get_atom(), result);
+}
+
+template<FactKind T, Context C>
+void collect_parameters(View<Index<FunctionTerm<T>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    for (const auto term : element.get_terms())
+        collect_parameters(term, result);
+}
+
+template<Context C>
+void collect_parameters(View<Data<FunctionExpression>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
+}
+
+template<ArithmeticOpKind O, Context C>
+void collect_parameters(View<Index<UnaryOperator<O, Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    collect_parameters(element.get_arg(), result);
+}
+
+template<OpKind O, Context C>
+void collect_parameters(View<Index<BinaryOperator<O, Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    collect_parameters(element.get_lhs(), result);
+    collect_parameters(element.get_rhs(), result);
+}
+
+template<ArithmeticOpKind O, Context C>
+void collect_parameters(View<Index<MultiOperator<O, Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    for (const auto arg : element.get_args())
+        collect_parameters(arg, result);
+}
+
+template<Context C>
+void collect_parameters(View<Data<ArithmeticOperator<Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
+}
+
+template<Context C>
+void collect_parameters(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
+}
+
+template<Context C>
+void collect_parameters(View<Index<ConjunctiveCondition>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    for (const auto literal : element.template get_literals<StaticTag>())
+        collect_parameters(literal, result);
+    for (const auto literal : element.template get_literals<FluentTag>())
+        collect_parameters(literal, result);
+    for (const auto literal : element.template get_literals<DerivedTag>())
+        collect_parameters(literal, result);
+    for (const auto constraint : element.get_numeric_constraints())
+        collect_parameters(constraint, result);
+}
+
+template<Context C>
+void collect_parameters(View<Index<ConjunctiveEffect>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    for (const auto literal : element.get_literals())
+        collect_parameters(literal, result);
+    for (const auto numeric_effect : element.get_numeric_effects())
+        collect_parameters(numeric_effect, result);
+    if (element.get_auxiliary_numeric_effect().has_value())
+        collect_parameters(element.get_auxiliary_numeric_effect().value(), result);
+}
+
+template<Context C>
+void collect_parameters(View<Index<ConditionalEffect>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    collect_parameters(element.get_condition(), result);
+    collect_parameters(element.get_effect(), result);
+}
+
+template<Context C>
+void collect_parameters(View<Index<Action>, C> element, UnorderedSet<ParameterIndex>& result)
+{
+    collect_parameters(element.get_condition(), result);
+    for (const auto cond_effect : element.get_effects())
+        collect_parameters(cond_effect, result);
+}
+
+template<FactKind T, Context C>
+auto collect_parameters(View<Index<Atom<T>>, C> element)
+{
+    auto result = UnorderedSet<ParameterIndex> {};
+    collect_parameters(element, result);
+    return result;
+}
+
+template<FactKind T, Context C>
+auto collect_parameters(View<Index<Literal<T>>, C> element)
+{
+    auto result = UnorderedSet<ParameterIndex> {};
+    collect_parameters(element, result);
+    return result;
+}
+
+template<FactKind T, Context C>
+auto collect_parameters(View<Index<FunctionTerm<T>>, C> element)
+{
+    auto result = UnorderedSet<ParameterIndex> {};
+    collect_parameters(element, result);
+    return result;
+}
+
+template<Context C>
+auto collect_parameters(View<Data<BooleanOperator<Data<FunctionExpression>>>, C> element)
+{
+    auto result = UnorderedSet<ParameterIndex> {};
+    visit([&](auto&& arg) { collect_parameters(arg, result); }, element.get_variant());
+    return result;
+}
+
+template<Context C>
+auto collect_parameters(View<Index<Action>, C> element)
+{
+    auto result = UnorderedSet<ParameterIndex> {};
     collect_parameters(element, result);
     return result;
 }

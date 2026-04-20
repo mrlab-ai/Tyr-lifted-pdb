@@ -337,6 +337,89 @@ void bind_rpg_ff_heuristic(nb::module_& m, const std::string& name)
              "execution_context"_a);
 }
 
+template<TaskKind Kind>
+void bind_max_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = MaxHeuristic<Kind>;
+
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](std::vector<std::shared_ptr<Heuristic<Kind>>> components) { return T::create(std::move(components)); }), "components"_a);
+}
+
+template<TaskKind Kind>
+void bind_projection_abstraction_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionAbstractionHeuristic<Kind>;
+
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](const ProjectionAbstraction<Kind>& projection) { return T::create(projection); }), "projection"_a);
+}
+
+template<TaskKind Kind>
+void bind_canonical_heuristic(nb::module_& m, const std::string& name)
+{
+    using T = CanonicalHeuristic<Kind>;
+
+    nb::class_<T, Heuristic<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](const ProjectionAbstractionList<Kind>& projections) { return T::create(projections); }), "projections"_a);
+}
+
+template<TaskKind Kind>
+class PyPatternGenerator : public PatternGenerator<Kind>
+{
+public:
+    using Base = PatternGenerator<Kind>;
+
+    NB_TRAMPOLINE(Base, 1);
+
+    /* Trampoline (need one for each virtual function) */
+    PatternCollection generate() override { NB_OVERRIDE_PURE(generate); }
+};
+
+inline void bind_pattern(nb::module_& m, const std::string& name)
+{
+    using T = Pattern;
+
+    nb::class_<T>(m, name.c_str())  //
+        .def(nb::init<formalism::planning::FDRFactViewList<formalism::FluentTag>>(), "facts"_a);
+}
+
+template<TaskKind Kind>
+void bind_projection_abstraction(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionAbstraction<Kind>;
+
+    nb::class_<T>(m, name.c_str());
+}
+
+template<TaskKind Kind>
+void bind_pattern_generator(nb::module_& m, const std::string& name)
+{
+    using T = PatternGenerator<Kind>;
+
+    nb::class_<T, PyPatternGenerator<Kind>>(m, name.c_str())  //
+        .def("generate", &T::generate);
+}
+
+template<TaskKind Kind>
+void bind_goal_pattern_generator(nb::module_& m, const std::string& name)
+{
+    using T = GoalPatternGenerator<Kind>;
+
+    nb::class_<T, PatternGenerator<Kind>>(m, name.c_str())  //
+        .def(nb::new_([](std::shared_ptr<const Task<Kind>> task) { return T::create(std::move(task)); }), "task"_a);
+}
+
+template<TaskKind Kind>
+void bind_projection_generator(nb::module_& m, const std::string& name)
+{
+    using T = ProjectionGenerator<Kind>;
+
+    nb::class_<T>(m, name.c_str())  //
+        .def(nb::init<std::shared_ptr<const Task<Kind>>, PatternCollection>(), "task"_a, "patterns"_a)
+        .def("generate", &T::generate);
+}
+
 }
 
 /**
@@ -365,6 +448,8 @@ void bind_module_definitions(nb::module_& m)
      */
 
     nb::class_<Statistics>(m, "Statistics");
+
+    bind_pattern(m, "Pattern");
 }
 
 void bind_ground_module_definitions(nb::module_& m)
@@ -390,6 +475,14 @@ void bind_ground_module_definitions(nb::module_& m)
     bind_heuristic<GroundTag>(m, "Heuristic");
     bind_blind_heuristic<GroundTag>(m, "BlindHeuristic");
     bind_goal_count_heuristic<GroundTag>(m, "GoalCountHeuristic");
+    bind_max_heuristic<GroundTag>(m, "MaxHeuristic");
+    bind_projection_abstraction_heuristic<GroundTag>(m, "ProjectionAbstractionHeuristic");
+    bind_canonical_heuristic<GroundTag>(m, "CanonicalHeuristic");
+
+    bind_pattern_generator<GroundTag>(m, "PatternGenerator");
+    bind_goal_pattern_generator<GroundTag>(m, "GoalPatternGenerator");
+    bind_projection_abstraction<GroundTag>(m, "ProjectionAbstraction");
+    bind_vector<ProjectionAbstractionList<GroundTag>>(m, "ProjectionAbstractionList");
 }
 
 void bind_lifted_module_definitions(nb::module_& m)
@@ -450,6 +543,15 @@ should not be used further.
     bind_rpg_add_heuristic<LiftedTag>(m, "AddRPGHeuristic");
     bind_rpg_ff_heuristic<LiftedTag>(m, "FFRPGHeuristic");
     bind_goal_count_heuristic<LiftedTag>(m, "GoalCountHeuristic");
+    bind_max_heuristic<LiftedTag>(m, "MaxHeuristic");
+    bind_projection_abstraction_heuristic<LiftedTag>(m, "ProjectionAbstractionHeuristic");
+    bind_canonical_heuristic<LiftedTag>(m, "CanonicalHeuristic");
+
+    bind_pattern_generator<LiftedTag>(m, "PatternGenerator");
+    bind_goal_pattern_generator<LiftedTag>(m, "GoalPatternGenerator");
+    bind_projection_abstraction<LiftedTag>(m, "ProjectionAbstraction");
+    bind_vector<ProjectionAbstractionList<LiftedTag>>(m, "ProjectionAbstractionList");
+    bind_projection_generator<LiftedTag>(m, "ProjectionGenerator");
 }
 
 namespace astar_eager

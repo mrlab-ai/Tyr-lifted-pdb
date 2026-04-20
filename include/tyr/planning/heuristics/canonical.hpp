@@ -1,0 +1,47 @@
+/*
+ * Copyright (C) 2025 Dominik Drexler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#ifndef TYR_PLANNING_HEURISTICS_CANONICAL_HPP_
+#define TYR_PLANNING_HEURISTICS_CANONICAL_HPP_
+
+#include "tyr/planning/abstractions/explicit_projection.hpp"
+#include "tyr/planning/heuristic.hpp"
+
+#include <memory>
+#include <vector>
+
+namespace tyr::planning
+{
+
+template<TaskKind Kind>
+class CanonicalHeuristic : public Heuristic<Kind>
+{
+private:
+    std::vector<std::shared_ptr<Heuristic<Kind>>> m_components;
+    std::vector<std::vector<uint_t>> m_additive_partitions;
+
+public:
+    explicit CanonicalHeuristic(const ProjectionAbstractionList<Kind>& projections);
+
+    static std::shared_ptr<CanonicalHeuristic<Kind>> create(const ProjectionAbstractionList<Kind>& projections);
+
+    float_t evaluate(const StateView<Kind>& state) override;
+};
+
+}
+
+#endif

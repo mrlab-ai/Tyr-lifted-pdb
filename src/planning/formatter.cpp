@@ -29,6 +29,9 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/unification/formatter.hpp"
+#include "tyr/planning/abstractions/explicit_projection.hpp"
+#include "tyr/planning/abstractions/projection_generator.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/ground_task.hpp"
@@ -196,6 +199,55 @@ std::ostream& print(std::ostream& os, const planning::Plan<Kind>& el)
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::LiftedTag>& el);
 template std::ostream& print(std::ostream& os, const planning::Plan<planning::GroundTag>& el);
 
+std::ostream& print(std::ostream& os, const planning::Pattern& el)
+{
+    os << "Pattern(\n";
+    {
+        IndentScope scope(os);
+
+        os << print_indent << "facts = " << el.facts_set << "\n";
+    }
+    os << print_indent << ")";
+
+    return os;
+}
+
+template<planning::TaskKind Kind>
+std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Kind>& el)
+{
+    os << "digraph {\n";
+
+    const auto& vertices = el.get_forward().vertices();
+    const auto& transitions = el.get_forward().transitions();
+
+    for (const auto& vertex : vertices)
+        fmt::print(os, "n{} [label=\"{}\"];\n", to_string(vertex.get_index()), to_string(vertex));
+
+    auto grouped_labels = std::vector<std::vector<std::vector<std::string>>>(vertices.size(), std::vector<std::vector<std::string>>(vertices.size()));
+    for (const auto& transition : transitions)
+    {
+        const auto src = transition.src;
+        const auto dst = transition.dst;
+        grouped_labels[src][dst].push_back(to_string(transition.projected_action.get_name()) + " | " + to_string(transition.substitution));
+    }
+
+    for (uint_t vi = 0; vi < vertices.size(); ++vi)
+    {
+        for (uint_t vj = 0; vj < vertices.size(); ++vj)
+        {
+            if (!grouped_labels[vi][vj].empty())
+                fmt::print(os, "n{} -> n{} [label=\"{}\\l\"];\n", vi, vj, fmt::join(grouped_labels[vi][vj], "\\l"));
+        }
+    }
+
+    os << "}\n";
+
+    return os;
+}
+
+template std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<planning::LiftedTag>& el);
+template std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<planning::GroundTag>& el);
+
 namespace planning
 {
 
@@ -241,6 +293,17 @@ std::ostream& operator<<(std::ostream& os, const Plan<Kind>& el)
 
 template std::ostream& operator<<(std::ostream& os, const Plan<LiftedTag>& el);
 template std::ostream& operator<<(std::ostream& os, const Plan<GroundTag>& el);
+
+std::ostream& operator<<(std::ostream& os, const Pattern& el) { return tyr::print(os, el); }
+
+template<TaskKind Kind>
+std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<Kind>& el)
+{
+    return tyr::print(os, el);
+}
+
+template std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<LiftedTag>& el);
+template std::ostream& operator<<(std::ostream& os, const ProjectionAbstraction<GroundTag>& el);
 
 }
 }
