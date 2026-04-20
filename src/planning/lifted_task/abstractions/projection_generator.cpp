@@ -394,7 +394,7 @@ void append_projected_action(fp::ActionView element,
     canonicalize(action);
     const auto new_action = context.destination.get_or_create(action).first;
 
-    const auto [it, inserted] =
+    [[maybe_unused]] const auto [it, inserted] =
         projected_to_original_action.emplace(new_action,
                                              typename ProjectionMapping<LiftedTag>::ProjectedActionInfo { element, std::move(projected_to_original) });
     assert(inserted);
