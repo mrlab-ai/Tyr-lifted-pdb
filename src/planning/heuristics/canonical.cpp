@@ -27,6 +27,7 @@
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
+namespace u = tyr::formalism::unification;
 
 namespace tyr::planning
 {
@@ -42,77 +43,116 @@ auto create_component_heuristics(const ProjectionAbstractionList<Kind>& projecti
     return result;
 }
 
-using Label = std::pair<fp::ActionView, fp::ActionBindingView>;
+using Binding = u::SubstitutionFunction<Index<f::Object>>;
+using LabelsByAction = UnorderedMap<fp::ActionView, std::vector<Binding>>;
 
-struct LabelHash
+template<typename T>
+bool substitutions_equal_exact(const u::SubstitutionFunction<T>& lhs, const u::SubstitutionFunction<T>& rhs)
 {
-    size_t operator()(const Label& label) const noexcept
-    {
-        size_t seed = 0;
-        hash_combine(seed, label.first);
-        const auto objects = label.second.get_objects();
-        for (const auto object : objects)
-            hash_combine(seed, object);
-        return seed;
-    }
-};
+    if (lhs.parameters() != rhs.parameters())
+        return false;
 
-struct LabelEqualTo
-{
-    bool operator()(const Label& lhs, const Label& rhs) const noexcept
+    for (const auto p : lhs.parameters())
     {
-        if (lhs.first != rhs.first)
+        if (lhs[p] != rhs[p])
             return false;
-
-        const auto lhs_objects = lhs.second.get_objects();
-        const auto rhs_objects = rhs.second.get_objects();
-        assert(lhs_objects.size() == rhs_objects.size());
-
-        return std::equal(lhs_objects.begin(), lhs_objects.end(), rhs_objects.begin());
     }
-};
 
-using LabelSet = gtl::flat_hash_set<Label, LabelHash, LabelEqualTo>;
+    return true;
+}
+
+template<typename T>
+bool substitutions_compatible(const u::SubstitutionFunction<T>& lhs, const u::SubstitutionFunction<T>& rhs)
+{
+    for (const auto p : lhs.parameters())
+    {
+        const auto* lhs_slot = lhs.try_get(p);
+        const auto* rhs_slot = rhs.try_get(p);
+
+        if (lhs_slot == nullptr || rhs_slot == nullptr)
+            continue;
+
+        if (!lhs_slot->has_value() || !rhs_slot->has_value())
+            continue;
+
+        if (**lhs_slot != **rhs_slot)
+            return false;
+    }
+
+    return true;
+}
+
+template<typename T>
+void push_unique_exact(std::vector<u::SubstitutionFunction<T>>& vec, const u::SubstitutionFunction<T>& sigma)
+{
+    if (std::none_of(vec.begin(), vec.end(), [&](const auto& other) { return substitutions_equal_exact(other, sigma); }))
+    {
+        vec.push_back(sigma);
+    }
+}
+
+template<TaskKind Kind>
+auto collect_labels(const ProjectionAbstractionList<Kind>& projections)
+{
+    auto result = std::vector<LabelsByAction> {};
+    result.reserve(projections.size());
+
+    for (const auto& projection : projections)
+    {
+        auto labels = LabelsByAction {};
+
+        const auto& changing = projection.state_changing_transitions();
+        for (auto t = changing.find_first(); t != boost::dynamic_bitset<>::npos; t = changing.find_next(t))
+        {
+            const auto& transition = projection.transitions()[t];
+            push_unique_exact(labels[transition.original_action], transition.substitution);
+        }
+
+        result.push_back(std::move(labels));
+    }
+
+    return result;
+}
+
+bool labels_overlap(const LabelsByAction& lhs, const LabelsByAction& rhs)
+{
+    for (const auto& [action, lhs_bindings] : lhs)
+    {
+        const auto it = rhs.find(action);
+        if (it == rhs.end())
+            continue;
+
+        const auto& rhs_bindings = it->second;
+
+        for (const auto& sigma_l : lhs_bindings)
+        {
+            for (const auto& sigma_r : rhs_bindings)
+            {
+                if (substitutions_compatible(sigma_l, sigma_r))
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 template<TaskKind Kind>
 auto create_additivity_graph(const ProjectionAbstractionList<Kind>& projections)
 {
     const auto k = projections.size();
-
-    auto label_sets = std::vector<LabelSet> {};
-    label_sets.reserve(k);
-    for (const auto& projection : projections)
-    {
-        auto label_set = LabelSet {};
-
-        const auto& changing = projection.state_changing_transitions();
-        const auto& mapping = projection.get_mapping();
-
-        for (auto t = changing.find_first(); t != boost::dynamic_bitset<>::npos; t = changing.find_next(t))
-        {
-            const auto transition = projection.transitions()[t];
-
-            // Original action (before projection) + projected ground action binding
-            // label_set.emplace(mapping.get_original_action(transition.label.get_action()), transition.label.get_row());
-        }
-
-        label_sets.push_back(std::move(label_set));
-    }
+    const auto labels = collect_labels(projections);
 
     // Initialize empty dense graph with k vertices.
     auto graph = graphs::bron_kerbosch::Graph(k);
 
     for (uint_t i = 0; i < k; ++i)
     {
-        const auto& li = label_sets[i];
-
         for (uint_t j = i + 1; j < k; ++j)
         {
-            const auto& lj = label_sets[j];
+            const bool overlaps = labels_overlap(labels[i], labels[j]);
 
-            bool intersects = std::any_of(li.begin(), li.end(), [&](const auto& x) { return lj.contains(x); });
-
-            if (!intersects)
+            if (!overlaps)
             {
                 graph.matrix[i].set(j);
                 graph.matrix[j].set(i);

@@ -38,9 +38,16 @@ namespace tyr::planning
 
 struct Transition
 {
-    // TODO: get rid of actions.
+    // The projected action is still useful for executing inside the projected task.
     formalism::planning::ActionView projected_action;
+
+    // The original action is required for cross-projection label comparison.
+    formalism::planning::ActionView original_action;
+
+    // Substitution over the original action parameters.
+    // Unbound parameters represent "any".
     formalism::unification::SubstitutionFunction<Index<formalism::Object>> substitution;
+
     uint_t src;
     uint_t dst;
 };
@@ -51,13 +58,15 @@ template<TaskKind Kind>
 class ProjectionMapping
 {
 public:
-    using ActionMapping = UnorderedMap<formalism::planning::ActionView, formalism::planning::ActionView>;
-
-    explicit ProjectionMapping(Pattern pattern, ActionMapping projected_to_original_action) :
-        m_pattern(std::move(pattern)),
-        m_projected_to_original_action(std::move(projected_to_original_action))
+    struct ProjectedActionInfo
     {
-    }
+        formalism::planning::ActionView original_action;
+        std::vector<formalism::ParameterIndex> projected_to_original;
+    };
+
+    using ActionMapping = UnorderedMap<formalism::planning::ActionView, ProjectedActionInfo>;
+
+    explicit ProjectionMapping(Pattern pattern) : m_pattern(std::move(pattern)) {}
 
     uint_t map_state(const StateView<Kind>& state) const noexcept
     {
@@ -75,14 +84,8 @@ public:
         return r;
     }
 
-    formalism::planning::ActionView get_original_action(formalism::planning::ActionView projected_action) const noexcept
-    {
-        return m_projected_to_original_action.at(projected_action);
-    }
-
 private:
     Pattern m_pattern;
-    ActionMapping m_projected_to_original_action;
 };
 
 template<TaskKind Kind>

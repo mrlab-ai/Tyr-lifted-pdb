@@ -376,15 +376,13 @@ void append_projected_action(fp::ActionView element,
     auto& action = *action_ptr;
     action.clear();
 
-    // TODO: decide which variables to keep.
-
     auto variable_remapping = compute_variable_remapping(element, pattern);
 
-    // std::cout << pattern << std::endl;
-
-    // std::cout << element << std::endl;
-
-    // std::cout << variable_remapping << std::endl;
+    // Invert original -> projected to projected -> original so that transition
+    // labels can later be lifted back to the original action parameter space.
+    auto projected_to_original = std::vector<f::ParameterIndex>(variable_remapping.size());
+    for (const auto& [original_p, projected_p] : variable_remapping)
+        projected_to_original[uint_t(projected_p)] = original_p;
 
     action.name = element.get_name();
     project_variables(element.get_variables(), uint_t(0), variable_remapping, action.variables, context);
@@ -395,9 +393,11 @@ void append_projected_action(fp::ActionView element,
 
     canonicalize(action);
     const auto new_action = context.destination.get_or_create(action).first;
-    projected_to_original_action.emplace(new_action, element);
 
-    // std::cout << new_action << std::endl;
+    const auto [it, inserted] =
+        projected_to_original_action.emplace(new_action,
+                                             typename ProjectionMapping<LiftedTag>::ProjectedActionInfo { element, std::move(projected_to_original) });
+    assert(inserted);
 
     ref_projected_actions.push_back(new_action.get_index());
 }
@@ -507,6 +507,9 @@ auto create_abstract_states(const Pattern& pattern, Task<LiftedTag>& task, State
     return std::make_pair(std::move(astates), std::move(goal_vertices));
 }
 
+namespace
+{
+
 bool is_ground(const Data<f::Term>& term) { return u::is_object(term); }
 
 template<f::FactKind T>
@@ -565,6 +568,27 @@ std::optional<u::SubstitutionFunction<Index<f::Object>>> to_object_substitution(
             return std::nullopt;
 
         [[maybe_unused]] const auto inserted = result.assign(parameter, u::get_object(term));
+        assert(inserted);
+    }
+
+    return result;
+}
+
+u::SubstitutionFunction<Index<f::Object>> lift_substitution_to_original(const u::SubstitutionFunction<Index<f::Object>>& projected_sigma,
+                                                                        size_t original_arity,
+                                                                        const std::vector<f::ParameterIndex>& projected_to_original)
+{
+    auto result = u::SubstitutionFunction<Index<f::Object>>::from_range(f::ParameterIndex { 0 }, original_arity);
+
+    for (uint_t projected_i = 0; projected_i < projected_to_original.size(); ++projected_i)
+    {
+        const auto projected_p = f::ParameterIndex { projected_i };
+
+        if (!projected_sigma.contains_parameter(projected_p) || !projected_sigma.is_bound(projected_p))
+            continue;
+
+        const auto original_p = projected_to_original[projected_i];
+        [[maybe_unused]] const auto inserted = result.assign(original_p, *projected_sigma[projected_p]);
         assert(inserted);
     }
 
@@ -982,6 +1006,8 @@ void for_each_unifier(fp::ActionView action,
                       });
 }
 
+}  // namespace
+
 auto create_abstract_state_changing_transitions(const std::vector<StateView<LiftedTag>>& astates,
                                                 const Pattern& pattern,
                                                 const ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
@@ -1004,20 +1030,23 @@ auto create_abstract_state_changing_transitions(const std::vector<StateView<Lift
 
             const auto& astate_j = astates[j];
 
-            for (const auto& [projected_action, original_action] : projected_to_original_action)
+            for (const auto& [projected_action, info] : projected_to_original_action)
             {
                 for_each_unifier(projected_action,
                                  astate_i,
                                  astate_j,
                                  task,
                                  pattern,
-                                 [&](const u::SubstitutionFunction<Index<f::Object>>& sigma)
+                                 [&](const u::SubstitutionFunction<Index<f::Object>>& sigma_projected)
                                  {
+                                     const auto sigma_original =
+                                         lift_substitution_to_original(sigma_projected, info.original_action.get_arity(), info.projected_to_original);
+
                                      const auto t = uint_t(transitions.size());
                                      const auto src = uint_t(astate_i.get_index());
                                      const auto dst = uint_t(astate_j.get_index());
 
-                                     transitions.emplace_back(projected_action, sigma, src, dst);
+                                     transitions.push_back(Transition { projected_action, info.original_action, sigma_original, src, dst });
                                      adj_lists[src].push_back(t);
                                  });
             }
@@ -1040,9 +1069,6 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
     auto [projected_formalism_task, projected_to_original_action] =
         create_projected_formalism_task(original_task.get_formalism_task(), pattern, destination, factory, fdr_context);
 
-    // std::cout << projected_formalism_task.get_task().get_domain() << std::endl;
-    // std::cout << projected_formalism_task.get_task() << std::endl;
-
     auto projected_task = LiftedTask::create(projected_formalism_task);
 
     // Note: Each projection has its own StateRepository.
@@ -1054,13 +1080,12 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
     auto [transitions, adj_lists] =
         create_abstract_state_changing_transitions(astates, pattern, projected_to_original_action, *projected_task, successor_generator, *fdr_context);
 
-    auto result = ProjectionAbstraction(
-        std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern, projected_to_original_action),
-                                                                        std::move(state_repository),
-                                                                        std::move(astates),
-                                                                        std::move(transitions),
-                                                                        std::move(adj_lists),
-                                                                        std::move(goal_vertices)));
+    auto result = ProjectionAbstraction(std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern),
+                                                                                                        std::move(state_repository),
+                                                                                                        std::move(astates),
+                                                                                                        std::move(transitions),
+                                                                                                        std::move(adj_lists),
+                                                                                                        std::move(goal_vertices)));
 
     std::cout << result << std::endl;
 
