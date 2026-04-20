@@ -46,6 +46,7 @@ std::ostream& print(std::ostream& os, const formalism::unification::Substitution
             for (const auto& parameter : el.parameters())
                 os << print_indent << parameter << " -> " << (el.is_bound(parameter) ? to_string(*el[parameter]) : "unbound") << "\n";
         }
+        os << print_indent << "]\n";
     }
     os << print_indent << ")";
 

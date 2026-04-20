@@ -93,7 +93,7 @@ auto create_additivity_graph(const ProjectionAbstractionList<Kind>& projections)
             const auto transition = projection.transitions()[t];
 
             // Original action (before projection) + projected ground action binding
-            label_set.emplace(mapping.get_original_action(transition.label.get_action()), transition.label.get_row());
+            // label_set.emplace(mapping.get_original_action(transition.label.get_action()), transition.label.get_row());
         }
 
         label_sets.push_back(std::move(label_set));

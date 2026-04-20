@@ -253,42 +253,26 @@ struct EqualTo<BitsetSpan<Block>>
     bool operator()(const BitsetSpan<Block>& lhs, const BitsetSpan<Block>& rhs) const noexcept { return lhs == rhs; }
 };
 
-/// @brief EqualTo specialization for an `IdentifiableMembersView`
-/// that pairwise compares all members.
-/// @tparam ...Ts are the types of all members.
 template<Identifiable T>
 struct EqualTo<T>
 {
-    using is_transparent = void;  // <-- enables hetero lookup
+    using is_transparent = void;
+    using Members = std::remove_cvref_t<decltype(std::declval<T>().identifying_members())>;
 
-    using MembersTupleType = decltype(std::declval<T>().identifying_members());
+    bool operator()(const T& lhs, const T& rhs) const noexcept { return EqualTo<Members> {}(lhs.identifying_members(), rhs.identifying_members()); }
 
-    bool operator()(const T& lhs, const T& rhs) const noexcept
+    template<typename U>
+    bool operator()(const T& lhs, const U& rhs) const noexcept
+        requires requires { EqualTo<Members> {}(lhs.identifying_members(), rhs); }
     {
-        return EqualTo<std::remove_cvref_t<MembersTupleType>> {}(lhs.identifying_members(), rhs.identifying_members());
+        return EqualTo<Members> {}(lhs.identifying_members(), rhs);
     }
 
-    // Mixed overloads required by Abseil: (T, view) and (view, T)
-    template<class U>
-        requires std::same_as<std::remove_cvref_t<U>, MembersTupleType>
-    bool operator()(const T& a, const U& v) const noexcept
+    template<typename U>
+    bool operator()(const U& lhs, const T& rhs) const noexcept
+        requires requires { EqualTo<Members> {}(lhs, rhs.identifying_members()); }
     {
-        return EqualTo<std::remove_cvref_t<MembersTupleType>> {}(a.identifying_members(), v);
-    }
-
-    template<class U>
-        requires std::same_as<std::remove_cvref_t<U>, MembersTupleType>
-    bool operator()(const U& v, const T& b) const noexcept
-    {
-        return EqualTo<std::remove_cvref_t<MembersTupleType>> {}(v, b.identifying_members());
-    }
-
-    // Optional: view-view compare (handy for testing)
-    template<class U, class V>
-        requires(std::same_as<std::remove_cvref_t<U>, MembersTupleType> && std::same_as<std::remove_cvref_t<V>, MembersTupleType>)
-    bool operator()(const U& u, const V& v) const noexcept
-    {
-        return EqualTo<std::remove_cvref_t<MembersTupleType>> {}(u, v);
+        return EqualTo<Members> {}(lhs, rhs.identifying_members());
     }
 };
 

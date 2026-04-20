@@ -29,6 +29,7 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/unification/formatter.hpp"
 #include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/abstractions/projection_generator.hpp"
 #include "tyr/planning/algorithms/statistics.hpp"
@@ -227,7 +228,7 @@ std::ostream& print(std::ostream& os, const planning::ProjectionAbstraction<Kind
     {
         const auto src = transition.src;
         const auto dst = transition.dst;
-        grouped_labels[src][dst].push_back(to_string(std::make_pair(transition.label, formalism::planning::PlanFormatting())));
+        grouped_labels[src][dst].push_back(to_string(transition.projected_action.get_name()) + " | " + to_string(transition.substitution));
     }
 
     for (uint_t vi = 0; vi < vertices.size(); ++vi)

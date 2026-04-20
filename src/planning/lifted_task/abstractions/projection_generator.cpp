@@ -23,8 +23,8 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/itertools.hpp"
+#include "tyr/common/less.hpp"
 #include "tyr/common/onetbb.hpp"
-#include "tyr/database/database.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
@@ -32,6 +32,7 @@
 #include "tyr/formalism/planning/formatter.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge.hpp"
+#include "tyr/formalism/planning/mutable/mutable.hpp"
 #include "tyr/formalism/planning/planning_task.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/variable_dependency_graph.hpp"
@@ -52,6 +53,7 @@
 
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
+namespace u = tyr::formalism::unification;
 
 namespace tyr::planning
 {
@@ -59,7 +61,7 @@ namespace
 {
 void project_variables(fp::VariableListView elements,
                        uint_t parent_arity,
-                       const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping,
+                       const Map<f::ParameterIndex, f::ParameterIndex>& mapping,
                        IndexList<f::Variable>& ref_projected_variables,
                        fp::MergeContext& context)
 {
@@ -75,7 +77,7 @@ void project_variables(fp::VariableListView elements,
     }
 }
 
-bool should_keep(fp::TermView element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+bool should_keep(fp::TermView element, const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     return visit(
         [&](auto&& arg)
@@ -92,19 +94,19 @@ bool should_keep(fp::TermView element, const UnorderedMap<f::ParameterIndex, f::
         element.get_variant());
 }
 
-bool should_keep(fp::TermListView element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+bool should_keep(fp::TermListView element, const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     return std::all_of(element.begin(), element.end(), [&](const auto& arg) { return should_keep(arg, mapping); });
 }
 
 template<f::FactKind T>
-bool should_keep(fp::AtomView<T> element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+bool should_keep(fp::AtomView<T> element, const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     return should_keep(element.get_terms(), mapping);
 }
 
 template<f::FactKind T>
-bool should_keep(fp::LiteralView<T> element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+bool should_keep(fp::LiteralView<T> element, const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     return should_keep(element.get_atom(), mapping);
 }
@@ -118,7 +120,7 @@ void append_projected_atom(fp::GroundAtomView<T> element, const Pattern& pattern
 
 template<f::FactKind T>
 void append_projected_literal(fp::GroundLiteralView<T> element,
-                              const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping,
+                              const Map<f::ParameterIndex, f::ParameterIndex>& mapping,
                               IndexList<fp::GroundLiteral<T>>& ref_projected_literal,
                               fp::MergeContext& context)
 {
@@ -126,7 +128,7 @@ void append_projected_literal(fp::GroundLiteralView<T> element,
         ref_projected_literal.push_back(fp::merge_p2p(element, context).first.get_index());
 }
 
-auto remap_term(fp::TermView element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+auto remap_term(fp::TermView element, const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     return visit(
         [&](auto&& arg) -> Data<f::Term>
@@ -144,7 +146,7 @@ auto remap_term(fp::TermView element, const UnorderedMap<f::ParameterIndex, f::P
 }
 
 template<f::FactKind T>
-auto merge_projected_atom(fp::AtomView<T> element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping, fp::MergeContext& context)
+auto merge_projected_atom(fp::AtomView<T> element, const Map<f::ParameterIndex, f::ParameterIndex>& mapping, fp::MergeContext& context)
 {
     auto atom_ptr = context.builder.template get_builder<fp::Atom<T>>();
     auto& atom = *atom_ptr;
@@ -159,7 +161,7 @@ auto merge_projected_atom(fp::AtomView<T> element, const UnorderedMap<f::Paramet
 }
 
 template<f::FactKind T>
-auto merge_projected_literal(fp::LiteralView<T> element, const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping, fp::MergeContext& context)
+auto merge_projected_literal(fp::LiteralView<T> element, const Map<f::ParameterIndex, f::ParameterIndex>& mapping, fp::MergeContext& context)
 {
     auto literal_ptr = context.builder.template get_builder<fp::Literal<T>>();
     auto& literal = *literal_ptr;
@@ -174,7 +176,7 @@ auto merge_projected_literal(fp::LiteralView<T> element, const UnorderedMap<f::P
 
 template<f::FactKind T>
 void append_projected_literal(fp::LiteralView<T> element,
-                              const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping,
+                              const Map<f::ParameterIndex, f::ParameterIndex>& mapping,
                               IndexList<fp::Literal<T>>& ref_projected_literal,
                               fp::MergeContext& context)
 {
@@ -217,7 +219,7 @@ auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pat
 auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element,
                                             uint_t parent_arity,
                                             fp::MergeContext& context,
-                                            const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+                                            const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     auto conj_cond_ptr = context.builder.template get_builder<fp::ConjunctiveCondition>();
     auto& conj_cond = *conj_cond_ptr;
@@ -233,9 +235,7 @@ auto create_projected_conjunctive_condition(fp::ConjunctiveConditionView element
     return context.destination.get_or_create(conj_cond);
 }
 
-auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element,
-                                         fp::MergeContext& context,
-                                         const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element, fp::MergeContext& context, const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     auto conj_effect_ptr = context.builder.template get_builder<fp::ConjunctiveEffect>();
     auto& conj_eff = *conj_effect_ptr;
@@ -252,7 +252,7 @@ void append_projected_conditional_effect(fp::ConditionalEffectView element,
                                          uint_t parent_arity,
                                          fp::MergeContext& context,
                                          IndexList<fp::ConditionalEffect>& ref_projected_cond_effect,
-                                         const UnorderedMap<f::ParameterIndex, f::ParameterIndex>& mapping)
+                                         const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
 {
     auto cond_effect_ptr = context.builder.template get_builder<fp::ConditionalEffect>();
     auto& cond_effect = *cond_effect_ptr;
@@ -270,7 +270,7 @@ void append_projected_conditional_effect(fp::ConditionalEffectView element,
  * compute_variable_remapping
  */
 
-void compute_variable_remapping(fp::TermView element, UnorderedMap<f::ParameterIndex, f::ParameterIndex>& result)
+void compute_variable_remapping(fp::TermView element, Map<f::ParameterIndex, f::ParameterIndex>& result)
 {
     visit(
         [&](auto&& arg)
@@ -286,13 +286,13 @@ void compute_variable_remapping(fp::TermView element, UnorderedMap<f::ParameterI
         element.get_variant());
 }
 
-void compute_variable_remapping(fp::TermListView element, UnorderedMap<f::ParameterIndex, f::ParameterIndex>& result)
+void compute_variable_remapping(fp::TermListView element, Map<f::ParameterIndex, f::ParameterIndex>& result)
 {
     for (const auto term : element)
         compute_variable_remapping(term, result);
 }
 
-void compute_variable_remapping(fp::ConjunctiveConditionView element, const Pattern& pattern, UnorderedMap<f::ParameterIndex, f::ParameterIndex>& result)
+void compute_variable_remapping(fp::ConjunctiveConditionView element, const Pattern& pattern, Map<f::ParameterIndex, f::ParameterIndex>& result)
 {
     for (const auto literal : element.get_literals<f::FluentTag>())
     {
@@ -303,7 +303,7 @@ void compute_variable_remapping(fp::ConjunctiveConditionView element, const Patt
     }
 }
 
-void compute_variable_remapping(fp::ConjunctiveEffectView element, const Pattern& pattern, UnorderedMap<f::ParameterIndex, f::ParameterIndex>& result)
+void compute_variable_remapping(fp::ConjunctiveEffectView element, const Pattern& pattern, Map<f::ParameterIndex, f::ParameterIndex>& result)
 {
     for (const auto literal : element.get_literals())
     {
@@ -314,9 +314,9 @@ void compute_variable_remapping(fp::ConjunctiveEffectView element, const Pattern
     }
 }
 
-UnorderedMap<f::ParameterIndex, f::ParameterIndex> compute_variable_remapping(fp::ActionView element, const Pattern& pattern)
+Map<f::ParameterIndex, f::ParameterIndex> compute_variable_remapping(fp::ActionView element, const Pattern& pattern)
 {
-    auto result = UnorderedMap<f::ParameterIndex, f::ParameterIndex> {};
+    auto result = Map<f::ParameterIndex, f::ParameterIndex> {};
 
     // Base case: keep all variable of atoms over predicates in the pattern.
 
@@ -507,36 +507,520 @@ auto create_abstract_states(const Pattern& pattern, Task<LiftedTag>& task, State
     return std::make_pair(std::move(astates), std::move(goal_vertices));
 }
 
-auto create_abstract_transitions(const std::vector<StateView<LiftedTag>>& astates,
-                                 const Pattern& pattern,
-                                 const ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
-                                 Task<LiftedTag>& task,
-                                 SuccessorGenerator<LiftedTag>& successor_generator,
-                                 fp::FDRContext& fdr_context)
+bool is_ground(const Data<f::Term>& term) { return u::is_object(term); }
+
+template<f::FactKind T>
+bool is_ground(const fp::MutableAtom<T>& atom)
+{
+    return std::all_of(atom.terms.begin(), atom.terms.end(), [](const auto& term) { return is_ground(term); });
+}
+
+template<f::FactKind T>
+bool contains_atom(const std::vector<fp::MutableAtom<T>>& atoms, const fp::MutableAtom<T>& atom)
+{
+    return std::find(atoms.begin(), atoms.end(), atom) != atoms.end();
+}
+
+std::vector<fp::MutableAtom<f::FluentTag>> difference_atoms(const std::vector<fp::MutableAtom<f::FluentTag>>& lhs,
+                                                            const std::vector<fp::MutableAtom<f::FluentTag>>& rhs)
+{
+    auto result = std::vector<fp::MutableAtom<f::FluentTag>> {};
+    for (const auto& atom : lhs)
+    {
+        if (!contains_atom(rhs, atom))
+            result.push_back(atom);
+    }
+    return result;
+}
+
+size_t compute_sigma_domain_size(const fp::MutableAction& action)
+{
+    size_t domain_size = action.num_variables;
+
+    for (const auto& ceff : action.effects)
+        domain_size = std::max(domain_size, ceff.num_parent_variables + ceff.num_variables);
+
+    return domain_size;
+}
+
+u::SubstitutionFunction<Data<f::Term>> make_sigma(const fp::MutableAction& action)
+{
+    return u::SubstitutionFunction<Data<f::Term>>::from_range(f::ParameterIndex(0), compute_sigma_domain_size(action));
+}
+
+std::optional<u::SubstitutionFunction<Index<f::Object>>> to_object_substitution(const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                                                                                size_t num_action_parameters)
+{
+    auto result = u::SubstitutionFunction<Index<f::Object>>::from_range(f::ParameterIndex(0), num_action_parameters);
+
+    for (size_t i = 0; i < num_action_parameters; ++i)
+    {
+        const auto parameter = f::ParameterIndex(uint_t(i));
+
+        if (!sigma.contains_parameter(parameter) || !sigma.is_bound(parameter))
+            continue;
+
+        const auto& term = *sigma[parameter];
+        if (!u::is_object(term))
+            return std::nullopt;
+
+        [[maybe_unused]] const auto inserted = result.assign(parameter, u::get_object(term));
+        assert(inserted);
+    }
+
+    return result;
+}
+
+std::vector<fp::MutableAtom<f::StaticTag>> collect_projected_static_atoms(const Task<LiftedTag>& task)
+{
+    auto result = std::vector<fp::MutableAtom<f::StaticTag>> {};
+    result.reserve(task.get_task().get_atoms<f::StaticTag>().size());
+
+    for (const auto atom : task.get_task().get_atoms<f::StaticTag>())
+        result.emplace_back(atom);
+
+    return result;
+}
+
+std::vector<fp::MutableAtom<f::FluentTag>> collect_visible_fluent_atoms(const StateView<LiftedTag>& state, const Pattern& pattern)
+{
+    auto result = std::vector<fp::MutableAtom<f::FluentTag>> {};
+    result.reserve(pattern.facts_set.size());
+
+    for (const auto fact : pattern.facts_set)
+    {
+        if (!state.get_unpacked_state().get(fact.get_variable()).is_none())
+            result.emplace_back(fact.get_atom().value());
+    }
+
+    return result;
+}
+
+std::vector<fp::MutableAtom<f::FluentTag>> collect_pattern_atoms(const Pattern& pattern)
+{
+    auto result = std::vector<fp::MutableAtom<f::FluentTag>> {};
+    result.reserve(pattern.atoms_set.size());
+
+    for (const auto atom : pattern.atoms_set)
+        result.emplace_back(atom);
+
+    return result;
+}
+
+bool is_visible_atom(const fp::MutableAtom<f::FluentTag>& atom, const std::vector<fp::MutableAtom<f::FluentTag>>& visible_atoms)
+{
+    return contains_atom(visible_atoms, atom);
+}
+
+template<f::FactKind T>
+bool literal_holds(const fp::MutableLiteral<T>& lit, const std::vector<fp::MutableAtom<T>>& atoms)
+{
+    assert(is_ground(lit.atom));
+
+    if (lit.polarity)
+        return contains_atom(atoms, lit.atom);
+
+    return !contains_atom(atoms, lit.atom);
+}
+
+template<f::FactKind T>
+std::optional<u::SubstitutionFunction<Data<f::Term>>>
+match_literal_to_atom(const fp::MutableLiteral<T>& lit, const fp::MutableAtom<T>& atom, u::SubstitutionFunction<Data<f::Term>> sigma)
+{
+    const auto target_lit = fp::MutableLiteral<T>(atom, lit.polarity);
+    return u::match(lit, target_lit, std::move(sigma));
+}
+
+bool same_atom_set(const std::vector<fp::MutableAtom<f::FluentTag>>& lhs, const std::vector<fp::MutableAtom<f::FluentTag>>& rhs)
+{
+    if (lhs.size() != rhs.size())
+        return false;
+
+    return std::all_of(lhs.begin(), lhs.end(), [&](const auto& atom) { return contains_atom(rhs, atom); });
+}
+
+void push_unique(std::vector<fp::MutableAtom<f::FluentTag>>& atoms, const fp::MutableAtom<f::FluentTag>& atom)
+{
+    if (!contains_atom(atoms, atom))
+        atoms.push_back(atom);
+}
+
+/**
+ * Static literal satisfaction
+ *
+ * Enumerates all substitutions extending `sigma` that satisfy the static literals.
+ */
+template<typename Callback>
+void satisfy_static_literals_rec(const fp::MutableLiteralList<f::StaticTag>& static_literals,
+                                 size_t pos,
+                                 const std::vector<fp::MutableAtom<f::StaticTag>>& static_atoms,
+                                 const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                                 Callback&& callback)
+{
+    if (pos == static_literals.size())
+    {
+        callback(sigma);
+        return;
+    }
+
+    const auto lit = u::apply_substitution_fixpoint(static_literals[pos], sigma);
+
+    if (is_ground(lit.atom))
+    {
+        if (literal_holds(lit, static_atoms))
+            satisfy_static_literals_rec(static_literals, pos + 1, static_atoms, sigma, std::forward<Callback>(callback));
+
+        return;
+    }
+
+    // Negative nonground static literals are not handled existentially here.
+    if (!lit.polarity)
+        return;
+
+    for (const auto& atom : static_atoms)
+    {
+        auto sigma2 = sigma;
+        const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
+        if (!matched)
+            continue;
+
+        satisfy_static_literals_rec(static_literals, pos + 1, static_atoms, *matched, std::forward<Callback>(callback));
+    }
+}
+
+/**
+ * Visible fluent source condition check
+ *
+ * Only pattern-visible fluent atoms are checked exactly against the source abstract state.
+ * Hidden fluent literals remain existential and are ignored here.
+ */
+bool visible_fluent_literals_hold_in_src(const fp::MutableLiteralList<f::FluentTag>& fluent_literals,
+                                         const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                                         const std::vector<fp::MutableAtom<f::FluentTag>>& visible_pattern_atoms,
+                                         const u::SubstitutionFunction<Data<f::Term>>& sigma)
+{
+    for (const auto& lit0 : fluent_literals)
+    {
+        const auto lit = u::apply_substitution_fixpoint(lit0, sigma);
+
+        if (!is_ground(lit.atom))
+            continue;  // hidden existential support
+
+        if (!is_visible_atom(lit.atom, visible_pattern_atoms))
+            continue;  // not part of the abstraction
+
+        if (!literal_holds(lit, src_atoms))
+            return false;
+    }
+
+    return true;
+}
+
+/**
+ * Enumerate all substitutions extending `sigma` that satisfy a conjunctive condition:
+ * - static literals are matched exactly/existentially against projected static atoms
+ * - visible fluent literals are checked exactly against the source abstract state
+ * - hidden fluent literals are ignored here
+ */
+template<typename Callback>
+void satisfy_condition_bindings(const fp::MutableConjunctiveCondition& condition,
+                                const std::vector<fp::MutableAtom<f::StaticTag>>& static_atoms,
+                                const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                                const std::vector<fp::MutableAtom<f::FluentTag>>& visible_pattern_atoms,
+                                const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                                Callback&& callback)
+{
+    satisfy_static_literals_rec(condition.static_literals,
+                                0,
+                                static_atoms,
+                                sigma,
+                                [&](const u::SubstitutionFunction<Data<f::Term>>& sigma2)
+                                {
+                                    if (!visible_fluent_literals_hold_in_src(condition.fluent_literals, src_atoms, visible_pattern_atoms, sigma2))
+                                        return;
+
+                                    callback(sigma2);
+                                });
+}
+
+std::optional<u::SubstitutionFunction<Data<f::Term>>> match_effect_literal(const fp::MutableLiteral<f::FluentTag>& effect_lit,
+                                                                           const fp::MutableAtom<f::FluentTag>& target_atom,
+                                                                           bool target_polarity,
+                                                                           u::SubstitutionFunction<Data<f::Term>> sigma)
+{
+    const auto target_lit = fp::MutableLiteral<f::FluentTag>(target_atom, target_polarity);
+    return u::match(effect_lit, target_lit, std::move(sigma));
+}
+
+/**
+ * Enumerate all effect-driven partial substitutions that explain the added/deleted visible atoms.
+ */
+template<typename Callback>
+void unify_changes_rec(const fp::MutableAction& action,
+                       const std::vector<fp::MutableAtom<f::FluentTag>>& added,
+                       const std::vector<fp::MutableAtom<f::FluentTag>>& deleted,
+                       size_t add_pos,
+                       size_t del_pos,
+                       const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                       Callback&& callback)
+{
+    if (add_pos == added.size() && del_pos == deleted.size())
+    {
+        callback(sigma);
+        return;
+    }
+
+    if (add_pos < added.size())
+    {
+        const auto& target = added[add_pos];
+
+        for (const auto& ceff : action.effects)
+        {
+            for (const auto& lit : ceff.effect.literals)
+            {
+                if (!lit.polarity)
+                    continue;
+
+                auto sigma2 = sigma;
+                const auto matched = match_effect_literal(lit, target, true, std::move(sigma2));
+                if (!matched)
+                    continue;
+
+                unify_changes_rec(action, added, deleted, add_pos + 1, del_pos, *matched, std::forward<Callback>(callback));
+            }
+        }
+
+        return;
+    }
+
+    const auto& target = deleted[del_pos];
+
+    for (const auto& ceff : action.effects)
+    {
+        for (const auto& lit : ceff.effect.literals)
+        {
+            if (lit.polarity)
+                continue;
+
+            auto sigma2 = sigma;
+            const auto matched = match_effect_literal(lit, target, false, std::move(sigma2));
+            if (!matched)
+                continue;
+
+            unify_changes_rec(action, added, deleted, add_pos, del_pos + 1, *matched, std::forward<Callback>(callback));
+        }
+    }
+}
+
+/**
+ * Enumerate all completed substitutions whose visible firing effects explain exactly the abstract difference.
+ *
+ * We first satisfy the action condition, then recursively consider all conditional effects.
+ * Effects that do not contribute visible pattern atoms may be skipped.
+ */
+template<typename Callback>
+void enumerate_verified_bindings_rec(const fp::MutableAction& action,
+                                     size_t effect_pos,
+                                     const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                                     const std::vector<fp::MutableAtom<f::FluentTag>>& dst_atoms,
+                                     const std::vector<fp::MutableAtom<f::FluentTag>>& added,
+                                     const std::vector<fp::MutableAtom<f::FluentTag>>& deleted,
+                                     const std::vector<fp::MutableAtom<f::FluentTag>>& visible_pattern_atoms,
+                                     const std::vector<fp::MutableAtom<f::StaticTag>>& static_atoms,
+                                     const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                                     const std::vector<fp::MutableAtom<f::FluentTag>>& produced_add,
+                                     const std::vector<fp::MutableAtom<f::FluentTag>>& produced_del,
+                                     Callback&& callback)
+{
+    if (effect_pos == action.effects.size())
+    {
+        if (!same_atom_set(produced_add, added))
+            return;
+
+        if (!same_atom_set(produced_del, deleted))
+            return;
+
+        if (produced_add.empty() && produced_del.empty())
+            return;
+
+        callback(sigma);
+        return;
+    }
+
+    const auto& ceff = action.effects[effect_pos];
+
+    // Option 1: skip this effect (either it does not fire, or it only has hidden consequences).
+    enumerate_verified_bindings_rec(action,
+                                    effect_pos + 1,
+                                    src_atoms,
+                                    dst_atoms,
+                                    added,
+                                    deleted,
+                                    visible_pattern_atoms,
+                                    static_atoms,
+                                    sigma,
+                                    produced_add,
+                                    produced_del,
+                                    std::forward<Callback>(callback));
+
+    // Option 2: satisfy the effect condition and realize its visible consequences.
+    satisfy_condition_bindings(ceff.condition,
+                               static_atoms,
+                               src_atoms,
+                               visible_pattern_atoms,
+                               sigma,
+                               [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_eff)
+                               {
+                                   const auto grounded_ceff = u::apply_substitution_fixpoint(ceff, sigma_eff);
+
+                                   auto produced_add2 = produced_add;
+                                   auto produced_del2 = produced_del;
+
+                                   for (const auto& lit : grounded_ceff.effect.literals)
+                                   {
+                                       if (!is_ground(lit.atom))
+                                           return;
+
+                                       if (!is_visible_atom(lit.atom, visible_pattern_atoms))
+                                           continue;
+
+                                       if (lit.polarity)
+                                       {
+                                           if (!contains_atom(dst_atoms, lit.atom))
+                                               return;
+
+                                           push_unique(produced_add2, lit.atom);
+                                       }
+                                       else
+                                       {
+                                           if (contains_atom(dst_atoms, lit.atom))
+                                               return;
+
+                                           push_unique(produced_del2, lit.atom);
+                                       }
+                                   }
+
+                                   enumerate_verified_bindings_rec(action,
+                                                                   effect_pos + 1,
+                                                                   src_atoms,
+                                                                   dst_atoms,
+                                                                   added,
+                                                                   deleted,
+                                                                   visible_pattern_atoms,
+                                                                   static_atoms,
+                                                                   sigma_eff,
+                                                                   produced_add2,
+                                                                   produced_del2,
+                                                                   callback);
+                               });
+}
+
+/**
+ * Enumerate all object substitutions for `action` that realize `src -> dst` over the pattern.
+ */
+template<typename Callback>
+void for_each_unifier(fp::ActionView action,
+                      const StateView<LiftedTag>& src,
+                      const StateView<LiftedTag>& dst,
+                      const Task<LiftedTag>& task,
+                      const Pattern& pattern,
+                      Callback&& callback)
+{
+    const auto mutable_action = fp::MutableAction(action);
+
+    // Pattern-visible difference only.
+    const auto src_atoms = collect_visible_fluent_atoms(src, pattern);
+    const auto dst_atoms = collect_visible_fluent_atoms(dst, pattern);
+    const auto added = difference_atoms(dst_atoms, src_atoms);
+    const auto deleted = difference_atoms(src_atoms, dst_atoms);
+
+    const auto visible_pattern_atoms = collect_pattern_atoms(pattern);
+    const auto static_atoms = collect_projected_static_atoms(task);
+
+    auto seen = std::vector<u::SubstitutionFunction<Index<f::Object>>> {};
+
+    unify_changes_rec(mutable_action,
+                      added,
+                      deleted,
+                      0,
+                      0,
+                      make_sigma(mutable_action),
+                      [&](const u::SubstitutionFunction<Data<f::Term>>& sigma0)
+                      {
+                          satisfy_condition_bindings(mutable_action.condition,
+                                                     static_atoms,
+                                                     src_atoms,
+                                                     visible_pattern_atoms,
+                                                     sigma0,
+                                                     [&](const u::SubstitutionFunction<Data<f::Term>>& sigma1)
+                                                     {
+                                                         enumerate_verified_bindings_rec(mutable_action,
+                                                                                         0,
+                                                                                         src_atoms,
+                                                                                         dst_atoms,
+                                                                                         added,
+                                                                                         deleted,
+                                                                                         visible_pattern_atoms,
+                                                                                         static_atoms,
+                                                                                         sigma1,
+                                                                                         {},
+                                                                                         {},
+                                                                                         [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_final)
+                                                                                         {
+                                                                                             const auto obj_sigma =
+                                                                                                 to_object_substitution(sigma_final, action.get_arity());
+                                                                                             if (!obj_sigma)
+                                                                                                 return;
+
+                                                                                             if (std::find(seen.begin(), seen.end(), *obj_sigma) != seen.end())
+                                                                                                 return;
+
+                                                                                             seen.push_back(*obj_sigma);
+                                                                                             callback(*obj_sigma);
+                                                                                         });
+                                                     });
+                      });
+}
+
+auto create_abstract_state_changing_transitions(const std::vector<StateView<LiftedTag>>& astates,
+                                                const Pattern& pattern,
+                                                const ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
+                                                Task<LiftedTag>& task,
+                                                SuccessorGenerator<LiftedTag>& successor_generator,
+                                                fp::FDRContext& fdr_context)
 {
     auto labeled_succ_nodes = std::vector<LabeledNode<LiftedTag>> {};
     auto transitions = TransitionList {};
     auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
-    auto care_set = fp::CareSet {};
-    for (const auto& fact : pattern.facts)
-        care_set.predicate_bindings.insert(fact.get_atom().value().get_row());
 
-    for (const auto& astate : astates)
+    for (size_t i = 0; i < astates.size(); ++i)
     {
-        auto& adj_row = adj_lists[uint_t(astate.get_index())];
-        auto anode = Node<LiftedTag>(astate, float_t { 0 });
+        const auto& astate_i = astates[i];
 
-        successor_generator.get_labeled_successor_nodes(anode, care_set, labeled_succ_nodes);
-
-        for (const auto& labeled_succ_node : labeled_succ_nodes)
+        for (size_t j = 0; j < astates.size(); ++j)
         {
-            assert(uint_t(labeled_succ_node.node.get_state().get_index()) < astates.size());
-            const auto t = transitions.size();
-            const auto src = uint_t(astate.get_index());
-            const auto dst = uint_t(labeled_succ_node.node.get_state().get_index());
+            if (i == j)
+                continue;
 
-            transitions.emplace_back(labeled_succ_node.label, src, dst);
-            adj_row.push_back(t);
+            const auto& astate_j = astates[j];
+
+            for (const auto& [projected_action, original_action] : projected_to_original_action)
+            {
+                for_each_unifier(projected_action,
+                                 astate_i,
+                                 astate_j,
+                                 task,
+                                 pattern,
+                                 [&](const u::SubstitutionFunction<Index<f::Object>>& sigma)
+                                 {
+                                     const auto t = uint_t(transitions.size());
+                                     const auto src = uint_t(astate_i.get_index());
+                                     const auto dst = uint_t(astate_j.get_index());
+
+                                     transitions.emplace_back(projected_action, sigma, src, dst);
+                                     adj_lists[src].push_back(t);
+                                 });
+            }
         }
     }
 
@@ -564,20 +1048,21 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
     // Note: Each projection has its own StateRepository.
     auto execution_context = ExecutionContext::create(1);
     auto successor_generator = SuccessorGenerator<LiftedTag>(projected_task, execution_context);
-    auto& state_repository = successor_generator.get_state_repository();
+    auto state_repository = successor_generator.get_state_repository();
 
     auto [astates, goal_vertices] = create_abstract_states(pattern, *projected_task, *state_repository);
     auto [transitions, adj_lists] =
-        create_abstract_transitions(astates, pattern, projected_to_original_action, *projected_task, successor_generator, *fdr_context);
+        create_abstract_state_changing_transitions(astates, pattern, projected_to_original_action, *projected_task, successor_generator, *fdr_context);
 
     auto result = ProjectionAbstraction(
-        std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern, std::move(projected_to_original_action)),
+        std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern, projected_to_original_action),
+                                                                        std::move(state_repository),
                                                                         std::move(astates),
                                                                         std::move(transitions),
                                                                         std::move(adj_lists),
                                                                         std::move(goal_vertices)));
 
-    // std::cout << result << std::endl;
+    std::cout << result << std::endl;
 
     return result;
 }

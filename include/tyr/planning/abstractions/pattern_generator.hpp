@@ -33,14 +33,16 @@ struct Pattern
     formalism::planning::FDRFactViewList<formalism::FluentTag> facts;
 
     UnorderedSet<formalism::planning::FDRFactView<formalism::FluentTag>> facts_set;
+    UnorderedSet<formalism::planning::GroundAtomView<formalism::FluentTag>> atoms_set;
     UnorderedSet<formalism::planning::PredicateView<formalism::FluentTag>> predicates_set;
 
-    explicit Pattern(formalism::planning::FDRFactViewList<formalism::FluentTag> facts_) : facts(facts_), facts_set(), predicates_set()
+    explicit Pattern(formalism::planning::FDRFactViewList<formalism::FluentTag> facts_) : facts(facts_), facts_set(), atoms_set(), predicates_set()
     {
         for (const auto fact : facts_)
         {
             assert(fact.has_value());
             facts_set.insert(fact);
+            atoms_set.insert(fact.get_atom().value());
             predicates_set.insert(fact.get_atom()->get_predicate());
         }
     }

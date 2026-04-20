@@ -22,6 +22,7 @@
 #include "tyr/common/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
 #include "tyr/formalism/planning/views.hpp"
+#include "tyr/formalism/unification/substitution.hpp"
 #include "tyr/graphs/concepts.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/state_view.hpp"
@@ -38,7 +39,8 @@ namespace tyr::planning
 struct Transition
 {
     // TODO: get rid of actions.
-    formalism::planning::GroundActionView label;
+    formalism::planning::ActionView projected_action;
+    formalism::unification::SubstitutionFunction<Index<formalism::Object>> substitution;
     uint_t src;
     uint_t dst;
 };
@@ -102,11 +104,13 @@ public:
     }
 
     ForwardProjectionAbstraction(ProjectionMapping<Kind> mapping,
+                                 std::shared_ptr<StateRepository<Kind>> state_repository,
                                  std::vector<StateView<Kind>> vertices,
                                  TransitionList transitions,
                                  std::vector<std::vector<uint_t>> adj_lists,
                                  std::vector<uint_t> goal_vertices) :
         m_mapping(std::move(mapping)),
+        m_state_repository(std::move(state_repository)),
         m_vertices(std::move(vertices)),
         m_transitions(std::move(transitions)),
         m_adj_lists(std::move(adj_lists)),
@@ -116,6 +120,7 @@ public:
     }
 
     const auto& get_mapping() const noexcept { return m_mapping; }
+    const auto& state_repository() const noexcept { return m_state_repository; }
     auto num_vertices() const noexcept { return m_vertices.size(); }
     auto num_edges() const noexcept { return m_transitions.size(); }
     const auto& vertices() const noexcept { return m_vertices; }
@@ -126,7 +131,7 @@ public:
 
 private:
     ProjectionMapping<Kind> m_mapping;
-    // TODO: get rid of states.
+    std::shared_ptr<StateRepository<Kind>> m_state_repository;
     std::vector<StateView<Kind>> m_vertices;
     TransitionList m_transitions;
     std::vector<std::vector<uint_t>> m_adj_lists;

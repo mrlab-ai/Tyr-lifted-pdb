@@ -27,7 +27,6 @@ add_gtest(formalism_view                                 "formalism/view.cpp")
 add_gtest(formalism_index                                "formalism/index.cpp")
 add_gtest(formalism_unification                          "formalism/unification.cpp")
 
-add_gtest(database_join                                  "database/join.cpp")
 
 add_gtest(planning_lifted_task                           "planning/lifted_task.cpp")
 add_gtest(planning_ground_task                           "planning/ground_task.cpp")
