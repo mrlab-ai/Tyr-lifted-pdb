@@ -26,6 +26,15 @@ from pytyr.pytyr.planning.lifted import (
     AddRPGHeuristic,
     FFRPGHeuristic,
     GoalCountHeuristic,
+    MaxHeuristic,
+    ProjectionAbstractionHeuristic,
+    CanonicalHeuristic,
+
+    PatternGenerator,
+    GoalPatternGenerator,
+    ProjectionAbstraction,
+    ProjectionAbstractionList,
+    ProjectionGenerator,
 )
 
 from . import (
