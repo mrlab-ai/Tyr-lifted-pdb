@@ -25,8 +25,8 @@
 #include "tyr/formalism/unification/substitution.hpp"
 #include "tyr/graphs/concepts.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/state_view.hpp"
-#include "tyr/planning/task.hpp"
 
 #include <boost/graph/graph_concepts.hpp>
 #include <boost/graph/graph_traits.hpp>

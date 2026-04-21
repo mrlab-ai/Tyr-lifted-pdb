@@ -26,7 +26,6 @@
 #include "tyr/planning/ground_task/state_iterators.hpp"
 #include "tyr/planning/state_iterators.hpp"
 #include "tyr/planning/state_view.hpp"
-#include "tyr/planning/task.hpp"
 
 #include <boost/dynamic_bitset.hpp>
 

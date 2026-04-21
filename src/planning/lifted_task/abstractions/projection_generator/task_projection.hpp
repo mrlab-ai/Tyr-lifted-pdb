@@ -15,17 +15,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef TYR_PLANNING_TASK_HPP_
-#define TYR_PLANNING_TASK_HPP_
+#ifndef TYR_SRC_PLANNING_LIFTED_TASK_ABSTRACTIONS_PROJECTION_GENERATOR_TASK_PROJECTION_HPP_
+#define TYR_SRC_PLANNING_LIFTED_TASK_ABSTRACTIONS_PROJECTION_GENERATOR_TASK_PROJECTION_HPP_
 
+#include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/declarations.hpp"
 
 namespace tyr::planning
 {
-
-template<TaskKind Kind>
-class Task;
-
+std::pair<LiftedTaskPtr, ProjectionMapping<LiftedTag>::ActionMapping> project_task(const Task<LiftedTag>& original_task, const Pattern& pattern);
 }
 
 #endif
