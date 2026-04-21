@@ -14,6 +14,7 @@ import argparse
 
 from pathlib import Path
 import sys
+import time
 
 from lifted_ipdb import LiftedIPDBPatternGenerator
 from pytyr.common import (
@@ -76,13 +77,31 @@ def main():
     successor_generator = SuccessorGenerator(lifted_task, execution_context)
 
     # Use the lifted iPDB-style pattern generator with CLI-controlled limits.
+    print("[PATTERN] Pattern generation started")
+
+    pattern_start = time.perf_counter_ns()
+
     patterns = LiftedIPDBPatternGenerator(lifted_task).generate(
         args.max_pattern_size,
         args.max_pattern_count,
     )
 
+    pattern_end = time.perf_counter_ns()
+    pattern_time_ns = pattern_end - pattern_start
+    pattern_time_ms = pattern_time_ns / 1_000_000
 
+    print(f"[PATTERN] Pattern generation time {pattern_time_ms:.3f} ms ({pattern_time_ns} ns)")
+
+    print("[PROJECT] Projection computation started")
+    proj_start = time.perf_counter_ns()
+    
     projections = ProjectionGenerator(lifted_task, patterns).generate()
+
+    proj_end = time.perf_counter_ns()
+    proj_time_ns = proj_end - proj_start
+    proj_time_ms = proj_time_ns / 1_000_000
+
+    print(f"[PROJECT] Projections computation time {proj_time_ms:.3f} ms ({proj_time_ns} ns)")
 
     # BELOW: A hack to filter out projections whose PDBs report the initial state as a dead-end. 
     initial_node = successor_generator.get_initial_node()
@@ -102,6 +121,8 @@ def main():
         heuristic = BlindHeuristic()
     else:
         heuristic = CanonicalHeuristic(filtered_projections)
+
+    print(f"[HEURISTIC] Start node h-value: {heuristic.evaluate(initial_state)}")
 
     options = Options()                               # Lifted search is parallelized but only useful on large tasks.
     options.event_handler = DefaultEventHandler(0)         # Collects and prints statistics. If verbosity >= 2, then also prints labeled nodes.
