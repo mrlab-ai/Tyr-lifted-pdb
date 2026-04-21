@@ -24,7 +24,6 @@
 #include "tyr/planning/state_index.hpp"
 #include "tyr/planning/state_repository.hpp"
 #include "tyr/planning/state_view.hpp"
-#include "tyr/planning/task.hpp"
 #include "tyr/planning/unpacked_state.hpp"
 
 #include <concepts>

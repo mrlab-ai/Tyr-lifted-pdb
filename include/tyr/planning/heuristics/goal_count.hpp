@@ -18,8 +18,8 @@
 #ifndef TYR_PLANNING_HEURISTICS_GOAL_COUNT_HPP_
 #define TYR_PLANNING_HEURISTICS_GOAL_COUNT_HPP_
 
+#include "tyr/planning/declarations.hpp"
 #include "tyr/planning/heuristic.hpp"
-#include "tyr/planning/task.hpp"
 
 namespace tyr::planning
 {

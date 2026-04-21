@@ -19,7 +19,6 @@
 
 #include "tyr/common/bit.hpp"
 #include "tyr/planning/ground_task/state_storage/hash_set/context.hpp"
-#include "tyr/planning/task.hpp"
 
 namespace tyr::planning
 {
