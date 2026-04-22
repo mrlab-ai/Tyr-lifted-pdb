@@ -581,17 +581,18 @@ class LiftedIPDBPatternGenerator(PatternGenerator):
                     max_depth=max_pattern_size-1,  # Only explore up to max_pattern_size levels in the causal graph, since deeper levels won't be relevant for patterns of that size.
                 )
                 causal_graphs.append((parent, children, goal_atom))
-                self.write_dot(parent, children, goal_atom, f"goal_{inx}.dot")
+                #self.write_dot(parent, children, goal_atom, f"goal_{inx}.dot")
 
 
         for inx, goal in enumerate(goals):
+            for pattern_size in range(1, max_pattern_size + 1):
             #print(f" - {goal.get_atom()}")
-            pattern_collection.extend(self.generate_interesting_patterns(
-                goal.get_atom(),
-                causal_graphs[inx][1],  # children_one_pattern_bfs(goal_atom, max_pattern_size, max_pattern_count) dict for this goal atom's BFS tree
-                max_pattern_size,
-                patterns_count_per_goal,  # Adjust as needed, perhaps pass as command-line arguments
-            ))
+                pattern_collection.extend(self.generate_interesting_patterns(
+                    goal.get_atom(),
+                    causal_graphs[inx][1],  # children_one_pattern_bfs(goal_atom, max_pattern_size, max_pattern_count) dict for this goal atom's BFS tree
+                    pattern_size,
+                    patterns_count_per_goal,  # Adjust as needed, perhaps pass as command-line arguments
+                ))
         
         print(f"Generated {len(pattern_collection)} patterns.")
 

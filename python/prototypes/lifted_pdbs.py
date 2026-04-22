@@ -79,7 +79,7 @@ def main():
     successor_generator = SuccessorGenerator(lifted_task, execution_context)
 
     # Use the lifted iPDB-style pattern generator with CLI-controlled limits.
-    print("[PATTERN] Pattern generation started")
+    print("[PATTERN] Pattern generation started", flush=True)
 
     pattern_start = time.perf_counter_ns()
 
@@ -92,7 +92,7 @@ def main():
     pattern_time_ns = pattern_end - pattern_start
     pattern_time_ms = pattern_time_ns / 1_000_000
 
-    print(f"[PATTERN] Pattern generation time {pattern_time_ms:.3f} ms ({pattern_time_ns} ns)")
+    print(f"[PATTERN] Pattern generation time {pattern_time_ms:.3f} ms ({pattern_time_ns} ns)", flush=True)
 
     print("[PROJECT] Projection computation started")
     proj_start = time.perf_counter_ns()
@@ -103,7 +103,7 @@ def main():
     proj_time_ns = proj_end - proj_start
     proj_time_ms = proj_time_ns / 1_000_000
 
-    print(f"[PROJECT] Projections computation time {proj_time_ms:.3f} ms ({proj_time_ns} ns)")
+    print(f"[PROJECT] Projections computation time {proj_time_ms:.3f} ms ({proj_time_ns} ns)", flush=True)
 
     # BELOW: A hack to filter out projections whose PDBs report the initial state as a dead-end. 
     initial_node = successor_generator.get_initial_node()
@@ -131,9 +131,9 @@ def main():
     heuristic_time_ns = heuristic_end - heuristic_start
     heuristic_time_ms = heuristic_time_ns / 1_000_000
 
-    print(f"[HEURISTIC] Heuristic computation time {heuristic_time_ms:.3f} ms ({heuristic_time_ns} ns)")
+    print(f"[HEURISTIC] Heuristic computation time {heuristic_time_ms:.3f} ms ({heuristic_time_ns} ns)", flush=True)
 
-    print(f"[HEURISTIC] Start node h-value: {heuristic.evaluate(initial_state)}")
+    print(f"[HEURISTIC] Start node h-value: {heuristic.evaluate(initial_state)}", flush=True)
 
     options = Options()                               # Lifted search is parallelized but only useful on large tasks.
     options.event_handler = DefaultEventHandler(0)         # Collects and prints statistics. If verbosity >= 2, then also prints labeled nodes.
@@ -144,23 +144,23 @@ def main():
     search_start_ns = search_start_time - global_start
     search_start_ms = search_start_ns / 1_000_000
 
-    print(f"[SEARCH] Search start time {search_start_ms:.3f} ms ({search_start_ns} ns)")
+    print(f"[SEARCH] Search start time {search_start_ms:.3f} ms ({search_start_ns} ns)", flush=True)
 
     search_result = find_solution(lifted_task, successor_generator, heuristic, options)
  
-    print("Search status:", search_result.status)
+    print("Search status:", search_result.status, flush=True)
 
     plan = search_result.plan
 
     if plan is not None:
-        print(f"Found plan with length {plan.get_length()} and cost {plan.get_cost()}")
+        print(f"Found plan with length {plan.get_length()} and cost {plan.get_cost()}", flush=True)
         print(plan)
     else:
-        print("No solution was found.")
+        print("No solution was found.", flush=True)
 
     global_end = time.perf_counter_ns()
 
-    print(f"Total time: {global_end - global_start} ns")
+    print(f"Total time: {global_end - global_start} ns", flush=True)
 
 if __name__ == "__main__":
     main()
