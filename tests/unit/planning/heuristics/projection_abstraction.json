@@ -1,0 +1,14 @@
+{
+    "gripper": {
+        "domain": "gripper/domain.pddl",
+        "instances": [
+            {
+                "path": "gripper/p-2-0.pddl",
+                "initial_projection_heuristic_estimates": [
+                    1.0,
+                    1.0
+                ]
+            }
+        ]
+    }
+}
