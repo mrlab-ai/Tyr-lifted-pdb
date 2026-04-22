@@ -28,6 +28,7 @@ add_gtest(formalism_view                                 "formalism/view.cpp")
 add_gtest(formalism_index                                "formalism/index.cpp")
 add_gtest(formalism_unification                          "formalism/unification.cpp")
 
+add_gtest(planning_heuristics_projection_abstraction     "planning/heuristics/projection_abstraction.cpp")
 add_gtest(planning_lifted_task                           "planning/lifted_task.cpp")
 add_gtest(planning_ground_task                           "planning/ground_task.cpp")
 add_gtest(planning_ground_vs_lifted                      "planning/ground_vs_lifted.cpp")
