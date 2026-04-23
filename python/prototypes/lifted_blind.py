@@ -16,7 +16,7 @@ from pathlib import Path
 import sys
 import time
 
-from pattern_gen import LiftedPatternGenerator
+from lifted_ipdb import LiftedIPDBPatternGenerator
 from pytyr.common import (
     ExecutionContext
 )
@@ -65,8 +65,8 @@ def main():
     arg_parser = argparse.ArgumentParser(description="A* Eager Search.")
     arg_parser.add_argument("-d", "--domain-filepath", type=Path, required=True, help="Path to a PDDL domain file.")
     arg_parser.add_argument("-p", "--task-filepath", type=Path, required=True, help="Path to PDDL task file.")
-    arg_parser.add_argument("--max-pattern-size", type=int, default=2, help="Maximum size of generated patterns.")
-    arg_parser.add_argument("--max-pattern-count", type=int, default=10, help="Maximum number of generated patterns.")
+    #arg_parser.add_argument("--max-pattern-size", type=int, default=2, help="Maximum size of generated patterns.")
+    #arg_parser.add_argument("--max-pattern-count", type=int, default=10, help="Maximum number of generated patterns.")
     args = arg_parser.parse_args()
 
     domain_filepath : Path = args.domain_filepath
@@ -78,56 +78,13 @@ def main():
     execution_context = ExecutionContext(1)
     successor_generator = SuccessorGenerator(lifted_task, execution_context)
 
-    # Use the lifted iPDB-style pattern generator with CLI-controlled limits.
-    print("[PATTERN] Pattern generation started", flush=True)
-
-    pattern_start = time.perf_counter_ns()
-
-    patterns = LiftedPatternGenerator(lifted_task).generate(
-        args.max_pattern_size,
-        args.max_pattern_count,
-    )
-
-    pattern_end = time.perf_counter_ns()
-    pattern_time_ns = pattern_end - pattern_start
-    pattern_time_ms = pattern_time_ns / 1_000_000
-
-    print(f"[PATTERN] Pattern generation time {pattern_time_ms:.3f} ms ({pattern_time_ns} ns)", flush=True)
-
-    
-
-    print("[PROJECT] Projection computation started")
-    proj_start = time.perf_counter_ns()
-    
-    projections = ProjectionGenerator(lifted_task, patterns).generate()
-
-    proj_end = time.perf_counter_ns()
-    proj_time_ns = proj_end - proj_start
-    proj_time_ms = proj_time_ns / 1_000_000
-
-    print(f"[PROJECT] Projections computation time {proj_time_ms:.3f} ms ({proj_time_ns} ns)", flush=True)
-
     # BELOW: A hack to filter out projections whose PDBs report the initial state as a dead-end. 
     initial_node = successor_generator.get_initial_node()
     initial_state = initial_node.get_state()
-    """
-    filtered_projections = ProjectionAbstractionList()
-    for proj in projections:
-        ph = ProjectionAbstractionHeuristic(proj)
-        h0 = ph.evaluate(initial_state)
-       if h0 == float("inf"):
-            print("[WARN] Dropping projection whose PDB reports the initial state as a dead-end (h = inf).")
-            continue
-        filtered_projections.append(proj)
 
-    if len(filtered_projections) == 0:
-        print("[WARN] All projections reported the initial state as a dead-end. Falling back to BlindHeuristic.")
-        heuristic = BlindHeuristic()
-    else:
-    """
     heuristic_start = time.perf_counter_ns()
 
-    heuristic = CanonicalHeuristic(projections)
+    heuristic = BlindHeuristic()
 
     heuristic_end = time.perf_counter_ns()
     heuristic_time_ns = heuristic_end - heuristic_start
