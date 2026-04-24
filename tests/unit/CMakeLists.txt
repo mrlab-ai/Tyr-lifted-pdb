@@ -29,6 +29,11 @@ add_gtest(formalism_index                                "formalism/index.cpp")
 add_gtest(formalism_unification                          "formalism/unification.cpp")
 
 add_gtest(planning_heuristics_projection_abstraction     "planning/heuristics/projection_abstraction.cpp")
+target_compile_definitions(planning_heuristics_projection_abstraction PRIVATE
+    HEURISTICS_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/planning/heuristics/"
+    ROOT_DIR="${CMAKE_SOURCE_DIR}/")
+target_link_libraries(planning_heuristics_projection_abstraction PRIVATE Boost::json)
+
 add_gtest(planning_lifted_task                           "planning/lifted_task.cpp")
 add_gtest(planning_ground_task                           "planning/ground_task.cpp")
 add_gtest(planning_ground_vs_lifted                      "planning/ground_vs_lifted.cpp")
