@@ -136,9 +136,17 @@ endif()
 
 message(STATUS "Build configuration: ${CMAKE_BUILD_TYPE}")
 
+set(ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+message("ROOT_DIR: ${ROOT_DIR}")
+
 set(DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/")
 add_definitions(-DDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/")
 message("DATA_DIR: ${DATA_DIR}")
+
+set(PROFILING_DIR "${CMAKE_CURRENT_SOURCE_DIR}/profiling/")
+add_definitions(-DPROFILING_DIR="${CMAKE_CURRENT_SOURCE_DIR}/profiling/")
+message("PROFILING_DIR: ${PROFILING_DIR}")
 
 if(VERBOSE)
     add_compile_definitions(VERBOSE)
