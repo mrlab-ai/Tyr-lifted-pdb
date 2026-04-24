@@ -257,7 +257,7 @@ endif()
 # Target Profiling
 # ----------------
 if(BUILD_PROFILING)
-    add_subdirectory(benchmark)
+    add_subdirectory(profiling)
 endif()
 
 # -----------
