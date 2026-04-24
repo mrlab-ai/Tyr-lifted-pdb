@@ -58,24 +58,6 @@
             "logistics-large-simple/p-a1-c1-s1000-p10-t1-g4.pddl"
         ]
     },
-    "organic-synthesis-alkene": {
-        "domain": "organic-synthesis-alkene/domain.pddl",
-        "tasks": [
-            "organic-synthesis-alkene/p1.pddl"
-        ]
-    },
-    "organic-synthesis-MIT": {
-        "domain": "organic-synthesis-MIT/domain.pddl",
-        "tasks": [
-            "organic-synthesis-MIT/p2.pddl"
-        ]
-    },
-    "organic-synthesis-original": {
-        "domain": "organic-synthesis-original/domain.pddl",
-        "tasks": [
-            "organic-synthesis-original/prob01.pddl"
-        ]
-    },
     "pipesworld-tankage-nosplit": {
         "domain": "pipesworld-tankage-nosplit/domain.pddl",
         "tasks": [
