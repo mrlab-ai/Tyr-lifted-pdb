@@ -1,15 +1,127 @@
 {
-    "gripper": {
-        "domain": "gripper/domain.pddl",
+    "blocksworld-large-simple": {
+        "domain": "blocksworld-large-simple/domain.pddl",
         "tasks": [
-            "gripper/test_problem.pddl",
-            "gripper/p-2-0.pddl"
+            "blocksworld-large-simple/p-100-2.pddl",
+            "blocksworld-large-simple/p-100-3.pddl",
+            "blocksworld-large-simple/p-100-4.pddl",
+            "blocksworld-large-simple/p-100-5.pddl"
         ]
     },
-    "miconic": {
-        "domain": "miconic/domain.pddl",
+    "childsnack-contents": {
+        "domain": "childsnack-contents/domain.pddl",
         "tasks": [
-            "miconic/test_problem.pddl"
+            "childsnack-contents/contentam1-cham3-p0.pddl",
+            "childsnack-contents/contentam1-cham5-p0.pddl",
+            "childsnack-contents/contentam1-cham7-p0.pddl",
+            "childsnack-contents/contentam2-cham3-p0.pddl",
+            "childsnack-contents/contentam2-cham5-p0.pddl",
+            "childsnack-contents/contentam2-cham7-p0.pddl",
+            "childsnack-contents/contentam3-cham3-p0.pddl",
+            "childsnack-contents/contentam3-cham5-p0.pddl",
+            "childsnack-contents/contentam3-cham7-p0.pddl",
+            "childsnack-contents/contentam4-cham3-p0.pddl",
+            "childsnack-contents/contentam4-cham5-p0.pddl",
+            "childsnack-contents/contentam4-cham7-p0.pddl"
+        ]
+    },
+    "genome-edit-distance": {
+        "domain": "genome-edit-distance/domain.pddl",
+        "tasks": [
+            "genome-edit-distance/d-1-2.pddl"
+        ]
+    },
+    "genome-edit-distance-positional": {
+        "domain": "genome-edit-distance-positional/domain.pddl",
+        "tasks": [
+            "genome-edit-distance-positional/d-1-2.pddl"
+        ]
+    },
+    "genome-edit-distance-split": {
+        "domain": "genome-edit-distance-split/domain.pddl",
+        "tasks": [
+            "genome-edit-distance-split/d-1-2.pddl"
+        ]
+    },
+    "labyrinth": {
+        "domain": "labyrinth/domain.pddl",
+        "tasks": [
+            "labyrinth/p01.pddl"
+        ]
+    },
+    "logistics-large-simple": {
+        "domain": "logistics-large-simple/domain.pddl",
+        "tasks": [
+            "logistics-large-simple/p-a1-c1-s1000-p10-t1-g1.pddl",
+            "logistics-large-simple/p-a1-c1-s1000-p10-t1-g2.pddl",
+            "logistics-large-simple/p-a1-c1-s1000-p10-t1-g3.pddl",
+            "logistics-large-simple/p-a1-c1-s1000-p10-t1-g4.pddl"
+        ]
+    },
+    "organic-synthesis-alkene": {
+        "domain": "organic-synthesis-alkene/domain.pddl",
+        "tasks": [
+            "organic-synthesis-alkene/p1.pddl"
+        ]
+    },
+    "organic-synthesis-MIT": {
+        "domain": "organic-synthesis-MIT/domain.pddl",
+        "tasks": [
+            "organic-synthesis-MIT/p2.pddl"
+        ]
+    },
+    "organic-synthesis-original": {
+        "domain": "organic-synthesis-original/domain.pddl",
+        "tasks": [
+            "organic-synthesis-original/prob01.pddl"
+        ]
+    },
+    "pipesworld-tankage-nosplit": {
+        "domain": "pipesworld-tankage-nosplit/domain.pddl",
+        "tasks": [
+            "pipesworld-tankage-nosplit/p01-net1-b6-g2-t50.pddl"
+        ]
+    },
+    "rovers-large-simple": {
+        "domain": "rovers-large-simple/domain.pddl",
+        "tasks": [
+            "rovers-large-simple/p-r1-w1000-o1-1-g2.pddl",
+            "rovers-large-simple/p-r1-w1000-o1-1-g4.pddl",
+            "rovers-large-simple/p-r1-w1000-o1-1-g6.pddl",
+            "rovers-large-simple/p-r1-w1000-o1-1-g8.pddl"
+        ]
+    },
+    "visitall-multidimensional-3-dim": {
+        "domain": "visitall-multidimensional/3-dim/domain.pddl",
+        "tasks": [
+            "visitall-multidimensional/3-dim/p0-CLOSE-g1.pddl",
+            "visitall-multidimensional/3-dim/p0-CLOSE-g2.pddl",
+            "visitall-multidimensional/3-dim/p0-CLOSE-g3.pddl",
+            "visitall-multidimensional/3-dim/p0-FAR-g1.pddl",
+            "visitall-multidimensional/3-dim/p0-FAR-g2.pddl",
+            "visitall-multidimensional/3-dim/p0-FAR-g3.pddl"
+        ]
+    },
+    "visitall-multidimensional-4-dim": {
+        "domain": "visitall-multidimensional/4-dim/domain.pddl",
+        "tasks": [
+            "visitall-multidimensional/4-dim/p0-CLOSE-g1.pddl",
+            "visitall-multidimensional/4-dim/p0-CLOSE-g2.pddl",
+            "visitall-multidimensional/4-dim/p0-CLOSE-g3.pddl",
+            "visitall-multidimensional/4-dim/p0-FAR-g1.pddl",
+            "visitall-multidimensional/4-dim/p0-FAR-g2.pddl",
+            "visitall-multidimensional/4-dim/p0-FAR-g3.pddl"
+        ]
+    },
+    "visitall-multidimensional-5-dim": {
+        "domain": "visitall-multidimensional/5-dim/domain.pddl",
+        "tasks": [
+            "visitall-multidimensional/5-dim/p0-CLOSE-g1.pddl",
+            "visitall-multidimensional/5-dim/p0-CLOSE-g2.pddl",
+            "visitall-multidimensional/5-dim/p0-CLOSE-g3.pddl",
+            "visitall-multidimensional/5-dim/p0-FAR-g1.pddl",
+            "visitall-multidimensional/5-dim/p0-FAR-g2.pddl",
+            "visitall-multidimensional/5-dim/p0-FAR-g3.pddl"
         ]
     }
 }
