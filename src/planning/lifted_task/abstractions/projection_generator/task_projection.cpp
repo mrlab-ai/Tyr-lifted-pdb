@@ -404,7 +404,9 @@ void append_projected_action(fp::ActionView element,
     for (const auto& [original_p, projected_p] : variable_remapping)
         projected_to_original[uint_t(projected_p)] = original_p;
 
-    action.name = element.get_name();
+    // Some actions have similar names but different bodies. To avoid name clashes, we append the action index to the name. This is not a problem since the name
+    // is only used for debugging purposes.
+    action.name = std::string(element.get_name()) + "_" + to_string(element.get_index());
     project_variables(element.get_variables(), uint_t(0), variable_remapping, action.variables, context);
     action.original_arity = action.variables.size();
     action.condition = create_projected_conjunctive_condition(element.get_condition(), uint_t(0), context, variable_remapping, pattern).first.get_index();
@@ -414,11 +416,7 @@ void append_projected_action(fp::ActionView element,
     canonicalize(action);
     const auto new_action = context.destination.get_or_create(action).first;
 
-    [[maybe_unused]] const auto [it, inserted] =
-        projected_to_original_action.emplace(new_action,
-                                             typename ProjectionMapping<LiftedTag>::ProjectedActionInfo { element, std::move(projected_to_original) });
-    assert(inserted);
-
+    projected_to_original_action.emplace(new_action, typename ProjectionMapping<LiftedTag>::ProjectedActionInfo { element, std::move(projected_to_original) });
     ref_projected_actions.push_back(new_action.get_index());
 }
 
@@ -441,9 +439,7 @@ auto create_projected_formalism_domain(fp::DomainView element,
     for (const auto object : element.get_constants())
         domain.constants.push_back(fp::merge_p2p(object, context).first.get_index());
     for (const auto action : element.get_actions())
-    {
         append_projected_action(action, context, domain.actions, projected_to_original_action, pattern);
-    }
 
     canonicalize(domain);
     return fp::PlanningDomain(context.destination.get_or_create(domain).first, std::move(destination), std::move(factory));
