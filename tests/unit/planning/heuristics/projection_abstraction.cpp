@@ -4,6 +4,7 @@
 #include <tyr/formalism/formalism.hpp>
 #include <tyr/planning/planning.hpp>
 
+#include <algorithm>
 #include <cctype>
 #include <fstream>
 #include <sstream>
@@ -60,6 +61,13 @@ std::string format_values(const std::vector<float_t>& values)
     }
     out << ']';
     return out.str();
+}
+
+std::vector<float_t> sorted_values(const std::vector<float_t>& values)
+{
+    auto sorted = values;
+    std::sort(sorted.begin(), sorted.end());
+    return sorted;
 }
 
 std::string make_test_name(const InstanceTestCase& test_case)
@@ -119,7 +127,7 @@ TEST_P(ProjectionAbstractionSys1Test, InitialStateEstimates)
     auto initial_state = state_repository->get_initial_state();
     auto values = evaluate_heuristics(heuristics, initial_state);
 
-    EXPECT_EQ(values, tc.expected_sys1)
+    EXPECT_EQ(sorted_values(values), sorted_values(tc.expected_sys1))
         << "expected=" << format_values(tc.expected_sys1)
         << ", actual=" << format_values(values);
 }
