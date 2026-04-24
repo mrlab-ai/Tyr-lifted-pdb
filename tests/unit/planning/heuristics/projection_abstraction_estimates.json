@@ -1,0 +1,907 @@
+{
+    "fd_git_hash": "ea49374554dcb92e1469a5c1084e960e48feb762",
+    "agricola": {
+        "domain": "data/agricola/domain.pddl",
+        "instances": [
+            {
+                "path": "data/agricola/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    1,
+                    1,
+                    1
+                ]
+            }
+        ]
+    },
+    "airport": {
+        "domain": "data/airport/domain.pddl",
+        "instances": [
+            {
+                "path": "data/airport/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "assembly": {
+        "domain": "data/assembly/domain.pddl",
+        "instances": [
+            {
+                "path": "data/assembly/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "barman": {
+        "domain": "data/barman/domain.pddl",
+        "instances": [
+            {
+                "path": "data/barman/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    2,
+                    1,
+                    1,
+                    1,
+                    1
+                ]
+            }
+        ]
+    },
+    "blocks_3": {
+        "domain": "data/blocks_3/domain.pddl",
+        "instances": [
+            {
+                "path": "data/blocks_3/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    0,
+                    1,
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1
+                ]
+            },
+            {
+                "path": "data/blocks_3/test_problem2.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    0,
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            }
+        ]
+    },
+    "blocks_4": {
+        "domain": "data/blocks_4/domain.pddl",
+        "instances": [
+            {
+                "path": "data/blocks_4/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    0,
+                    1,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1,
+                    2,
+                    2,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            }
+        ]
+    },
+    "childsnack": {
+        "domain": "data/childsnack/domain.pddl",
+        "instances": [
+            {
+                "path": "data/childsnack/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    2
+                ]
+            }
+        ]
+    },
+    "delivery": {
+        "domain": "data/delivery/domain.pddl",
+        "instances": [
+            {
+                "path": "data/delivery/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    4
+                ]
+            },
+            {
+                "path": "data/delivery/test_problem2.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    2,
+                    2,
+                    1,
+                    2,
+                    2
+                ]
+            }
+        ]
+    },
+    "driverlog": {
+        "domain": "data/driverlog/domain.pddl",
+        "instances": [
+            {
+                "path": "data/driverlog/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    0,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    2,
+                    1
+                ]
+            }
+        ]
+    },
+    "ferry": {
+        "domain": "data/ferry/domain.pddl",
+        "instances": [
+            {
+                "path": "data/ferry/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    2,
+                    2,
+                    1,
+                    2,
+                    2
+                ]
+            }
+        ]
+    },
+    "fo-counters": {
+        "domain": "data/fo-counters/domain.pddl",
+        "instances": [
+            {
+                "path": "data/fo-counters/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "grid": {
+        "domain": "data/grid/domain.pddl",
+        "instances": [
+            {
+                "path": "data/grid/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    1,
+                    2
+                ]
+            }
+        ]
+    },
+    "gripper": {
+        "domain": "data/gripper/domain.pddl",
+        "instances": [
+            {
+                "path": "data/gripper/p-1-0.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    2
+                ]
+            },
+            {
+                "path": "data/gripper/p-2-0.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1,
+                    1,
+                    1,
+                    2
+                ]
+            },
+            {
+                "path": "data/gripper/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    2,
+                    3
+                ]
+            },
+            {
+                "path": "data/gripper/test_problem2.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    2,
+                    2
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1,
+                    1,
+                    1,
+                    2
+                ]
+            }
+        ]
+    },
+    "hiking": {
+        "domain": "data/hiking/domain.pddl",
+        "instances": [
+            {
+                "path": "data/hiking/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    2,
+                    2,
+                    1
+                ]
+            }
+        ]
+    },
+    "logistics": {
+        "domain": "data/logistics/domain.pddl",
+        "instances": [
+            {
+                "path": "data/logistics/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    1
+                ]
+            }
+        ]
+    },
+    "miconic": {
+        "domain": "data/miconic/domain.pddl",
+        "instances": [
+            {
+                "path": "data/miconic/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    2,
+                    2
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    2,
+                    3,
+                    3
+                ]
+            },
+            {
+                "path": "data/miconic/test_problem_2.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    2
+                ]
+            }
+        ]
+    },
+    "miconic-fulladl": {
+        "domain": "data/miconic-fulladl/domain.pddl",
+        "instances": [
+            {
+                "path": "data/miconic-fulladl/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "miconic-simpleadl": {
+        "domain": "data/miconic-simpleadl/domain.pddl",
+        "instances": [
+            {
+                "path": "data/miconic-simpleadl/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "parcprinter": {
+        "domain": "data/parcprinter/domain.pddl",
+        "instances": [
+            {
+                "path": "data/parcprinter/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    0,
+                    8000,
+                    8000,
+                    113013
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    0,
+                    8000,
+                    0,
+                    0,
+                    0,
+                    0,
+                    8000,
+                    8000,
+                    8000,
+                    8000,
+                    8000,
+                    8000,
+                    8000,
+                    169009,
+                    8000,
+                    121013,
+                    123013,
+                    113013,
+                    113013,
+                    113013
+                ]
+            }
+        ]
+    },
+    "pathways": {
+        "domain": "data/pathways/domain.pddl",
+        "instances": [
+            {
+                "path": "data/pathways/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1
+                ]
+            }
+        ]
+    },
+    "philosophers": {
+        "domain": "data/philosophers/domain.pddl",
+        "instances": [
+            {
+                "path": "data/philosophers/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "psr-middle": {
+        "domain": "data/psr-middle/domain.pddl",
+        "instances": [
+            {
+                "path": "data/psr-middle/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "pushworld": {
+        "domain": "data/pushworld/domain.pddl",
+        "instances": [
+            {
+                "path": "data/pushworld/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "refuel": {
+        "domain": "data/refuel/domain.pddl",
+        "instances": [
+            {
+                "path": "data/refuel/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "refuel-adl": {
+        "domain": "data/refuel-adl/domain.pddl",
+        "instances": [
+            {
+                "path": "data/refuel-adl/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": null,
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    },
+    "reward": {
+        "domain": "data/reward/domain.pddl",
+        "instances": [
+            {
+                "path": "data/reward/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    3,
+                    2
+                ]
+            }
+        ]
+    },
+    "rovers": {
+        "domain": "data/rovers/domain.pddl",
+        "instances": [
+            {
+                "path": "data/rovers/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    2
+                ]
+            }
+        ]
+    },
+    "satellite": {
+        "domain": "data/satellite/domain.pddl",
+        "instances": [
+            {
+                "path": "data/satellite/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    2,
+                    2,
+                    2,
+                    2,
+                    1,
+                    2
+                ]
+            }
+        ]
+    },
+    "schedule": {
+        "domain": "data/schedule/domain.pddl",
+        "instances": [
+            {
+                "path": "data/schedule/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1
+                ]
+            }
+        ]
+    },
+    "sokoban": {
+        "domain": "data/sokoban/domain.pddl",
+        "instances": [
+            {
+                "path": "data/sokoban/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    2,
+                    2,
+                    1
+                ]
+            }
+        ]
+    },
+    "spanner": {
+        "domain": "data/spanner/domain.pddl",
+        "instances": [
+            {
+                "path": "data/spanner/p-1-1-2-1(2).pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    2,
+                    4
+                ]
+            },
+            {
+                "path": "data/spanner/p-1-1-2-1.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    2,
+                    2
+                ]
+            },
+            {
+                "path": "data/spanner/p-1-1-3-1.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    2,
+                    2
+                ]
+            },
+            {
+                "path": "data/spanner/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    2,
+                    3
+                ]
+            }
+        ]
+    },
+    "transport": {
+        "domain": "data/transport/domain.pddl",
+        "instances": [
+            {
+                "path": "data/transport/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1
+                ]
+            }
+        ]
+    },
+    "visitall": {
+        "domain": "data/visitall/domain.pddl",
+        "instances": [
+            {
+                "path": "data/visitall/instance1.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    2,
+                    1
+                ]
+            },
+            {
+                "path": "data/visitall/instance2.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1
+                ]
+            },
+            {
+                "path": "data/visitall/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    4,
+                    3,
+                    2,
+                    2,
+                    1,
+                    1
+                ]
+            },
+            {
+                "path": "data/visitall/test_problem2.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    1,
+                    1,
+                    1
+                ],
+                "initial_projection_heuristic_estimates_sys_2": [
+                    1,
+                    1,
+                    1,
+                    2,
+                    1,
+                    1
+                ]
+            }
+        ]
+    },
+    "woodworking": {
+        "domain": "data/woodworking/domain.pddl",
+        "instances": [
+            {
+                "path": "data/woodworking/test_problem.pddl",
+                "initial_projection_heuristic_estimates_sys_1": [
+                    5,
+                    10,
+                    10,
+                    10,
+                    15,
+                    15,
+                    20,
+                    10,
+                    10,
+                    10,
+                    30
+                ],
+                "initial_projection_heuristic_estimates_sys_2": null
+            }
+        ]
+    }
+}
