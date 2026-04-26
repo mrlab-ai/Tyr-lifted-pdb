@@ -165,6 +165,8 @@ TYR_INLINE_IMPL bool is_applicable_if_fires(formalism::planning::ConditionalEffe
                                                    }
                                                });
 
+    context.grounder.binding.resize(binding_size);
+
     return applicable;
 }
 

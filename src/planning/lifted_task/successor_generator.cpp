@@ -155,9 +155,8 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
 
     compute_action_facts(node);
 
-    auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
     const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_unpacked_state(), node.get_metric());
-    auto applicability_context = ApplicabilityContext { state_context, grounder_context, *m_task->get_fdr_context() };
+    auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
 
     for_each_action_binding(m_workspace,
                             m_task->get_action_program(),
@@ -167,7 +166,7 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
                                 m_scratch_action_binding.relation = action.get_index();
                                 m_scratch_action_binding.objects = binding;
 
-                                if (m_executor.is_applicable(action, applicability_context))
+                                if (m_executor.is_applicable(action, state_context, grounder_context, *m_task->get_fdr_context()))
                                     out_bindings.emplace_back(m_task->get_repository()->get_or_create(m_scratch_action_binding).first);
                             });
 }

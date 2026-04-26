@@ -44,9 +44,16 @@ public:
 
     // Lifted action API
 
-    bool is_applicable(formalism::planning::ActionView action, const ApplicabilityContext& context);
+    bool is_applicable(formalism::planning::ActionView action,
+                       const StateContext<LiftedTag>& state_context,
+                       formalism::planning::GrounderContext& grounder,
+                       const formalism::planning::FDRContext& fdr);
 
-    Node<LiftedTag> apply_action(const ApplicabilityContext& context, formalism::planning::ActionView action, StateRepository<LiftedTag>& state_repository);
+    Node<LiftedTag> apply_action(const StateContext<LiftedTag>& state_context,
+                                 formalism::planning::ActionView action,
+                                 formalism::planning::GrounderContext& grounder,
+                                 formalism::planning::FDRContext& fdr,
+                                 StateRepository<LiftedTag>& state_repository);
 
 private:
     DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_del_effects;

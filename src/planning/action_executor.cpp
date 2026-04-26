@@ -22,6 +22,7 @@
 #include "tyr/common/types.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
+#include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/planning/action_executor.hpp"
 #include "tyr/planning/applicability.hpp"
 #include "tyr/planning/applicability_lifted.hpp"
@@ -56,10 +57,10 @@ void process_effects(fp::GroundActionView action,
         {
             const auto effect = cond_effect.get_effect();
 
-            for (const auto fact : effect.template get_facts<formalism::NegativeTag>())
+            for (const auto fact : effect.template get_facts<f::NegativeTag>())
                 tmp_del_effects.push_back(fact.get_data());
 
-            for (const auto fact : effect.template get_facts<formalism::PositiveTag>())
+            for (const auto fact : effect.template get_facts<f::PositiveTag>())
                 tmp_add_effects.push_back(fact.get_data());
 
             for (const auto numeric_effect : effect.get_numeric_effects())
@@ -70,6 +71,61 @@ void process_effects(fp::GroundActionView action,
             if (effect.get_auxiliary_numeric_effect().has_value())
                 state_context.auxiliary_value = evaluate(effect.get_auxiliary_numeric_effect().value(), state_context);
         }
+    }
+}
+
+inline void process_effects(fp::ActionView action,
+                            const analysis::ActionDomain& action_domain,
+                            UnpackedState<LiftedTag>& succ_unpacked_state,
+                            StateContext<LiftedTag>& state_context,
+                            fp::GrounderContext& grounder_context,
+                            fp::FDRContext& fdr_context,
+                            itertools::cartesian_set::Workspace<Index<f::Object>>& cartesian_workspace,
+                            formalism::planning::EffectFamilyList& effect_families,
+                            DataList<fp::FDRFact<f::FluentTag>>& tmp_del_effects,
+                            DataList<fp::FDRFact<f::FluentTag>>& tmp_add_effects)
+{
+    auto applicability_context = ApplicabilityContext { state_context, grounder_context, fdr_context };
+
+    for (const auto cond_effect : action.get_effects())
+    {
+        const auto& parameter_domains = action_domain.payload.effect_domains.at(cond_effect.get_index()).payload.effect_domain.payload;
+        const auto binding_size = grounder_context.binding.size();
+
+        itertools::cartesian_set::for_each_element(
+            parameter_domains.begin() + cond_effect.get_arity(),
+            parameter_domains.end(),
+            cartesian_workspace,
+            [&](auto&& binding_cond)
+            {
+                grounder_context.binding.resize(binding_size);
+                grounder_context.binding.insert(grounder_context.binding.end(), binding_cond.begin(), binding_cond.end());
+
+                if (is_applicable(cond_effect.get_condition(), applicability_context))
+                {
+                    const auto effect = cond_effect.get_effect();
+
+                    for (const auto literal : effect.get_literals())
+                        if (literal.get_polarity())
+                            tmp_add_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first));
+                        else
+                            tmp_del_effects.push_back(fdr_context.get_fact(ground(literal.get_atom(), grounder_context).first));
+
+                    for (const auto numeric_effect : effect.get_numeric_effects())
+                        visit(
+                            [&](auto&& arg) {
+                                succ_unpacked_state.set(ground(arg.get_fterm(), grounder_context).first.get_index(),
+                                                        evaluate(numeric_effect, applicability_context));
+                            },
+                            numeric_effect.get_variant());
+
+                    /// Collect the increment (total-cost) in the state_context
+                    if (effect.get_auxiliary_numeric_effect().has_value())
+                        state_context.auxiliary_value = evaluate(effect.get_auxiliary_numeric_effect().value(), applicability_context);
+                }
+
+                grounder_context.binding.resize(binding_size);
+            });
     }
 }
 
@@ -126,20 +182,64 @@ ActionExecutor::apply_action(const StateContext<GroundTag>& state_context, fp::G
 
 // Action binding API
 
-bool ActionExecutor::is_applicable(formalism::planning::ActionView action, const ApplicabilityContext& context)
+bool ActionExecutor::is_applicable(fp::ActionView action,
+                                   const StateContext<LiftedTag>& state_context,
+                                   fp::GrounderContext& grounder,
+                                   const fp::FDRContext& fdr)
 {
-    assert(tyr::planning::is_applicable(action.get_condition(), context));
+    auto applicability_context = ApplicabilityContext { state_context, grounder, fdr };
+
+    assert(tyr::planning::is_applicable(action.get_condition(), applicability_context));
 
     return tyr::planning::is_applicable_if_fires(action.get_effects(),
-                                                 context,
+                                                 applicability_context,
                                                  m_effect_families,
                                                  m_cartesian_workspace,
-                                                 context.state.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
+                                                 state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
 }
 
-Node<LiftedTag>
-ActionExecutor::apply_action(const ApplicabilityContext& context, formalism::planning::ActionView action, StateRepository<LiftedTag>& state_repository)
+Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& state_context,
+                                             fp::ActionView action,
+                                             fp::GrounderContext& grounder,
+                                             fp::FDRContext& fdr,
+                                             StateRepository<LiftedTag>& state_repository)
 {
-}
+    m_del_effects.clear();
+    m_add_effects.clear();
 
+    auto tmp_state_context = state_context;
+    auto& task = tmp_state_context.task;
+
+    auto succ_unpacked_state_ptr = state_repository.get_unregistered_state();
+    auto& succ_unpacked_state = *succ_unpacked_state_ptr;
+    succ_unpacked_state.assign_unextended_part(tmp_state_context.unpacked_state);
+
+    process_effects(action,
+                    state_context.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()),
+                    succ_unpacked_state,
+                    tmp_state_context,
+                    grounder,
+                    fdr,
+                    m_cartesian_workspace,
+                    m_effect_families,
+                    m_del_effects,
+                    m_add_effects);
+
+    for (const auto fact : m_del_effects)
+        if (succ_unpacked_state.get(fact.variable) == fact.value)
+            succ_unpacked_state.set(Data<fp::FDRFact<f::FluentTag>> { fact.variable, fp::FDRValue::none() });
+
+    for (const auto fact : m_add_effects)
+        succ_unpacked_state.set(fact);
+
+    auto succ_state = state_repository.register_state(succ_unpacked_state_ptr);
+
+    auto succ_state_context = StateContext { task, succ_unpacked_state, tmp_state_context.auxiliary_value };
+    if (task.get_task().get_metric())
+        succ_state_context.auxiliary_value = evaluate(task.get_task().get_metric().value().get_fexpr(), succ_state_context);
+    else
+        ++succ_state_context.auxiliary_value;  // Assume unit cost if no metric is given
+
+    return Node<LiftedTag>(succ_state, succ_state_context.auxiliary_value);
+}
 }
