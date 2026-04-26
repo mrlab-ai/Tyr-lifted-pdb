@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_LIFTED_TASK_SUCCESSOR_GENERATOR_HPP_
 #define TYR_PLANNING_LIFTED_TASK_SUCCESSOR_GENERATOR_HPP_
 
+#include "tyr/common/itertools.hpp"
 #include "tyr/common/onetbb.hpp"
 #include "tyr/datalog/policies/annotation.hpp"
 #include "tyr/datalog/policies/termination.hpp"

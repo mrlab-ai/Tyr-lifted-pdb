@@ -19,6 +19,7 @@
 #define TYR_PLANNING_ACTION_EXECUTOR_HPP_
 
 #include "tyr/common/declarations.hpp"
+#include "tyr/common/itertools.hpp"
 #include "tyr/common/types.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/repository.hpp"
@@ -33,7 +34,7 @@ class ActionExecutor
 public:
     ActionExecutor() = default;
 
-    // Ground action API (interning)
+    // Ground action API
 
     template<TaskKind Kind>
     bool is_applicable(formalism::planning::GroundActionView action, const StateContext<Kind>& state);
@@ -41,25 +42,17 @@ public:
     template<TaskKind Kind>
     Node<Kind> apply_action(const StateContext<Kind>& state_context, formalism::planning::GroundActionView action, StateRepository<Kind>& state_repository);
 
-    // Action binding API (interning)
+    // Lifted action API
 
-    bool is_applicable(formalism::planning::ActionBindingView binding, const ApplicabilityContext& context);
+    bool is_applicable(formalism::planning::ActionView action, const ApplicabilityContext& context);
 
-    Node<LiftedTag>
-    apply_action(const StateContext<LiftedTag>& state_context, formalism::planning::ActionBindingView binding, StateRepository<LiftedTag>& state_repository);
-
-    // Action binding API (no interning)
-
-    bool is_applicable(const Data<formalism::RelationBinding<formalism::planning::Action>>& binding, const ApplicabilityContext& context);
-
-    Node<LiftedTag> apply_action(const StateContext<LiftedTag>& state_context,
-                                 const Data<formalism::RelationBinding<formalism::planning::Action>>& binding,
-                                 StateRepository<LiftedTag>& state_repository);
+    Node<LiftedTag> apply_action(const ApplicabilityContext& context, formalism::planning::ActionView action, StateRepository<LiftedTag>& state_repository);
 
 private:
     DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_del_effects;
     DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_add_effects;
     formalism::planning::EffectFamilyList m_effect_families;
+    itertools::cartesian_set::Workspace<Index<formalism::Object>> m_cartesian_workspace;
 };
 }
 

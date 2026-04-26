@@ -73,12 +73,11 @@ void process_effects(fp::GroundActionView action,
     }
 }
 
-// Ground action API (interning)
+// Ground action API
 
 template<TaskKind Kind>
 bool ActionExecutor::is_applicable(fp::GroundActionView action, const StateContext<Kind>& state)
 {
-    // Ensure precondition applicability
     assert(tyr::planning::is_applicable(action.get_condition(), state));
 
     return tyr::planning::is_applicable_if_fires(action.get_effects(), state, m_effect_families);
@@ -125,26 +124,21 @@ ActionExecutor::apply_action(const StateContext<LiftedTag>& state_context, fp::G
 template Node<GroundTag>
 ActionExecutor::apply_action(const StateContext<GroundTag>& state_context, fp::GroundActionView action, StateRepository<GroundTag>& state_repository);
 
-// Action binding API (interning)
+// Action binding API
 
-bool ActionExecutor::is_applicable(formalism::planning::ActionBindingView binding, const ApplicabilityContext& context) { return true; }
-
-Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& state_context,
-                                             formalism::planning::ActionBindingView binding,
-                                             StateRepository<LiftedTag>& state_repository)
+bool ActionExecutor::is_applicable(formalism::planning::ActionView action, const ApplicabilityContext& context)
 {
+    assert(tyr::planning::is_applicable(action.get_condition(), context));
+
+    return tyr::planning::is_applicable_if_fires(action.get_effects(),
+                                                 context,
+                                                 m_effect_families,
+                                                 m_cartesian_workspace,
+                                                 context.state.task.get_formalism_task().get_variable_domains().action_domains.at(action.get_index()));
 }
 
-// Action binding API (no interning)
-
-bool ActionExecutor::is_applicable(const Data<formalism::RelationBinding<formalism::planning::Action>>& binding, const ApplicabilityContext& context)
-{
-    return true;
-}
-
-Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& state_context,
-                                             const Data<formalism::RelationBinding<formalism::planning::Action>>& binding,
-                                             StateRepository<LiftedTag>& state_repository)
+Node<LiftedTag>
+ActionExecutor::apply_action(const ApplicabilityContext& context, formalism::planning::ActionView action, StateRepository<LiftedTag>& state_repository)
 {
 }
 

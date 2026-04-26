@@ -167,7 +167,7 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
                                 m_scratch_action_binding.relation = action.get_index();
                                 m_scratch_action_binding.objects = binding;
 
-                                if (m_executor.is_applicable(m_scratch_action_binding, applicability_context))
+                                if (m_executor.is_applicable(action, applicability_context))
                                     out_bindings.emplace_back(m_task->get_repository()->get_or_create(m_scratch_action_binding).first);
                             });
 }

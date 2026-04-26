@@ -117,6 +117,7 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/algorithms/gbfs_lazy/event_handler.cpp
 
     planning/applicability.cpp
+    planning/applicability_lifted.cpp
     planning/action_executor.cpp
     planning/formatter.cpp
     planning/ground_task.cpp

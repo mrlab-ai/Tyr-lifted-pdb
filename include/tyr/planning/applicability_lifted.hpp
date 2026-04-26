@@ -101,8 +101,11 @@ bool is_applicable_if_fires(formalism::planning::ConditionalEffectListView eleme
  * is_applicable
  */
 
-template<formalism::FactKind T>
-bool is_applicable(formalism::planning::LiteralView<T> element, const ApplicabilityContext& context);
+bool is_applicable(formalism::planning::LiteralView<formalism::StaticTag> element, const ApplicabilityContext& context);
+
+bool is_applicable(formalism::planning::LiteralView<formalism::FluentTag> element, const ApplicabilityContext& context);
+
+bool is_applicable(formalism::planning::LiteralView<formalism::DerivedTag> element, const ApplicabilityContext& context);
 
 template<formalism::FactKind T>
 bool is_applicable(formalism::planning::LiteralListView<T> elements, const ApplicabilityContext& context);
