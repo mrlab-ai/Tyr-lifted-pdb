@@ -1071,10 +1071,12 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
 
             // Implicit case doesnt exist for vertices, so we dont need to check for that here.
 
+            const auto has_runtime_dependency = m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::PositiveTag>(p)
+                                                || m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::NegativeTag>(p)
+                                                || m_unary_overapproximation_vdg.unary().has_numeric_dependency(p);
+
             // Static-only case.
-            if (!m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::PositiveTag>(p)
-                && !m_unary_overapproximation_vdg.unary().has_literal_dependency<f::FluentTag, f::NegativeTag>(p)
-                && !m_unary_overapproximation_vdg.unary().has_numeric_dependency(p))
+            if (!has_runtime_dependency)
             {
                 delta_affected_partition.set();
                 delta_delta_partition.set();
@@ -1082,33 +1084,33 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                 delta_delta_partition -= full_delta_partition;
                 full_affected_partition.set();
                 full_delta_partition.set();
-
-                continue;
             }
-
-            // Runtime-filtered case.
-            for_each_bit(
-                [&](auto&& bit)
-                {
-                    const auto v = info.bit_offset + bit;
-                    const auto& vertex = get_vertex(v);
-
-                    if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
-                        && consistent_numeric_constraints(vertex,
-                                                          unary_overapproximation_constraints,
-                                                          m_unary_overapproximation_indexed_constraints,
-                                                          assignment_sets))
+            else
+            {
+                // Runtime-filtered case.
+                for_each_bit(
+                    [&](auto&& bit)
                     {
-                        /// Process delta consistent vertex.
-                        full_affected_partition.set(bit);
-                        delta_affected_partition.set(bit);
+                        const auto v = info.bit_offset + bit;
+                        const auto& vertex = get_vertex(v);
 
-                        full_delta_partition.set(bit);
-                        delta_delta_partition.set(bit);
-                    }
-                },
-                [](auto&& a) noexcept { return ~a; },
-                full_affected_partition);
+                        if (consistent_literals(vertex, m_unary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                            && consistent_numeric_constraints(vertex,
+                                                              unary_overapproximation_constraints,
+                                                              m_unary_overapproximation_indexed_constraints,
+                                                              assignment_sets))
+                        {
+                            /// Process delta consistent vertex.
+                            full_affected_partition.set(bit);
+                            delta_affected_partition.set(bit);
+
+                            full_delta_partition.set(bit);
+                            delta_delta_partition.set(bit);
+                        }
+                    },
+                    [](auto&& a) noexcept { return ~a; },
+                    full_affected_partition);
+            }
         }
     }
 
@@ -1149,12 +1151,13 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     continue;
                 }
 
-                // Static-only/runtime-filtered.
-                // TODO: separate both
+                const auto has_runtime_dependency = m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::PositiveTag>(pi, pj)
+                                                    || m_binary_overapproximation_vdg.binary().has_literal_dependency<f::FluentTag, f::NegativeTag>(pi, pj)
+                                                    || m_binary_overapproximation_vdg.binary().has_numeric_dependency(pi, pj);
+
                 for (auto bi = full_affected_partition_i.find_first(); bi != BitsetSpan<const uint64_t>::npos; bi = full_affected_partition_i.find_next(bi))
                 {
                     const auto vi = offset_i + bi;  ///< vi is consistent + delta
-                    const auto& vertex_i = get_vertex(vi);
 
                     const auto static_edges = m_matrix.get_bitset(vi, pj);
                     auto full_edges_i = full_graph.matrix.get_bitset(vi, pj);
@@ -1162,53 +1165,73 @@ void StaticConsistencyGraph::initialize_dynamic_consistency_graphs(const Assignm
                     auto delta_touched_i = delta_graph.matrix.touched_partitions(vi, pj);
                     auto full_touched_i = full_graph.matrix.touched_partitions(vi, pj);
 
-                    for_each_bit(
-                        [&](auto&& bj)
-                        {
-                            const auto vj = offset_j + bj;
+                    auto process_delta_edge = [&](auto&& bj)
+                    {
+                        const auto vj = offset_j + bj;
 
-                            const auto& vertex_j = get_vertex(vj);
+                        // Set edges
+                        full_edges_i.set(bj);
+                        full_graph.matrix.get_bitset(vj, pi).set(bi);
 
-                            const auto edge = details::Edge(vertex_i, vertex_j);
+                        delta_edges_i.set(bj);
+                        delta_graph.matrix.get_bitset(vj, pi).set(bi);
 
-                            if (consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
-                                && consistent_numeric_constraints(edge,
-                                                                  binary_overapproximation_constraints,
-                                                                  m_binary_overapproximation_indexed_constraints,
-                                                                  assignment_sets))
+                        delta_edges.emplace_back(kpkc::Vertex(vi), kpkc::Vertex(vj));
+
+                        // Set/test affected partitions
+                        assert(full_affected_partition_i.test(bi));
+                        assert(full_affected_partition_j.test(bj));
+                        delta_affected_partition_i.set(bi);
+                        delta_affected_partition_j.set(bj);
+
+                        // Set/test delta partitions
+                        assert(full_graph.delta_partitions.get_bitset(info_i).test(bi));
+                        assert(full_graph.delta_partitions.get_bitset(info_j).test(bj));
+
+                        // Set touched partitions
+                        delta_touched_i = true;
+                        full_touched_i = true;
+                        delta_graph.matrix.touched_partitions(vj, pi) = true;
+                        full_graph.matrix.touched_partitions(vj, pi) = true;
+                    };
+
+                    if (!has_runtime_dependency)
+                    {
+                        for_each_bit(
+                            process_delta_edge,
+                            [](auto&& a, auto&& b, auto&& c) noexcept { return a & b & ~c; },
+                            static_edges,
+                            full_affected_partition_j,
+                            full_edges_i);
+                    }
+                    else
+                    {
+                        const auto& vertex_i = get_vertex(vi);
+
+                        for_each_bit(
+                            [&](auto&& bj)
                             {
-                                /// Process delta consistent edge.
+                                const auto vj = offset_j + bj;
 
-                                // Set edges
-                                full_edges_i.set(bj);
-                                full_graph.matrix.get_bitset(vj, pi).set(bi);
+                                const auto& vertex_j = get_vertex(vj);
 
-                                delta_edges_i.set(bj);
-                                delta_graph.matrix.get_bitset(vj, pi).set(bi);
+                                const auto edge = details::Edge(vertex_i, vertex_j);
 
-                                delta_edges.emplace_back(kpkc::Vertex(vi), kpkc::Vertex(vj));
-
-                                // Set/test affected partitions
-                                assert(full_affected_partition_i.test(bi));
-                                assert(full_affected_partition_j.test(bj));
-                                delta_affected_partition_i.set(bi);
-                                delta_affected_partition_j.set(bj);
-
-                                // Set/test delta partitions
-                                assert(full_graph.delta_partitions.get_bitset(info_i).test(bi));
-                                assert(full_graph.delta_partitions.get_bitset(info_j).test(bj));
-
-                                // Set touched partitions
-                                delta_touched_i = true;
-                                full_touched_i = true;
-                                delta_graph.matrix.touched_partitions(vj, pi) = true;
-                                full_graph.matrix.touched_partitions(vj, pi) = true;
-                            }
-                        },
-                        [](auto&& a, auto&& b, auto&& c) noexcept { return a & b & ~c; },
-                        static_edges,
-                        full_affected_partition_j,
-                        full_edges_i);
+                                if (consistent_literals(edge, m_binary_overapproximation_indexed_literals.fluent_indexed, assignment_sets.fluent_sets.predicate)
+                                    && consistent_numeric_constraints(edge,
+                                                                      binary_overapproximation_constraints,
+                                                                      m_binary_overapproximation_indexed_constraints,
+                                                                      assignment_sets))
+                                {
+                                    /// Process delta consistent edge.
+                                    process_delta_edge(bj);
+                                }
+                            },
+                            [](auto&& a, auto&& b, auto&& c) noexcept { return a & b & ~c; },
+                            static_edges,
+                            full_affected_partition_j,
+                            full_edges_i);
+                    }
                 }
             }
         }
