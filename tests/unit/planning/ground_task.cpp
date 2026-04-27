@@ -40,7 +40,7 @@ p::SuccessorGenerator<p::GroundTag> create_successor_generator(std::shared_ptr<p
     return p::SuccessorGenerator<p::GroundTag>(task, ExecutionContext::create(1));
 }
 
-fs::path absolute(const std::string& subdir) { return fs::path(std::string(DATA_DIR)) / subdir; }
+fs::path absolute(const std::string& subdir) { return fs::path(std::string(ROOT_DIR)) / "data" / subdir; }
 
 struct GroundTaskCase
 {
@@ -66,7 +66,7 @@ class GroundTaskTest : public ::testing::TestWithParam<GroundTaskCase>
 TEST_P(GroundTaskTest, HasExpectedGroundTaskAndSuccessorCounts)
 {
     const auto& param = GetParam();
-    auto ground_task = compute_ground_task(absolute(param.subdir + "/domain.pddl"), absolute(param.subdir + "/test_problem.pddl"));
+    auto ground_task = compute_ground_task(absolute(param.subdir + "/domain.pddl"), absolute(param.subdir + "/test-1.pddl"));
 
     EXPECT_EQ(ground_task->get_num_atoms<f::FluentTag>(), param.expected_fluent_atoms);
     EXPECT_EQ(ground_task->get_num_atoms<f::DerivedTag>(), param.expected_derived_atoms);

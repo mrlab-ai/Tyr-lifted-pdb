@@ -136,13 +136,10 @@ endif()
 
 message(STATUS "Build configuration: ${CMAKE_BUILD_TYPE}")
 
-set(DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data/")
-add_definitions(-DDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/")
-message("DATA_DIR: ${DATA_DIR}")
+set(ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+add_definitions(-DROOT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+message("ROOT_DIR: ${ROOT_DIR}")
 
-if(VERBOSE)
-    add_compile_definitions(VERBOSE)
-endif()
 
 ##############################################################
 # CMake modules and macro files
@@ -184,7 +181,7 @@ endif()
 # Boost
 # Find Boost headers only according to https://cmake.org/cmake/help/latest/module/FindBoost.html
 configure_boost()
-find_package(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS iostreams PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+find_package(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS iostreams json PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
 if(Boost_FOUND)
   message(STATUS "Found Boost: ${Boost_DIR} (found version ${Boost_VERSION})")
 endif()
@@ -257,7 +254,7 @@ endif()
 # Target Profiling
 # ----------------
 if(BUILD_PROFILING)
-    add_subdirectory(benchmark)
+    add_subdirectory(profiling)
 endif()
 
 # -----------

@@ -40,7 +40,7 @@ p::SuccessorGenerator<p::LiftedTag> create_successor_generator(std::shared_ptr<p
     return p::SuccessorGenerator<p::LiftedTag>(task, ExecutionContext::create(1));
 }
 
-fs::path absolute(const std::string& subdir) { return fs::path(std::string(DATA_DIR)) / subdir; }
+fs::path absolute(const std::string& subdir) { return fs::path(std::string(ROOT_DIR)) / "data" / subdir; }
 
 struct LiftedSuccessorCountCase
 {
@@ -102,7 +102,7 @@ bool are_same_binding(fp::ActionBindingView lhs, const Data<formalism::RelationB
 
 void expect_action_binding_apis_match_ground_actions(const std::string& subdir)
 {
-    auto lifted_task = compute_lifted_task(absolute(subdir + "/domain.pddl"), absolute(subdir + "/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute(subdir + "/domain.pddl"), absolute(subdir + "/test-1.pddl"));
     auto successor_generator = create_successor_generator(lifted_task);
     const auto initial_node = successor_generator.get_initial_node();
 
@@ -149,7 +149,7 @@ class LiftedTaskSuccessorCountTest : public ::testing::TestWithParam<LiftedSucce
 TEST_P(LiftedTaskSuccessorCountTest, InitialNodeHasExpectedSuccessorCount)
 {
     const auto& param = GetParam();
-    auto lifted_task = compute_lifted_task(absolute(param.subdir + "/domain.pddl"), absolute(param.subdir + "/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute(param.subdir + "/domain.pddl"), absolute(param.subdir + "/test-1.pddl"));
     auto successor_generator = create_successor_generator(lifted_task);
 
     EXPECT_EQ(successor_generator.get_labeled_successor_nodes(successor_generator.get_initial_node()).size(), param.expected_successors);

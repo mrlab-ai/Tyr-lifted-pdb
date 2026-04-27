@@ -1,0 +1,16 @@
+{
+    "cases": {
+        "blocksworld-large-simple/profiling-1": {
+            "domain_file": "classical/blocksworld-large-simple/domain.pddl",
+            "problem_file": "classical/blocksworld-large-simple/profiling-1.pddl"
+        },
+        "logistics-large-simple/profiling-1": {
+            "domain_file": "classical/logistics-large-simple/domain.pddl",
+            "problem_file": "classical/logistics-large-simple/profiling-1.pddl"
+        },
+        "rovers-large-simple/profiling-1": {
+            "domain_file": "classical/rovers-large-simple/domain.pddl",
+            "problem_file": "classical/rovers-large-simple/profiling-1.pddl"
+        }
+    }
+}

@@ -9,7 +9,7 @@ Example usage (run from the repository root):
 
     python3 python/examples/planning/gbfs_lazy.py \
         -d data/classical/gripper/domain.pddl \
-        -p data/classical/gripper/test_problem.pddl
+        -p data/classical/gripper/test-1.pddl
 
 Author: Dominik Drexler (dominik.drexler@liu.se)
 """

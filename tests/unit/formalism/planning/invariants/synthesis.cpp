@@ -31,7 +31,7 @@ namespace
 {
 auto compute_lifted_task(const fs::path& domain_filepath, const fs::path& problem_filepath) { return fp::Parser(domain_filepath).parse_task(problem_filepath); }
 
-fs::path absolute(const std::string& subdir) { return fs::path(std::string(DATA_DIR)) / subdir; }
+fs::path absolute(const std::string& subdir) { return fs::path(std::string(ROOT_DIR)) / "data" / subdir; }
 
 inline std::vector<fpi::Invariant> sort_invariants(std::vector<fpi::Invariant> invariants)
 {
@@ -75,7 +75,7 @@ auto inv(size_t num_rigid_variables, size_t num_counted_variables, std::initiali
 /// <Invariant {built_rooms((0, -1)) [omitted_pos = 1], space_rooms((0,)) [omitted_pos = None]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisAgricola)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/agricola/domain.pddl"), absolute("classical/agricola/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/agricola/domain.pddl"), absolute("classical/agricola/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -135,7 +135,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisAgricola)
 /// <Invariant {is-moving((0,)) [omitted_pos = None], is-parked((0, -1)) [omitted_pos = 1], is-pushing((0,)) [omitted_pos = None]}>]
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisAirport)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/airport/domain.pddl"), absolute("classical/airport/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/airport/domain.pddl"), absolute("classical/airport/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -197,7 +197,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisAirport)
 /// No invariants.
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisAssembly)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/assembly/domain.pddl"), absolute("classical/assembly/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/assembly/domain.pddl"), absolute("classical/assembly/test-1.pddl"));
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
 
@@ -216,7 +216,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisAssembly)
 /// <Invariant {handempty((0,)) [omitted_pos = None], holding((0, -1)) [omitted_pos = 1]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisBarman)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/barman/domain.pddl"), absolute("classical/barman/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/barman/domain.pddl"), absolute("classical/barman/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -251,7 +251,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisBarman)
 /// <Invariant {on((0, -1)) [omitted_pos = 1], on-table((0,)) [omitted_pos = None]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisBlocks3)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/blocks_3/domain.pddl"), absolute("classical/blocks_3/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/blocks_3/domain.pddl"), absolute("classical/blocks_3/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -282,7 +282,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisBlocks3)
 /// <Invariant {holding((0,)) [omitted_pos = None], on((0, -1)) [omitted_pos = 1], on-table((0,)) [omitted_pos = None]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisBlocks4)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/blocks_4/domain.pddl"), absolute("classical/blocks_4/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/blocks_4/domain.pddl"), absolute("classical/blocks_4/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -334,7 +334,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisBlocks4)
 /// <Invariant {at_kitchen_sandwich((0,)) [omitted_pos = None], notexist((0,)) [omitted_pos = None], ontray((0, -1)) [omitted_pos = 1]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisChildsnack)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/childsnack/domain.pddl"), absolute("classical/childsnack/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/childsnack/domain.pddl"), absolute("classical/childsnack/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -442,7 +442,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisChildsnack)
 /// <Invariant {carrying((0, -1)) [omitted_pos = 1], empty((0,)) [omitted_pos = None]}>]
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisDelivery)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/delivery/domain.pddl"), absolute("classical/delivery/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/delivery/domain.pddl"), absolute("classical/delivery/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -472,7 +472,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisDelivery)
 /// <Invariant {at((0, -1)) [omitted_pos = 1], driving((0, -1)) [omitted_pos = 1], in((0, -1)) [omitted_pos = 1]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisDriverlog)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/driverlog/domain.pddl"), absolute("classical/driverlog/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/driverlog/domain.pddl"), absolute("classical/driverlog/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -504,7 +504,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisDriverlog)
 /// <Invariant {empty-ferry(()) [omitted_pos = None], on((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisFerry)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/ferry/domain.pddl"), absolute("classical/ferry/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/ferry/domain.pddl"), absolute("classical/ferry/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -538,7 +538,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisFerry)
 /// No invariants.
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisFoCounters)
 {
-    auto lifted_task = compute_lifted_task(absolute("numeric/fo-counters/domain.pddl"), absolute("numeric/fo-counters/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("numeric/fo-counters/domain.pddl"), absolute("numeric/fo-counters/test-1.pddl"));
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
 
@@ -559,7 +559,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisFoCounters)
 /// <Invariant {locked((-1,)) [omitted_pos = 0], open((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisGrid)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/grid/domain.pddl"), absolute("classical/grid/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/grid/domain.pddl"), absolute("classical/grid/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -617,7 +617,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisGrid)
 /// <Invariant {carry((-1, 0)) [omitted_pos = 0], free((0,)) [omitted_pos = None]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisGripper)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/gripper/domain.pddl"), absolute("classical/gripper/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/gripper/domain.pddl"), absolute("classical/gripper/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -656,7 +656,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisGripper)
 /// <Invariant {down((-1,)) [omitted_pos = 0], up((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisHiking)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/hiking/domain.pddl"), absolute("classical/hiking/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/hiking/domain.pddl"), absolute("classical/hiking/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -705,7 +705,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisHiking)
 /// <Invariant {at((0, -1)) [omitted_pos = 1], in((0, -1)) [omitted_pos = 1]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisLogistics)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/logistics/domain.pddl"), absolute("classical/logistics/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/logistics/domain.pddl"), absolute("classical/logistics/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -733,7 +733,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisLogistics)
 /// <Invariant {boarded((0,)) [omitted_pos = None], origin((0, -1)) [omitted_pos = 1], served((0,)) [omitted_pos = None]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisMiconic)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/miconic/domain.pddl"), absolute("classical/miconic/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/miconic/domain.pddl"), absolute("classical/miconic/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -783,7 +783,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisMiconic)
 /// <Invariant {lift-at((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisMiconicFulladl)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/miconic-fulladl/domain.pddl"), absolute("classical/miconic-fulladl/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/miconic-fulladl/domain.pddl"), absolute("classical/miconic-fulladl/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -805,7 +805,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisMiconicFulladl)
 /// <Invariant {lift-at((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisMiconicSimpleadl)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/miconic-simpleadl/domain.pddl"), absolute("classical/miconic-simpleadl/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/miconic-simpleadl/domain.pddl"), absolute("classical/miconic-simpleadl/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -833,7 +833,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisMiconicSimpleadl)
 /// <Invariant {hasimage((0, 1, -1)) [omitted_pos = 2], notprintedwith((0, 1, -1)) [omitted_pos = 2]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisParcprinter)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/parcprinter/domain.pddl"), absolute("classical/parcprinter/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/parcprinter/domain.pddl"), absolute("classical/parcprinter/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -886,7 +886,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisParcprinter)
 /// <Invariant {num-subs((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisPathways)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/pathways/domain.pddl"), absolute("classical/pathways/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/pathways/domain.pddl"), absolute("classical/pathways/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -914,7 +914,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisPathways)
 /// <Invariant {advance-head((-1,)) [omitted_pos = 0], advance-tail((-1,)) [omitted_pos = 0], settled((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisPhilosophers)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/philosophers/domain.pddl"), absolute("classical/philosophers/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/philosophers/domain.pddl"), absolute("classical/philosophers/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -972,7 +972,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisPhilosophers)
 /// No Invariants.
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisPsrMiddle)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/psr-middle/domain.pddl"), absolute("classical/psr-middle/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/psr-middle/domain.pddl"), absolute("classical/psr-middle/test-1.pddl"));
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
 
@@ -987,7 +987,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisPsrMiddle)
 /// <Invariant {at((0, -1)) [omitted_pos = 1]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisPushworld)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/pushworld/domain.pddl"), absolute("classical/pushworld/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/pushworld/domain.pddl"), absolute("classical/pushworld/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1009,7 +1009,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisPushworld)
 /// No invariants.
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisRefuel)
 {
-    auto lifted_task = compute_lifted_task(absolute("numeric/refuel/domain.pddl"), absolute("numeric/refuel/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("numeric/refuel/domain.pddl"), absolute("numeric/refuel/test-1.pddl"));
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
 
@@ -1022,7 +1022,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisRefuel)
 /// No ground truth.
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisRefuelAdl)
 {
-    auto lifted_task = compute_lifted_task(absolute("numeric/refuel-adl/domain.pddl"), absolute("numeric/refuel-adl/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("numeric/refuel-adl/domain.pddl"), absolute("numeric/refuel-adl/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1048,7 +1048,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisRefuelAdl)
 /// <Invariant {picked((-1,)) [omitted_pos = 0], reward((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisReward)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/reward/domain.pddl"), absolute("classical/reward/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/reward/domain.pddl"), absolute("classical/reward/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1110,7 +1110,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisReward)
 // )
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisRovers)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/rovers/domain.pddl"), absolute("classical/rovers/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/rovers/domain.pddl"), absolute("classical/rovers/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1213,7 +1213,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisRovers)
 /// <Invariant {power_avail((-1,)) [omitted_pos = 0], power_on((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisSatellite)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/satellite/domain.pddl"), absolute("classical/satellite/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/satellite/domain.pddl"), absolute("classical/satellite/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1241,7 +1241,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisSatellite)
 /// No invariants.
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisSchedule)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/schedule/domain.pddl"), absolute("classical/schedule/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/schedule/domain.pddl"), absolute("classical/schedule/test-1.pddl"));
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
 
@@ -1259,7 +1259,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisSchedule)
 /// <Invariant {at((-1, 0)) [omitted_pos = 0], clear((0,)) [omitted_pos = None]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisSokoban)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/sokoban/domain.pddl"), absolute("classical/sokoban/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/sokoban/domain.pddl"), absolute("classical/sokoban/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1305,7 +1305,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisSokoban)
 /// <Invariant {tightened((-1,)) [omitted_pos = 0], useable((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisSpanner)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/spanner/domain.pddl"), absolute("classical/spanner/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/spanner/domain.pddl"), absolute("classical/spanner/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1370,7 +1370,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisSpanner)
 ///
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisTpp)
 {
-    auto lifted_task = compute_lifted_task(absolute("numeric/tpp/domain.pddl"), absolute("numeric/tpp/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("numeric/tpp/domain.pddl"), absolute("numeric/tpp/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1393,7 +1393,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisTpp)
 /// <Invariant {at((0, -1)) [omitted_pos = 1], in((0, -1)) [omitted_pos = 1]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisTransport)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/transport/domain.pddl"), absolute("classical/transport/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/transport/domain.pddl"), absolute("classical/transport/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1421,7 +1421,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisTransport)
 /// <Invariant {at-robot((-1,)) [omitted_pos = 0]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisVisitall)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/visitall/domain.pddl"), absolute("classical/visitall/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/visitall/domain.pddl"), absolute("classical/visitall/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1449,7 +1449,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisVisitall)
 /// <Invariant {available((0,)) [omitted_pos = None], in-highspeed-saw((0, -1)) [omitted_pos = 1], unused((0,)) [omitted_pos = None]}>
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisWoodworking)
 {
-    auto lifted_task = compute_lifted_task(absolute("classical/woodworking/domain.pddl"), absolute("classical/woodworking/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("classical/woodworking/domain.pddl"), absolute("classical/woodworking/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());
@@ -1506,7 +1506,7 @@ TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisWoodworking)
 ///
 TEST(TyrTests, TyrFormalismPlanningInvariantsSynthesisZenotravel)
 {
-    auto lifted_task = compute_lifted_task(absolute("numeric/zenotravel/domain.pddl"), absolute("numeric/zenotravel/test_problem.pddl"));
+    auto lifted_task = compute_lifted_task(absolute("numeric/zenotravel/domain.pddl"), absolute("numeric/zenotravel/test-1.pddl"));
     auto& repository = *lifted_task.get_repository();
 
     auto actual = fpi::synthesize_invariants(lifted_task.get_task().get_domain());

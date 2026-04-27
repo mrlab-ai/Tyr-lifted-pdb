@@ -9,7 +9,7 @@ def test_pddl_parser():
     """ Test parsing and translation of a PDDL domain and problem file.
     """
     domain_filepath = str(ROOT_DIR / "data" / "classical" / "gripper" / "domain.pddl")
-    problem_filepath = str(ROOT_DIR / "data" / "classical" / "gripper" / "test_problem.pddl")
+    problem_filepath = str(ROOT_DIR / "data" / "classical" / "gripper" / "test-1.pddl")
     parser_options = ParserOptions()
     parser = Parser(domain_filepath, parser_options)
 

@@ -27,7 +27,7 @@ namespace tyr::tests
 {
 namespace
 {
-fs::path absolute(const std::string& subdir) { return fs::path(std::string(DATA_DIR)) / subdir; }
+fs::path absolute(const std::string& subdir) { return fs::path(std::string(ROOT_DIR)) / "data" / subdir; }
 
 /// @brief Compare statistics that must be the same for both configurations
 /// Notes:
@@ -95,7 +95,7 @@ TEST_P(GroundVsLiftedTest, BlindAStarMatches)
 {
     const auto subdir = GetParam();
     const auto domain = absolute(subdir + "/domain.pddl");
-    const auto problem = absolute(subdir + "/test_problem.pddl");
+    const auto problem = absolute(subdir + "/test-1.pddl");
 
     const auto lifted = run_blind_astar<p::LiftedTag>(domain, problem);
     const auto grounded = run_blind_astar<p::GroundTag>(domain, problem);
