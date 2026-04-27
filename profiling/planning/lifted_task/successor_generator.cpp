@@ -29,18 +29,25 @@ std::vector<BenchmarkCase> load_cases()
 {
     const auto document = tyr::profiling::load_json_file(tyr::profiling::profiling_path("planning/lifted_task/successor_generator.json"));
     const auto& root = document.as_object();
-    const auto& cases = root.at("cases").as_object();
+    const auto& domains = root.at("domains").as_object();
 
     auto result = std::vector<BenchmarkCase>();
 
-    for (const auto& [run_name_key, case_value] : cases)
+    for (const auto& [domain_name_key, domain_value] : domains)
     {
-        const auto& case_object = case_value.as_object();
-        const auto run_name = std::string(run_name_key);
-        const auto domain = tyr::profiling::data_path(json::value_to<std::string>(case_object.at("domain_file")));
-        const auto task = tyr::profiling::data_path(json::value_to<std::string>(case_object.at("problem_file")));
+        const auto& domain_object = domain_value.as_object();
+        const auto domain_name = std::string(domain_name_key);
+        const auto domain = tyr::profiling::data_path(json::value_to<std::string>(domain_object.at("domain_file")));
+        const auto& tasks = domain_object.at("tasks").as_object();
 
-        result.push_back(BenchmarkCase { run_name, domain, task });
+        for (const auto& [task_name_key, task_value] : tasks)
+        {
+            const auto task_name = std::string(task_name_key);
+            const auto run_name = domain_name + "/" + task_name;
+            const auto task = tyr::profiling::data_path(json::value_to<std::string>(task_value));
+
+            result.push_back(BenchmarkCase { run_name, domain, task });
+        }
     }
 
     return result;
@@ -65,7 +72,7 @@ void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& 
         benchmark::DoNotOptimize(successors.size());
     }
 
-    state.counters["successors"] = benchmark::Counter(static_cast<double>(successors.size()));
+    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(successors.size()));
 }
 
 void benchmark_interned_action_bindings(benchmark::State& state, const BenchmarkCase& benchmark_case)
@@ -82,7 +89,7 @@ void benchmark_interned_action_bindings(benchmark::State& state, const Benchmark
         benchmark::DoNotOptimize(bindings.size());
     }
 
-    state.counters["bindings"] = benchmark::Counter(static_cast<double>(bindings.size()));
+    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(bindings.size()));
 }
 
 void benchmark_action_binding_iterator(benchmark::State& state, const BenchmarkCase& benchmark_case)
@@ -106,7 +113,7 @@ void benchmark_action_binding_iterator(benchmark::State& state, const BenchmarkC
         benchmark::DoNotOptimize(num_bindings);
     }
 
-    state.counters["bindings"] = benchmark::Counter(static_cast<double>(num_bindings));
+    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(num_bindings));
 }
 }
 

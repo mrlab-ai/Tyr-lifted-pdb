@@ -2,19 +2,120 @@
 import argparse
 import datetime as dt
 import json
+import os
 import pathlib
+import platform
 import re
 import subprocess
 import sys
 
+from schema import validate_suite
+
 
 RESULT_RE = re.compile(
-    r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(?P<name>.*?)\s+\.{2,}\s*(?P<status>Passed|\*\*\*Timeout|\*\*\*Failed|Failed)\b"
+    r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(?P<name>.*?)\s+\.{2,}\s*"
+    r"(?P<status>Passed|\*\*\*Timeout|\*\*\*Failed|Failed)\s+(?P<duration>[0-9.]+)\s+sec\b"
 )
 
 
+def run_text(command: list[str], cwd: pathlib.Path | None = None):
+    result = subprocess.run(command, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
+def find_cmake_cache(path: pathlib.Path):
+    for candidate in [path, *path.parents]:
+        cache = candidate / "CMakeCache.txt"
+        if cache.exists():
+            return cache
+    return None
+
+
+def read_cmake_cache(cache_path: pathlib.Path | None):
+    if cache_path is None:
+        return {}
+
+    result = {}
+    wanted = {
+        "CMAKE_BUILD_TYPE",
+        "CMAKE_CXX_COMPILER",
+        "CMAKE_CXX_COMPILER_ID",
+        "CMAKE_CXX_COMPILER_VERSION",
+        "CMAKE_CXX_FLAGS",
+    }
+
+    for line in cache_path.read_text(errors="replace").splitlines():
+        if line.startswith("//") or line.startswith("#") or "=" not in line:
+            continue
+        key_with_type, value = line.split("=", 1)
+        key = key_with_type.split(":", 1)[0]
+        if key in wanted:
+            result[key] = value
+
+    result["CMakeCache"] = str(cache_path)
+    return result
+
+
+def read_cmake_compiler_metadata(cache_path: pathlib.Path | None):
+    if cache_path is None:
+        return {}
+
+    cmake_files = cache_path.parent / "CMakeFiles"
+    compiler_files = list(cmake_files.glob("*/CMakeCXXCompiler.cmake"))
+    if not compiler_files:
+        return {}
+
+    result = {}
+    wanted = {
+        "CMAKE_CXX_COMPILER_ID",
+        "CMAKE_CXX_COMPILER_VERSION",
+    }
+    pattern = re.compile(r'set\((?P<key>[A-Za-z0-9_]+)\s+"(?P<value>.*)"\)')
+
+    for line in compiler_files[0].read_text(errors="replace").splitlines():
+        match = pattern.match(line)
+        if match and match.group("key") in wanted:
+            result[match.group("key")] = match.group("value")
+
+    return result
+
+
+def collect_metadata(args, executable: pathlib.Path, test_dir: pathlib.Path, output_dir: pathlib.Path, ctest_command: list[str]):
+    cache_path = find_cmake_cache(test_dir)
+    return {
+        "git": {
+            "commit": run_text(["git", "rev-parse", "HEAD"]),
+            "branch": run_text(["git", "rev-parse", "--abbrev-ref", "HEAD"]),
+            "dirty": bool(run_text(["git", "status", "--porcelain"])),
+        },
+        "build": {
+            "executable": str(executable),
+            "test_dir": str(test_dir),
+            **read_cmake_cache(cache_path),
+            **read_cmake_compiler_metadata(cache_path),
+        },
+        "host": {
+            "hostname": platform.node(),
+            "platform": platform.platform(),
+            "cpu_count": os.cpu_count(),
+        },
+        "runner": {
+            "command": sys.argv,
+            "ctest_command": ctest_command,
+            "suite_json": str(args.suite_json),
+            "output_dir": str(output_dir),
+            "parallel": args.parallel,
+            "benchmark_min_time": args.benchmark_min_time,
+            "benchmark_repetitions": args.benchmark_repetitions,
+            "benchmark_report_aggregates_only": args.benchmark_report_aggregates_only,
+        },
+    }
+
+
 def parse_results(log: str):
-    statuses = {}
+    results = {}
 
     for line in log.splitlines():
         match = RESULT_RE.match(line)
@@ -23,29 +124,43 @@ def parse_results(log: str):
 
         name = match.group("name").strip()
         status = match.group("status")
+        duration = float(match.group("duration"))
 
         if status == "Passed":
-            statuses[name] = "passed"
+            parsed_status = "passed"
         elif status == "***Timeout":
-            statuses[name] = "timed_out"
+            parsed_status = "timed_out"
         else:
-            statuses[name] = "failed"
+            parsed_status = "failed"
 
-    return statuses
+        results[name] = {
+            "status": parsed_status,
+            "ctest_duration_seconds": duration,
+        }
+
+    return results
 
 
-def load_cases(suite_json: pathlib.Path):
+def load_suite(suite_json: pathlib.Path):
     suite = json.loads(suite_json.read_text())
+    validate_suite(suite)
+    return suite
+
+
+def load_cases(suite):
     cases = []
 
-    for run_name, config in suite["cases"].items():
-        cases.append(
-            {
-                "run_name": run_name,
-                "domain_file": config["domain_file"],
-                "problem_file": config["problem_file"],
-            }
-        )
+    for domain_name, domain_config in suite["domains"].items():
+        for task_name, task_file in domain_config["tasks"].items():
+            cases.append(
+                {
+                    "run_name": f"{domain_name}/{task_name}",
+                    "domain": domain_name,
+                    "task": task_name,
+                    "domain_file": domain_config["domain_file"],
+                    "problem_file": task_file,
+                }
+            )
 
     return cases
 
@@ -57,7 +172,14 @@ def group_cases(cases):
     return groups
 
 
-def run_benchmarks(benchmark_executable: pathlib.Path, output_dir: pathlib.Path, passed_cases, min_time: str):
+def run_benchmarks(
+    benchmark_executable: pathlib.Path,
+    output_dir: pathlib.Path,
+    passed_cases,
+    min_time: str,
+    repetitions: int | None,
+    report_aggregates_only: bool,
+):
     results = []
     benchmark_output_dir = output_dir / "benchmark-results"
     benchmark_log_file = output_dir / "benchmark.log"
@@ -76,6 +198,10 @@ def run_benchmarks(benchmark_executable: pathlib.Path, output_dir: pathlib.Path,
                 f"--benchmark_out={result_file}",
                 "--benchmark_out_format=json",
             ]
+            if repetitions is not None:
+                command.append(f"--benchmark_repetitions={repetitions}")
+            if report_aggregates_only:
+                command.append("--benchmark_report_aggregates_only=true")
 
             result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             benchmark_log.write(result.stdout)
@@ -90,6 +216,9 @@ def run_benchmarks(benchmark_executable: pathlib.Path, output_dir: pathlib.Path,
                     "result_file": str(result_file),
                 }
             )
+            case["benchmark_status"] = "passed" if result.returncode == 0 else "failed"
+            case["benchmark_result_file"] = str(result_file)
+            case["benchmark_exit_code"] = result.returncode
 
     return results
 
@@ -109,9 +238,15 @@ def main():
         "--suite-json",
         type=pathlib.Path,
         required=True,
-        help="Profiling suite JSON with run names, domain files, and problem files.",
+        help="Profiling suite JSON with domains, domain files, and task files.",
     )
     parser.add_argument("--benchmark-min-time", default="0.1s", help="Google Benchmark --benchmark_min_time value.")
+    parser.add_argument("--benchmark-repetitions", type=int, help="Google Benchmark --benchmark_repetitions value.")
+    parser.add_argument(
+        "--benchmark-report-aggregates-only",
+        action="store_true",
+        help="Forward --benchmark_report_aggregates_only=true to Google Benchmark.",
+    )
     parser.add_argument(
         "ctest_args",
         nargs=argparse.REMAINDER,
@@ -140,21 +275,45 @@ def main():
         *extra_args,
     ]
 
+    metadata = collect_metadata(args, executable, test_dir, output_dir, command)
+
     result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     log_file.write_text(result.stdout)
 
-    statuses = parse_results(result.stdout)
+    ctest_results = parse_results(result.stdout)
 
-    cases = load_cases(args.suite_json)
+    suite = load_suite(args.suite_json)
+    cases = load_cases(suite)
 
     for case in cases:
-        case["status"] = statuses.get(case["run_name"], "not_run")
+        ctest_result = ctest_results.get(case["run_name"])
+        if ctest_result is None:
+            case["status"] = "not_run"
+            case["benchmark_status"] = "skipped"
+            case["benchmark_skip_reason"] = "ctest_not_run"
+        else:
+            case.update(ctest_result)
+            if case["status"] == "timed_out":
+                case["benchmark_status"] = "skipped"
+                case["benchmark_skip_reason"] = "ctest_timed_out"
+            elif case["status"] == "failed":
+                case["benchmark_status"] = "skipped"
+                case["benchmark_skip_reason"] = "ctest_failed"
 
     groups = group_cases(cases)
-    benchmark_results = run_benchmarks(executable, output_dir, groups["passed"], args.benchmark_min_time)
+    benchmark_results = run_benchmarks(
+        executable,
+        output_dir,
+        groups["passed"],
+        args.benchmark_min_time,
+        args.benchmark_repetitions,
+        args.benchmark_report_aggregates_only,
+    )
 
     summary = {
         "generated": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+        "metadata": metadata,
+        "attributes": suite.get("attributes", {}),
         "command": command,
         "exit_code": result.returncode,
         "cases": cases,
