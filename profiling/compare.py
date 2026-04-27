@@ -165,7 +165,7 @@ def compare_attributes(old_benchmarks, new_benchmarks, attributes):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compare two profiling ctest-summary.json files.")
+    parser = argparse.ArgumentParser(description="Compare two profiling summary JSON files.")
     parser.add_argument("old_summary", type=pathlib.Path)
     parser.add_argument("new_summary", type=pathlib.Path)
     parser.add_argument("--output", type=pathlib.Path, help="Optional JSON file to write the comparison to.")

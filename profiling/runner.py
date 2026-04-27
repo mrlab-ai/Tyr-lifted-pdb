@@ -8,14 +8,9 @@ import platform
 import re
 import subprocess
 import sys
+import time
 
 from schema import validate_suite
-
-
-RESULT_RE = re.compile(
-    r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(?P<name>.*?)\s+\.{2,}\s*"
-    r"(?P<status>Passed|\*\*\*Timeout|\*\*\*Failed|Failed)\s+(?P<duration>[0-9.]+)\s+sec\b"
-)
 
 
 def run_text(command: list[str], cwd: pathlib.Path | None = None):
@@ -82,7 +77,7 @@ def read_cmake_compiler_metadata(cache_path: pathlib.Path | None):
     return result
 
 
-def collect_metadata(args, executable: pathlib.Path, test_dir: pathlib.Path, output_dir: pathlib.Path, ctest_command: list[str]):
+def collect_metadata(args, executable: pathlib.Path, test_dir: pathlib.Path, output_dir: pathlib.Path):
     cache_path = find_cmake_cache(test_dir)
     return {
         "git": {
@@ -103,48 +98,30 @@ def collect_metadata(args, executable: pathlib.Path, test_dir: pathlib.Path, out
         },
         "runner": {
             "command": sys.argv,
-            "ctest_command": ctest_command,
             "suite_json": str(args.suite_json),
             "output_dir": str(output_dir),
-            "parallel": args.parallel,
+            "dry_run_benchmark_min_time": args.dry_run_benchmark_min_time,
+            "dry_run_timeout_seconds": args.dry_run_timeout,
             "benchmark_min_time": args.benchmark_min_time,
             "benchmark_repetitions": args.benchmark_repetitions,
             "benchmark_report_aggregates_only": args.benchmark_report_aggregates_only,
+            "benchmark_timeout_seconds": args.benchmark_timeout,
         },
     }
-
-
-def parse_results(log: str):
-    results = {}
-
-    for line in log.splitlines():
-        match = RESULT_RE.match(line)
-        if not match:
-            continue
-
-        name = match.group("name").strip()
-        status = match.group("status")
-        duration = float(match.group("duration"))
-
-        if status == "Passed":
-            parsed_status = "passed"
-        elif status == "***Timeout":
-            parsed_status = "timed_out"
-        else:
-            parsed_status = "failed"
-
-        results[name] = {
-            "status": parsed_status,
-            "ctest_duration_seconds": duration,
-        }
-
-    return results
 
 
 def load_suite(suite_json: pathlib.Path):
     suite = json.loads(suite_json.read_text())
     validate_suite(suite)
     return suite
+
+
+def normalize_stdout(stdout):
+    if stdout is None:
+        return ""
+    if isinstance(stdout, bytes):
+        return stdout.decode(errors="replace")
+    return stdout
 
 
 def load_cases(suite):
@@ -172,68 +149,189 @@ def group_cases(cases):
     return groups
 
 
+def build_benchmark_command(
+    benchmark_executable: pathlib.Path,
+    run_name: str,
+    min_time: str,
+    result_file: pathlib.Path | None,
+    repetitions: int | None,
+    report_aggregates_only: bool,
+):
+    command = [
+        str(benchmark_executable),
+        f"--benchmark_filter=^{run_name}/.*",
+        f"--benchmark_min_time={min_time}",
+        "--benchmark_format=json",
+    ]
+    if result_file is not None:
+        command.extend(
+            [
+                f"--benchmark_out={result_file}",
+                "--benchmark_out_format=json",
+            ]
+        )
+    if repetitions is not None:
+        command.append(f"--benchmark_repetitions={repetitions}")
+    if report_aggregates_only:
+        command.append("--benchmark_report_aggregates_only=true")
+    return command
+
+
+def run_command(command: list[str], timeout: float):
+    started = time.monotonic()
+    try:
+        result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout)
+        duration = time.monotonic() - started
+        stdout = normalize_stdout(result.stdout)
+        exit_code = result.returncode
+        status = "passed" if result.returncode == 0 else "failed"
+    except subprocess.TimeoutExpired as error:
+        duration = time.monotonic() - started
+        stdout = normalize_stdout(error.stdout)
+        exit_code = None
+        status = "timed_out"
+
+    return {
+        "command": command,
+        "status": status,
+        "exit_code": exit_code,
+        "duration_seconds": duration,
+        "stdout": stdout,
+    }
+
+
+def write_log_entry(log_file, run_name: str, phase: str, result):
+    log_file.write(f"===== {run_name} ({phase}: {result['status']}) =====\n")
+    log_file.write(result["stdout"])
+    if result["stdout"] and not result["stdout"].endswith("\n"):
+        log_file.write("\n")
+
+
+def run_dry_runs(
+    benchmark_executable: pathlib.Path,
+    output_dir: pathlib.Path,
+    cases,
+    min_time: str,
+    timeout: float,
+):
+    results = []
+    dry_run_log_file = output_dir / "dry-run.log"
+
+    with dry_run_log_file.open("w") as dry_run_log:
+        for case in cases:
+            run_name = case["run_name"]
+            command = build_benchmark_command(
+                benchmark_executable,
+                run_name,
+                min_time,
+                None,
+                1,
+                True,
+            )
+            result = run_command(command, timeout)
+            write_log_entry(dry_run_log, run_name, "dry-run", result)
+
+            results.append(
+                {
+                    "run_name": run_name,
+                    "command": command,
+                    "status": result["status"],
+                    "exit_code": result["exit_code"],
+                    "duration_seconds": result["duration_seconds"],
+                }
+            )
+            case["dry_run_status"] = result["status"]
+            case["dry_run_duration_seconds"] = result["duration_seconds"]
+            case["dry_run_exit_code"] = result["exit_code"]
+
+            if result["status"] == "timed_out":
+                case["status"] = "timed_out"
+                case["benchmark_status"] = "skipped"
+                case["benchmark_skip_reason"] = "dry_run_timed_out"
+                case["dry_run_timeout_seconds"] = timeout
+            elif result["status"] == "failed":
+                case["status"] = "failed"
+                case["benchmark_status"] = "skipped"
+                case["benchmark_skip_reason"] = "dry_run_failed"
+            else:
+                case["status"] = "not_run"
+
+    return results
+
+
 def run_benchmarks(
     benchmark_executable: pathlib.Path,
     output_dir: pathlib.Path,
-    passed_cases,
+    cases,
     min_time: str,
     repetitions: int | None,
     report_aggregates_only: bool,
+    timeout: float,
 ):
     results = []
     benchmark_output_dir = output_dir / "benchmark-results"
     benchmark_log_file = output_dir / "benchmark.log"
 
     with benchmark_log_file.open("w") as benchmark_log:
-        for case in passed_cases:
+        for case in cases:
+            if case["dry_run_status"] != "passed":
+                continue
+
             run_name = case["run_name"]
             result_file = benchmark_output_dir / f"{run_name}.json"
+            temp_result_file = result_file.with_name(f"{result_file.name}.tmp")
             result_file.parent.mkdir(parents=True, exist_ok=True)
+            result_file.unlink(missing_ok=True)
+            temp_result_file.unlink(missing_ok=True)
 
-            command = [
-                str(benchmark_executable),
-                f"--benchmark_filter=^{run_name}/.*",
-                f"--benchmark_min_time={min_time}",
-                "--benchmark_format=json",
-                f"--benchmark_out={result_file}",
-                "--benchmark_out_format=json",
-            ]
-            if repetitions is not None:
-                command.append(f"--benchmark_repetitions={repetitions}")
-            if report_aggregates_only:
-                command.append("--benchmark_report_aggregates_only=true")
+            command = build_benchmark_command(
+                benchmark_executable,
+                run_name,
+                min_time,
+                temp_result_file,
+                repetitions,
+                report_aggregates_only,
+            )
+            result = run_command(command, timeout)
+            write_log_entry(benchmark_log, run_name, "benchmark", result)
 
-            result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            benchmark_log.write(result.stdout)
-            if result.stdout and not result.stdout.endswith("\n"):
-                benchmark_log.write("\n")
+            if result["status"] == "passed":
+                temp_result_file.replace(result_file)
+            else:
+                temp_result_file.unlink(missing_ok=True)
 
             results.append(
                 {
                     "run_name": run_name,
                     "command": command,
-                    "exit_code": result.returncode,
+                    "status": result["status"],
+                    "exit_code": result["exit_code"],
                     "result_file": str(result_file),
+                    "duration_seconds": result["duration_seconds"],
                 }
             )
-            case["benchmark_status"] = "passed" if result.returncode == 0 else "failed"
-            case["benchmark_result_file"] = str(result_file)
-            case["benchmark_exit_code"] = result.returncode
+            case["status"] = result["status"]
+            case["benchmark_status"] = result["status"]
+            case["benchmark_duration_seconds"] = result["duration_seconds"]
+            case["benchmark_exit_code"] = result["exit_code"]
+            if result["status"] == "passed":
+                case["benchmark_result_file"] = str(result_file)
+            elif result["status"] == "timed_out":
+                case["benchmark_timeout_seconds"] = timeout
 
     return results
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run CTest profiling, summarize outcomes, and benchmark the runs that passed the CTest screen."
+        description="Dry-run each profiling case with a hard timeout, then benchmark the cases that pass."
     )
     parser.add_argument("--executable", type=pathlib.Path, required=True, help="Profiling benchmark executable to run.")
     parser.add_argument(
         "--output-dir",
         required=True,
-        help="Directory for ctest.log and ctest-summary.json.",
+        help="Directory for benchmark.log, summary.json, and benchmark result JSON files.",
     )
-    parser.add_argument("-j", "--parallel", default="24", help="CTest parallelism.")
     parser.add_argument(
         "--suite-json",
         type=pathlib.Path,
@@ -243,84 +341,74 @@ def main():
     parser.add_argument("--benchmark-min-time", default="0.1s", help="Google Benchmark --benchmark_min_time value.")
     parser.add_argument("--benchmark-repetitions", type=int, help="Google Benchmark --benchmark_repetitions value.")
     parser.add_argument(
+        "--dry-run-benchmark-min-time",
+        default="0.001s",
+        help="Google Benchmark --benchmark_min_time value used for dry-run screening.",
+    )
+    parser.add_argument(
+        "--dry-run-timeout",
+        type=float,
+        default=10.0,
+        help="Hard wall-clock timeout in seconds for each dry-run subprocess.",
+    )
+    parser.add_argument(
+        "--benchmark-timeout",
+        type=float,
+        default=60.0,
+        help="Hard wall-clock timeout in seconds for each per-case Google Benchmark subprocess.",
+    )
+    parser.add_argument(
         "--benchmark-report-aggregates-only",
         action="store_true",
         help="Forward --benchmark_report_aggregates_only=true to Google Benchmark.",
     )
-    parser.add_argument(
-        "ctest_args",
-        nargs=argparse.REMAINDER,
-        help="Extra arguments passed to ctest after '--'.",
-    )
     args = parser.parse_args()
-
-    extra_args = args.ctest_args
-    if extra_args and extra_args[0] == "--":
-        extra_args = extra_args[1:]
+    if args.dry_run_timeout <= 0:
+        parser.error("--dry-run-timeout must be greater than 0.")
+    if args.benchmark_timeout <= 0:
+        parser.error("--benchmark-timeout must be greater than 0.")
 
     output_dir = pathlib.Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     executable = args.executable
     test_dir = executable.parent
-    log_file = output_dir / "ctest.log"
-    summary_file = output_dir / "ctest-summary.json"
-
-    command = [
-        "ctest",
-        "--test-dir",
-        str(test_dir),
-        "--output-on-failure",
-        f"-j{args.parallel}",
-        *extra_args,
-    ]
-
-    metadata = collect_metadata(args, executable, test_dir, output_dir, command)
-
-    result = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    log_file.write_text(result.stdout)
-
-    ctest_results = parse_results(result.stdout)
+    summary_file = output_dir / "summary.json"
 
     suite = load_suite(args.suite_json)
     cases = load_cases(suite)
+    metadata = collect_metadata(args, executable, test_dir, output_dir)
 
-    for case in cases:
-        ctest_result = ctest_results.get(case["run_name"])
-        if ctest_result is None:
-            case["status"] = "not_run"
-            case["benchmark_status"] = "skipped"
-            case["benchmark_skip_reason"] = "ctest_not_run"
-        else:
-            case.update(ctest_result)
-            if case["status"] == "timed_out":
-                case["benchmark_status"] = "skipped"
-                case["benchmark_skip_reason"] = "ctest_timed_out"
-            elif case["status"] == "failed":
-                case["benchmark_status"] = "skipped"
-                case["benchmark_skip_reason"] = "ctest_failed"
-
-    groups = group_cases(cases)
+    dry_run_results = run_dry_runs(
+        executable,
+        output_dir,
+        cases,
+        args.dry_run_benchmark_min_time,
+        args.dry_run_timeout,
+    )
     benchmark_results = run_benchmarks(
         executable,
         output_dir,
-        groups["passed"],
+        cases,
         args.benchmark_min_time,
         args.benchmark_repetitions,
         args.benchmark_report_aggregates_only,
+        args.benchmark_timeout,
     )
+    groups = group_cases(cases)
+    exit_code = 1 if groups["failed"] else 0
 
     summary = {
         "generated": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "metadata": metadata,
         "attributes": suite.get("attributes", {}),
-        "command": command,
-        "exit_code": result.returncode,
+        "exit_code": exit_code,
         "cases": cases,
         "passed": groups["passed"],
         "timed_out": groups["timed_out"],
         "failed": groups["failed"],
         "not_run": groups["not_run"],
+        "dry_run_results": dry_run_results,
         "benchmark_results": benchmark_results,
         "counts": {
             "passed": len(groups["passed"]),
@@ -335,11 +423,7 @@ def main():
     summary_file.write_text(rendered_summary + "\n")
     print(rendered_summary)
 
-    has_benchmark_failures = any(benchmark_result["exit_code"] != 0 for benchmark_result in benchmark_results)
-    if groups["failed"] or groups["not_run"] or has_benchmark_failures:
-        return 1
-
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":
