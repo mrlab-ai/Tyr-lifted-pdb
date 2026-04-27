@@ -89,13 +89,21 @@ public:
         if (const auto it = m_set.find(element, h); it != m_set.end())
             return { *it, false };
 
+        return { insert_new_with_hash(h, element), true };
+    }
+
+    index_type insert_new_with_hash(size_t h, std::span<const value_type> element)
+    {
+        assert(h == BlockArraySet::hash(element) && "The given hash does not match container internal's hash.");
+        assert(h == m_set.hash(element));
+
         const auto index = static_cast<index_type>(m_pool->size());
         m_pool->push_back(element);
 
         [[maybe_unused]] const auto [it, inserted] = m_set.emplace_with_hash(h, index);
         assert(inserted);
 
-        return { index, true };
+        return index;
     }
 
     std::pair<index_type, bool> insert(std::span<const value_type> element)

@@ -90,10 +90,20 @@ public:
         if (auto it = m_set.find(element, h); it != m_set.end())
             return { *it, false };
 
+        return { insert_new_with_hash(h, element), true };
+    }
+
+    Index<Tag> insert_new_with_hash(size_t h, const Data<Tag>& element)
+    {
+        // assert(is_canonical(element) && "The given element is not canonical. Did you forget to call canonicalize?");
+        assert(h == hash(element) && "The given hash does not match container internal's hash.");
+        assert(h == m_set.hash(element));
+
         Index<Tag> idx(static_cast<uint_t>(m_storage->size()));
         m_storage->push_back(element);
-        m_set.emplace_with_hash(h, idx);
-        return { idx, true };
+        [[maybe_unused]] const auto [it, inserted] = m_set.emplace_with_hash(h, idx);
+        assert(inserted);
+        return idx;
     }
 
     std::pair<Index<Tag>, bool> insert(const Data<Tag>& element)

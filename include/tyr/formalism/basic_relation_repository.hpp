@@ -173,8 +173,8 @@ public:
         if (auto row_or_nullopt = container.find_with_hash(builder.objects, h))
             return { Index<Row>(slot.parent_size + *row_or_nullopt), false };
 
-        const auto [row, success] = container.insert_with_hash(h, builder.objects);
-        return { Index<Row>(slot.parent_size + row), success };
+        const auto row = container.insert_new_with_hash(h, builder.objects);
+        return { Index<Row>(slot.parent_size + row), true };
     }
 
     std::pair<Index<Row>, bool> get_or_create_local(const Data<RelationBinding<T>>& builder)

@@ -111,6 +111,16 @@ public:
         if (it != m_set.end())
             return std::make_pair(*it, false);
 
+        return std::make_pair(insert_new_with_hash<Mode>(h, element), true);
+    }
+
+    template<::cista::mode Mode = CISTA_MODE>
+    Index<Tag> insert_new_with_hash(size_t h, const Data<Tag>& element)
+    {
+        assert(is_canonical(element) && "The given element is not canonical. Did you forget to call canonicalize?");
+        assert(h == IndexedHashSet::hash(element) && "The given hash does not match container internal's hash.");
+        assert(h == m_set.hash(element));
+
         // 2. Serialize
         m_buf->reset();
         ::cista::serialize<Mode>(*m_buf, element);
@@ -128,7 +138,7 @@ public:
         [[maybe_unused]] auto [it2, inserted] = m_set.emplace_with_hash(h, index);
         assert(inserted);
 
-        return std::make_pair(index, true);
+        return index;
     }
 
     // const T* always points to a valid instantiation of the class.

@@ -126,8 +126,8 @@ public:
 
         builder.index.value = m_slot.parent_size + container.size();
 
-        const auto [index, success] = container.insert_with_hash(h, builder);
-        return { Index<T>(m_slot.parent_size + uint_t(index)), success };
+        const auto index = container.insert_new_with_hash(h, builder);
+        return { Index<T>(m_slot.parent_size + uint_t(index)), true };
     }
 
     std::pair<Index<T>, bool> get_or_create_local(Data<T>& builder) { return get_or_create_local_with_hash(builder, BasicSymbolRepository::hash(builder)); }
