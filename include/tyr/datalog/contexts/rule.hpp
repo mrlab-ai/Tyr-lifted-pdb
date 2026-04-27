@@ -47,9 +47,9 @@ public:
         explicit In(const RuleExecutionContext<OrAP, AndAP, TP>& rctx, const RuleWorkspace<AndAP>::Worker& ws_worker) :
             m_rctx(rctx),
             m_and_ap(ws_worker.solve.and_ap),
-            m_ws_rule(rctx.ws_rule),
-            m_cws_rule(rctx.cws_rule),
-            m_fact_sets(rctx.ctx.ctx.cws.facts.fact_sets, rctx.ctx.ctx.ws.facts.fact_sets)
+            m_ws_rule(rctx.out().ws_rule()),
+            m_cws_rule(rctx.in().cws_rule()),
+            m_fact_sets(rctx.stratum_in().program().facts().fact_sets, rctx.stratum_out().program().facts().fact_sets)
         {
         }
 
@@ -60,12 +60,12 @@ public:
 
         const auto& and_ap() noexcept { return m_and_ap; }
         const auto& and_ap() const noexcept { return m_and_ap; }
-        const auto& or_annot() noexcept { return m_rctx.ctx.ctx.ws.or_annot; }
-        const auto& or_annot() const noexcept { return m_rctx.ctx.ctx.ws.or_annot; }
-        const auto& cost_buckets() noexcept { return m_rctx.ctx.ctx.ws.cost_buckets; }
-        const auto& cost_buckets() const noexcept { return m_rctx.ctx.ctx.ws.cost_buckets; }
-        const auto& program_repository() noexcept { return m_rctx.ws_rule.common.program_repository; }
-        const auto& program_repository() const noexcept { return m_rctx.ws_rule.common.program_repository; }
+        const auto& or_annot() noexcept { return m_rctx.stratum_out().program().or_annot(); }
+        const auto& or_annot() const noexcept { return m_rctx.stratum_out().program().or_annot(); }
+        const auto& cost_buckets() noexcept { return m_rctx.stratum_out().program().cost_buckets(); }
+        const auto& cost_buckets() const noexcept { return m_rctx.stratum_out().program().cost_buckets(); }
+        const auto& program_repository() noexcept { return m_rctx.out().common().program_repository; }
+        const auto& program_repository() const noexcept { return m_rctx.out().common().program_repository; }
         const auto& fact_sets() noexcept { return m_fact_sets; }
         const auto& fact_sets() const noexcept { return m_fact_sets; }
 
@@ -149,11 +149,43 @@ private:
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 struct RuleExecutionContext
 {
+    class In
+    {
+    public:
+        In(Index<formalism::datalog::Rule> rule, const ConstRuleWorkspace& cws_rule) : m_rule(rule), m_cws_rule(cws_rule) {}
+
+        auto rule() const noexcept { return m_rule; }
+        const auto& cws_rule() const noexcept { return m_cws_rule; }
+
+    private:
+        Index<formalism::datalog::Rule> m_rule;
+        const ConstRuleWorkspace& m_cws_rule;
+    };
+
+    class Out
+    {
+    public:
+        explicit Out(RuleWorkspace<AndAP>& ws_rule) : m_ws_rule(ws_rule) {}
+
+        auto& ws_rule() noexcept { return m_ws_rule; }
+        const auto& ws_rule() const noexcept { return m_ws_rule; }
+        auto& common() noexcept { return m_ws_rule.common; }
+        const auto& common() const noexcept { return m_ws_rule.common; }
+        auto& kpkc() noexcept { return m_ws_rule.common.kpkc; }
+        const auto& kpkc() const noexcept { return m_ws_rule.common.kpkc; }
+        auto& statistics() noexcept { return m_ws_rule.common.statistics; }
+        const auto& statistics() const noexcept { return m_ws_rule.common.statistics; }
+        auto& workers() noexcept { return m_ws_rule.worker; }
+        const auto& workers() const noexcept { return m_ws_rule.worker; }
+
+    private:
+        RuleWorkspace<AndAP>& m_ws_rule;
+    };
+
     RuleExecutionContext(Index<formalism::datalog::Rule> rule, StratumExecutionContext<OrAP, AndAP, TP>& ctx) :
-        rule(rule),
-        ctx(ctx),
-        ws_rule(*ctx.ctx.ws.rules[uint_t(rule)]),
-        cws_rule(ctx.ctx.cws.rules[uint_t(rule)])
+        m_ctx(ctx),
+        m_in(rule, ctx.in().program().rules()[uint_t(rule)]),
+        m_out(*ctx.out().program().rules()[uint_t(rule)])
     {
     }
 
@@ -165,24 +197,24 @@ struct RuleExecutionContext
     {
         // std::cout << cws_rule.get_rule() << std::endl;
 
-        ws_rule.common.initialize_iteration(cws_rule.get_static_consistency_graph(),
-                                            AssignmentSets { ctx.ctx.cws.facts.assignment_sets, ctx.ctx.ws.facts.assignment_sets });
+        out().common().initialize_iteration(in().cws_rule().get_static_consistency_graph(),
+                                            AssignmentSets { stratum_in().program().facts().assignment_sets, stratum_out().program().facts().assignment_sets });
     }
 
-    void clear_common() noexcept { ws_rule.common.clear(); }
+    void clear_common() noexcept { out().common().clear(); }
     void clear_worker() noexcept
     {
-        for (auto& worker : ws_rule.worker)
+        for (auto& worker : out().workers())
             worker.clear();
     }
     void clear_iteration() noexcept
     {
-        for (auto& worker : ws_rule.worker)
+        for (auto& worker : out().workers())
             worker.iteration.clear();
     }
     void clear_solve() noexcept
     {
-        for (auto& worker : ws_rule.worker)
+        for (auto& worker : out().workers())
             worker.solve.clear();
     }
     void clear() noexcept
@@ -195,15 +227,21 @@ struct RuleExecutionContext
      * Subcontext
      */
 
-    auto get_rule_worker_execution_context() { return RuleWorkerExecutionContext<OrAP, AndAP, TP>(*this, ws_rule.worker.local()); }
+    auto get_rule_worker_execution_context() { return RuleWorkerExecutionContext<OrAP, AndAP, TP>(*this, out().workers().local()); }
 
-    /// Inputs
-    Index<formalism::datalog::Rule> rule;
-    const StratumExecutionContext<OrAP, AndAP, TP>& ctx;
+    const auto& in() const noexcept { return m_in; }
+    auto& out() noexcept { return m_out; }
+    const auto& out() const noexcept { return m_out; }
 
-    /// Workspaces
-    RuleWorkspace<AndAP>& ws_rule;
-    const ConstRuleWorkspace& cws_rule;
+    const auto& stratum_in() const noexcept { return m_ctx.in(); }
+    auto& stratum_out() noexcept { return m_ctx.out(); }
+    const auto& stratum_out() const noexcept { return m_ctx.out(); }
+
+private:
+    StratumExecutionContext<OrAP, AndAP, TP>& m_ctx;
+
+    In m_in;
+    Out m_out;
 };
 }
 

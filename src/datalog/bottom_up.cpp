@@ -172,11 +172,11 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
     {
         assert(ensure_applicability(in.cws_rule().get_rule(), out.ground_context_iteration(), in.fact_sets()));
 
-        // std::cout << rctx.cws_rule.rule << " " << rctx.out.ground_context_solve().binding << std::endl;
+        // std::cout << in.cws_rule().get_rule() << " " << out.ground_context_solve().binding << std::endl;
 
         const auto worker_head = fd::ground_binding(in.cws_rule().get_rule().get_head(), out.ground_context_solve()).first;
 
-        // std::cout << make_view(ground(rctx.cws_rule.get_rule(), rctx.ground_context_iter).first, rctx.ground_context_iter.destination)
+        // std::cout << make_view(ground(in.cws_rule().get_rule(), out.ground_context_iteration()).first, out.ground_context_iteration().destination)
         //           << std::endl;
 
         out.heads_rows().insert(worker_head.get_index().row);
@@ -204,9 +204,12 @@ void process_clique(RuleWorkerExecutionContext<OrAP, AndAP, TP>& wrctx, std::spa
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
-    const auto& kpkc_algorithm = rctx.ws_rule.common.kpkc;
+    auto& rule_out = rctx.out();
+    const auto& kpkc_algorithm = rule_out.kpkc();
 
 #ifdef TYR_ENABLE_INNER_PARALLELISM
+
+    const auto& in = rctx.in();
 
     constexpr size_t PAR_THRESHOLD = 1024;
 
@@ -218,7 +221,8 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
     // Seeding from edges in first iteration is wasteful.
     // We could seed from all vertices in a partition instead.
     const bool do_parallel_inner =
-        false && kpkc_algorithm.get_iteration() > 1 && (rctx.cws_rule.get_rule().get_arity() > 2) && (delta_edges.size() >= PAR_THRESHOLD) && (arena_conc >= 2);
+        false && kpkc_algorithm.get_iteration() > 1 && (in.cws_rule().get_rule().get_arity() > 2) && (delta_edges.size() >= PAR_THRESHOLD)
+        && (arena_conc >= 2);
 
     if (do_parallel_inner)
     {
@@ -268,7 +272,7 @@ void generate_general_case(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void generate(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
-    const auto arity = rctx.cws_rule.get_rule().get_arity();
+    const auto arity = rctx.in().cws_rule().get_rule().get_arity();
 
     if (arity == 0)
         generate_nullary_case(rctx);
@@ -279,7 +283,7 @@ void generate(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void process_pending(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 {
-    for (auto& worker : rctx.ws_rule.worker)
+    for (auto& worker : rctx.out().workers())
     {
         auto wrctx = RuleWorkerExecutionContext(rctx, worker);
 
@@ -330,11 +334,12 @@ void process_pending(RuleExecutionContext<OrAP, AndAP, TP>& rctx)
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 {
-    auto& scheduler = ctx.scheduler;
-    auto& facts = ctx.ctx.ws.facts;
-    auto& cost_buckets = ctx.ctx.ws.cost_buckets;
-    auto& ws = ctx.ctx.ws;
-    auto& tp = ctx.ctx.ws.tp;
+    auto& out = ctx.out();
+    auto& scheduler = out.scheduler();
+    auto& program_out = out.program();
+    auto& facts = program_out.facts();
+    auto& cost_buckets = program_out.cost_buckets();
+    auto& tp = program_out.tp();
 
     scheduler.activate_all();
 
@@ -369,7 +374,7 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
          */
 
         {
-            const auto program_stopwatch = StopwatchScope(ws.statistics.parallel_time);
+            const auto program_stopwatch = StopwatchScope(program_out.statistics().parallel_time);
 
             oneapi::tbb::parallel_for_each(active_rules.begin(),
                                            active_rules.end(),
@@ -378,26 +383,27 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                                                // std::cout << make_view(rule_index, ws.repository) << std::endl;
 
                                                auto rctx = ctx.get_rule_execution_context(rule_index);
+                                               auto& rule_out = rctx.out();
 
-                                               const auto total_time = StopwatchScope(rctx.ws_rule.common.statistics.total_time);
-                                               ++rctx.ws_rule.common.statistics.num_executions;
+                                               const auto total_time = StopwatchScope(rule_out.statistics().total_time);
+                                               ++rule_out.statistics().num_executions;
 
                                                rctx.clear_iteration();  ///< Clear iteration before process_pending/generate
 
                                                {
-                                                   const auto initialize_time = StopwatchScope(rctx.ws_rule.common.statistics.initialize_time);
+                                                   const auto initialize_time = StopwatchScope(rule_out.statistics().initialize_time);
 
                                                    rctx.initialize();  ///< Initialize before process_pending/generate
                                                }
 
                                                {
-                                                   const auto process_pending_time = StopwatchScope(rctx.ws_rule.common.statistics.process_pending_time);
+                                                   const auto process_pending_time = StopwatchScope(rule_out.statistics().process_pending_time);
 
                                                    process_pending(rctx);
                                                }
 
                                                {
-                                                   const auto process_generate_time = StopwatchScope(rctx.ws_rule.common.statistics.process_generate_time);
+                                                   const auto process_generate_time = StopwatchScope(rule_out.statistics().process_generate_time);
 
                                                    generate(rctx);
                                                }
@@ -415,8 +421,8 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
             for (const auto rule_index : active_rules)
             {
                 const auto i = uint_t(rule_index);
-                auto merge_context = fd::MergeContext { ws.datalog_builder, ws.workspace_repository };
-                const auto& ws_rule = ws.rules[i];
+                auto merge_context = fd::MergeContext { program_out.datalog_builder(), program_out.workspace_repository() };
+                const auto& ws_rule = program_out.rules()[i];
 
                 for (const auto& worker : ws_rule->worker)
                 {
@@ -430,11 +436,11 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
                         const auto program_head = fd::merge_d2d(worker_head, merge_context).first;
 
                         // Update annotation
-                        const auto cost_update = ctx.ctx.ws.or_ap.update_annotation(program_head,
-                                                                                    worker_head,
-                                                                                    ctx.ctx.ws.or_annot,
-                                                                                    worker.iteration.and_annot,
-                                                                                    ctx.ctx.ws.and_annot);
+                        const auto cost_update = program_out.or_ap().update_annotation(program_head,
+                                                                                       worker_head,
+                                                                                       program_out.or_annot(),
+                                                                                       worker.iteration.and_annot,
+                                                                                       program_out.and_annot());
 
                         cost_buckets.update(cost_update, program_head);
                     }
@@ -469,8 +475,9 @@ void solve_bottom_up_for_stratum(StratumExecutionContext<OrAP, AndAP, TP>& ctx)
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 void solve_bottom_up(ProgramExecutionContext<OrAP, AndAP, TP>& ctx)
 {
-    const auto program_stopwatch = StopwatchScope(ctx.ws.statistics.total_time);
-    ++ctx.ws.statistics.num_executions;
+    auto& out = ctx.out();
+    const auto program_stopwatch = StopwatchScope(out.statistics().total_time);
+    ++out.statistics().num_executions;
 
     for (auto stratum_ctx : ctx.get_stratum_execution_contexts())
     {

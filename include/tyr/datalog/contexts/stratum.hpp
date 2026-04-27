@@ -31,7 +31,37 @@ struct ProgramExecutionContext;
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 struct StratumExecutionContext
 {
-    StratumExecutionContext(RuleSchedulerStratum& scheduler, const ProgramExecutionContext<OrAP, AndAP, TP>& ctx) : scheduler(scheduler), ctx(ctx) {}
+    class In
+    {
+    public:
+        explicit In(const ProgramExecutionContext<OrAP, AndAP, TP>& ctx) : m_ctx(ctx) {}
+
+        const auto& program() const noexcept { return m_ctx.in(); }
+
+    private:
+        const ProgramExecutionContext<OrAP, AndAP, TP>& m_ctx;
+    };
+
+    class Out
+    {
+    public:
+        Out(RuleSchedulerStratum& scheduler, ProgramExecutionContext<OrAP, AndAP, TP>& ctx) : m_scheduler(scheduler), m_ctx(ctx) {}
+
+        auto& scheduler() noexcept { return m_scheduler; }
+        const auto& scheduler() const noexcept { return m_scheduler; }
+        auto& program() noexcept { return m_ctx.out(); }
+        const auto& program() const noexcept { return m_ctx.out(); }
+
+    private:
+        RuleSchedulerStratum& m_scheduler;
+        ProgramExecutionContext<OrAP, AndAP, TP>& m_ctx;
+    };
+
+    StratumExecutionContext(RuleSchedulerStratum& scheduler, ProgramExecutionContext<OrAP, AndAP, TP>& ctx) :
+        m_in(ctx),
+        m_out(scheduler, ctx)
+    {
+    }
 
     /**
      * Initialization
@@ -43,8 +73,13 @@ struct StratumExecutionContext
 
     auto get_rule_execution_context(Index<formalism::datalog::Rule> rule) { return RuleExecutionContext<OrAP, AndAP, TP> { rule, *this }; }
 
-    RuleSchedulerStratum& scheduler;
-    const ProgramExecutionContext<OrAP, AndAP, TP>& ctx;
+    const auto& in() const noexcept { return m_in; }
+    auto& out() noexcept { return m_out; }
+    const auto& out() const noexcept { return m_out; }
+
+private:
+    In m_in;
+    Out m_out;
 };
 }
 

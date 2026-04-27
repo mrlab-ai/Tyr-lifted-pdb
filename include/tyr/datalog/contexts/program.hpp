@@ -35,7 +35,51 @@ namespace tyr::datalog
 template<OrAnnotationPolicyConcept OrAP, AndAnnotationPolicyConcept AndAP, TerminationPolicyConcept TP>
 struct ProgramExecutionContext
 {
-    ProgramExecutionContext(ProgramWorkspace<OrAP, AndAP, TP>& ws, const ConstProgramWorkspace& cws) : ws(ws), cws(cws) {}
+    class In
+    {
+    public:
+        explicit In(const ConstProgramWorkspace& cws) : m_cws(cws) {}
+
+        const auto& facts() const noexcept { return m_cws.facts; }
+        const auto& rules() const noexcept { return m_cws.rules; }
+
+    private:
+        const ConstProgramWorkspace& m_cws;
+    };
+
+    class Out
+    {
+    public:
+        explicit Out(ProgramWorkspace<OrAP, AndAP, TP>& ws) : m_ws(ws) {}
+
+        auto& facts() noexcept { return m_ws.facts; }
+        const auto& facts() const noexcept { return m_ws.facts; }
+        auto& or_ap() noexcept { return m_ws.or_ap; }
+        const auto& or_ap() const noexcept { return m_ws.or_ap; }
+        auto& or_annot() noexcept { return m_ws.or_annot; }
+        const auto& or_annot() const noexcept { return m_ws.or_annot; }
+        auto& and_annot() noexcept { return m_ws.and_annot; }
+        const auto& and_annot() const noexcept { return m_ws.and_annot; }
+        auto& tp() noexcept { return m_ws.tp; }
+        const auto& tp() const noexcept { return m_ws.tp; }
+        auto& rules() noexcept { return m_ws.rules; }
+        const auto& rules() const noexcept { return m_ws.rules; }
+        auto& datalog_builder() noexcept { return m_ws.datalog_builder; }
+        const auto& datalog_builder() const noexcept { return m_ws.datalog_builder; }
+        auto& workspace_repository() noexcept { return m_ws.workspace_repository; }
+        const auto& workspace_repository() const noexcept { return m_ws.workspace_repository; }
+        auto& schedulers() noexcept { return m_ws.schedulers; }
+        const auto& schedulers() const noexcept { return m_ws.schedulers; }
+        auto& cost_buckets() noexcept { return m_ws.cost_buckets; }
+        const auto& cost_buckets() const noexcept { return m_ws.cost_buckets; }
+        auto& statistics() noexcept { return m_ws.statistics; }
+        const auto& statistics() const noexcept { return m_ws.statistics; }
+
+    private:
+        ProgramWorkspace<OrAP, AndAP, TP>& m_ws;
+    };
+
+    ProgramExecutionContext(ProgramWorkspace<OrAP, AndAP, TP>& ws, const ConstProgramWorkspace& cws) : m_in(cws), m_out(ws) {}
 
     /**
      * Initialization
@@ -43,34 +87,36 @@ struct ProgramExecutionContext
 
     void clear() noexcept
     {
+        auto& out = this->out();
+
         // Clear the rules
-        for (auto& rule : ws.rules)
+        for (auto& rule : out.rules())
             rule->clear();
 
         // Clear the annotation policy.
-        for (auto& vec : ws.or_annot)
+        for (auto& vec : out.or_annot())
             vec.clear();
-        ws.and_annot.clear();
+        out.and_annot().clear();
 
         // Initialize the termination policy.
-        ws.tp.clear();
-        ws.tp.set_goals(ws.facts.goal_fact_sets);
+        out.tp().clear();
+        out.tp().set_goals(out.facts().goal_fact_sets);
 
         // Initialize first fact layer.
-        for (const auto& set : ws.facts.fact_sets.predicate.get_sets())
+        for (const auto& set : out.facts().fact_sets.predicate.get_sets())
         {
             for (const auto binding : set.get_bindings())
             {
-                ws.or_ap.initialize_annotation(binding, ws.or_annot);
-                ws.tp.achieve(binding);
+                out.or_ap().initialize_annotation(binding, out.or_annot());
+                out.tp().achieve(binding);
             }
         }
 
         // Initialize assignment sets
-        ws.facts.assignment_sets.insert(ws.facts.fact_sets);
+        out.facts().assignment_sets.insert(out.facts().fact_sets);
 
         // Reset cost buckets.
-        ws.cost_buckets.clear();
+        out.cost_buckets().clear();
     }
 
     /**
@@ -79,12 +125,17 @@ struct ProgramExecutionContext
 
     auto get_stratum_execution_contexts()
     {
-        return ws.schedulers.data
+        return out().schedulers().data
                | std::views::transform([this](RuleSchedulerStratum& scheduler) { return StratumExecutionContext<OrAP, AndAP, TP> { scheduler, *this }; });
     }
 
-    ProgramWorkspace<OrAP, AndAP, TP>& ws;
-    const ConstProgramWorkspace& cws;
+    const auto& in() const noexcept { return m_in; }
+    auto& out() noexcept { return m_out; }
+    const auto& out() const noexcept { return m_out; }
+
+private:
+    In m_in;
+    Out m_out;
 };
 }
 
