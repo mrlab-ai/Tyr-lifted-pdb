@@ -93,7 +93,7 @@ inline void process_effects(fp::ActionView action,
         const auto binding_size = grounder_context.binding.size();
 
         itertools::cartesian_set::for_each_element(
-            parameter_domains.begin() + cond_effect.get_arity(),
+            parameter_domains.begin() + action.get_arity(),
             parameter_domains.end(),
             cartesian_workspace,
             [&](auto&& binding_cond)

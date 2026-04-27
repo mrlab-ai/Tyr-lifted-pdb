@@ -8,8 +8,8 @@ before exploring this example.
 Example usage (run from the repository root):
 
     python3 python/examples/planning/gbfs_lazy.py \
-        -d data/gripper/domain.pddl \
-        -p data/gripper/test_problem.pddl
+        -d data/classical/gripper/domain.pddl \
+        -p data/classical/gripper/test_problem.pddl
 
 Author: Dominik Drexler (dominik.drexler@liu.se)
 """

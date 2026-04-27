@@ -139,7 +139,15 @@ Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<Lif
 }
 
 // Action binding API (interning)
-Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node, formalism::planning::ActionBindingView binding) {}
+Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node, formalism::planning::ActionBindingView binding)
+{
+    m_scratch_action_binding.relation = binding.get_relation().get_index();
+    m_scratch_action_binding.objects.clear();
+    for (const auto object : binding.get_data())
+        m_scratch_action_binding.objects.push_back(object);
+
+    return get_successor_node(node, m_scratch_action_binding);
+}
 
 std::vector<formalism::planning::ActionBindingView> SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<LiftedTag>& node)
 {
@@ -175,6 +183,15 @@ void SuccessorGenerator<LiftedTag>::get_applicable_action_bindings(const Node<Li
 Node<LiftedTag> SuccessorGenerator<LiftedTag>::get_successor_node(const Node<LiftedTag>& node,
                                                                   const Data<formalism::RelationBinding<formalism::planning::Action>>& binding)
 {
+    m_workspace.binding.clear();
+    for (const auto object : binding.objects)
+        m_workspace.binding.push_back(object);
+
+    auto grounder_context = fp::GrounderContext { m_workspace.planning_builder, *m_task->get_repository(), m_workspace.binding };
+    const auto state_context = StateContext<LiftedTag>(*m_task, node.get_state().get_unpacked_state(), node.get_metric());
+    const auto action = make_view(binding.relation, *m_task->get_repository());
+
+    return m_executor.apply_action(state_context, action, grounder_context, *m_task->get_fdr_context(), *m_state_repository);
 }
 
 // Lookup

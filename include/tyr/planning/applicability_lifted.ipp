@@ -142,14 +142,15 @@ TYR_INLINE_IMPL bool is_applicable_if_fires(formalism::planning::ConditionalEffe
                                             const ApplicabilityContext& context,
                                             formalism::planning::EffectFamilyList& ref_fluent_effect_families,
                                             itertools::cartesian_set::Workspace<Index<formalism::Object>>& cartesian_workspace,
-                                            const analysis::ConditionalEffectDomain& effect_domains)
+                                            const analysis::ConditionalEffectDomain& effect_domains,
+                                            size_t action_arity)
 {
     const auto& parameter_domains = effect_domains.payload.effect_domain.payload;
     const auto binding_size = context.grounder.binding.size();
 
     bool applicable = true;
 
-    itertools::cartesian_set::for_each_element(parameter_domains.begin() + element.get_arity(),
+    itertools::cartesian_set::for_each_element(parameter_domains.begin() + action_arity,
                                                parameter_domains.end(),
                                                cartesian_workspace,
                                                [&](auto&& binding_cond)
@@ -184,7 +185,8 @@ TYR_INLINE_IMPL bool is_applicable_if_fires(formalism::planning::ConditionalEffe
                                     context,
                                     out_fluent_effect_families,
                                     cartesian_workspace,
-                                    action_domains.payload.effect_domains.at(cond_effect.get_index())))
+                                    action_domains.payload.effect_domains.at(cond_effect.get_index()),
+                                    context.grounder.binding.size()))
             return false;
     }
 

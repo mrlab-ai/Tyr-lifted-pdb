@@ -300,8 +300,7 @@ void bind_module_definitions(nb::module_& m)
                       { return std::make_shared<FDRContext>(ground_mutex_groups, std::move(repository)); }),
              "ground_mutex_groups"_a,
              "repository"_a)
-        .def("get_fact", nb::overload_cast<GroundAtomView<FluentTag>>(&FDRContext::get_fact_view), "atom"_a)
-        .def("get_fact", nb::overload_cast<GroundLiteralView<FluentTag>>(&FDRContext::get_fact_view), "literal"_a);
+        .def("get_fact", nb::overload_cast<GroundAtomView<FluentTag>>(&FDRContext::get_fact_view), "atom"_a);
 
     /**
      * PlanningDomain
