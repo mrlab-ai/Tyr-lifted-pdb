@@ -22,6 +22,7 @@
 #include "tyr/common/iostream.hpp"
 #include "tyr/formalism/formatter.hpp"
 #include "tyr/formalism/planning/invariants/invariant.hpp"
+#include "tyr/formalism/planning/mutable/formatter.hpp"
 
 #include <fmt/core.h>
 #include <fmt/ostream.h>

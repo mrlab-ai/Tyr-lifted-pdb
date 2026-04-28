@@ -145,7 +145,6 @@ target_link_libraries(core
     TBB::tbb
     valla::core   
     loki::parsers  
-  PRIVATE
     fmt::fmt
 )
 
