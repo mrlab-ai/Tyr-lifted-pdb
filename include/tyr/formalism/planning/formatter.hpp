@@ -72,7 +72,10 @@ struct fmt::formatter<tyr::formalism::planning::OpAssign, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::OpAssign&, FormatContext& ctx) const { return fmt::format_to(ctx.out(), "assign"); }
+    auto format(const tyr::formalism::planning::OpAssign&, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "assign");
+    }
 };
 
 template<>
@@ -80,7 +83,10 @@ struct fmt::formatter<tyr::formalism::planning::OpIncrease, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::OpIncrease&, FormatContext& ctx) const { return fmt::format_to(ctx.out(), "increase"); }
+    auto format(const tyr::formalism::planning::OpIncrease&, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "increase");
+    }
 };
 
 template<>
@@ -88,7 +94,10 @@ struct fmt::formatter<tyr::formalism::planning::OpDecrease, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::OpDecrease&, FormatContext& ctx) const { return fmt::format_to(ctx.out(), "decrease"); }
+    auto format(const tyr::formalism::planning::OpDecrease&, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "decrease");
+    }
 };
 
 template<>
@@ -96,7 +105,10 @@ struct fmt::formatter<tyr::formalism::planning::OpScaleUp, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::OpScaleUp&, FormatContext& ctx) const { return fmt::format_to(ctx.out(), "scale-up"); }
+    auto format(const tyr::formalism::planning::OpScaleUp&, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "scale-up");
+    }
 };
 
 template<>
@@ -104,7 +116,10 @@ struct fmt::formatter<tyr::formalism::planning::OpScaleDown, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::OpScaleDown&, FormatContext& ctx) const { return fmt::format_to(ctx.out(), "scale-down"); }
+    auto format(const tyr::formalism::planning::OpScaleDown&, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "scale-down");
+    }
 };
 
 template<>
@@ -112,7 +127,10 @@ struct fmt::formatter<tyr::formalism::planning::Minimize, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::Minimize&, FormatContext& ctx) const { return fmt::format_to(ctx.out(), "minimize"); }
+    auto format(const tyr::formalism::planning::Minimize&, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "minimize");
+    }
 };
 
 template<>
@@ -120,7 +138,10 @@ struct fmt::formatter<tyr::formalism::planning::Maximize, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
     template<typename FormatContext>
-    auto format(const tyr::formalism::planning::Maximize&, FormatContext& ctx) const { return fmt::format_to(ctx.out(), "maximize"); }
+    auto format(const tyr::formalism::planning::Maximize&, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "maximize");
+    }
 };
 
 template<tyr::formalism::OpKind Op, typename T>
@@ -853,7 +874,10 @@ struct fmt::formatter<tyr::formalism::planning::GroundAtomView<T>, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::GroundAtomView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", tyr::to_string(value.get_predicate().get_name()), fmt::join(tyr::to_strings(value.get_row().get_objects()), " "));
+        return fmt::format_to(ctx.out(),
+                              "({} {})",
+                              tyr::to_string(value.get_predicate().get_name()),
+                              fmt::join(tyr::to_strings(value.get_row().get_objects()), " "));
     }
 };
 
@@ -890,7 +914,10 @@ struct fmt::formatter<tyr::formalism::planning::GroundFunctionTermView<T>, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::GroundFunctionTermView<T>& value, FormatContext& ctx) const
     {
-        return fmt::format_to(ctx.out(), "({} {})", tyr::to_string(value.get_function().get_name()), fmt::join(tyr::to_strings(value.get_row().get_objects()), " "));
+        return fmt::format_to(ctx.out(),
+                              "({} {})",
+                              tyr::to_string(value.get_function().get_name()),
+                              fmt::join(tyr::to_strings(value.get_row().get_objects()), " "));
     }
 };
 
@@ -1007,7 +1034,8 @@ struct fmt::formatter<tyr::formalism::planning::FDRFactView<T>, char>
     template<typename FormatContext>
     auto format(const tyr::formalism::planning::FDRFactView<T>& value, FormatContext& ctx) const
     {
-        if (value.get_value() == tyr::formalism::planning::FDRValue::none())
+        const auto atom = value.get_atom();
+        if (!atom.has_value())
         {
             return fmt::format_to(ctx.out(),
                                   "<{},{}>: (none-of {})",
@@ -1019,7 +1047,7 @@ struct fmt::formatter<tyr::formalism::planning::FDRFactView<T>, char>
                               "<{},{}>: {}",
                               tyr::to_string(value.get_variable().get_index()),
                               tyr::to_string(value.get_value()),
-                              tyr::to_string(value.get_variable().get_atoms()[tyr::uint_t(value.get_value()) - 1]));
+                              tyr::to_string(atom.value()));
     }
 };
 
