@@ -62,32 +62,6 @@ struct fmt::formatter<tyr::formalism::planning::MutableLiteral<T>, char>
 };
 
 template<>
-struct fmt::formatter<tyr::formalism::planning::MutableConditionalEffect, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::MutableConditionalEffect& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "MutableConditionalEffect(\n";
-        {
-            tyr::IndentScope scope(os);
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "num parent variables = ", value.num_parent_variables);
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "num variables = ", value.num_variables);
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.condition);
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "effect = ", value.effect);
-        }
-        os << tyr::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
 struct fmt::formatter<tyr::formalism::planning::MutableConjunctiveCondition, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
@@ -131,6 +105,32 @@ struct fmt::formatter<tyr::formalism::planning::MutableConjunctiveEffect, char>
             fmt::print(os, "{}{}\n", "num variables = ", value.num_variables);
             os << tyr::print_indent;
             fmt::print(os, "{}{}\n", "literals = ", value.literals);
+        }
+        os << tyr::print_indent << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
+};
+
+template<>
+struct fmt::formatter<tyr::formalism::planning::MutableConditionalEffect, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::MutableConditionalEffect& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "MutableConditionalEffect(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "num parent variables = ", value.num_parent_variables);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "num variables = ", value.num_variables);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "condition = ", value.condition);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "effect = ", value.effect);
         }
         os << tyr::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
