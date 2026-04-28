@@ -41,6 +41,21 @@ struct PlanFormatting
 }  // namespace tyr::formalism::planning
 
 template<>
+struct fmt::formatter<tyr::formalism::planning::ConjunctiveEffectView, char>;
+
+template<>
+struct fmt::formatter<tyr::formalism::planning::GroundConjunctiveEffectView, char>;
+
+template<>
+struct fmt::formatter<tyr::formalism::planning::ActionBindingView, char>;
+
+template<>
+struct fmt::formatter<tyr::formalism::planning::AxiomBindingView, char>;
+
+template<tyr::formalism::FactKind T>
+struct fmt::formatter<tyr::formalism::planning::FDRFactView<T>, char>;
+
+template<>
 struct fmt::formatter<tyr::formalism::planning::FDRValue, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
@@ -985,6 +1000,29 @@ struct fmt::formatter<tyr::formalism::planning::ConjunctiveConditionView, char>
     }
 };
 
+template<tyr::formalism::FactKind T>
+struct fmt::formatter<tyr::formalism::planning::FDRFactView<T>, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::FDRFactView<T>& value, FormatContext& ctx) const
+    {
+        if (value.get_value() == tyr::formalism::planning::FDRValue::none())
+        {
+            return fmt::format_to(ctx.out(),
+                                  "<{},{}>: (none-of {})",
+                                  tyr::to_string(value.get_variable().get_index()),
+                                  tyr::to_string(value.get_value()),
+                                  fmt::join(tyr::to_strings(value.get_variable().get_atoms()), " "));
+        }
+        return fmt::format_to(ctx.out(),
+                              "<{},{}>: {}",
+                              tyr::to_string(value.get_variable().get_index()),
+                              tyr::to_string(value.get_value()),
+                              tyr::to_string(value.get_variable().get_atoms()[tyr::uint_t(value.get_value()) - 1]));
+    }
+};
+
 template<>
 struct fmt::formatter<tyr::formalism::planning::GroundConjunctiveConditionView, char>
 {
@@ -1008,54 +1046,6 @@ struct fmt::formatter<tyr::formalism::planning::GroundConjunctiveConditionView, 
             fmt::print(os, "{}{}\n", "negative facts = ", value.template get_facts<tyr::formalism::NegativeTag>());
             os << tyr::print_indent;
             fmt::print(os, "{}{}\n", "numeric constraints = ", value.get_numeric_constraints());
-        }
-        os << tyr::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct fmt::formatter<tyr::formalism::planning::ConditionalEffectView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::ConditionalEffectView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "ConditionalEffect(\n";
-        {
-            tyr::IndentScope scope(os);
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.get_condition());
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "effect = ", value.get_effect());
-        }
-        os << tyr::print_indent << ")";
-        return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct fmt::formatter<tyr::formalism::planning::GroundConditionalEffectView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::GroundConditionalEffectView& value, FormatContext& ctx) const
-    {
-        auto os = std::stringstream {};
-        os << "GroundConditionalEffect(\n";
-        {
-            tyr::IndentScope scope(os);
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "index = ", value.get_index());
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "condition = ", value.get_condition());
-            os << tyr::print_indent;
-            fmt::print(os, "{}{}\n", "effect = ", value.get_effect());
         }
         os << tyr::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
@@ -1115,6 +1105,54 @@ struct fmt::formatter<tyr::formalism::planning::GroundConjunctiveEffectView, cha
 };
 
 template<>
+struct fmt::formatter<tyr::formalism::planning::ConditionalEffectView, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::ConditionalEffectView& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "ConditionalEffect(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "index = ", value.get_index());
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "variables = ", value.get_variables());
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "condition = ", value.get_condition());
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "effect = ", value.get_effect());
+        }
+        os << tyr::print_indent << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
+};
+
+template<>
+struct fmt::formatter<tyr::formalism::planning::GroundConditionalEffectView, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::GroundConditionalEffectView& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "GroundConditionalEffect(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "index = ", value.get_index());
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "condition = ", value.get_condition());
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "effect = ", value.get_effect());
+        }
+        os << tyr::print_indent << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
+};
+
+template<>
 struct fmt::formatter<tyr::formalism::planning::ActionView, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
@@ -1138,6 +1176,28 @@ struct fmt::formatter<tyr::formalism::planning::ActionView, char>
         }
         os << tyr::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
+    }
+};
+
+template<>
+struct fmt::formatter<tyr::formalism::planning::ActionBindingView, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::ActionBindingView& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", fmt::join(tyr::to_strings(value.get_objects()), " "));
+    }
+};
+
+template<>
+struct fmt::formatter<tyr::formalism::planning::AxiomBindingView, char>
+{
+    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+    template<typename FormatContext>
+    auto format(const tyr::formalism::planning::AxiomBindingView& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", fmt::join(tyr::to_strings(value.get_objects()), " "));
     }
 };
 
@@ -1233,28 +1293,6 @@ struct fmt::formatter<tyr::formalism::planning::GroundAxiomView, char>
         }
         os << tyr::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<>
-struct fmt::formatter<tyr::formalism::planning::ActionBindingView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::ActionBindingView& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", fmt::join(tyr::to_strings(value.get_objects()), " "));
-    }
-};
-
-template<>
-struct fmt::formatter<tyr::formalism::planning::AxiomBindingView, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::AxiomBindingView& value, FormatContext& ctx) const
-    {
-        return fmt::format_to(ctx.out(), "{}", fmt::join(tyr::to_strings(value.get_objects()), " "));
     }
 };
 
@@ -1367,29 +1405,6 @@ struct fmt::formatter<tyr::formalism::planning::FDRVariableView<T>, char>
         }
         os << tyr::print_indent << ")";
         return fmt::format_to(ctx.out(), "{}", os.str());
-    }
-};
-
-template<tyr::formalism::FactKind T>
-struct fmt::formatter<tyr::formalism::planning::FDRFactView<T>, char>
-{
-    constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    template<typename FormatContext>
-    auto format(const tyr::formalism::planning::FDRFactView<T>& value, FormatContext& ctx) const
-    {
-        if (value.get_value() == tyr::formalism::planning::FDRValue::none())
-        {
-            return fmt::format_to(ctx.out(),
-                                  "<{},{}>: (none-of {})",
-                                  tyr::to_string(value.get_variable().get_index()),
-                                  tyr::to_string(value.get_value()),
-                                  fmt::join(tyr::to_strings(value.get_variable().get_atoms()), " "));
-        }
-        return fmt::format_to(ctx.out(),
-                              "<{},{}>: {}",
-                              tyr::to_string(value.get_variable().get_index()),
-                              tyr::to_string(value.get_value()),
-                              tyr::to_string(value.get_variable().get_atoms()[tyr::uint_t(value.get_value()) - 1]));
     }
 };
 
