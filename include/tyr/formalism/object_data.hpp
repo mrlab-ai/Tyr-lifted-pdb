@@ -32,7 +32,7 @@ struct Data<formalism::Object>
     ::cista::offset::string name;
 
     Data() = default;
-    Data(::cista::offset::string name_) : index(), name(std::move(name)) {}
+    Data(::cista::offset::string name_) : index(), name(std::move(name_)) {}
     // Python constructor
     Data(const std::string& name_) : index(), name(name_) {}
     Data(const Data& other) = delete;

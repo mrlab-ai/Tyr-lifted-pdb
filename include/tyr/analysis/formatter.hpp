@@ -27,6 +27,11 @@
 namespace fmt
 {
 
+template<typename C, typename Char>
+struct range_format_kind<tyr::analysis::VariableDomainView<C>, Char, void> : std::false_type
+{
+};
+
 template<>
 struct formatter<tyr::analysis::VariableDomain, char>
 {

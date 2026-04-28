@@ -17,6 +17,8 @@
 
 #include "domains.hpp"
 
+#include "tyr/analysis/formatter.hpp"
+
 namespace nb = nanobind;
 using namespace nb::literals;
 
