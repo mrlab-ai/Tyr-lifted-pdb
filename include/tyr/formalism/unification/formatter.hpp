@@ -49,7 +49,10 @@ struct formatter<tyr::formalism::unification::SubstitutionFunction<T>, char>
                 for (const auto& parameter : value.parameters())
                 {
                     os << tyr::print_indent;
-                    fmt::print(os, "{} -> {}\n", parameter, value.is_bound(parameter) ? tyr::to_string(*value[parameter]) : "unbound");
+                    if (value.is_bound(parameter))
+                        fmt::print(os, "{} -> {}\n", parameter, *value[parameter]);
+                    else
+                        fmt::print(os, "{} -> unbound\n", parameter);
                 }
             }
         }
