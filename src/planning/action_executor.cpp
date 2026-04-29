@@ -163,7 +163,7 @@ Node<Kind> apply_action_impl(const StateContext<Kind>& state_context,
     else
         ++succ_state_context.auxiliary_value;  // Assume unit cost if no metric is given
 
-    return Node<Kind>(succ_state, succ_state_context.auxiliary_value);
+    return Node<Kind>(succ_state, FloatTolerance<float_t>::canonicalize(succ_state_context.auxiliary_value));
 }
 
 // Ground action API

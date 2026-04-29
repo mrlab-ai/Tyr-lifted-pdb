@@ -18,11 +18,14 @@
 #ifndef TYR_COMMON_CONFIG_HPP_
 #define TYR_COMMON_CONFIG_HPP_
 
+#include <algorithm>
 #include <cassert>
 #include <cista/mode.h>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -46,6 +49,24 @@ struct FloatTolerance<float_t>
 {
     static constexpr float_t abs_epsilon = static_cast<float_t>(1e-12);
     static constexpr float_t rel_epsilon = static_cast<float_t>(1e-12);
+
+    static_assert(abs_epsilon > std::numeric_limits<float_t>::epsilon(), "Absolute float tolerance is too small.");
+    static_assert(rel_epsilon > std::numeric_limits<float_t>::epsilon(), "Relative float tolerance is too small.");
+    static_assert(abs_epsilon < static_cast<float_t>(1), "Absolute float tolerance is too large.");
+    static_assert(rel_epsilon < static_cast<float_t>(1), "Relative float tolerance is too large.");
+
+    static constexpr float_t tolerance(float_t lhs, float_t rhs) noexcept
+    {
+        return std::max(abs_epsilon, rel_epsilon * std::max(std::abs(lhs), std::abs(rhs)));
+    }
+
+    static constexpr float_t canonicalize(float_t value) noexcept
+    {
+        if (std::isnan(value) || std::isinf(value))
+            return value;
+
+        return std::round(value / abs_epsilon) * abs_epsilon;
+    }
 };
 
 #ifdef NDEBUG

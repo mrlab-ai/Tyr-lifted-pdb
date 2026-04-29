@@ -50,6 +50,8 @@ public:
 
 private:
     RawVectorSet<uint_t, float_t>& m_float_vec_set;
+
+    std::vector<float_t> m_float_vec_buffer;
 };
 
 }

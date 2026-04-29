@@ -24,7 +24,7 @@
 namespace tyr::planning
 {
 template<TaskKind Kind>
-NumericStorageBackend<Kind, HashSet>::NumericStorageBackend(StateStorageContext<Kind, HashSet>& ctx) : m_float_vec_set(ctx.float_vec_set)
+NumericStorageBackend<Kind, HashSet>::NumericStorageBackend(StateStorageContext<Kind, HashSet>& ctx) : m_float_vec_set(ctx.float_vec_set), m_float_vec_buffer()
 {
 }
 
@@ -32,7 +32,11 @@ template<TaskKind Kind>
 typename NumericStorageBackend<Kind, HashSet>::Packed
 NumericStorageBackend<Kind, HashSet>::insert(const typename NumericStorageBackend<Kind, HashSet>::Unpacked& unpacked)
 {
-    return NumericStorageBackend<Kind, HashSet>::Packed { m_float_vec_set.insert(unpacked.values) };
+    m_float_vec_buffer.clear();
+    for (const auto value : unpacked.values)
+        m_float_vec_buffer.push_back(FloatTolerance<float_t>::canonicalize(value));
+
+    return NumericStorageBackend<Kind, HashSet>::Packed { m_float_vec_set.insert(m_float_vec_buffer) };
 }
 
 template<TaskKind Kind>

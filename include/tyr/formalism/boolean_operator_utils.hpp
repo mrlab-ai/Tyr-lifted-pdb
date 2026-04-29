@@ -36,7 +36,7 @@ struct FloatCmp
 {
     static T tol(T a, T b) noexcept
     {
-        return std::max(FloatTolerance<T>::abs_epsilon, FloatTolerance<T>::rel_epsilon * std::max(std::abs(a), std::abs(b)));
+        return FloatTolerance<T>::tolerance(a, b);
     }
 
     static bool eq(T a, T b) noexcept { return std::abs(a - b) <= tol(a, b); }

@@ -41,7 +41,9 @@ float_t evaluate_metric(View<::cista::optional<Index<formalism::planning::Metric
     if (auxiliary_fterm_value)
         return auxiliary_fterm_value.value().get_value();
 
-    return metric ? evaluate(metric.value().get_fexpr(), state_context) : 0.;
+    const auto value = metric ? evaluate(metric.value().get_fexpr(), state_context) : 0.;
+
+    return FloatTolerance<float_t>::canonicalize(value);
 }
 }
 
