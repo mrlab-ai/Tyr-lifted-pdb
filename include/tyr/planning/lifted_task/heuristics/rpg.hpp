@@ -21,6 +21,7 @@
 #include "tyr/common/onetbb.hpp"
 #include "tyr/datalog/bottom_up.hpp"
 #include "tyr/datalog/contexts/program.hpp"
+#include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/workspaces/program.hpp"
 #include "tyr/planning/declarations.hpp"
 #include "tyr/planning/heuristic.hpp"

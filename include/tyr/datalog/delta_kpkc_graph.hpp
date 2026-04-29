@@ -24,7 +24,6 @@
 #include "tyr/common/hash.hpp"
 #include "tyr/common/vector.hpp"
 #include "tyr/datalog/declarations.hpp"
-#include "tyr/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/variable_dependency_graph.hpp"
 
 #include <boost/dynamic_bitset.hpp>

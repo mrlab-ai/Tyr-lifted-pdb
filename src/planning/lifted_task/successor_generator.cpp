@@ -20,6 +20,7 @@
 #include "../metric.hpp"
 #include "tyr/datalog/bottom_up.hpp"
 #include "tyr/datalog/contexts/program.hpp"
+#include "tyr/datalog/formatter.hpp"
 #include "tyr/formalism/planning/grounder.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"
 #include "tyr/planning/applicability_lifted.hpp"

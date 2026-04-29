@@ -18,7 +18,7 @@
 #ifndef TYR_PLANNING_HEURISTICS_FF_HPP_
 #define TYR_PLANNING_HEURISTICS_FF_HPP_
 
-#include "tyr/planning/task.hpp"
+#include "tyr/planning/declarations.hpp"
 
 namespace tyr::planning
 {

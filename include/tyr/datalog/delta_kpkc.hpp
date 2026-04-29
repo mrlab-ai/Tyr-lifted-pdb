@@ -23,7 +23,6 @@
 #include "tyr/common/vector.hpp"
 #include "tyr/datalog/declarations.hpp"
 #include "tyr/datalog/delta_kpkc_graph.hpp"
-#include "tyr/datalog/formatter.hpp"
 #include "tyr/datalog/statistics/rule.hpp"
 
 #include <boost/dynamic_bitset.hpp>

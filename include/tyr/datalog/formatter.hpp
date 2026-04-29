@@ -18,14 +18,63 @@
 #ifndef TYR_DATALOG_FORMATTER_HPP_
 #define TYR_DATALOG_FORMATTER_HPP_
 
+#include "tyr/common/chrono.hpp"
 #include "tyr/common/formatter.hpp"
 #include "tyr/common/iostream.hpp"
-#include "tyr/datalog/declarations.hpp"
-#include "tyr/formalism/declarations.hpp"  // for Context
+#include "tyr/datalog/assignment.hpp"
+#include "tyr/datalog/consistency_graph.hpp"
+#include "tyr/datalog/delta_kpkc.hpp"
+#include "tyr/datalog/delta_kpkc_graph.hpp"
+#include "tyr/datalog/statistics/program.hpp"
+#include "tyr/datalog/statistics/rule.hpp"
 
+#include <fmt/base.h>
+#include <fmt/format.h>
 #include <fmt/ostream.h>
-#include <iosfwd>  // for ostream
+#include <fmt/ranges.h>
+#include <ostream>
+#include <ranges>
 #include <sstream>
+#include <string>
+
+namespace tyr::datalog::details
+{
+
+template<formalism::FactKind T, typename FormatContext>
+auto format_rule_to_literal_info(const RuleToLiteralInfo<T>& value, FormatContext& ctx)
+{
+    auto os = std::stringstream {};
+    os << "RuleToLiteralInfo(\n";
+    {
+        IndentScope scope(os);
+        os << print_indent;
+        fmt::print(os, "{}{}\n", "predicate = ", value.predicate);
+        os << print_indent;
+        fmt::print(os, "{}{}\n", "polarity = ", value.polarity);
+        os << print_indent;
+        fmt::print(os, "{}{}\n", "position mappings = ", value.position_mappings);
+    }
+    os << ")";
+    return fmt::format_to(ctx.out(), "{}", os.str());
+}
+
+template<formalism::FactKind T, typename FormatContext>
+auto format_tagged_rule_to_literal_infos(const TaggedRuleToLiteralInfos<T>& value, FormatContext& ctx)
+{
+    auto os = std::stringstream {};
+    os << "TaggedRuleToLiteralInfos(\n";
+    {
+        IndentScope scope(os);
+        os << print_indent;
+        fmt::print(os, "{}{}\n", "literal infos = ", value.infos);
+        os << print_indent;
+        fmt::print(os, "{}{}\n", "info mappings = ", value.info_mappings);
+    }
+    os << ")";
+    return fmt::format_to(ctx.out(), "{}", os.str());
+}
+
+}  // namespace tyr::datalog::details
 
 namespace fmt
 {
@@ -34,154 +83,430 @@ template<>
 struct formatter<tyr::datalog::VertexAssignment, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::VertexAssignment& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::VertexAssignment& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "[{}/{}]", value.index, value.object);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::EdgeAssignment, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::EdgeAssignment& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::EdgeAssignment& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "[{}/{}, {}/{}]", value.first_index, value.first_object, value.second_index, value.second_object);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::Vertex, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::Vertex& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::Vertex& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "[{}/{}]", value.get_parameter_index(), value.get_object_index());
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::Edge, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::Edge& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::Edge& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "[{}, {}]", value.vi(), value.vj());
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::RuleToLiteralInfoMappings, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::RuleToLiteralInfoMappings& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::RuleToLiteralInfoMappings& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "RuleToLiteralInfoMappings(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "parameter to literal infos = ", value.parameter_to_infos);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "parameter pairs to literal infos = ", value.parameter_pairs_to_infos);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "parameter to literal infos with constants = ", value.parameter_to_infos_with_constants);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "literal infos with constants = ", value.infos_with_constants);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "literal infos with constant pairs = ", value.infos_with_constant_pairs);
+        }
+        os << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::RuleToLiteralPositionMappings, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::RuleToLiteralPositionMappings& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::RuleToLiteralPositionMappings& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "RuleToLiteralPositionMappings(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "constant positions = ", value.constant_positions);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "parameter to positions = ", value.parameter_to_positions);
+        }
+        os << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::RuleToLiteralInfo<tyr::formalism::StaticTag>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::RuleToLiteralInfo<tyr::formalism::StaticTag>& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::RuleToLiteralInfo<tyr::formalism::StaticTag>& value, FormatContext& ctx) const
+    {
+        return tyr::datalog::details::format_rule_to_literal_info(value, ctx);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::RuleToLiteralInfo<tyr::formalism::FluentTag>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::RuleToLiteralInfo<tyr::formalism::FluentTag>& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::RuleToLiteralInfo<tyr::formalism::FluentTag>& value, FormatContext& ctx) const
+    {
+        return tyr::datalog::details::format_rule_to_literal_info(value, ctx);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::TaggedRuleToLiteralInfos<tyr::formalism::StaticTag>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::TaggedRuleToLiteralInfos<tyr::formalism::StaticTag>& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::TaggedRuleToLiteralInfos<tyr::formalism::StaticTag>& value, FormatContext& ctx) const
+    {
+        return tyr::datalog::details::format_tagged_rule_to_literal_infos(value, ctx);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::TaggedRuleToLiteralInfos<tyr::formalism::FluentTag>, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::TaggedRuleToLiteralInfos<tyr::formalism::FluentTag>& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::TaggedRuleToLiteralInfos<tyr::formalism::FluentTag>& value, FormatContext& ctx) const
+    {
+        return tyr::datalog::details::format_tagged_rule_to_literal_infos(value, ctx);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::details::RuleToLiteralInfos, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::details::RuleToLiteralInfos& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::details::RuleToLiteralInfos& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "RuleToLiteralInfos(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "static indexed = ", value.static_indexed);
+            os << tyr::print_indent;
+            fmt::print(os, "{}{}\n", "fluent indexed = ", value.fluent_indexed);
+        }
+        os << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::StaticConsistencyGraph, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::StaticConsistencyGraph& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::StaticConsistencyGraph&, FormatContext& ctx) const
+    {
+        return ctx.out();
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::kpkc::Vertex, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::kpkc::Vertex& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::kpkc::Vertex& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "{}", value.index);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::kpkc::Edge, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::kpkc::Edge& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::kpkc::Edge& value, FormatContext& ctx) const
+    {
+        return fmt::format_to(ctx.out(), "<{} -- {}>", value.src, value.dst);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::kpkc::VertexPartitions, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::kpkc::VertexPartitions& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::kpkc::VertexPartitions& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "VertexPartitions(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent << "partitions = [";
+            for (tyr::uint_t p = 0; p < value.layout().k; ++p)
+            {
+                const auto& info = value.layout().info.infos[p];
+                fmt::print(os, "{}, ", tyr::BitsetSpan<const uint64_t>(value.data().data() + info.block_offset, info.num_bits));
+            }
+            os << "]\n";
+        }
+        os << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::kpkc::DeduplicatedAdjacencyMatrix, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::kpkc::DeduplicatedAdjacencyMatrix& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::kpkc::DeduplicatedAdjacencyMatrix& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "DeduplicatedAdjacencyMatrix(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent << "adjacency lists = [\n";
+            for (tyr::uint_t v = 0; v < value.layout().nv; ++v)
+            {
+                tyr::IndentScope scope2(os);
+                os << tyr::print_indent;
+                fmt::print(os, "{}: [", v);
+                for (tyr::uint_t p = 0; p < value.layout().k; ++p)
+                    fmt::print(os, "{}, ", value.get_bitset(v, p));
+                os << "]\n";
+            }
+            os << "]\n";
+        }
+        os << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::kpkc::PartitionedAdjacencyMatrix, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::kpkc::PartitionedAdjacencyMatrix& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::kpkc::PartitionedAdjacencyMatrix& value, FormatContext& ctx) const
+    {
+        auto os = std::stringstream {};
+        os << "PartitionedAdjacencyMatrix(\n";
+        {
+            tyr::IndentScope scope(os);
+            os << tyr::print_indent << "affected partitions = [";
+            for (tyr::uint_t p = 0; p < value.layout().k; ++p)
+            {
+                const auto& info = value.layout().info.infos[p];
+                fmt::print(os, "{}, ", tyr::BitsetSpan<const uint64_t>(value.affected_partitions().data().data() + info.block_offset, info.num_bits));
+            }
+            os << "]\n";
+            os << tyr::print_indent << "delta partitions = [";
+            for (tyr::uint_t p = 0; p < value.layout().k; ++p)
+            {
+                const auto& info = value.layout().info.infos[p];
+                fmt::print(os, "{}, ", tyr::BitsetSpan<const uint64_t>(value.delta_partitions().data().data() + info.block_offset, info.num_bits));
+            }
+            os << "]\n";
+            os << tyr::print_indent << "adjacency lists = [\n";
+            for (tyr::uint_t v = 0; v < value.layout().nv; ++v)
+            {
+                tyr::IndentScope scope2(os);
+                os << tyr::print_indent;
+                fmt::print(os, "{}: [", v);
+                for (tyr::uint_t p = 0; p < value.layout().k; ++p)
+                    fmt::print(os, "{}, ", value.get_bitset(v, p));
+                os << "]\n";
+            }
+            os << "]\n";
+        }
+        os << ")";
+        return fmt::format_to(ctx.out(), "{}", os.str());
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::ProgramStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::ProgramStatistics& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::ProgramStatistics& value, FormatContext& ctx) const
+    {
+        const double parallel_ns = static_cast<double>(tyr::to_ns(value.parallel_time));
+        const double total_ns = static_cast<double>(tyr::to_ns(value.total_time));
+        const double frac = parallel_ns > 0.0 && total_ns > 0.0 ? parallel_ns / total_ns : 1.0;
+        const auto avg_total_us = value.num_executions > 0 ? tyr::to_us(value.total_time) / value.num_executions : 0.0;
+
+        return fmt::format_to(ctx.out(),
+                              "[ProgramStatistics] N_exec = {:>10}    | executions\n"
+                              "[ProgramStatistics] T_seq  = {:>10} ms | sequential time\n"
+                              "[ProgramStatistics] T_par  = {:>10} ms | parallel time\n"
+                              "[ProgramStatistics] T_tot  = {:>10} ms | total time\n"
+                              "[ProgramStatistics] T_avg  = {:>10} us | average time\n"
+                              "[ProgramStatistics] PF     = {:>10.2f}    | parallel fraction (T_par / T_tot)",
+                              value.num_executions,
+                              tyr::to_ms(value.total_time) - tyr::to_ms(value.parallel_time),
+                              tyr::to_ms(value.parallel_time),
+                              tyr::to_ms(value.total_time),
+                              avg_total_us,
+                              frac);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::RuleStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::RuleStatistics& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::RuleStatistics& value, FormatContext& ctx) const
+    {
+        const auto avg_total_us = value.num_executions > 0 ? tyr::to_us(value.total_time) / value.num_executions : 0.0;
+        return fmt::format_to(ctx.out(),
+                              "[RuleStatistics] N_exec = {:>10}    | executions\n"
+                              "[RuleStatistics] T_seq  = {:>10} ms | sequential time\n"
+                              "[RuleStatistics] T_par  = {:>10} ms | parallel time\n"
+                              "[RuleStatistics] T_tot  = {:>10} ms | total time\n"
+                              "[RuleStatistics] T_avg  = {:>10} us | average time",
+                              value.num_executions,
+                              tyr::to_ms(value.initialize_time) + tyr::to_ms(value.process_pending_time),
+                              tyr::to_ms(value.process_generate_time),
+                              tyr::to_ms(value.total_time),
+                              avg_total_us);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::AggregatedRuleStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::AggregatedRuleStatistics& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::AggregatedRuleStatistics& value, FormatContext& ctx) const
+    {
+        const auto avg_total_us = value.num_executions > 0 ? tyr::to_us(value.total_time) / value.num_executions : 0.0;
+        const double tot_max_ns = static_cast<double>(tyr::to_ns(value.tot_time_max));
+        const double tot_med_ns = static_cast<double>(tyr::to_ns(value.tot_time_median));
+        const double tot_skew = tot_max_ns > 0.0 && tot_med_ns > 0.0 ? tot_max_ns / tot_med_ns : 1.0;
+        const double avg_max_ns = static_cast<double>(value.avg_time_max.count());
+        const double avg_med_ns = static_cast<double>(value.avg_time_median.count());
+        const double avg_skew = avg_max_ns > 0.0 && avg_med_ns > 0.0 ? avg_max_ns / avg_med_ns : 1.0;
+        const auto parallel_ns = static_cast<double>(tyr::to_ns(value.process_generate_time));
+        const auto total_ns = static_cast<double>(tyr::to_ns(value.total_time));
+        const double frac = parallel_ns > 0.0 && total_ns > 0.0 ? parallel_ns / total_ns : 1.0;
+
+        return fmt::format_to(ctx.out(),
+                              "[AggregatedRuleStatistics] N_exec     = {:>10}    | executions\n"
+                              "[AggregatedRuleStatistics] N_samples  = {:>10}    | samples\n"
+                              "[AggregatedRuleStatistics] T_seq      = {:>10} ms | sequential time\n"
+                              "[AggregatedRuleStatistics] T_par      = {:>10} ms | parallel time\n"
+                              "[AggregatedRuleStatistics] T_tot      = {:>10} ms | total time\n"
+                              "[AggregatedRuleStatistics] T_avg      = {:>10} us | average time\n"
+                              "[AggregatedRuleStatistics] PF         = {:>10.2f}    | parallel fraction (T_par / T_tot)\n"
+                              "[AggregatedRuleStatistics] T_tot_min  = {:>10} ms | minimum total time\n"
+                              "[AggregatedRuleStatistics] T_tot_max  = {:>10} ms | maximum total time\n"
+                              "[AggregatedRuleStatistics] T_tot_med  = {:>10} ms | median total time\n"
+                              "[AggregatedRuleStatistics] T_tot_skew = {:>10.2f}    | skew total time (T_tot_max / T_tot_med)\n"
+                              "[AggregatedRuleStatistics] T_avg_min  = {:>10} us | minimum average time\n"
+                              "[AggregatedRuleStatistics] T_avg_max  = {:>10} us | maximum average time\n"
+                              "[AggregatedRuleStatistics] T_avg_med  = {:>10} us | median average time\n"
+                              "[AggregatedRuleStatistics] T_avg_skew = {:>10.2f}    | skew average time (T_avg_max / T_avg_med)",
+                              value.num_executions,
+                              value.sample_count,
+                              tyr::to_ms(value.initialize_time) + tyr::to_ms(value.process_pending_time),
+                              tyr::to_ms(value.process_generate_time),
+                              tyr::to_ms(value.total_time),
+                              avg_total_us,
+                              frac,
+                              tyr::to_ms(value.tot_time_min),
+                              tyr::to_ms(value.tot_time_max),
+                              tyr::to_ms(value.tot_time_median),
+                              tot_skew,
+                              tyr::to_us(value.avg_time_min),
+                              tyr::to_us(value.avg_time_max),
+                              tyr::to_us(value.avg_time_median),
+                              avg_skew);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::RuleWorkerStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::RuleWorkerStatistics& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::RuleWorkerStatistics& value, FormatContext& ctx) const
+    {
+        const auto pen = static_cast<tyr::float_t>(value.num_pending_rules);
+        const auto gen = static_cast<tyr::float_t>(value.num_generated_rules);
+        auto overapproximation_ratio = (gen > 0) ? (pen + gen) / gen : tyr::float_t { 1.0 };
+        return fmt::format_to(ctx.out(),
+                              "[RuleWorkerStatistics] N_exec = {:>10} | executions\n"
+                              "[RuleWorkerStatistics] N_gen  = {:>10} | generated rules\n"
+                              "[RuleWorkerStatistics] N_pen  = {:>10} | pending rules\n"
+                              "[RuleWorkerStatistics] OA     = {:>10.2f} | overapproximation ratio (1 + N_pen / N_gen)",
+                              value.num_executions,
+                              value.num_generated_rules,
+                              value.num_pending_rules,
+                              overapproximation_ratio);
+    }
 };
 
 template<>
 struct formatter<tyr::datalog::AggregatedRuleWorkerStatistics, char>
 {
     constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-    auto format(const tyr::datalog::AggregatedRuleWorkerStatistics& value, format_context& ctx) const -> format_context::iterator;
+    template<typename FormatContext>
+    auto format(const tyr::datalog::AggregatedRuleWorkerStatistics& value, FormatContext& ctx) const
+    {
+        const auto pen = static_cast<tyr::float_t>(value.num_pending_rules);
+        const auto gen = static_cast<tyr::float_t>(value.num_generated_rules);
+        auto overapproximation_ratio = (gen > 0) ? (pen + gen) / gen : tyr::float_t { 1.0 };
+        return fmt::format_to(ctx.out(),
+                              "[AggregatedRuleWorkerStatistics] N_exec =  {:>10} | executions\n"
+                              "[AggregatedRuleWorkerStatistics] N_gen  =  {:>10} | generated rules\n"
+                              "[AggregatedRuleWorkerStatistics] N_pen  =  {:>10} | pending rules\n"
+                              "[AggregatedRuleWorkerStatistics] OA     =  {:>10.2f} | overapproximation ratio (1 + N_pen / N_gen)",
+                              value.num_executions,
+                              value.num_generated_rules,
+                              value.num_pending_rules,
+                              overapproximation_ratio);
+    }
 };
 
 

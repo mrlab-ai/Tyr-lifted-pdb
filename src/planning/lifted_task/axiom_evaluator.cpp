@@ -25,6 +25,7 @@
 #include "tyr/datalog/bottom_up.hpp"   // for solve_bottom_up
 #include "tyr/datalog/contexts/program.hpp"
 #include "tyr/datalog/fact_sets.hpp"  // for FactSets, Pre...
+#include "tyr/datalog/formatter.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 #include "tyr/formalism/planning/merge_datalog.hpp"   // for MergeContext
 #include "tyr/formalism/planning/merge_planning.hpp"  // for MergeContext

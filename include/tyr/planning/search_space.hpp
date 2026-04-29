@@ -21,7 +21,6 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/segmented_vector.hpp"
 #include "tyr/planning/applicability.hpp"
-#include "tyr/planning/formatter.hpp"
 #include "tyr/planning/node.hpp"
 #include "tyr/planning/search_node.hpp"
 

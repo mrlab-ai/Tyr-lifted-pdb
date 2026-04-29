@@ -23,7 +23,6 @@
 #include "tyr/common/config.hpp"
 #include "tyr/datalog/assignment.hpp"
 #include "tyr/datalog/fact_sets.hpp"
-#include "tyr/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/formatter.hpp"
 #include "tyr/formalism/datalog/repository.hpp"
 #include "tyr/formalism/datalog/views.hpp"
