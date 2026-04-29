@@ -18,6 +18,7 @@
 #ifndef TYR_PLANNING_GROUND_TASK_MATCH_TREE_DECLARATIONS_HPP_
 #define TYR_PLANNING_GROUND_TASK_MATCH_TREE_DECLARATIONS_HPP_
 
+#include "tyr/common/type_list.hpp"
 #include "tyr/formalism/planning/declarations.hpp"
 
 #include <concepts>
@@ -60,6 +61,10 @@ struct Node
 {
 };
 
+template<typename Tag>
+using RepositoryTypes =
+    TypeList<AtomSelectorNode<Tag>, VariableSelectorNode<Tag>, NegativeFactSelectorNode<Tag>, NumericConstraintSelectorNode<Tag>, ElementGeneratorNode<Tag>>;
+
 /**
  * MatchTree
  */
@@ -83,20 +88,19 @@ concept RepositoryAccess = requires(const Repo& r, Index<Tag> idx) {
     { r[idx] } -> std::same_as<const Data<Tag>&>;
 };
 
+template<typename Repo, typename... Tags>
+constexpr bool match_tree_repository_access_for_types(TypeList<Tags...>) noexcept
+{
+    return (RepositoryAccess<Repo, Tags> && ...);
+}
+
 template<typename T>
 concept HasFormalismRepository = requires(const T& r) {
     { r.get_formalism_repository() } -> formalism::planning::Context;
 };
 
-template<typename T>
-concept RepositoryConcept =
-    HasFormalismRepository<T> && RepositoryAccess<T, AtomSelectorNode<formalism::planning::GroundAction>>
-    && RepositoryAccess<T, VariableSelectorNode<formalism::planning::GroundAction>>
-    && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::planning::GroundAction>>
-    && RepositoryAccess<T, ElementGeneratorNode<formalism::planning::GroundAction>> && RepositoryAccess<T, AtomSelectorNode<formalism::planning::GroundAxiom>>
-    && RepositoryAccess<T, VariableSelectorNode<formalism::planning::GroundAxiom>>
-    && RepositoryAccess<T, NumericConstraintSelectorNode<formalism::planning::GroundAxiom>>
-    && RepositoryAccess<T, ElementGeneratorNode<formalism::planning::GroundAxiom>>;
+template<typename T, typename Tag>
+concept RepositoryConcept = HasFormalismRepository<T> && match_tree_repository_access_for_types<T>(RepositoryTypes<Tag> {});
 
 /// @brief Make Repository a trivial context.
 /// @param context
@@ -107,9 +111,9 @@ inline const Repository<Tag>& get_repository(const Repository<Tag>& context) noe
     return context;
 }
 
-template<typename T>
+template<typename T, typename Tag>
 concept Context = requires(const T& a) {
-    { get_repository(a) } -> RepositoryConcept;
+    { get_repository(a) } -> RepositoryConcept<Tag>;
 };
 
 }

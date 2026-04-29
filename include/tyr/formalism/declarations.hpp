@@ -20,6 +20,7 @@
 
 #include "tyr/common/config.hpp"
 #include "tyr/common/declarations.hpp"
+#include "tyr/common/type_list.hpp"
 #include "tyr/common/types.hpp"
 
 namespace tyr::formalism
@@ -44,6 +45,11 @@ struct AuxiliaryTag
 
 template<typename T>
 concept FactKind = std::same_as<T, StaticTag> || std::same_as<T, FluentTag> || std::same_as<T, DerivedTag> || std::same_as<T, AuxiliaryTag>;
+
+using StaticFluentTags = TypeList<StaticTag, FluentTag>;
+using StaticFluentDerivedTags = TypeList<StaticTag, FluentTag, DerivedTag>;
+using StaticFluentAuxiliaryTags = TypeList<StaticTag, FluentTag, AuxiliaryTag>;
+using FluentDerivedTags = TypeList<FluentTag, DerivedTag>;
 
 /**
  * Tags to dispatch operators
@@ -109,6 +115,12 @@ concept ArithmeticOpKind = std::same_as<T, OpAdd> || std::same_as<T, OpMul> || s
 
 template<typename T>
 concept OpKind = BooleanOpKind<T> || ArithmeticOpKind<T>;
+
+using BooleanOpKinds = TypeList<OpEq, OpNe, OpLe, OpLt, OpGe, OpGt>;
+using ArithmeticOpKinds = TypeList<OpAdd, OpSub, OpMul, OpDiv>;
+using UnaryArithmeticOpKinds = TypeList<OpSub>;
+using BinaryArithmeticOpKinds = TypeList<OpAdd, OpSub, OpMul, OpDiv>;
+using MultiArithmeticOpKinds = TypeList<OpAdd, OpMul>;
 
 /**
  * Formalism tag

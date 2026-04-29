@@ -111,7 +111,6 @@ template class BasicSymbolRepository<planning::Metric>;
 template class BasicSymbolRepository<planning::Domain>;
 template class BasicSymbolRepository<planning::Task>;
 template class BasicSymbolRepository<planning::FDRVariable<FluentTag>>;
-template class BasicSymbolRepository<planning::FDRVariable<DerivedTag>>;
 template class BasicSymbolRepository<planning::ConjunctiveCondition>;
 template class BasicSymbolRepository<planning::GroundConjunctiveCondition>;
 template class BasicSymbolRepository<planning::FDRTask>;

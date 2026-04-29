@@ -69,11 +69,7 @@ private:
         Entry(buffer::Buffer& buffer, buffer::SegmentedBuffer& arena) : container(buffer, arena) {}
     };
 
-    using RepositoryStorage = std::tuple<Entry<AtomSelectorNode<Tag>>,
-                                         Entry<VariableSelectorNode<Tag>>,
-                                         Entry<NegativeFactSelectorNode<Tag>>,
-                                         Entry<NumericConstraintSelectorNode<Tag>>,
-                                         Entry<ElementGeneratorNode<Tag>>>;
+    using RepositoryStorage = TypeListToTupleT<MapTypeListT<Entry, RepositoryTypes<Tag>>>;
 
     const formalism::planning::Repository& m_formalism_repository;
     buffer::SegmentedBuffer m_arena;
@@ -81,16 +77,18 @@ private:
     RepositoryStorage m_repository;
     uint_t m_index;
 
+    template<typename... Ts>
+    static RepositoryStorage make_repository_storage(TypeList<Ts...>, buffer::Buffer& buffer, buffer::SegmentedBuffer& arena)
+    {
+        return RepositoryStorage(Entry<Ts>(buffer, arena)...);
+    }
+
 public:
     explicit Repository(uint_t index, const formalism::planning::Repository& formalism_repository) :
         m_formalism_repository(formalism_repository),
         m_arena(),
         m_buffer(),
-        m_repository(Entry<AtomSelectorNode<Tag>>(m_buffer, m_arena),
-                     Entry<VariableSelectorNode<Tag>>(m_buffer, m_arena),
-                     Entry<NegativeFactSelectorNode<Tag>>(m_buffer, m_arena),
-                     Entry<NumericConstraintSelectorNode<Tag>>(m_buffer, m_arena),
-                     Entry<ElementGeneratorNode<Tag>>(m_buffer, m_arena)),
+        m_repository(make_repository_storage(RepositoryTypes<Tag> {}, m_buffer, m_arena)),
         m_index(index)
     {
     }
@@ -161,9 +159,9 @@ public:
     }
 };
 
-static_assert(RepositoryConcept<Repository<formalism::planning::GroundAction>>);
+static_assert(RepositoryConcept<Repository<formalism::planning::GroundAction>, formalism::planning::GroundAction>);
 
-static_assert(Context<Repository<formalism::planning::GroundAction>>);
+static_assert(Context<Repository<formalism::planning::GroundAction>, formalism::planning::GroundAction>);
 
 }
 

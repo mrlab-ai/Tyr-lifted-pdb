@@ -29,7 +29,7 @@
 
 namespace tyr
 {
-template<typename Tag, planning::match_tree::Context C>
+template<typename Tag, planning::match_tree::Context<Tag> C>
 class View<Data<planning::match_tree::Node<Tag>>, C>
 {
 private:

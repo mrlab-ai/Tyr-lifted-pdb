@@ -44,98 +44,9 @@
 namespace tyr::formalism::planning
 {
 
-using SymbolRepository = tyr::formalism::SymbolRepository<Variable,
-                                                          Object,
-                                                          Predicate<StaticTag>,
-                                                          Predicate<FluentTag>,
-                                                          Predicate<DerivedTag>,
-                                                          Atom<StaticTag>,
-                                                          Atom<FluentTag>,
-                                                          Atom<DerivedTag>,
-                                                          GroundAtom<StaticTag>,
-                                                          GroundAtom<FluentTag>,
-                                                          GroundAtom<DerivedTag>,
-                                                          Literal<StaticTag>,
-                                                          Literal<FluentTag>,
-                                                          Literal<DerivedTag>,
-                                                          GroundLiteral<StaticTag>,
-                                                          GroundLiteral<FluentTag>,
-                                                          GroundLiteral<DerivedTag>,
-                                                          Function<StaticTag>,
-                                                          Function<FluentTag>,
-                                                          Function<AuxiliaryTag>,
-                                                          FunctionTerm<StaticTag>,
-                                                          FunctionTerm<FluentTag>,
-                                                          FunctionTerm<AuxiliaryTag>,
-                                                          GroundFunctionTerm<StaticTag>,
-                                                          GroundFunctionTerm<FluentTag>,
-                                                          GroundFunctionTerm<AuxiliaryTag>,
-                                                          GroundFunctionTermValue<StaticTag>,
-                                                          GroundFunctionTermValue<FluentTag>,
-                                                          GroundFunctionTermValue<AuxiliaryTag>,
-                                                          UnaryOperator<OpSub, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpAdd, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpSub, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpMul, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpDiv, Data<FunctionExpression>>,
-                                                          MultiOperator<OpAdd, Data<FunctionExpression>>,
-                                                          MultiOperator<OpMul, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpEq, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpNe, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpLe, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpLt, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpGe, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpGt, Data<FunctionExpression>>,
-                                                          UnaryOperator<OpSub, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpAdd, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpSub, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpMul, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpDiv, Data<GroundFunctionExpression>>,
-                                                          MultiOperator<OpAdd, Data<GroundFunctionExpression>>,
-                                                          MultiOperator<OpMul, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpEq, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpNe, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpLe, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpLt, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpGe, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpGt, Data<GroundFunctionExpression>>,
-                                                          NumericEffect<OpAssign, FluentTag>,
-                                                          NumericEffect<OpIncrease, FluentTag>,
-                                                          NumericEffect<OpDecrease, FluentTag>,
-                                                          NumericEffect<OpScaleUp, FluentTag>,
-                                                          NumericEffect<OpScaleDown, FluentTag>,
-                                                          NumericEffect<OpIncrease, AuxiliaryTag>,
-                                                          GroundNumericEffect<OpAssign, FluentTag>,
-                                                          GroundNumericEffect<OpIncrease, FluentTag>,
-                                                          GroundNumericEffect<OpDecrease, FluentTag>,
-                                                          GroundNumericEffect<OpScaleUp, FluentTag>,
-                                                          GroundNumericEffect<OpScaleDown, FluentTag>,
-                                                          GroundNumericEffect<OpIncrease, AuxiliaryTag>,
-                                                          ConditionalEffect,
-                                                          GroundConditionalEffect,
-                                                          ConjunctiveEffect,
-                                                          GroundConjunctiveEffect,
-                                                          Action,
-                                                          GroundAction,
-                                                          Axiom,
-                                                          GroundAxiom,
-                                                          Metric,
-                                                          Domain,
-                                                          Task,
-                                                          FDRVariable<FluentTag>,
-                                                          FDRVariable<DerivedTag>,
-                                                          ConjunctiveCondition,
-                                                          GroundConjunctiveCondition,
-                                                          FDRTask>;
+using SymbolRepository = tyr::ApplyTypeListT<tyr::formalism::SymbolRepository, SymbolRepositoryTypes>;
 
-using RelationRepository = tyr::formalism::RelationRepository<Predicate<StaticTag>,
-                                                              Predicate<FluentTag>,
-                                                              Predicate<DerivedTag>,
-                                                              Function<StaticTag>,
-                                                              Function<FluentTag>,
-                                                              Function<AuxiliaryTag>,
-                                                              Action,
-                                                              Axiom>;
+using RelationRepository = tyr::ApplyTypeListT<tyr::formalism::RelationRepository, RelationRepositoryTypes>;
 
 using Repository = tyr::formalism::Repository<SymbolRepository, RelationRepository>;
 using RepositoryPtr = std::shared_ptr<Repository>;
@@ -485,7 +396,6 @@ extern template class BasicSymbolRepository<planning::Metric>;
 extern template class BasicSymbolRepository<planning::Domain>;
 extern template class BasicSymbolRepository<planning::Task>;
 extern template class BasicSymbolRepository<planning::FDRVariable<FluentTag>>;
-extern template class BasicSymbolRepository<planning::FDRVariable<DerivedTag>>;
 extern template class BasicSymbolRepository<planning::ConjunctiveCondition>;
 extern template class BasicSymbolRepository<planning::GroundConjunctiveCondition>;
 extern template class BasicSymbolRepository<planning::FDRTask>;
@@ -556,7 +466,6 @@ extern template struct View<Index<formalism::Predicate<formalism::FluentTag>>, f
 extern template struct View<Index<formalism::Predicate<formalism::DerivedTag>>, formalism::planning::Repository>;
 
 extern template struct View<Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::Repository>;
-extern template struct View<Index<formalism::planning::FDRVariable<formalism::DerivedTag>>, formalism::planning::Repository>;
 
 // Operator index views: lifted
 extern template struct View<Index<formalism::planning::UnaryOperator<formalism::OpSub, Data<formalism::planning::FunctionExpression>>>,
@@ -654,7 +563,6 @@ extern template struct View<Data<formalism::planning::GroundNumericEffectOperato
 extern template struct View<Data<formalism::planning::GroundNumericEffectOperator<formalism::AuxiliaryTag>>, formalism::planning::Repository>;
 extern template struct View<Data<formalism::Term>, formalism::planning::Repository>;
 extern template struct View<Data<formalism::planning::FDRFact<formalism::FluentTag>>, formalism::planning::Repository>;
-extern template struct View<Data<formalism::planning::FDRFact<formalism::DerivedTag>>, formalism::planning::Repository>;
 
 // Pair views
 extern template struct View<Index<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>, formalism::planning::Repository>;

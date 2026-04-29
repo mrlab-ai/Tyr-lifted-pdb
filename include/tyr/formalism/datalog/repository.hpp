@@ -44,59 +44,9 @@
 
 namespace tyr::formalism::datalog
 {
-using SymbolRepository = tyr::formalism::SymbolRepository<Variable,
-                                                          Object,
-                                                          Predicate<StaticTag>,
-                                                          Predicate<FluentTag>,
-                                                          Atom<StaticTag>,
-                                                          Atom<FluentTag>,
-                                                          GroundAtom<StaticTag>,
-                                                          GroundAtom<FluentTag>,
-                                                          Literal<StaticTag>,
-                                                          Literal<FluentTag>,
-                                                          GroundLiteral<StaticTag>,
-                                                          GroundLiteral<FluentTag>,
-                                                          Function<StaticTag>,
-                                                          Function<FluentTag>,
-                                                          FunctionTerm<StaticTag>,
-                                                          FunctionTerm<FluentTag>,
-                                                          GroundFunctionTerm<StaticTag>,
-                                                          GroundFunctionTerm<FluentTag>,
-                                                          GroundFunctionTermValue<StaticTag>,
-                                                          GroundFunctionTermValue<FluentTag>,
-                                                          UnaryOperator<OpSub, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpAdd, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpSub, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpMul, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpDiv, Data<FunctionExpression>>,
-                                                          MultiOperator<OpAdd, Data<FunctionExpression>>,
-                                                          MultiOperator<OpMul, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpEq, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpNe, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpLe, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpLt, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpGe, Data<FunctionExpression>>,
-                                                          BinaryOperator<OpGt, Data<FunctionExpression>>,
-                                                          UnaryOperator<OpSub, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpAdd, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpSub, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpMul, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpDiv, Data<GroundFunctionExpression>>,
-                                                          MultiOperator<OpAdd, Data<GroundFunctionExpression>>,
-                                                          MultiOperator<OpMul, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpEq, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpNe, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpLe, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpLt, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpGe, Data<GroundFunctionExpression>>,
-                                                          BinaryOperator<OpGt, Data<GroundFunctionExpression>>,
-                                                          ConjunctiveCondition,
-                                                          Rule,
-                                                          GroundConjunctiveCondition,
-                                                          GroundRule,
-                                                          Program>;
+using SymbolRepository = tyr::ApplyTypeListT<tyr::formalism::SymbolRepository, SymbolRepositoryTypes>;
 
-using RelationRepository = tyr::formalism::RelationRepository<Predicate<StaticTag>, Predicate<FluentTag>, Function<StaticTag>, Function<FluentTag>, Rule>;
+using RelationRepository = tyr::ApplyTypeListT<tyr::formalism::RelationRepository, RelationRepositoryTypes>;
 
 using Repository = tyr::formalism::Repository<SymbolRepository, RelationRepository>;
 

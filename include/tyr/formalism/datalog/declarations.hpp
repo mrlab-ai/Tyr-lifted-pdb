@@ -117,7 +117,65 @@ struct Program
 {
 };
 
-class Builder;
+using CoreTypes = TypeList<Variable, Object>;
+using PredicateTypes = MapTypeListT<Predicate, StaticFluentTags>;
+using AtomTypes = MapTypeListT<Atom, StaticFluentTags>;
+using GroundAtomTypes = MapTypeListT<GroundAtom, StaticFluentTags>;
+using LiteralTypes = MapTypeListT<Literal, StaticFluentTags>;
+using GroundLiteralTypes = MapTypeListT<GroundLiteral, StaticFluentTags>;
+using FunctionTypes = MapTypeListT<Function, StaticFluentTags>;
+using FunctionTermTypes = MapTypeListT<FunctionTerm, StaticFluentTags>;
+using GroundFunctionTermTypes = MapTypeListT<GroundFunctionTerm, StaticFluentTags>;
+using GroundFunctionTermValueTypes = MapTypeListT<GroundFunctionTermValue, StaticFluentTags>;
+
+template<typename Op>
+using LiftedUnaryOperatorType = UnaryOperator<Op, Data<FunctionExpression>>;
+
+template<typename Op>
+using LiftedBinaryOperatorType = BinaryOperator<Op, Data<FunctionExpression>>;
+
+template<typename Op>
+using LiftedMultiOperatorType = MultiOperator<Op, Data<FunctionExpression>>;
+
+template<typename Op>
+using GroundUnaryOperatorType = UnaryOperator<Op, Data<GroundFunctionExpression>>;
+
+template<typename Op>
+using GroundBinaryOperatorType = BinaryOperator<Op, Data<GroundFunctionExpression>>;
+
+template<typename Op>
+using GroundMultiOperatorType = MultiOperator<Op, Data<GroundFunctionExpression>>;
+
+using LiftedArithmeticExpressionTypes = ConcatTypeListsT<MapTypeListT<LiftedUnaryOperatorType, UnaryArithmeticOpKinds>,
+                                                        MapTypeListT<LiftedBinaryOperatorType, BinaryArithmeticOpKinds>,
+                                                        MapTypeListT<LiftedMultiOperatorType, MultiArithmeticOpKinds>>;
+
+using LiftedBooleanExpressionTypes = MapTypeListT<LiftedBinaryOperatorType, BooleanOpKinds>;
+
+using GroundArithmeticExpressionTypes = ConcatTypeListsT<MapTypeListT<GroundUnaryOperatorType, UnaryArithmeticOpKinds>,
+                                                        MapTypeListT<GroundBinaryOperatorType, BinaryArithmeticOpKinds>,
+                                                        MapTypeListT<GroundMultiOperatorType, MultiArithmeticOpKinds>>;
+
+using GroundBooleanExpressionTypes = MapTypeListT<GroundBinaryOperatorType, BooleanOpKinds>;
+
+using ExpressionTypes = ConcatTypeListsT<LiftedArithmeticExpressionTypes, LiftedBooleanExpressionTypes, GroundArithmeticExpressionTypes, GroundBooleanExpressionTypes>;
+using CompoundTypes = TypeList<ConjunctiveCondition, Rule, GroundConjunctiveCondition, GroundRule, Program>;
+
+using SymbolRepositoryTypes = ConcatTypeListsT<CoreTypes,
+                                               PredicateTypes,
+                                               AtomTypes,
+                                               GroundAtomTypes,
+                                               LiteralTypes,
+                                               GroundLiteralTypes,
+                                               FunctionTypes,
+                                               FunctionTermTypes,
+                                               GroundFunctionTermTypes,
+                                               GroundFunctionTermValueTypes,
+                                               ExpressionTypes,
+                                               CompoundTypes>;
+
+using RelationRepositoryTypes = ConcatTypeListsT<PredicateTypes, FunctionTypes, TypeList<Rule>>;
+using BuilderTypes = ConcatTypeListsT<SymbolRepositoryTypes, MapTypeListT<RelationBinding, RelationRepositoryTypes>>;
 
 /**
  * Context
@@ -129,28 +187,14 @@ concept RepositoryAccess = requires(const Repo& r, Index<Tag> idx) {
     { r[idx] } -> std::same_as<const Data<Tag>&>;
 };
 
+template<typename Repo, typename... Tags>
+constexpr bool repository_access_for_types(TypeList<Tags...>) noexcept
+{
+    return (RepositoryAccess<Repo, Tags> && ...);
+}
+
 template<typename T>
-concept RepositoryConcept =
-    RepositoryAccess<T, Variable> && RepositoryAccess<T, Object> && RepositoryAccess<T, Predicate<StaticTag>> && RepositoryAccess<T, Predicate<FluentTag>>
-    && RepositoryAccess<T, Atom<StaticTag>> && RepositoryAccess<T, Atom<FluentTag>> && RepositoryAccess<T, GroundAtom<StaticTag>>
-    && RepositoryAccess<T, GroundAtom<FluentTag>> && RepositoryAccess<T, Literal<StaticTag>> && RepositoryAccess<T, Literal<FluentTag>>
-    && RepositoryAccess<T, GroundLiteral<StaticTag>> && RepositoryAccess<T, GroundLiteral<FluentTag>> && RepositoryAccess<T, Function<StaticTag>>
-    && RepositoryAccess<T, Function<FluentTag>> && RepositoryAccess<T, FunctionTerm<StaticTag>> && RepositoryAccess<T, FunctionTerm<FluentTag>>
-    && RepositoryAccess<T, GroundFunctionTerm<StaticTag>> && RepositoryAccess<T, GroundFunctionTerm<FluentTag>>
-    && RepositoryAccess<T, GroundFunctionTermValue<StaticTag>> && RepositoryAccess<T, GroundFunctionTermValue<FluentTag>>
-    && RepositoryAccess<T, UnaryOperator<OpSub, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpAdd, Data<FunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpSub, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpMul, Data<FunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpDiv, Data<FunctionExpression>>> && RepositoryAccess<T, MultiOperator<OpAdd, Data<FunctionExpression>>>
-    && RepositoryAccess<T, MultiOperator<OpMul, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpEq, Data<FunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpLe, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpLt, Data<FunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpGe, Data<FunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpGt, Data<FunctionExpression>>>
-    && RepositoryAccess<T, UnaryOperator<OpSub, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpAdd, Data<GroundFunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpSub, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpMul, Data<GroundFunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpDiv, Data<GroundFunctionExpression>>> && RepositoryAccess<T, MultiOperator<OpAdd, Data<GroundFunctionExpression>>>
-    && RepositoryAccess<T, MultiOperator<OpMul, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpEq, Data<GroundFunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpLe, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpLt, Data<GroundFunctionExpression>>>
-    && RepositoryAccess<T, BinaryOperator<OpGe, Data<GroundFunctionExpression>>> && RepositoryAccess<T, BinaryOperator<OpGt, Data<GroundFunctionExpression>>>
-    && RepositoryAccess<T, Rule> && RepositoryAccess<T, GroundRule> && RepositoryAccess<T, Program>;
+concept RepositoryConcept = repository_access_for_types<T>(SymbolRepositoryTypes {}) && repository_access_for_types<T>(RelationRepositoryTypes {});
 
 template<typename T>
     requires RepositoryConcept<T>

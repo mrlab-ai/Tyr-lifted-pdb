@@ -81,7 +81,6 @@ template struct View<Index<formalism::Predicate<formalism::FluentTag>>, formalis
 template struct View<Index<formalism::Predicate<formalism::DerivedTag>>, formalism::planning::Repository>;
 
 template struct View<Index<formalism::planning::FDRVariable<formalism::FluentTag>>, formalism::planning::Repository>;
-template struct View<Index<formalism::planning::FDRVariable<formalism::DerivedTag>>, formalism::planning::Repository>;
 
 // Operator index views: lifted
 template struct View<Index<formalism::planning::UnaryOperator<formalism::OpSub, Data<formalism::planning::FunctionExpression>>>,
@@ -172,7 +171,6 @@ template struct View<Data<formalism::planning::GroundNumericEffectOperator<forma
 template struct View<Data<formalism::planning::GroundNumericEffectOperator<formalism::AuxiliaryTag>>, formalism::planning::Repository>;
 template struct View<Data<formalism::Term>, formalism::planning::Repository>;
 template struct View<Data<formalism::planning::FDRFact<formalism::FluentTag>>, formalism::planning::Repository>;
-template struct View<Data<formalism::planning::FDRFact<formalism::DerivedTag>>, formalism::planning::Repository>;
 
 // Pair views
 template struct View<Index<formalism::RelationBinding<formalism::Predicate<formalism::StaticTag>>>, formalism::planning::Repository>;

@@ -17,12 +17,12 @@
 
 #include "tyr/planning/ground_task/axiom_evaluator.hpp"
 
-#include "tyr/common/comparators.hpp"             // for operator!=
-#include "tyr/common/config.hpp"                  // for float_t
-#include "tyr/formalism/planning/repository.hpp"  // for Repository
-#include "tyr/formalism/planning/views.hpp"       // for View
-#include "tyr/planning/applicability.hpp"         // for StateCo...
-#include "tyr/planning/ground_task.hpp"           // for GroundTag
+#include "tyr/common/comparators.hpp"
+#include "tyr/common/config.hpp"
+#include "tyr/formalism/planning/repository.hpp"
+#include "tyr/formalism/planning/views.hpp"
+#include "tyr/planning/applicability.hpp"
+#include "tyr/planning/ground_task.hpp"
 #include "tyr/planning/ground_task/match_tree/match_tree.hpp"
 #include "tyr/planning/ground_task/unpacked_state.hpp"
 

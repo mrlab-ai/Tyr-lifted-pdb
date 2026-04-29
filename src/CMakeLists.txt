@@ -47,7 +47,6 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     analysis/domains_translation.cpp
 
     formalism/datalog/builder.cpp
-    formalism/datalog/formatter.cpp
     formalism/datalog/grounder.cpp
     formalism/datalog/merge.cpp
     formalism/datalog/repository.cpp
@@ -56,7 +55,6 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
 
 
     formalism/planning/invariants/constraints.cpp
-    formalism/planning/invariants/formatter.cpp
     formalism/planning/invariants/matching.cpp
     formalism/planning/invariants/matcher.cpp
     formalism/planning/invariants/mutexes.cpp
@@ -66,7 +64,6 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     formalism/planning/invariants/synthesis.cpp
     formalism/planning/builder.cpp
     formalism/planning/fdr_context.cpp
-    formalism/planning/formatter.cpp
     formalism/planning/grounder.cpp
     formalism/planning/merge_datalog.cpp
     formalism/planning/merge_planning.cpp
@@ -89,7 +86,6 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     datalog/delta_kpkc_graph.cpp
     datalog/delta_kpkc.cpp
     datalog/fact_set.cpp
-    datalog/formatter.cpp
     datalog/rule_scheduler.cpp
 
     ${TYR_STATE_STORAGE_SRC_FILES}
@@ -128,7 +124,6 @@ add_library(core STATIC ${TYR_PRIVATE_HEADER_FILES} ${TYR_PUBLIC_HEADER_FILES}
     planning/applicability.cpp
     planning/applicability_lifted.cpp
     planning/action_executor.cpp
-    planning/formatter.cpp
     planning/ground_task.cpp
     planning/lifted_task.cpp
     planning/plan.cpp

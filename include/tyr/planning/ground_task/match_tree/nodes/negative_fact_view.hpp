@@ -28,7 +28,7 @@
 
 namespace tyr
 {
-template<typename Tag, planning::match_tree::Context C>
+template<typename Tag, planning::match_tree::Context<Tag> C>
 class View<Index<planning::match_tree::NegativeFactSelectorNode<Tag>>, C>
 {
 private:
