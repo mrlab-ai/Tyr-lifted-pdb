@@ -99,7 +99,7 @@ void BM_ProjectionGenerator(benchmark::State& state, std::string domain_filepath
 
 void register_projection_generator_benchmarks()
 {
-    const auto config_path = absolute(std::string(PROFILING_DIR), "projection_generator.json");
+    const auto config_path = absolute(std::string(PROFILING_DIR), "planning/lifted_task/abstractions/projection_generator.json");
     const auto instances = read_benchmark_config(config_path);
 
     for (const auto& instance : instances)

@@ -8,3 +8,5 @@ target_link_libraries(successor_generator
         benchmark::benchmark 
         Boost::json
 )
+
+add_subdirectory(abstractions)

@@ -36,8 +36,6 @@
 #include "tyr/planning/state_storage/tree_compression/numeric.hpp"
 #endif
 
-#include "tyr/planning/task.hpp"
-
 #include <valla/valla.hpp>
 
 /**

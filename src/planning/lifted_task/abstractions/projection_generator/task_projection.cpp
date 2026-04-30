@@ -21,7 +21,6 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/itertools.hpp"
-#include "tyr/common/less.hpp"
 #include "tyr/common/onetbb.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"

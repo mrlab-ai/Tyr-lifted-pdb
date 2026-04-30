@@ -24,7 +24,6 @@
 #include "tyr/common/equal_to.hpp"
 #include "tyr/common/hash.hpp"
 #include "tyr/common/itertools.hpp"
-#include "tyr/common/less.hpp"
 #include "tyr/common/onetbb.hpp"
 #include "tyr/formalism/planning/builder.hpp"
 #include "tyr/formalism/planning/datas.hpp"
@@ -545,7 +544,14 @@ void for_each_unifier(fp::ActionView action,
                                                                                              if (!obj_sigma)
                                                                                                  return;
 
-                                                                                             if (std::find(seen.begin(), seen.end(), *obj_sigma) != seen.end())
+                                                                                            if (std::any_of(seen.begin(),
+                                                                                                            seen.end(),
+                                                                                                            [&](const auto& existing)
+                                                                                                            {
+                                                                                                                return EqualTo<
+                                                                                                                    u::SubstitutionFunction<Index<f::Object>>> {}(
+                                                                                                                    existing, *obj_sigma);
+                                                                                                            }))
                                                                                                  return;
 
                                                                                              seen.push_back(*obj_sigma);

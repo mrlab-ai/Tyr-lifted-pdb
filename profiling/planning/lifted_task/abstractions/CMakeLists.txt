@@ -1,0 +1,9 @@
+add_executable(projection_generator
+    "projection_generator.cpp"
+)
+target_link_libraries(projection_generator
+    PRIVATE
+        tyr::core
+        benchmark::benchmark
+        Boost::json
+)
