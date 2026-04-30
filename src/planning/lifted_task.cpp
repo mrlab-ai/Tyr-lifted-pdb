@@ -33,22 +33,32 @@ namespace fp = tyr::formalism::planning;
 
 namespace tyr::planning
 {
-Task<LiftedTag>::Task(formalism::planning::PlanningTask task) :
+Task<LiftedTag>::Task(formalism::planning::PlanningTask task, LiftedTaskProgramConstruction program_construction) :
     m_task(std::move(task)),
     m_static_atoms_bitset(),
     m_static_numeric_variables(),
-    m_axiom_program(get_task()),
-    m_action_program(get_task()),
-    m_rpg_program(get_task())
+    m_axiom_program(),
+    m_action_program(),
+    m_rpg_program()
 {
     for (const auto atom : get_task().template get_atoms<f::StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);
 
     for (const auto fterm_value : get_task().template get_fterm_values<f::StaticTag>())
         set(uint_t(fterm_value.get_fterm().get_index()), fterm_value.get_value(), m_static_numeric_variables, std::numeric_limits<float_t>::quiet_NaN());
+
+    if (program_construction == LiftedTaskProgramConstruction::Build)
+    {
+        m_axiom_program.emplace(get_task());
+        m_action_program.emplace(get_task());
+        m_rpg_program.emplace(get_task());
+    }
 }
 
-std::shared_ptr<LiftedTask> LiftedTask::create(formalism::planning::PlanningTask task) { return std::make_shared<LiftedTask>(std::move(task)); }
+std::shared_ptr<LiftedTask> LiftedTask::create(formalism::planning::PlanningTask task, LiftedTaskProgramConstruction program_construction)
+{
+    return std::make_shared<LiftedTask>(std::move(task), program_construction);
+}
 
 GroundTaskInstantiationResult LiftedTask::instantiate_ground_task(ExecutionContext& execution_context, const GroundTaskInstantiationOptions& options)
 {

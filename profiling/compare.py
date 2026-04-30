@@ -115,23 +115,17 @@ def compare_attribute_value(old_value, new_value, rule):
         return "unchanged" if old_value == new_value else "changed"
 
     if rule == AttributeCompare.LOWER_IS_BETTER.value:
-        try:
-            if new_value < old_value:
-                return "improved"
-            if new_value > old_value:
-                return "regressed"
-        except TypeError:
-            return "unsupported_compare"
+        if new_value < old_value:
+            return "improved"
+        if new_value > old_value:
+            return "regressed"
         return "unchanged"
 
     if rule == AttributeCompare.HIGHER_IS_BETTER.value:
-        try:
-            if new_value > old_value:
-                return "improved"
-            if new_value < old_value:
-                return "regressed"
-        except TypeError:
-            return "unsupported_compare"
+        if new_value > old_value:
+            return "improved"
+        if new_value < old_value:
+            return "regressed"
         return "unchanged"
 
     return "unknown_rule"
@@ -190,7 +184,7 @@ def main():
     attribute_violations = [
         comparison
         for comparison in attribute_comparisons
-        if comparison["status"] in {"changed", "regressed", "missing", "unknown_rule", "unsupported_compare"}
+        if comparison["status"] in {"changed", "regressed", "missing", "unknown_rule"}
     ]
     case_status_changes = compare_cases(old_summary, new_summary)
 

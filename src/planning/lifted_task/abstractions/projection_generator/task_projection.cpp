@@ -49,6 +49,8 @@
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
+#include <chrono>
+
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
 
@@ -56,6 +58,15 @@ namespace tyr::planning
 {
 namespace
 {
+auto now()
+{
+    return std::chrono::steady_clock::now();
+}
+
+size_t elapsed_ns(std::chrono::steady_clock::time_point start)
+{
+    return static_cast<size_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(now() - start).count());
+}
 
 // project_variables
 
@@ -233,6 +244,67 @@ Map<f::ParameterIndex, f::ParameterIndex> compute_variable_remapping(fp::ActionV
     return result;
 }
 
+bool has_projected_effect(fp::ActionView element, const Pattern& pattern)
+{
+    for (const auto effect : element.get_effects())
+    {
+        for (const auto literal : effect.get_effect().get_literals())
+        {
+            if (pattern.predicates_set.contains(literal.get_atom().get_predicate()))
+                return true;
+        }
+    }
+
+    return false;
+}
+
+using StaticPredicateSet = UnorderedSet<fp::PredicateView<f::StaticTag>>;
+
+struct ActionProjectionInfo
+{
+    fp::ActionView action;
+    Map<f::ParameterIndex, f::ParameterIndex> variable_remapping;
+};
+
+struct TaskProjectionInfo
+{
+    std::vector<ActionProjectionInfo> actions;
+    StaticPredicateSet needed_static_predicates;
+};
+
+void collect_needed_static_predicates(fp::ConjunctiveConditionView element,
+                                      const Map<f::ParameterIndex, f::ParameterIndex>& mapping,
+                                      const Pattern& pattern,
+                                      StaticPredicateSet& ref_result)
+{
+    for (const auto literal : element.get_literals<f::StaticTag>())
+    {
+        if (should_keep(literal, mapping, pattern))
+            ref_result.insert(literal.get_atom().get_predicate());
+    }
+}
+
+TaskProjectionInfo create_task_projection_info(const fp::PlanningTask& planning_task, const Pattern& pattern)
+{
+    auto result = TaskProjectionInfo {};
+
+    for (const auto action : planning_task.get_domain().get_domain().get_actions())
+    {
+        if (!has_projected_effect(action, pattern))
+            continue;
+
+        auto variable_remapping = compute_variable_remapping(action, pattern);
+        collect_needed_static_predicates(action.get_condition(), variable_remapping, pattern, result.needed_static_predicates);
+
+        for (const auto effect : action.get_effects())
+            collect_needed_static_predicates(effect.get_condition(), variable_remapping, pattern, result.needed_static_predicates);
+
+        result.actions.push_back(ActionProjectionInfo { action, std::move(variable_remapping) });
+    }
+
+    return result;
+}
+
 // remap_term
 
 auto remap_term(fp::TermView element, const Map<f::ParameterIndex, f::ParameterIndex>& mapping)
@@ -319,8 +391,6 @@ auto create_projected_goal(fp::GroundConjunctiveConditionView element, const Pat
     auto& conj_cond = *conj_cond_ptr;
     conj_cond.clear();
 
-    for (const auto literal : element.template get_literals<f::StaticTag>())
-        conj_cond.static_literals.push_back(merge_p2p(literal, context).first.get_index());  // always useful to have
     for (const auto fact : element.template get_facts<f::PositiveTag>())
         append_projected_fact(fact, pattern, conj_cond.positive_facts, context, fdr_context);
     for (const auto fact : element.template get_facts<f::NegativeTag>())
@@ -366,7 +436,7 @@ auto create_projected_conjunctive_effect(fp::ConjunctiveEffectView element,
     return context.destination.get_or_create(conj_eff);
 }
 
-void append_projected_conditional_effect(fp::ConditionalEffectView element,
+bool append_projected_conditional_effect(fp::ConditionalEffectView element,
                                          uint_t parent_arity,
                                          fp::MergeContext& context,
                                          IndexList<fp::ConditionalEffect>& ref_projected_cond_effect,
@@ -377,25 +447,29 @@ void append_projected_conditional_effect(fp::ConditionalEffectView element,
     auto& cond_effect = *cond_effect_ptr;
     cond_effect.clear();
 
+    cond_effect.effect = create_projected_conjunctive_effect(element.get_effect(), context, mapping, pattern).first.get_index();
+
+    if (make_view(cond_effect.effect, context.destination).get_literals().empty())
+        return false;
+
     project_variables(element.get_variables(), parent_arity, mapping, cond_effect.variables, context);
     cond_effect.condition = create_projected_conjunctive_condition(element.get_condition(), parent_arity, context, mapping, pattern).first.get_index();
-    cond_effect.effect = create_projected_conjunctive_effect(element.get_effect(), context, mapping, pattern).first.get_index();
 
     canonicalize(cond_effect);
     ref_projected_cond_effect.push_back(context.destination.get_or_create(cond_effect).first.get_index());
+    return true;
 }
 
 void append_projected_action(fp::ActionView element,
                              fp::MergeContext& context,
                              IndexList<fp::Action>& ref_projected_actions,
                              ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
+                             const Map<f::ParameterIndex, f::ParameterIndex>& variable_remapping,
                              const Pattern& pattern)
 {
     auto action_ptr = context.builder.template get_builder<fp::Action>();
     auto& action = *action_ptr;
     action.clear();
-
-    auto variable_remapping = compute_variable_remapping(element, pattern);
 
     // Invert original -> projected to projected -> original so that transition
     // labels can later be lifted back to the original action parameter space.
@@ -424,6 +498,7 @@ auto create_projected_formalism_domain(fp::DomainView element,
                                        fp::MergeContext& context,
                                        fp::RepositoryFactoryPtr factory,
                                        ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
+                                       const std::vector<ActionProjectionInfo>& action_projection_infos,
                                        const Pattern& pattern)
 {
     auto domain_ptr = context.builder.template get_builder<fp::Domain>();
@@ -437,8 +512,13 @@ auto create_projected_formalism_domain(fp::DomainView element,
         domain.fluent_predicates.push_back(fp::merge_p2p(predicate, context).first.get_index());
     for (const auto object : element.get_constants())
         domain.constants.push_back(fp::merge_p2p(object, context).first.get_index());
-    for (const auto action : element.get_actions())
-        append_projected_action(action, context, domain.actions, projected_to_original_action, pattern);
+    for (const auto& action_info : action_projection_infos)
+        append_projected_action(action_info.action,
+                                context,
+                                domain.actions,
+                                projected_to_original_action,
+                                action_info.variable_remapping,
+                                pattern);
 
     canonicalize(domain);
     return fp::PlanningDomain(context.destination.get_or_create(domain).first, std::move(destination), std::move(factory));
@@ -454,9 +534,15 @@ auto create_projected_formalism_task(const fp::PlanningTask& planning_task,
     auto builder = fp::Builder();
 
     auto context = fp::MergeContext(builder, *destination);
+    const auto task_projection_info = create_task_projection_info(planning_task, pattern);
 
-    const auto project_domain =
-        create_projected_formalism_domain(planning_task.get_domain().get_domain(), destination, context, factory, projected_to_original_action, pattern);
+    const auto project_domain = create_projected_formalism_domain(planning_task.get_domain().get_domain(),
+                                                                  destination,
+                                                                  context,
+                                                                  factory,
+                                                                  projected_to_original_action,
+                                                                  task_projection_info.actions,
+                                                                  pattern);
 
     auto task_ptr = builder.get_builder<fp::Task>();
     auto& task = *task_ptr;
@@ -469,7 +555,10 @@ auto create_projected_formalism_task(const fp::PlanningTask& planning_task,
     for (const auto object : planning_task.get_task().get_objects())
         task.objects.push_back(fp::merge_p2p(object, context).first.get_index());
     for (const auto atom : planning_task.get_task().get_atoms<f::StaticTag>())
-        task.static_atoms.push_back(fp::merge_p2p(atom, context).first.get_index());  // always useful to have
+    {
+        if (task_projection_info.needed_static_predicates.contains(atom.get_predicate()))
+            task.static_atoms.push_back(fp::merge_p2p(atom, context).first.get_index());
+    }
     for (const auto atom : planning_task.get_task().get_atoms<f::FluentTag>())
         append_projected_atom(atom, pattern, task.fluent_atoms, context);
     task.goal = create_projected_goal(planning_task.get_task().get_goal(), pattern, context, *fdr_context).first.get_index();
@@ -487,14 +576,22 @@ std::pair<LiftedTaskPtr, ProjectionMapping<LiftedTag>::ActionMapping> project_ta
     const auto& factory = original_task.get_domain().get_repository_factory();
     auto destination = factory->create_shared(original_task.get_repository().get());
 
-    // Copy the FDRContext although we never modify it. Just in case we decide to do so.
-    auto builder = fp::Builder();
-    auto fdr_context = std::make_shared<fp::FDRContext>(*original_task.get_fdr_context(), builder, destination);
+    const auto fdr_context_start = now();
+    auto fdr_context = std::make_shared<fp::FDRContext>(destination);
+    const auto fdr_context_ns = elapsed_ns(fdr_context_start);
 
     // Project the original task.
+    const auto formalism_task_start = now();
     auto [projected_formalism_task, projected_to_original_action] =
         create_projected_formalism_task(original_task.get_formalism_task(), pattern, destination, factory, fdr_context);
+    const auto formalism_task_ns = elapsed_ns(formalism_task_start);
 
-    return std::make_pair(LiftedTask::create(projected_formalism_task), std::move(projected_to_original_action));
+    const auto lifted_task_create_start = now();
+    auto lifted_task = LiftedTask::create(projected_formalism_task, LiftedTaskProgramConstruction::Skip);
+    const auto lifted_task_create_ns = elapsed_ns(lifted_task_create_start);
+
+    add_projection_generator_project_task_breakdown(fdr_context_ns, formalism_task_ns, lifted_task_create_ns);
+
+    return std::make_pair(std::move(lifted_task), std::move(projected_to_original_action));
 }
 }

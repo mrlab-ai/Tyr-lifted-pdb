@@ -97,8 +97,26 @@ def validate_attribute_value(attribute_name, attribute_config, value):
     if attribute_type == AttributeType.FLOAT and not isinstance(value, (int, float)):
         raise ValueError(f"Attribute '{attribute_name}' expected float value, got {type(value).__name__}.")
 
-    if attribute_type == AttributeType.INT and not (isinstance(value, int) and not isinstance(value, bool)):
+    if attribute_type == AttributeType.INT:
+        if isinstance(value, bool):
+            raise ValueError(f"Attribute '{attribute_name}' expected int value, got bool.")
+        if isinstance(value, int):
+            return
+        if isinstance(value, float) and value.is_integer():
+            return
         raise ValueError(f"Attribute '{attribute_name}' expected int value, got {type(value).__name__}.")
 
     if attribute_type == AttributeType.STR and not isinstance(value, str):
         raise ValueError(f"Attribute '{attribute_name}' expected str value, got {type(value).__name__}.")
+
+
+def normalize_attribute_value(attribute_config, value):
+    if value is None:
+        return None
+
+    attribute_type = AttributeType(attribute_config["type"])
+
+    if attribute_type == AttributeType.INT:
+        return int(value)
+
+    return value

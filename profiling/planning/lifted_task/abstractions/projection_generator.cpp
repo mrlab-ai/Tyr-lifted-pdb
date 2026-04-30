@@ -84,10 +84,52 @@ void benchmark_projection_generator(benchmark::State& state, const BenchmarkCase
 
     for (auto _ : state)
     {
+        p::reset_projection_generator_instrumentation();
         projections = p::ProjectionGenerator<p::LiftedTag>(task, patterns).generate();
 
         benchmark::DoNotOptimize(projections);
     }
+
+    auto num_transitions = size_t { 0 };
+    for (const auto& projection : projections)
+        num_transitions += projection.get_forward().num_edges();
+
+    state.counters["num_transitions"] = benchmark::Counter(num_transitions);
+
+    const auto instrumentation = p::get_projection_generator_instrumentation();
+    state.counters["condition_join_calls"] = benchmark::Counter(instrumentation.condition_join_calls);
+    state.counters["selected_static_literals"] = benchmark::Counter(instrumentation.selected_static_literals);
+    state.counters["selected_fluent_literals"] = benchmark::Counter(instrumentation.selected_fluent_literals);
+    state.counters["selected_zero_candidate_literals"] = benchmark::Counter(instrumentation.selected_zero_candidate_literals);
+    state.counters["static_candidate_atoms_tried"] = benchmark::Counter(instrumentation.static_candidate_atoms_tried);
+    state.counters["fluent_candidate_atoms_tried"] = benchmark::Counter(instrumentation.fluent_candidate_atoms_tried);
+    state.counters["fluent_visible_branches"] = benchmark::Counter(instrumentation.fluent_visible_branches);
+    state.counters["fluent_hidden_branches"] = benchmark::Counter(instrumentation.fluent_hidden_branches);
+    state.counters["condition_binding_callbacks"] = benchmark::Counter(instrumentation.condition_binding_callbacks);
+    state.counters["unifier_queries"] = benchmark::Counter(instrumentation.unifier_queries);
+    state.counters["change_unification_calls"] = benchmark::Counter(instrumentation.change_unification_calls);
+    state.counters["positive_effect_candidates_tried"] = benchmark::Counter(instrumentation.positive_effect_candidates_tried);
+    state.counters["negative_effect_candidates_tried"] = benchmark::Counter(instrumentation.negative_effect_candidates_tried);
+    state.counters["effect_condition_fire_attempts"] = benchmark::Counter(instrumentation.effect_condition_fire_attempts);
+    state.counters["verified_binding_callbacks"] = benchmark::Counter(instrumentation.verified_binding_callbacks);
+    state.counters["patterns_processed"] = benchmark::Counter(instrumentation.patterns_processed);
+    state.counters["abstract_states_created"] = benchmark::Counter(instrumentation.abstract_states_created);
+    state.counters["action_contexts_created"] = benchmark::Counter(instrumentation.action_contexts_created);
+    state.counters["state_pair_checks"] = benchmark::Counter(instrumentation.state_pair_checks);
+    state.counters["self_state_pairs_skipped"] = benchmark::Counter(instrumentation.self_state_pairs_skipped);
+    state.counters["action_pair_checks"] = benchmark::Counter(instrumentation.action_pair_checks);
+    state.counters["project_task_ns"] = benchmark::Counter(instrumentation.project_task_ns);
+    state.counters["project_fdr_context_ns"] = benchmark::Counter(instrumentation.project_fdr_context_ns);
+    state.counters["project_formalism_task_ns"] = benchmark::Counter(instrumentation.project_formalism_task_ns);
+    state.counters["project_lifted_task_create_ns"] = benchmark::Counter(instrumentation.project_lifted_task_create_ns);
+    state.counters["abstract_states_ns"] = benchmark::Counter(instrumentation.abstract_states_ns);
+    state.counters["projection_context_ns"] = benchmark::Counter(instrumentation.projection_context_ns);
+    state.counters["abstract_state_infos_ns"] = benchmark::Counter(instrumentation.abstract_state_infos_ns);
+    state.counters["action_contexts_ns"] = benchmark::Counter(instrumentation.action_contexts_ns);
+    state.counters["transition_loop_ns"] = benchmark::Counter(instrumentation.transition_loop_ns);
+    state.counters["transition_generation_ns"] = benchmark::Counter(instrumentation.transition_generation_ns);
+    state.counters["projection_assembly_ns"] = benchmark::Counter(instrumentation.projection_assembly_ns);
+    state.counters["total_projection_ns"] = benchmark::Counter(instrumentation.total_projection_ns);
 
     auto heuristic = p::CanonicalHeuristic<p::LiftedTag>::create(projections);
     auto state_repository = p::StateRepository<p::LiftedTag>::create(task, tyr::ExecutionContext::create(1));

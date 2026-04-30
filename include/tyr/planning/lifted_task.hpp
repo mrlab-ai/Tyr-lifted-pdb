@@ -34,6 +34,8 @@
 #include "tyr/planning/programs/rpg.hpp"
 
 #include <boost/dynamic_bitset.hpp>  // for dynamic_bitset
+#include <cassert>                   // for assert
+#include <optional>                  // for optional
 #include <limits>                    // for numeric_limits
 #include <memory>                    // for shared_ptr
 #include <vector>                    // for vector
@@ -41,13 +43,21 @@
 namespace tyr::planning
 {
 
+enum class LiftedTaskProgramConstruction
+{
+    Build,
+    Skip,
+};
+
 template<>
 class Task<LiftedTag>
 {
 public:
-    explicit Task(formalism::planning::PlanningTask task);
+    explicit Task(formalism::planning::PlanningTask task,
+                  LiftedTaskProgramConstruction program_construction = LiftedTaskProgramConstruction::Build);
 
-    static std::shared_ptr<Task<LiftedTag>> create(formalism::planning::PlanningTask task);
+    static std::shared_ptr<Task<LiftedTag>> create(formalism::planning::PlanningTask task,
+                                                   LiftedTaskProgramConstruction program_construction = LiftedTaskProgramConstruction::Build);
 
     GroundTaskInstantiationResult instantiate_ground_task(ExecutionContext& execution_context,
                                                           const GroundTaskInstantiationOptions& options = GroundTaskInstantiationOptions());
@@ -64,12 +74,36 @@ public:
     const auto& get_repository() const noexcept { return m_task.get_repository(); }
     bool has_axioms() const noexcept { return !get_task().get_axioms().empty() || !get_domain().get_domain().get_axioms().empty(); }
 
-    auto& get_axiom_program() noexcept { return m_axiom_program; }
-    const auto& get_axiom_program() const noexcept { return m_axiom_program; }
-    auto& get_action_program() noexcept { return m_action_program; }
-    const auto& get_action_program() const noexcept { return m_action_program; }
-    auto& get_rpg_program() noexcept { return m_rpg_program; }
-    const auto& get_rpg_program() const noexcept { return m_rpg_program; }
+    auto& get_axiom_program() noexcept
+    {
+        assert(m_axiom_program.has_value());
+        return *m_axiom_program;
+    }
+    const auto& get_axiom_program() const noexcept
+    {
+        assert(m_axiom_program.has_value());
+        return *m_axiom_program;
+    }
+    auto& get_action_program() noexcept
+    {
+        assert(m_action_program.has_value());
+        return *m_action_program;
+    }
+    const auto& get_action_program() const noexcept
+    {
+        assert(m_action_program.has_value());
+        return *m_action_program;
+    }
+    auto& get_rpg_program() noexcept
+    {
+        assert(m_rpg_program.has_value());
+        return *m_rpg_program;
+    }
+    const auto& get_rpg_program() const noexcept
+    {
+        assert(m_rpg_program.has_value());
+        return *m_rpg_program;
+    }
 
     auto& get_grounder_cache() noexcept { return m_grounder_cache; }
     const auto& get_grounder_cache() const noexcept { return m_grounder_cache; }
@@ -88,11 +122,11 @@ private:
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
 
-    AxiomEvaluatorProgram m_axiom_program;
+    std::optional<AxiomEvaluatorProgram> m_axiom_program;
 
-    ApplicableActionProgram m_action_program;
+    std::optional<ApplicableActionProgram> m_action_program;
 
-    RPGProgram m_rpg_program;
+    std::optional<RPGProgram> m_rpg_program;
 
     formalism::planning::GrounderCache m_grounder_cache;
 };

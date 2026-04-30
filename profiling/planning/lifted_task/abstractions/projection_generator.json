@@ -283,6 +283,11 @@
             "description": "Initial heuristic estimate of the canonical heuristic for the task.",
             "type": "float",
             "compare": "strict_equality"
+        },
+        "num_transitions": {
+            "description": "Total number of transitions in the projections.",
+            "type": "int",
+            "compare": "strict_equality"
         }
     }
 }

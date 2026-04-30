@@ -26,13 +26,14 @@ Implement the first lifted pattern database heuristic for classical planning.
 - Use pairs of source and target state to enumerate transitions between them
 
 ## Notes
-- ...
+- Compile with 8 cores only.
 
 ## Tasks
 The agent should work on the highest unchecked task in this list. The agent must not mark tasks as complete.
 
 - [ ] Make projection abstraction generation fast
   - Interesting files/directories:
+    - `docs/agent-goals/lifted-pdbs.md`
     - `include/tyr/planning/abstractions/`
     - `src/planning/abstractions/`
     - `include/tyr/formalism/unification/`
@@ -45,9 +46,10 @@ The agent should work on the highest unchecked task in this list. The agent must
   - Validation:
     - Configure and build profiling:
     - `cmake -S . -B build -DBUILD_PROFILING=ON`
-    - `cmake --build build --target projection_generator -j24`
+    - `cmake --build build --target projection_generator -j8`
     - Run baseline and candidate profiling with `profiling/runner.py`.
     - Compare summaries with `profiling/compare.py`.
     - For quick smoke checks, use `--benchmark-min-time 0.01s --benchmark-timeout 1`.
   - Notes:
-    - Any relevant context.
+    - Identifying a better join order over the predicates can be useful to prune the search tree early.
+    - Having a lookup table from variables to predicates for which there exists an atom in the action schema can also be useful to prune the search tree.
