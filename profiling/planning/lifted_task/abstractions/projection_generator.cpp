@@ -94,7 +94,7 @@ void benchmark_projection_generator(benchmark::State& state, const BenchmarkCase
     const auto initial_state = state_repository->get_initial_state();
     const auto initial_heuristic_estimate = heuristic->evaluate(initial_state);
 
-    state.counters["initial_heuristic_estimate"] = benchmark::Counter(static_cast<double>(initial_heuristic_estimate));
+    state.counters["initial_heuristic_estimate"] = benchmark::Counter(initial_heuristic_estimate);
 }
 }
 
