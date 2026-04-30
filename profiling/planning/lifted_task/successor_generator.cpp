@@ -1,6 +1,6 @@
-#include "tyr/common/json_loader.hpp"
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 
+#include "tyr/common/json_loader.hpp"
 #include "tyr/formalism/planning/parser.hpp"
 #include "tyr/formalism/planning/views.hpp"
 #include "tyr/planning/lifted_task.hpp"
@@ -72,7 +72,7 @@ void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& 
         benchmark::DoNotOptimize(successors.size());
     }
 
-    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(successors.size()));
+    state.counters["num_successors"] = benchmark::Counter(successors.size());
 }
 
 void benchmark_interned_action_bindings(benchmark::State& state, const BenchmarkCase& benchmark_case)
@@ -89,7 +89,7 @@ void benchmark_interned_action_bindings(benchmark::State& state, const Benchmark
         benchmark::DoNotOptimize(bindings.size());
     }
 
-    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(bindings.size()));
+    state.counters["num_successors"] = benchmark::Counter(bindings.size());
 }
 
 void benchmark_action_binding_iterator(benchmark::State& state, const BenchmarkCase& benchmark_case)
@@ -113,7 +113,7 @@ void benchmark_action_binding_iterator(benchmark::State& state, const BenchmarkC
         benchmark::DoNotOptimize(num_bindings);
     }
 
-    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(num_bindings));
+    state.counters["num_successors"] = benchmark::Counter(num_bindings);
 }
 }
 

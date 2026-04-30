@@ -4,7 +4,7 @@ import json
 import pathlib
 import sys
 
-from schema import AttributeCompare, validate_attribute_value, validate_attributes
+from schema import AttributeCompare, normalize_attribute_value, validate_attribute_value, validate_attributes
 
 
 def load_json(path: pathlib.Path):
@@ -115,17 +115,23 @@ def compare_attribute_value(old_value, new_value, rule):
         return "unchanged" if old_value == new_value else "changed"
 
     if rule == AttributeCompare.LOWER_IS_BETTER.value:
-        if new_value < old_value:
-            return "improved"
-        if new_value > old_value:
-            return "regressed"
+        try:
+            if new_value < old_value:
+                return "improved"
+            if new_value > old_value:
+                return "regressed"
+        except TypeError:
+            return "unsupported_compare"
         return "unchanged"
 
     if rule == AttributeCompare.HIGHER_IS_BETTER.value:
-        if new_value > old_value:
-            return "improved"
-        if new_value < old_value:
-            return "regressed"
+        try:
+            if new_value > old_value:
+                return "improved"
+            if new_value < old_value:
+                return "regressed"
+        except TypeError:
+            return "unsupported_compare"
         return "unchanged"
 
     return "unknown_rule"
@@ -145,7 +151,9 @@ def compare_attributes(old_benchmarks, new_benchmarks, attributes):
             rule = config.get("compare")
             validate_attribute_value(attribute_name, config, old_value)
             validate_attribute_value(attribute_name, config, new_value)
-            status = compare_attribute_value(old_value, new_value, rule)
+            old_compare_value = normalize_attribute_value(config, old_value)
+            new_compare_value = normalize_attribute_value(config, new_value)
+            status = compare_attribute_value(old_compare_value, new_compare_value, rule)
             comparison = {
                 "benchmark": benchmark_name,
                 "attribute": attribute_name,
@@ -182,7 +190,7 @@ def main():
     attribute_violations = [
         comparison
         for comparison in attribute_comparisons
-        if comparison["status"] in {"changed", "regressed", "missing", "unknown_rule"}
+        if comparison["status"] in {"changed", "regressed", "missing", "unknown_rule", "unsupported_compare"}
     ]
     case_status_changes = compare_cases(old_summary, new_summary)
 
