@@ -15,110 +15,99 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
+
+#include "tyr/common/json_loader.hpp"
+#include "tyr/formalism/planning/parser.hpp"
+#include "tyr/planning/abstractions/goal_pattern_generator.hpp"
+#include "tyr/planning/heuristics/canonical.hpp"
+#include "tyr/planning/lifted_task.hpp"
+#include "tyr/planning/lifted_task/state_repository.hpp"
+
 #include <benchmark/benchmark.h>
 #include <boost/json.hpp>
-#include <random>
-#include <tyr/tyr.hpp>
+#include <filesystem>
+#include <string>
+#include <vector>
 
+namespace fp = tyr::formalism::planning;
+namespace p = tyr::planning;
 namespace json = boost::json;
 
-namespace tyr::benchmarks
-{
 namespace
 {
-fs::path absolute(const std::string& prefix, const std::string& subdir) { return fs::path(prefix) / subdir; }
-
-struct BenchmarkInstance
+struct BenchmarkCase
 {
     std::string name;
-    std::string domain_filepath;
-    std::string problem_filepath;
+    std::filesystem::path domain;
+    std::filesystem::path task;
 };
 
-std::string read_file(const fs::path& filepath)
+std::vector<BenchmarkCase> load_cases()
 {
-    std::ifstream in(filepath);
-    if (!in)
-        throw std::runtime_error("Could not open benchmark config: " + filepath.string());
+    const auto document = tyr::common::load_json_file(tyr::common::profiling_path("planning/lifted_task/abstractions/projection_generator.json"));
+    const auto& root = document.as_object();
+    const auto& domains = root.at("domains").as_object();
 
-    return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-}
+    auto result = std::vector<BenchmarkCase>();
 
-std::vector<BenchmarkInstance> read_benchmark_config(const fs::path& filepath)
-{
-    const auto content = read_file(filepath);
-    const auto root = json::parse(content).as_object();
-
-    std::vector<BenchmarkInstance> instances;
-
-    for (const auto& [domain_name, domain_value] : root)
+    for (const auto& [domain_name_key, domain_value] : domains)
     {
-        const auto& domain_obj = domain_value.as_object();
+        const auto& domain_object = domain_value.as_object();
+        const auto domain_name = std::string(domain_name_key);
+        const auto domain = tyr::common::data_path(json::value_to<std::string>(domain_object.at("domain_file")));
+        const auto& tasks = domain_object.at("tasks").as_object();
 
-        const auto domain_filepath = absolute(std::string(DATA_DIR), std::string(domain_obj.at("domain").as_string()));
-
-        const auto& tasks = domain_obj.at("tasks").as_array();
-
-        for (const auto& task_value : tasks)
+        for (const auto& [task_name_key, task_value] : tasks)
         {
-            const auto problem_filepath = absolute(std::string(DATA_DIR), std::string(task_value.as_string()));
+            const auto task_name = std::string(task_name_key);
+            const auto run_name = domain_name + "/" + task_name;
+            const auto task = tyr::common::data_path(json::value_to<std::string>(task_value));
 
-            const auto task_stem = fs::path(std::string(task_value.as_string())).stem().string();
-
-            instances.push_back(BenchmarkInstance {
-                .name = std::string(domain_name) + "/" + task_stem,
-                .domain_filepath = domain_filepath.string(),
-                .problem_filepath = problem_filepath.string(),
-            });
+            result.push_back(BenchmarkCase { run_name, domain, task });
         }
     }
 
-    return instances;
+    return result;
 }
 
-void BM_ProjectionGenerator(benchmark::State& state, std::string domain_filepath, std::string problem_filepath)
+p::LiftedTaskPtr create_task(const BenchmarkCase& benchmark_case)
 {
+    return p::LiftedTask::create(fp::Parser(benchmark_case.domain).parse_task(benchmark_case.task));
+}
+
+void benchmark_projection_generator(benchmark::State& state, const BenchmarkCase& benchmark_case)
+{
+    auto task = create_task(benchmark_case);
+    auto patterns = p::GoalPatternGenerator<p::LiftedTag>(task).generate();
+    auto projections = std::vector<p::ProjectionAbstraction<p::LiftedTag>>();
+
     for (auto _ : state)
     {
-        auto parser_options = loki::ParserOptions();
-        auto parser = formalism::planning::Parser(domain_filepath, parser_options);
+        projections = p::ProjectionGenerator<p::LiftedTag>(task, patterns).generate();
 
-        auto domain = parser.get_domain();
-        auto lifted_task = planning::LiftedTask::create(parser.parse_task(problem_filepath));
-
-        auto patterns = planning::GoalPatternGenerator<planning::LiftedTag>(lifted_task).generate();
-
-        auto projections = planning::ProjectionGenerator<planning::LiftedTag>(lifted_task, patterns).generate();
-
-        benchmark::DoNotOptimize(domain);
-        benchmark::DoNotOptimize(lifted_task);
-        benchmark::DoNotOptimize(patterns);
         benchmark::DoNotOptimize(projections);
     }
-}
 
-void register_projection_generator_benchmarks()
-{
-    const auto config_path = absolute(std::string(PROFILING_DIR), "planning/lifted_task/abstractions/projection_generator.json");
-    const auto instances = read_benchmark_config(config_path);
+    auto heuristic = p::CanonicalHeuristic<p::LiftedTag>::create(projections);
+    auto state_repository = p::StateRepository<p::LiftedTag>::create(task, tyr::ExecutionContext::create(1));
+    const auto initial_state = state_repository->get_initial_state();
+    const auto initial_heuristic_estimate = heuristic->evaluate(initial_state);
 
-    for (const auto& instance : instances)
-    {
-        benchmark::RegisterBenchmark(("BM_ProjectionGenerator/" + instance.name).c_str(),
-                                     BM_ProjectionGenerator,
-                                     instance.domain_filepath,
-                                     instance.problem_filepath);
-    }
+    state.counters["initial_heuristic_estimate"] = benchmark::Counter(static_cast<double>(initial_heuristic_estimate));
 }
-}
-
 }
 
 int main(int argc, char** argv)
 {
-    tyr::benchmarks::register_projection_generator_benchmarks();
-
     benchmark::Initialize(&argc, argv);
+
+    for (const auto& benchmark_case : load_cases())
+    {
+        benchmark::RegisterBenchmark((benchmark_case.name + "/projection_generator").c_str(),
+                                     [benchmark_case](benchmark::State& state) { benchmark_projection_generator(state, benchmark_case); });
+    }
+
     benchmark::RunSpecifiedBenchmarks();
     benchmark::Shutdown();
 

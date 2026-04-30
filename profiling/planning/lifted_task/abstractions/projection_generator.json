@@ -1,109 +1,288 @@
 {
-    "blocksworld-large-simple": {
-        "domain": "blocksworld-large-simple/domain.pddl",
-        "tasks": [
-            "blocksworld-large-simple/p-100-2.pddl",
-            "blocksworld-large-simple/p-100-3.pddl",
-            "blocksworld-large-simple/p-100-4.pddl",
-            "blocksworld-large-simple/p-100-5.pddl"
-        ]
+    "domains": {
+        "blocksworld-large-simple": {
+            "domain_file": "profiling/htg/blocksworld-large-simple/domain.pddl",
+            "tasks": {
+                "p-100-2": "profiling/htg/blocksworld-large-simple/p-100-2.pddl",
+                "p-100-3": "profiling/htg/blocksworld-large-simple/p-100-3.pddl",
+                "p-100-4": "profiling/htg/blocksworld-large-simple/p-100-4.pddl",
+                "p-100-5": "profiling/htg/blocksworld-large-simple/p-100-5.pddl",
+                "p-1500-2": "profiling/htg/blocksworld-large-simple/p-1500-2.pddl",
+                "p-1500-3": "profiling/htg/blocksworld-large-simple/p-1500-3.pddl",
+                "p-1500-4": "profiling/htg/blocksworld-large-simple/p-1500-4.pddl",
+                "p-1500-5": "profiling/htg/blocksworld-large-simple/p-1500-5.pddl",
+                "p-300-2": "profiling/htg/blocksworld-large-simple/p-300-2.pddl",
+                "p-300-3": "profiling/htg/blocksworld-large-simple/p-300-3.pddl",
+                "p-300-4": "profiling/htg/blocksworld-large-simple/p-300-4.pddl",
+                "p-300-5": "profiling/htg/blocksworld-large-simple/p-300-5.pddl",
+                "p-700-2": "profiling/htg/blocksworld-large-simple/p-700-2.pddl",
+                "p-700-3": "profiling/htg/blocksworld-large-simple/p-700-3.pddl",
+                "p-700-4": "profiling/htg/blocksworld-large-simple/p-700-4.pddl",
+                "p-700-5": "profiling/htg/blocksworld-large-simple/p-700-5.pddl"
+            }
+        },
+        "childsnack-contents": {
+            "domain_file": "profiling/htg/childsnack-contents/domain.pddl",
+            "tasks": {
+                "contentam1-cham3-p0": "profiling/htg/childsnack-contents/contentam1-cham3-p0.pddl",
+                "contentam1-cham3-p10": "profiling/htg/childsnack-contents/contentam1-cham3-p10.pddl",
+                "contentam1-cham3-p5": "profiling/htg/childsnack-contents/contentam1-cham3-p5.pddl",
+                "contentam1-cham5-p0": "profiling/htg/childsnack-contents/contentam1-cham5-p0.pddl",
+                "contentam1-cham5-p10": "profiling/htg/childsnack-contents/contentam1-cham5-p10.pddl",
+                "contentam1-cham5-p5": "profiling/htg/childsnack-contents/contentam1-cham5-p5.pddl",
+                "contentam1-cham7-p0": "profiling/htg/childsnack-contents/contentam1-cham7-p0.pddl",
+                "contentam1-cham7-p10": "profiling/htg/childsnack-contents/contentam1-cham7-p10.pddl",
+                "contentam1-cham7-p5": "profiling/htg/childsnack-contents/contentam1-cham7-p5.pddl",
+                "contentam2-cham3-p0": "profiling/htg/childsnack-contents/contentam2-cham3-p0.pddl",
+                "contentam2-cham3-p4": "profiling/htg/childsnack-contents/contentam2-cham3-p4.pddl",
+                "contentam2-cham3-p8": "profiling/htg/childsnack-contents/contentam2-cham3-p8.pddl",
+                "contentam2-cham5-p0": "profiling/htg/childsnack-contents/contentam2-cham5-p0.pddl",
+                "contentam2-cham5-p4": "profiling/htg/childsnack-contents/contentam2-cham5-p4.pddl",
+                "contentam2-cham5-p8": "profiling/htg/childsnack-contents/contentam2-cham5-p8.pddl",
+                "contentam2-cham7-p0": "profiling/htg/childsnack-contents/contentam2-cham7-p0.pddl",
+                "contentam2-cham7-p4": "profiling/htg/childsnack-contents/contentam2-cham7-p4.pddl",
+                "contentam2-cham7-p8": "profiling/htg/childsnack-contents/contentam2-cham7-p8.pddl",
+                "contentam3-cham3-p0": "profiling/htg/childsnack-contents/contentam3-cham3-p0.pddl",
+                "contentam3-cham3-p2": "profiling/htg/childsnack-contents/contentam3-cham3-p2.pddl",
+                "contentam3-cham3-p4": "profiling/htg/childsnack-contents/contentam3-cham3-p4.pddl",
+                "contentam3-cham5-p0": "profiling/htg/childsnack-contents/contentam3-cham5-p0.pddl",
+                "contentam3-cham5-p2": "profiling/htg/childsnack-contents/contentam3-cham5-p2.pddl",
+                "contentam3-cham5-p4": "profiling/htg/childsnack-contents/contentam3-cham5-p4.pddl",
+                "contentam3-cham7-p0": "profiling/htg/childsnack-contents/contentam3-cham7-p0.pddl",
+                "contentam3-cham7-p2": "profiling/htg/childsnack-contents/contentam3-cham7-p2.pddl",
+                "contentam3-cham7-p4": "profiling/htg/childsnack-contents/contentam3-cham7-p4.pddl",
+                "contentam4-cham3-p0": "profiling/htg/childsnack-contents/contentam4-cham3-p0.pddl",
+                "contentam4-cham3-p1": "profiling/htg/childsnack-contents/contentam4-cham3-p1.pddl",
+                "contentam4-cham3-p2": "profiling/htg/childsnack-contents/contentam4-cham3-p2.pddl",
+                "contentam4-cham5-p0": "profiling/htg/childsnack-contents/contentam4-cham5-p0.pddl",
+                "contentam4-cham5-p1": "profiling/htg/childsnack-contents/contentam4-cham5-p1.pddl",
+                "contentam4-cham5-p2": "profiling/htg/childsnack-contents/contentam4-cham5-p2.pddl",
+                "contentam4-cham7-p0": "profiling/htg/childsnack-contents/contentam4-cham7-p0.pddl",
+                "contentam4-cham7-p1": "profiling/htg/childsnack-contents/contentam4-cham7-p1.pddl",
+                "contentam4-cham7-p2": "profiling/htg/childsnack-contents/contentam4-cham7-p2.pddl"
+            }
+        },
+        "genome-edit-distance": {
+            "domain_file": "profiling/htg/genome-edit-distance/domain.pddl",
+            "tasks": {
+                "d-1-2": "profiling/htg/genome-edit-distance/d-1-2.pddl",
+                "d-11-2": "profiling/htg/genome-edit-distance/d-11-2.pddl",
+                "d-13-2": "profiling/htg/genome-edit-distance/d-13-2.pddl",
+                "d-3-2": "profiling/htg/genome-edit-distance/d-3-2.pddl",
+                "d-5-2": "profiling/htg/genome-edit-distance/d-5-2.pddl",
+                "d-7-2": "profiling/htg/genome-edit-distance/d-7-2.pddl",
+                "d-9-2": "profiling/htg/genome-edit-distance/d-9-2.pddl"
+            }
+        },
+        "genome-edit-distance-positional": {
+            "domain_file": "profiling/htg/genome-edit-distance-positional/domain.pddl",
+            "tasks": {
+                "d-1-2": "profiling/htg/genome-edit-distance-positional/d-1-2.pddl",
+                "d-11-2": "profiling/htg/genome-edit-distance-positional/d-11-2.pddl",
+                "d-13-2": "profiling/htg/genome-edit-distance-positional/d-13-2.pddl",
+                "d-3-2": "profiling/htg/genome-edit-distance-positional/d-3-2.pddl",
+                "d-5-2": "profiling/htg/genome-edit-distance-positional/d-5-2.pddl",
+                "d-7-2": "profiling/htg/genome-edit-distance-positional/d-7-2.pddl",
+                "d-9-2": "profiling/htg/genome-edit-distance-positional/d-9-2.pddl"
+            }
+        },
+        "genome-edit-distance-split": {
+            "domain_file": "profiling/htg/genome-edit-distance-split/domain.pddl",
+            "tasks": {
+                "d-1-2": "profiling/htg/genome-edit-distance-split/d-1-2.pddl",
+                "d-11-2": "profiling/htg/genome-edit-distance-split/d-11-2.pddl",
+                "d-13-2": "profiling/htg/genome-edit-distance-split/d-13-2.pddl",
+                "d-3-2": "profiling/htg/genome-edit-distance-split/d-3-2.pddl",
+                "d-5-2": "profiling/htg/genome-edit-distance-split/d-5-2.pddl",
+                "d-7-2": "profiling/htg/genome-edit-distance-split/d-7-2.pddl",
+                "d-9-2": "profiling/htg/genome-edit-distance-split/d-9-2.pddl"
+            }
+        },
+        "labyrinth": {
+            "domain_file": "profiling/htg/labyrinth/domain.pddl",
+            "tasks": {
+                "p01": "profiling/htg/labyrinth/p01.pddl",
+                "p02": "profiling/htg/labyrinth/p02.pddl",
+                "p04": "profiling/htg/labyrinth/p04.pddl",
+                "p08": "profiling/htg/labyrinth/p08.pddl",
+                "p16": "profiling/htg/labyrinth/p16.pddl"
+            }
+        },
+        "logistics-large-simple": {
+            "domain_file": "profiling/htg/logistics-large-simple/domain.pddl",
+            "tasks": {
+                "p-a1-c1-s1000-p10-t1-g1": "profiling/htg/logistics-large-simple/p-a1-c1-s1000-p10-t1-g1.pddl",
+                "p-a1-c1-s1000-p10-t1-g2": "profiling/htg/logistics-large-simple/p-a1-c1-s1000-p10-t1-g2.pddl",
+                "p-a1-c1-s1000-p10-t1-g3": "profiling/htg/logistics-large-simple/p-a1-c1-s1000-p10-t1-g3.pddl",
+                "p-a1-c1-s1000-p10-t1-g4": "profiling/htg/logistics-large-simple/p-a1-c1-s1000-p10-t1-g4.pddl",
+                "p-a1-c1-s1250-p10-t1-g1": "profiling/htg/logistics-large-simple/p-a1-c1-s1250-p10-t1-g1.pddl",
+                "p-a1-c1-s1250-p10-t1-g2": "profiling/htg/logistics-large-simple/p-a1-c1-s1250-p10-t1-g2.pddl",
+                "p-a1-c1-s1250-p10-t1-g3": "profiling/htg/logistics-large-simple/p-a1-c1-s1250-p10-t1-g3.pddl",
+                "p-a1-c1-s1250-p10-t1-g4": "profiling/htg/logistics-large-simple/p-a1-c1-s1250-p10-t1-g4.pddl",
+                "p-a1-c1-s1750-p10-t1-g1": "profiling/htg/logistics-large-simple/p-a1-c1-s1750-p10-t1-g1.pddl",
+                "p-a1-c1-s1750-p10-t1-g2": "profiling/htg/logistics-large-simple/p-a1-c1-s1750-p10-t1-g2.pddl",
+                "p-a1-c1-s1750-p10-t1-g3": "profiling/htg/logistics-large-simple/p-a1-c1-s1750-p10-t1-g3.pddl",
+                "p-a1-c1-s1750-p10-t1-g4": "profiling/htg/logistics-large-simple/p-a1-c1-s1750-p10-t1-g4.pddl",
+                "p-a1-c2-s1500-p10-t2-g1": "profiling/htg/logistics-large-simple/p-a1-c2-s1500-p10-t2-g1.pddl",
+                "p-a1-c2-s1500-p10-t2-g2": "profiling/htg/logistics-large-simple/p-a1-c2-s1500-p10-t2-g2.pddl",
+                "p-a1-c2-s1500-p10-t2-g3": "profiling/htg/logistics-large-simple/p-a1-c2-s1500-p10-t2-g3.pddl",
+                "p-a1-c2-s1500-p10-t2-g4": "profiling/htg/logistics-large-simple/p-a1-c2-s1500-p10-t2-g4.pddl"
+            }
+        },
+        "organic-synthesis-MIT": {
+            "domain_file": "profiling/htg/organic-synthesis-MIT/domain.pddl",
+            "tasks": {
+                "p16": "profiling/htg/organic-synthesis-MIT/p16.pddl",
+                "p2": "profiling/htg/organic-synthesis-MIT/p2.pddl",
+                "p4": "profiling/htg/organic-synthesis-MIT/p4.pddl",
+                "p8": "profiling/htg/organic-synthesis-MIT/p8.pddl"
+            }
+        },
+        "organic-synthesis-alkene": {
+            "domain_file": "profiling/htg/organic-synthesis-alkene/domain.pddl",
+            "tasks": {
+                "p1": "profiling/htg/organic-synthesis-alkene/p1.pddl",
+                "p16": "profiling/htg/organic-synthesis-alkene/p16.pddl",
+                "p2": "profiling/htg/organic-synthesis-alkene/p2.pddl",
+                "p4": "profiling/htg/organic-synthesis-alkene/p4.pddl",
+                "p8": "profiling/htg/organic-synthesis-alkene/p8.pddl"
+            }
+        },
+        "organic-synthesis-original": {
+            "domain_file": "profiling/htg/organic-synthesis-original/domain.pddl",
+            "tasks": {
+                "prob01": "profiling/htg/organic-synthesis-original/prob01.pddl",
+                "prob02": "profiling/htg/organic-synthesis-original/prob02.pddl",
+                "prob04": "profiling/htg/organic-synthesis-original/prob04.pddl",
+                "prob08": "profiling/htg/organic-synthesis-original/prob08.pddl",
+                "prob16": "profiling/htg/organic-synthesis-original/prob16.pddl"
+            }
+        },
+        "pipesworld-tankage-nosplit": {
+            "domain_file": "profiling/htg/pipesworld-tankage-nosplit/domain.pddl",
+            "tasks": {
+                "p01-net1-b6-g2-t50": "profiling/htg/pipesworld-tankage-nosplit/p01-net1-b6-g2-t50.pddl",
+                "p02-net1-b6-g4-t50": "profiling/htg/pipesworld-tankage-nosplit/p02-net1-b6-g4-t50.pddl",
+                "p04-net1-b8-g5-t80": "profiling/htg/pipesworld-tankage-nosplit/p04-net1-b8-g5-t80.pddl",
+                "p08-net1-b12-g7-t80": "profiling/htg/pipesworld-tankage-nosplit/p08-net1-b12-g7-t80.pddl",
+                "p16-net2-b14-g6-t80": "profiling/htg/pipesworld-tankage-nosplit/p16-net2-b14-g6-t80.pddl",
+                "p32-net4-b14-g5-t30": "profiling/htg/pipesworld-tankage-nosplit/p32-net4-b14-g5-t30.pddl"
+            }
+        },
+        "rovers-large-simple": {
+            "domain_file": "profiling/htg/rovers-large-simple/domain.pddl",
+            "tasks": {
+                "p-r1-w1000-o1-1-g2": "profiling/htg/rovers-large-simple/p-r1-w1000-o1-1-g2.pddl",
+                "p-r1-w1000-o1-1-g4": "profiling/htg/rovers-large-simple/p-r1-w1000-o1-1-g4.pddl",
+                "p-r1-w1000-o1-1-g6": "profiling/htg/rovers-large-simple/p-r1-w1000-o1-1-g6.pddl",
+                "p-r1-w1000-o1-1-g8": "profiling/htg/rovers-large-simple/p-r1-w1000-o1-1-g8.pddl",
+                "p-r1-w1500-o1-1-g2": "profiling/htg/rovers-large-simple/p-r1-w1500-o1-1-g2.pddl",
+                "p-r1-w1500-o1-1-g4": "profiling/htg/rovers-large-simple/p-r1-w1500-o1-1-g4.pddl",
+                "p-r1-w1500-o1-1-g6": "profiling/htg/rovers-large-simple/p-r1-w1500-o1-1-g6.pddl",
+                "p-r1-w1500-o1-1-g8": "profiling/htg/rovers-large-simple/p-r1-w1500-o1-1-g8.pddl",
+                "p-r1-w2500-o1-1-g2": "profiling/htg/rovers-large-simple/p-r1-w2500-o1-1-g2.pddl",
+                "p-r1-w2500-o1-1-g4": "profiling/htg/rovers-large-simple/p-r1-w2500-o1-1-g4.pddl",
+                "p-r1-w2500-o1-1-g6": "profiling/htg/rovers-large-simple/p-r1-w2500-o1-1-g6.pddl",
+                "p-r1-w2500-o1-1-g8": "profiling/htg/rovers-large-simple/p-r1-w2500-o1-1-g8.pddl",
+                "p-r1-w4500-o1-1-g2": "profiling/htg/rovers-large-simple/p-r1-w4500-o1-1-g2.pddl",
+                "p-r1-w4500-o1-1-g4": "profiling/htg/rovers-large-simple/p-r1-w4500-o1-1-g4.pddl",
+                "p-r1-w4500-o1-1-g6": "profiling/htg/rovers-large-simple/p-r1-w4500-o1-1-g6.pddl",
+                "p-r1-w4500-o1-1-g8": "profiling/htg/rovers-large-simple/p-r1-w4500-o1-1-g8.pddl"
+            }
+        },
+        "visitall-multidimensional/3-dim": {
+            "domain_file": "profiling/htg/visitall-multidimensional/3-dim/domain.pddl",
+            "tasks": {
+                "CLOSE-g1-p0": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g1-p0.pddl",
+                "CLOSE-g1-p1": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g1-p1.pddl",
+                "CLOSE-g1-p3": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g1-p3.pddl",
+                "CLOSE-g1-p7": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g1-p7.pddl",
+                "CLOSE-g2-p0": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g2-p0.pddl",
+                "CLOSE-g2-p1": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g2-p1.pddl",
+                "CLOSE-g2-p3": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g2-p3.pddl",
+                "CLOSE-g2-p7": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g2-p7.pddl",
+                "CLOSE-g3-p0": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g3-p0.pddl",
+                "CLOSE-g3-p1": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g3-p1.pddl",
+                "CLOSE-g3-p3": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g3-p3.pddl",
+                "CLOSE-g3-p7": "profiling/htg/visitall-multidimensional/3-dim/CLOSE-g3-p7.pddl",
+                "FAR-g1-p0": "profiling/htg/visitall-multidimensional/3-dim/FAR-g1-p0.pddl",
+                "FAR-g1-p1": "profiling/htg/visitall-multidimensional/3-dim/FAR-g1-p1.pddl",
+                "FAR-g1-p3": "profiling/htg/visitall-multidimensional/3-dim/FAR-g1-p3.pddl",
+                "FAR-g1-p7": "profiling/htg/visitall-multidimensional/3-dim/FAR-g1-p7.pddl",
+                "FAR-g2-p0": "profiling/htg/visitall-multidimensional/3-dim/FAR-g2-p0.pddl",
+                "FAR-g2-p1": "profiling/htg/visitall-multidimensional/3-dim/FAR-g2-p1.pddl",
+                "FAR-g2-p3": "profiling/htg/visitall-multidimensional/3-dim/FAR-g2-p3.pddl",
+                "FAR-g2-p7": "profiling/htg/visitall-multidimensional/3-dim/FAR-g2-p7.pddl",
+                "FAR-g3-p0": "profiling/htg/visitall-multidimensional/3-dim/FAR-g3-p0.pddl",
+                "FAR-g3-p1": "profiling/htg/visitall-multidimensional/3-dim/FAR-g3-p1.pddl",
+                "FAR-g3-p3": "profiling/htg/visitall-multidimensional/3-dim/FAR-g3-p3.pddl",
+                "FAR-g3-p7": "profiling/htg/visitall-multidimensional/3-dim/FAR-g3-p7.pddl"
+            }
+        },
+        "visitall-multidimensional/4-dim": {
+            "domain_file": "profiling/htg/visitall-multidimensional/4-dim/domain.pddl",
+            "tasks": {
+                "CLOSE-g1-p0": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g1-p0.pddl",
+                "CLOSE-g1-p1": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g1-p1.pddl",
+                "CLOSE-g1-p3": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g1-p3.pddl",
+                "CLOSE-g1-p7": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g1-p7.pddl",
+                "CLOSE-g2-p0": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g2-p0.pddl",
+                "CLOSE-g2-p1": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g2-p1.pddl",
+                "CLOSE-g2-p3": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g2-p3.pddl",
+                "CLOSE-g2-p7": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g2-p7.pddl",
+                "CLOSE-g3-p0": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g3-p0.pddl",
+                "CLOSE-g3-p1": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g3-p1.pddl",
+                "CLOSE-g3-p3": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g3-p3.pddl",
+                "CLOSE-g3-p7": "profiling/htg/visitall-multidimensional/4-dim/CLOSE-g3-p7.pddl",
+                "FAR-g1-p0": "profiling/htg/visitall-multidimensional/4-dim/FAR-g1-p0.pddl",
+                "FAR-g1-p1": "profiling/htg/visitall-multidimensional/4-dim/FAR-g1-p1.pddl",
+                "FAR-g1-p3": "profiling/htg/visitall-multidimensional/4-dim/FAR-g1-p3.pddl",
+                "FAR-g1-p7": "profiling/htg/visitall-multidimensional/4-dim/FAR-g1-p7.pddl",
+                "FAR-g2-p0": "profiling/htg/visitall-multidimensional/4-dim/FAR-g2-p0.pddl",
+                "FAR-g2-p1": "profiling/htg/visitall-multidimensional/4-dim/FAR-g2-p1.pddl",
+                "FAR-g2-p3": "profiling/htg/visitall-multidimensional/4-dim/FAR-g2-p3.pddl",
+                "FAR-g2-p7": "profiling/htg/visitall-multidimensional/4-dim/FAR-g2-p7.pddl",
+                "FAR-g3-p0": "profiling/htg/visitall-multidimensional/4-dim/FAR-g3-p0.pddl",
+                "FAR-g3-p1": "profiling/htg/visitall-multidimensional/4-dim/FAR-g3-p1.pddl",
+                "FAR-g3-p3": "profiling/htg/visitall-multidimensional/4-dim/FAR-g3-p3.pddl",
+                "FAR-g3-p7": "profiling/htg/visitall-multidimensional/4-dim/FAR-g3-p7.pddl"
+            }
+        },
+        "visitall-multidimensional/5-dim": {
+            "domain_file": "profiling/htg/visitall-multidimensional/5-dim/domain.pddl",
+            "tasks": {
+                "CLOSE-g1-p0": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g1-p0.pddl",
+                "CLOSE-g1-p1": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g1-p1.pddl",
+                "CLOSE-g1-p3": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g1-p3.pddl",
+                "CLOSE-g1-p7": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g1-p7.pddl",
+                "CLOSE-g2-p1": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g2-p1.pddl",
+                "CLOSE-g2-p3": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g2-p3.pddl",
+                "CLOSE-g2-p7": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g2-p7.pddl",
+                "CLOSE-g3-p1": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g3-p1.pddl",
+                "CLOSE-g3-p3": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g3-p3.pddl",
+                "CLOSE-g3-p7": "profiling/htg/visitall-multidimensional/5-dim/CLOSE-g3-p7.pddl",
+                "FAR-g1-p1": "profiling/htg/visitall-multidimensional/5-dim/FAR-g1-p1.pddl",
+                "FAR-g1-p3": "profiling/htg/visitall-multidimensional/5-dim/FAR-g1-p3.pddl",
+                "FAR-g1-p7": "profiling/htg/visitall-multidimensional/5-dim/FAR-g1-p7.pddl",
+                "FAR-g2-p1": "profiling/htg/visitall-multidimensional/5-dim/FAR-g2-p1.pddl",
+                "FAR-g2-p3": "profiling/htg/visitall-multidimensional/5-dim/FAR-g2-p3.pddl",
+                "FAR-g2-p7": "profiling/htg/visitall-multidimensional/5-dim/FAR-g2-p7.pddl",
+                "FAR-g3-p1": "profiling/htg/visitall-multidimensional/5-dim/FAR-g3-p1.pddl",
+                "FAR-g3-p3": "profiling/htg/visitall-multidimensional/5-dim/FAR-g3-p3.pddl",
+                "FAR-g3-p7": "profiling/htg/visitall-multidimensional/5-dim/FAR-g3-p7.pddl",
+                "p0-CLOSE-g2": "profiling/htg/visitall-multidimensional/5-dim/p0-CLOSE-g2.pddl",
+                "p0-CLOSE-g3": "profiling/htg/visitall-multidimensional/5-dim/p0-CLOSE-g3.pddl",
+                "p0-FAR-g1": "profiling/htg/visitall-multidimensional/5-dim/p0-FAR-g1.pddl",
+                "p0-FAR-g2": "profiling/htg/visitall-multidimensional/5-dim/p0-FAR-g2.pddl",
+                "p0-FAR-g3": "profiling/htg/visitall-multidimensional/5-dim/p0-FAR-g3.pddl"
+            }
+        }
     },
-    "childsnack-contents": {
-        "domain": "childsnack-contents/domain.pddl",
-        "tasks": [
-            "childsnack-contents/contentam1-cham3-p0.pddl",
-            "childsnack-contents/contentam1-cham5-p0.pddl",
-            "childsnack-contents/contentam1-cham7-p0.pddl",
-            "childsnack-contents/contentam2-cham3-p0.pddl",
-            "childsnack-contents/contentam2-cham5-p0.pddl",
-            "childsnack-contents/contentam2-cham7-p0.pddl",
-            "childsnack-contents/contentam3-cham3-p0.pddl",
-            "childsnack-contents/contentam3-cham5-p0.pddl",
-            "childsnack-contents/contentam3-cham7-p0.pddl",
-            "childsnack-contents/contentam4-cham3-p0.pddl",
-            "childsnack-contents/contentam4-cham5-p0.pddl",
-            "childsnack-contents/contentam4-cham7-p0.pddl"
-        ]
-    },
-    "genome-edit-distance": {
-        "domain": "genome-edit-distance/domain.pddl",
-        "tasks": [
-            "genome-edit-distance/d-1-2.pddl"
-        ]
-    },
-    "genome-edit-distance-positional": {
-        "domain": "genome-edit-distance-positional/domain.pddl",
-        "tasks": [
-            "genome-edit-distance-positional/d-1-2.pddl"
-        ]
-    },
-    "genome-edit-distance-split": {
-        "domain": "genome-edit-distance-split/domain.pddl",
-        "tasks": [
-            "genome-edit-distance-split/d-1-2.pddl"
-        ]
-    },
-    "labyrinth": {
-        "domain": "labyrinth/domain.pddl",
-        "tasks": [
-            "labyrinth/p01.pddl"
-        ]
-    },
-    "logistics-large-simple": {
-        "domain": "logistics-large-simple/domain.pddl",
-        "tasks": [
-            "logistics-large-simple/p-a1-c1-s1000-p10-t1-g1.pddl",
-            "logistics-large-simple/p-a1-c1-s1000-p10-t1-g2.pddl",
-            "logistics-large-simple/p-a1-c1-s1000-p10-t1-g3.pddl",
-            "logistics-large-simple/p-a1-c1-s1000-p10-t1-g4.pddl"
-        ]
-    },
-    "pipesworld-tankage-nosplit": {
-        "domain": "pipesworld-tankage-nosplit/domain.pddl",
-        "tasks": [
-            "pipesworld-tankage-nosplit/p01-net1-b6-g2-t50.pddl"
-        ]
-    },
-    "rovers-large-simple": {
-        "domain": "rovers-large-simple/domain.pddl",
-        "tasks": [
-            "rovers-large-simple/p-r1-w1000-o1-1-g2.pddl",
-            "rovers-large-simple/p-r1-w1000-o1-1-g4.pddl",
-            "rovers-large-simple/p-r1-w1000-o1-1-g6.pddl",
-            "rovers-large-simple/p-r1-w1000-o1-1-g8.pddl"
-        ]
-    },
-    "visitall-multidimensional-3-dim": {
-        "domain": "visitall-multidimensional/3-dim/domain.pddl",
-        "tasks": [
-            "visitall-multidimensional/3-dim/p0-CLOSE-g1.pddl",
-            "visitall-multidimensional/3-dim/p0-CLOSE-g2.pddl",
-            "visitall-multidimensional/3-dim/p0-CLOSE-g3.pddl",
-            "visitall-multidimensional/3-dim/p0-FAR-g1.pddl",
-            "visitall-multidimensional/3-dim/p0-FAR-g2.pddl",
-            "visitall-multidimensional/3-dim/p0-FAR-g3.pddl"
-        ]
-    },
-    "visitall-multidimensional-4-dim": {
-        "domain": "visitall-multidimensional/4-dim/domain.pddl",
-        "tasks": [
-            "visitall-multidimensional/4-dim/p0-CLOSE-g1.pddl",
-            "visitall-multidimensional/4-dim/p0-CLOSE-g2.pddl",
-            "visitall-multidimensional/4-dim/p0-CLOSE-g3.pddl",
-            "visitall-multidimensional/4-dim/p0-FAR-g1.pddl",
-            "visitall-multidimensional/4-dim/p0-FAR-g2.pddl",
-            "visitall-multidimensional/4-dim/p0-FAR-g3.pddl"
-        ]
-    },
-    "visitall-multidimensional-5-dim": {
-        "domain": "visitall-multidimensional/5-dim/domain.pddl",
-        "tasks": [
-            "visitall-multidimensional/5-dim/p0-CLOSE-g1.pddl",
-            "visitall-multidimensional/5-dim/p0-CLOSE-g2.pddl",
-            "visitall-multidimensional/5-dim/p0-CLOSE-g3.pddl",
-            "visitall-multidimensional/5-dim/p0-FAR-g1.pddl",
-            "visitall-multidimensional/5-dim/p0-FAR-g2.pddl",
-            "visitall-multidimensional/5-dim/p0-FAR-g3.pddl"
-        ]
+    "attributes": {
+        "initial_heuristic_estimate": {
+            "description": "Initial heuristic estimate of the canonical heuristic for the task.",
+            "type": "float",
+            "compare": "strict_equality"
+        }
     }
 }

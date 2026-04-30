@@ -72,7 +72,7 @@ void benchmark_initial_successors(benchmark::State& state, const BenchmarkCase& 
         benchmark::DoNotOptimize(successors.size());
     }
 
-    state.counters["num_successors"] = benchmark::Counter(successors.size());
+    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(successors.size()));
 }
 
 void benchmark_interned_action_bindings(benchmark::State& state, const BenchmarkCase& benchmark_case)
@@ -89,7 +89,7 @@ void benchmark_interned_action_bindings(benchmark::State& state, const Benchmark
         benchmark::DoNotOptimize(bindings.size());
     }
 
-    state.counters["num_successors"] = benchmark::Counter(bindings.size());
+    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(bindings.size()));
 }
 
 void benchmark_action_binding_iterator(benchmark::State& state, const BenchmarkCase& benchmark_case)
@@ -113,7 +113,7 @@ void benchmark_action_binding_iterator(benchmark::State& state, const BenchmarkC
         benchmark::DoNotOptimize(num_bindings);
     }
 
-    state.counters["num_successors"] = benchmark::Counter(num_bindings);
+    state.counters["num_successors"] = benchmark::Counter(static_cast<double>(num_bindings));
 }
 }
 
