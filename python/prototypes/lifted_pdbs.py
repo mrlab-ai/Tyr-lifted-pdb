@@ -93,8 +93,7 @@ def main():
     pattern_time_ms = pattern_time_ns / 1_000_000
 
     print(f"[PATTERN] Pattern generation time {pattern_time_ms:.3f} ms ({pattern_time_ns} ns)", flush=True)
-
-    
+    print(f"[PATTERN] Generated {len(patterns)} patterns.", flush=True)
 
     print("[PROJECT] Projection computation started")
     proj_start = time.perf_counter_ns()
