@@ -635,6 +635,7 @@ void bind_event_handler(nb::module_& m, const std::string& name)
     using T = EventHandler<Kind>;
 
     nb::class_<T, PyEventHandler<Kind>>(m, name.c_str())
+        .def(nb::init<>())
         .def("on_expand_node", &T::on_expand_goal_node, "node"_a)
         .def("on_expand_goal_node", &T::on_expand_goal_node, "node"_a)
         .def("on_generate_node", &T::on_generate_node, "labeled_succ_node"_a)
@@ -750,6 +751,7 @@ void bind_event_handler(nb::module_& m, const std::string& name)
     using T = EventHandler<Kind>;
 
     nb::class_<T, PyEventHandler<Kind>>(m, name.c_str())
+        .def(nb::init<>())
         .def("on_expand_node", &T::on_expand_node, "node"_a)
         .def("on_expand_goal_node", &T::on_expand_goal_node, "node"_a)
         .def("on_generate_node", &T::on_generate_node, "labeled_suc_node"_a)
