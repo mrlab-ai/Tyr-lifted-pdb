@@ -17,6 +17,7 @@
 
 #include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 
+#include "projection_generator/projection_join_plan.hpp"
 #include "projection_generator/task_projection.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/block_array_set.hpp"
@@ -216,6 +217,199 @@ void push_unique(std::vector<fp::MutableAtom<f::FluentTag>>& atoms, const fp::Mu
     if (!contains_atom(atoms, atom))
         atoms.push_back(atom);
 }
+
+// ---------------------------------------------------------------------------
+// Phase 2: O(2^k) forward transition enumeration helpers
+// ---------------------------------------------------------------------------
+
+// Maps each pattern atom to its bit index (== position in Pattern::facts).
+UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t> build_pattern_bit_index(const Pattern& pattern)
+{
+    auto result = UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t> {};
+    result.reserve(pattern.facts.size());
+    for (uint_t i = 0; i < uint_t(pattern.facts.size()); ++i)
+        result.emplace(fp::MutableAtom<f::FluentTag>(pattern.facts[i].get_atom().value()), i);
+    return result;
+}
+
+// Apply one effect literal (after substitution) to dst_mask.
+// Non-ground literals (params bound to non-pattern objects) are no-ops.
+void apply_effect_to_mask(const fp::MutableLiteral<f::FluentTag>& lit,
+                          const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                          const UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t>& atom_bit_index,
+                          uint_t& dst_mask)
+{
+    const auto grounded = u::apply_substitution_fixpoint(lit, sigma);
+    if (!is_ground(grounded.atom))
+        return;
+    const auto it = atom_bit_index.find(grounded.atom);
+    if (it == atom_bit_index.end())
+        return;
+    const uint_t bit = uint_t(1) << it->second;
+    if (grounded.polarity)
+        dst_mask |= bit;
+    else
+        dst_mask &= ~bit;
+}
+
+// Returns false if any ground negative fluent literal's atom is held in src_atoms.
+// Non-ground literals are skipped (existential, consistent with old code behaviour).
+bool check_negative_fluent(const std::vector<fp::MutableLiteral<f::FluentTag>>& negative_fluent,
+                            const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                            const u::SubstitutionFunction<Data<f::Term>>& sigma)
+{
+    for (const auto& lit0 : negative_fluent)
+    {
+        const auto lit = u::apply_substitution_fixpoint(lit0, sigma);
+        if (!is_ground(lit.atom))
+            continue;
+        if (contains_atom(src_atoms, lit.atom))
+            return false;
+    }
+    return true;
+}
+
+// Enumerate bindings satisfying the positive fluent precondition literals.
+// Ground literals: exact check vs src_atoms.
+// Non-ground literals: enumerate from src_atoms AND allow existential (non-pattern binding)
+// to match the old code's treatment of unbound precondition params as existentially held.
+template<typename Callback>
+void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>>& positive_fluent,
+                              size_t pos,
+                              const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                              const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                              Callback&& callback)
+{
+    if (pos == positive_fluent.size())
+    {
+        callback(sigma);
+        return;
+    }
+
+    const auto lit = u::apply_substitution_fixpoint(positive_fluent[pos], sigma);
+
+    if (is_ground(lit.atom))
+    {
+        if (contains_atom(src_atoms, lit.atom))
+            enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, sigma, std::forward<Callback>(callback));
+        return;
+    }
+
+    // Non-ground: enumerate from visible src atoms.
+    for (const auto& atom : src_atoms)
+    {
+        auto sigma2 = sigma;
+        const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
+        if (!matched)
+            continue;
+        enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, *matched, callback);
+    }
+
+    // Existential: allow non-pattern concrete binding (leave param unbound).
+    // This replicates the old code's "if (!is_ground) continue" logic.
+    enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, sigma, std::forward<Callback>(callback));
+}
+
+// Process static join steps using the pre-built StaticAtomIndex.
+template<typename Callback>
+void join_static_v2(const std::vector<JoinStep>& steps,
+                    size_t pos,
+                    const StaticAtomIndex& static_index,
+                    const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                    Callback&& callback)
+{
+    if (pos == steps.size())
+    {
+        callback(sigma);
+        return;
+    }
+
+    const auto& step = steps[pos];
+    const auto partial = u::apply_substitution_fixpoint(step.literal, sigma);
+
+    if (is_ground(partial.atom))
+    {
+        if (literal_holds(partial, static_index.lookup(partial.atom.predicate)))
+            join_static_v2(steps, pos + 1, static_index, sigma, std::forward<Callback>(callback));
+        return;
+    }
+
+    if (!partial.polarity)
+        return;  // negative non-ground static: skip (matches old code)
+
+    for (const auto& atom : static_index.lookup(partial.atom.predicate))
+    {
+        auto sigma2 = sigma;
+        const auto matched = match_literal_to_atom(partial, atom, std::move(sigma2));
+        if (!matched)
+            continue;
+        join_static_v2(steps, pos + 1, static_index, *matched, callback);
+    }
+    // No existential case for static literals (they are fully grounded in the task).
+}
+
+// Enumerate all sigma extensions satisfying a conjunctive condition.
+template<typename Callback>
+void enumerate_condition_v2(const ConditionJoinPlan& plan,
+                             const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                             const StaticAtomIndex& static_index,
+                             const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                             Callback&& callback)
+{
+    enumerate_fluent_pos_rec(plan.positive_fluent, 0, src_atoms, sigma,
+        [&](const u::SubstitutionFunction<Data<f::Term>>& sigma1)
+        {
+            if (!check_negative_fluent(plan.negative_fluent, src_atoms, sigma1))
+                return;
+            join_static_v2(plan.static_join, 0, static_index, sigma1, std::forward<Callback>(callback));
+        });
+}
+
+// Enumerate bindings for effect-only parameters from pattern atoms.
+// Each unbound effect param is tried against each matching pattern atom position,
+// plus a non-pattern option (leave unbound → ADD effects for this param are no-ops).
+template<typename Callback>
+void enumerate_effect_params_v2(const std::vector<EffectParamEnum>& enums,
+                                size_t pos,
+                                const std::vector<fp::MutableAtom<f::FluentTag>>& pattern_atoms,
+                                const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                                Callback&& callback)
+{
+    if (pos == enums.size())
+    {
+        callback(sigma);
+        return;
+    }
+
+    const auto& e = enums[pos];
+
+    if (sigma.is_bound(e.param))
+    {
+        enumerate_effect_params_v2(enums, pos + 1, pattern_atoms, sigma, std::forward<Callback>(callback));
+        return;
+    }
+
+    for (const auto& atom : pattern_atoms)
+    {
+        if (atom.predicate.get_index() != e.effect_pred.get_index())
+            continue;
+        if (e.arg_pos >= atom.terms.size() || !u::is_object(atom.terms[e.arg_pos]))
+            continue;
+
+        auto sigma2 = sigma;
+        if (!sigma2.assign(e.param, Data<f::Term> { u::get_object(atom.terms[e.arg_pos]) }))
+            continue;
+
+        enumerate_effect_params_v2(enums, pos + 1, pattern_atoms, sigma2, callback);
+    }
+
+    // Non-pattern option: leave param unbound → non-ground ADD effects → no-op.
+    enumerate_effect_params_v2(enums, pos + 1, pattern_atoms, sigma, std::forward<Callback>(callback));
+}
+
+// ---------------------------------------------------------------------------
+// Old O(4^k) static literal satisfaction (kept for reference)
+// ---------------------------------------------------------------------------
 
 /**
  * Static literal satisfaction
@@ -641,14 +835,96 @@ auto create_abstract_state_changing_transitions(const std::vector<StateView<Lift
     return std::make_pair(std::move(transitions), std::move(adj_lists));
 }
 
+auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<LiftedTag>>& astates,
+                                                    const Pattern& pattern,
+                                                    const ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
+                                                    const StaticAtomIndex& static_index,
+                                                    const UnorderedMap<fp::ActionView, ActionJoinPlan>& join_plans)
+{
+    auto transitions = TransitionList {};
+    auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
+
+    const auto pattern_atoms = collect_pattern_atoms(pattern);
+    const auto atom_bit_index = build_pattern_bit_index(pattern);
+
+    for (size_t src_idx = 0; src_idx < astates.size(); ++src_idx)
+    {
+        const auto& astate = astates[src_idx];
+        const auto src_mask = uint_t(src_idx);
+        const auto src_atoms = collect_visible_fluent_atoms(astate, pattern);
+
+        for (const auto& [projected_action, info] : projected_to_original_action)
+        {
+            const auto& join_plan = join_plans.at(projected_action);
+            const auto mutable_action = fp::MutableAction(projected_action);
+            auto sigma0 = make_sigma(mutable_action);
+
+            auto seen = std::vector<u::SubstitutionFunction<Index<f::Object>>> {};
+
+            enumerate_condition_v2(join_plan.precondition, src_atoms, static_index, sigma0,
+                [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_pre)
+                {
+                    enumerate_effect_params_v2(join_plan.effect_param_enums, 0, pattern_atoms, sigma_pre,
+                        [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_full)
+                        {
+                            uint_t dst_mask = src_mask;
+
+                            for (size_t ei = 0; ei < mutable_action.effects.size(); ++ei)
+                            {
+                                if (!join_plan.effects[ei].has_visible_effects)
+                                    continue;
+
+                                const auto& ceff = mutable_action.effects[ei];
+                                const auto& ceff_plan = join_plan.effects[ei].condition_plan;
+
+                                enumerate_condition_v2(ceff_plan, src_atoms, static_index, sigma_full,
+                                    [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_ceff)
+                                    {
+                                        for (const auto& lit : ceff.effect.literals)
+                                            apply_effect_to_mask(lit, sigma_ceff, atom_bit_index, dst_mask);
+                                    });
+                            }
+
+                            if (dst_mask == src_mask)
+                                return;
+
+                            const auto obj_sigma_opt = to_object_substitution(sigma_full, mutable_action.num_variables);
+                            if (!obj_sigma_opt)
+                                return;
+
+                            if (std::any_of(seen.begin(), seen.end(),
+                                [&](const auto& s)
+                                { return EqualTo<u::SubstitutionFunction<Index<f::Object>>> {}(s, *obj_sigma_opt); }))
+                                return;
+                            seen.push_back(*obj_sigma_opt);
+
+                            const auto sigma_original =
+                                lift_substitution_to_original(*obj_sigma_opt, info.original_action.get_arity(), info.projected_to_original);
+
+                            const auto t = uint_t(transitions.size());
+                            transitions.push_back(Transition { projected_action, info.original_action, sigma_original, uint_t(src_idx), dst_mask });
+                            adj_lists[src_idx].push_back(t);
+                        });
+                });
+        }
+    }
+
+    return std::make_pair(std::move(transitions), std::move(adj_lists));
+}
+
 auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_task)
 {
     auto [projected_task, projected_to_original_action] = project_task(original_task, pattern);
 
+    // Build join plans once per projected task (Phase 1 precomputation).
+    const auto static_index = build_static_atom_index(*projected_task);
+    const auto join_plans = build_projection_join_plans(projected_to_original_action, pattern, static_index);
+
     auto state_repository = StateRepository<LiftedTag>::create(projected_task, ExecutionContext::create(1));
 
     auto [astates, goal_vertices] = create_abstract_states(pattern, *projected_task, *state_repository);
-    auto [transitions, adj_lists] = create_abstract_state_changing_transitions(astates, pattern, projected_to_original_action, *projected_task);
+    auto [transitions, adj_lists] =
+        create_abstract_state_changing_transitions_v2(astates, pattern, projected_to_original_action, static_index, join_plans);
 
     auto result = ProjectionAbstraction(std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern),
                                                                                                         std::move(state_repository),
