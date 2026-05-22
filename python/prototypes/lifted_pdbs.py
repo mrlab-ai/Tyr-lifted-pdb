@@ -31,17 +31,20 @@ from pytyr.planning import (
 )
 
 from pytyr.planning.lifted import (
-    Task, 
-    SuccessorGenerator, 
+    Task,
+    SuccessorGenerator,
     PatternGenerator,
     GoalPatternGenerator,
     ProjectionGenerator,
+    ProjectionOptions,
+    FluentLiteralOrder,
+    SrcAtomsIndex,
     ProjectionAbstractionHeuristic,
     CanonicalHeuristic,
     MaxHeuristic,
     BlindHeuristic,
     ProjectionAbstractionList,
-    PruningStrategy, 
+    PruningStrategy,
     TaskGoalStrategy,
 )
 
@@ -67,7 +70,25 @@ def main():
     arg_parser.add_argument("-p", "--task-filepath", type=Path, required=True, help="Path to PDDL task file.")
     arg_parser.add_argument("--max-pattern-size", type=int, default=2, help="Maximum size of generated patterns.")
     arg_parser.add_argument("--max-pattern-count", type=int, default=10, help="Maximum number of generated patterns.")
+    arg_parser.add_argument("--projection-fluent-literal-order",
+                            choices=["declaration", "selectivity"], default="selectivity",
+                            help="Phase 4a: ordering of positive fluent precondition literals (default: selectivity).")
+    arg_parser.add_argument("--projection-src-atoms-index",
+                            choices=["off", "on"], default="on",
+                            help="Phase 4b: per-src-state predicate index over visible fluent atoms (default: on).")
     args = arg_parser.parse_args()
+
+    projection_options = ProjectionOptions()
+    projection_options.fluent_literal_order = (
+        FluentLiteralOrder.Selectivity
+        if args.projection_fluent_literal_order == "selectivity"
+        else FluentLiteralOrder.Declaration
+    )
+    projection_options.src_atoms_index = (
+        SrcAtomsIndex.On if args.projection_src_atoms_index == "on" else SrcAtomsIndex.Off
+    )
+    print(f"[PROJECT] fluent_literal_order={args.projection_fluent_literal_order} "
+          f"src_atoms_index={args.projection_src_atoms_index}", flush=True)
 
     domain_filepath : Path = args.domain_filepath
     task_filepath : Path = args.task_filepath
@@ -98,7 +119,7 @@ def main():
     print("[PROJECT] Projection computation started")
     proj_start = time.perf_counter_ns()
     
-    projections = ProjectionGenerator(lifted_task, patterns).generate()
+    projections = ProjectionGenerator(lifted_task, patterns, projection_options).generate()
 
     proj_end = time.perf_counter_ns()
     proj_time_ns = proj_end - proj_start

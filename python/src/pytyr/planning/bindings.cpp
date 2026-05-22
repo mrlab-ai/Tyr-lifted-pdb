@@ -417,6 +417,7 @@ void bind_projection_generator(nb::module_& m, const std::string& name)
 
     nb::class_<T>(m, name.c_str())  //
         .def(nb::init<std::shared_ptr<const Task<Kind>>, PatternCollection>(), "task"_a, "patterns"_a)
+        .def(nb::init<std::shared_ptr<const Task<Kind>>, PatternCollection, ProjectionOptions>(), "task"_a, "patterns"_a, "options"_a)
         .def("generate", &T::generate);
 }
 
@@ -551,6 +552,23 @@ should not be used further.
     bind_goal_pattern_generator<LiftedTag>(m, "GoalPatternGenerator");
     bind_projection_abstraction<LiftedTag>(m, "ProjectionAbstraction");
     bind_vector<ProjectionAbstractionList<LiftedTag>>(m, "ProjectionAbstractionList");
+
+    // Phase 4: projection-generator options (selectivity ordering + per-state fluent index).
+    nb::enum_<FluentLiteralOrder>(m, "FluentLiteralOrder")
+        .value("Declaration", FluentLiteralOrder::Declaration)
+        .value("Selectivity", FluentLiteralOrder::Selectivity)
+        .export_values();
+
+    nb::enum_<SrcAtomsIndex>(m, "SrcAtomsIndex")
+        .value("Off", SrcAtomsIndex::Off)
+        .value("On", SrcAtomsIndex::On)
+        .export_values();
+
+    nb::class_<ProjectionOptions>(m, "ProjectionOptions")
+        .def(nb::init<>())
+        .def_rw("fluent_literal_order", &ProjectionOptions::fluent_literal_order)
+        .def_rw("src_atoms_index", &ProjectionOptions::src_atoms_index);
+
     bind_projection_generator<LiftedTag>(m, "ProjectionGenerator");
 }
 

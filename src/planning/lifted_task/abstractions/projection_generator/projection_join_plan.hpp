@@ -24,6 +24,7 @@
 #include "tyr/planning/abstractions/explicit_projection.hpp"
 #include "tyr/planning/abstractions/pattern_generator.hpp"
 #include "tyr/planning/declarations.hpp"
+#include "tyr/planning/lifted_task/abstractions/projection_generator.hpp"
 
 namespace tyr::planning
 {
@@ -130,10 +131,14 @@ StaticAtomIndex build_static_atom_index(const Task<LiftedTag>& task);
  * Build the join plan for one projected action schema.
  * The greedy ordering maximises the number of already-bound parameters at each step,
  * breaking ties by estimated_size (fewer tuples first).
+ *
+ * options.fluent_literal_order controls Phase 4a ordering of positive fluent
+ * preconditions. Static-join ordering is unaffected (always greedy).
  */
 ActionJoinPlan build_action_join_plan(const fp::MutableAction& action,
                                       const Pattern& pattern,
-                                      const StaticAtomIndex& static_index);
+                                      const StaticAtomIndex& static_index,
+                                      const ProjectionOptions& options);
 
 /**
  * Build join plans for every projected action in a projection's action mapping.
@@ -141,7 +146,8 @@ ActionJoinPlan build_action_join_plan(const fp::MutableAction& action,
 UnorderedMap<fp::ActionView, ActionJoinPlan>
 build_projection_join_plans(const ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
                             const Pattern& pattern,
-                            const StaticAtomIndex& static_index);
+                            const StaticAtomIndex& static_index,
+                            const ProjectionOptions& options);
 
 }  // namespace tyr::planning
 

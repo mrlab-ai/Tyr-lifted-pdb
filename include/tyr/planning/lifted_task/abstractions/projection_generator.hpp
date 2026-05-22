@@ -34,17 +34,41 @@ namespace fp = tyr::formalism::planning;
 namespace tyr::planning
 {
 
+// Phase 4a: ordering strategy for positive fluent precondition literals during
+// projection-transition enumeration. Selectivity is the optimized default.
+enum class FluentLiteralOrder
+{
+    Declaration,
+    Selectivity,
+};
+
+// Phase 4b: whether to build a per-src-state predicate-keyed index over visible
+// fluent atoms (mirrors StaticAtomIndex on the fluent side). On is the optimized
+// default.
+enum class SrcAtomsIndex
+{
+    Off,
+    On,
+};
+
+struct ProjectionOptions
+{
+    FluentLiteralOrder fluent_literal_order = FluentLiteralOrder::Selectivity;
+    SrcAtomsIndex src_atoms_index = SrcAtomsIndex::On;
+};
+
 template<>
 class ProjectionGenerator<LiftedTag>
 {
 public:
-    ProjectionGenerator(std::shared_ptr<const Task<LiftedTag>> task, PatternCollection patterns);
+    ProjectionGenerator(std::shared_ptr<const Task<LiftedTag>> task, PatternCollection patterns, ProjectionOptions options = {});
 
     ProjectionAbstractionList<LiftedTag> generate();
 
 private:
     std::shared_ptr<const Task<LiftedTag>> m_task;
     PatternCollection m_patterns;
+    ProjectionOptions m_options;
 };
 
 }

@@ -52,6 +52,8 @@
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
+#include <optional>
+
 namespace f = tyr::formalism;
 namespace fp = tyr::formalism::planning;
 namespace u = tyr::formalism::unification;
@@ -269,14 +271,30 @@ bool check_negative_fluent(const std::vector<fp::MutableLiteral<f::FluentTag>>& 
     return true;
 }
 
+// Phase 4b: per-src-state index over visible fluent atoms, keyed by predicate.
+// nullptr means "index disabled" — caller falls back to linear scan over src_atoms.
+using SrcAtomsByPredicate = UnorderedMap<fp::PredicateView<f::FluentTag>, std::vector<fp::MutableAtom<f::FluentTag>>>;
+
+SrcAtomsByPredicate build_src_atoms_index(const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms)
+{
+    auto index = SrcAtomsByPredicate {};
+    for (const auto& atom : src_atoms)
+        index[atom.predicate].push_back(atom);
+    return index;
+}
+
 // Enumerate bindings satisfying the positive fluent precondition literals.
 // Ground literals: exact check vs src_atoms.
 // Non-ground literals: enumerate from src_atoms AND allow existential (non-pattern binding)
 // to match the old code's treatment of unbound precondition params as existentially held.
+//
+// When src_atoms_index is non-null (Phase 4b on), non-ground literals iterate
+// only the atoms whose predicate matches, instead of scanning all src_atoms.
 template<typename Callback>
 void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>>& positive_fluent,
                               size_t pos,
                               const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                              const SrcAtomsByPredicate* src_atoms_index,
                               const u::SubstitutionFunction<Data<f::Term>>& sigma,
                               Callback&& callback)
 {
@@ -291,23 +309,41 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
     if (is_ground(lit.atom))
     {
         if (contains_atom(src_atoms, lit.atom))
-            enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, sigma, std::forward<Callback>(callback));
+            enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
         return;
     }
 
     // Non-ground: enumerate from visible src atoms.
-    for (const auto& atom : src_atoms)
+    if (src_atoms_index)
     {
-        auto sigma2 = sigma;
-        const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
-        if (!matched)
-            continue;
-        enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, *matched, callback);
+        const auto it = src_atoms_index->find(lit.atom.predicate);
+        if (it != src_atoms_index->end())
+        {
+            for (const auto& atom : it->second)
+            {
+                auto sigma2 = sigma;
+                const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
+                if (!matched)
+                    continue;
+                enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, src_atoms_index, *matched, callback);
+            }
+        }
+    }
+    else
+    {
+        for (const auto& atom : src_atoms)
+        {
+            auto sigma2 = sigma;
+            const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
+            if (!matched)
+                continue;
+            enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, src_atoms_index, *matched, callback);
+        }
     }
 
     // Existential: allow non-pattern concrete binding (leave param unbound).
     // This replicates the old code's "if (!is_ground) continue" logic.
-    enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, sigma, std::forward<Callback>(callback));
+    enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
 }
 
 // Process static join steps using the pre-built StaticAtomIndex.
@@ -352,11 +388,12 @@ void join_static_v2(const std::vector<JoinStep>& steps,
 template<typename Callback>
 void enumerate_condition_v2(const ConditionJoinPlan& plan,
                              const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                             const SrcAtomsByPredicate* src_atoms_index,
                              const StaticAtomIndex& static_index,
                              const u::SubstitutionFunction<Data<f::Term>>& sigma,
                              Callback&& callback)
 {
-    enumerate_fluent_pos_rec(plan.positive_fluent, 0, src_atoms, sigma,
+    enumerate_fluent_pos_rec(plan.positive_fluent, 0, src_atoms, src_atoms_index, sigma,
         [&](const u::SubstitutionFunction<Data<f::Term>>& sigma1)
         {
             if (!check_negative_fluent(plan.negative_fluent, src_atoms, sigma1))
@@ -839,7 +876,8 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
                                                     const Pattern& pattern,
                                                     const ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
                                                     const StaticAtomIndex& static_index,
-                                                    const UnorderedMap<fp::ActionView, ActionJoinPlan>& join_plans)
+                                                    const UnorderedMap<fp::ActionView, ActionJoinPlan>& join_plans,
+                                                    const ProjectionOptions& options)
 {
     auto transitions = TransitionList {};
     auto adj_lists = std::vector<std::vector<uint_t>>(astates.size());
@@ -853,6 +891,13 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
         const auto src_mask = uint_t(src_idx);
         const auto src_atoms = collect_visible_fluent_atoms(astate, pattern);
 
+        // Phase 4b: build per-state fluent-atom index once, reused across all actions.
+        // nullptr when the index is disabled (ablation path).
+        std::optional<SrcAtomsByPredicate> src_index_storage;
+        if (options.src_atoms_index == SrcAtomsIndex::On)
+            src_index_storage = build_src_atoms_index(src_atoms);
+        const SrcAtomsByPredicate* src_index_ptr = src_index_storage ? &(*src_index_storage) : nullptr;
+
         for (const auto& [projected_action, info] : projected_to_original_action)
         {
             const auto& join_plan = join_plans.at(projected_action);
@@ -861,7 +906,7 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
 
             auto seen = std::vector<u::SubstitutionFunction<Index<f::Object>>> {};
 
-            enumerate_condition_v2(join_plan.precondition, src_atoms, static_index, sigma0,
+            enumerate_condition_v2(join_plan.precondition, src_atoms, src_index_ptr, static_index, sigma0,
                 [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_pre)
                 {
                     enumerate_effect_params_v2(join_plan.effect_param_enums, 0, pattern_atoms, sigma_pre,
@@ -877,7 +922,7 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
                                 const auto& ceff = mutable_action.effects[ei];
                                 const auto& ceff_plan = join_plan.effects[ei].condition_plan;
 
-                                enumerate_condition_v2(ceff_plan, src_atoms, static_index, sigma_full,
+                                enumerate_condition_v2(ceff_plan, src_atoms, src_index_ptr, static_index, sigma_full,
                                     [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_ceff)
                                     {
                                         for (const auto& lit : ceff.effect.literals)
@@ -912,19 +957,19 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
     return std::make_pair(std::move(transitions), std::move(adj_lists));
 }
 
-auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_task)
+auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_task, const ProjectionOptions& options)
 {
     auto [projected_task, projected_to_original_action] = project_task(original_task, pattern);
 
     // Build join plans once per projected task (Phase 1 precomputation).
     const auto static_index = build_static_atom_index(*projected_task);
-    const auto join_plans = build_projection_join_plans(projected_to_original_action, pattern, static_index);
+    const auto join_plans = build_projection_join_plans(projected_to_original_action, pattern, static_index, options);
 
     auto state_repository = StateRepository<LiftedTag>::create(projected_task, ExecutionContext::create(1));
 
     auto [astates, goal_vertices] = create_abstract_states(pattern, *projected_task, *state_repository);
     auto [transitions, adj_lists] =
-        create_abstract_state_changing_transitions_v2(astates, pattern, projected_to_original_action, static_index, join_plans);
+        create_abstract_state_changing_transitions_v2(astates, pattern, projected_to_original_action, static_index, join_plans, options);
 
     auto result = ProjectionAbstraction(std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern),
                                                                                                         std::move(state_repository),
@@ -937,9 +982,10 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
 }
 }
 
-ProjectionGenerator<LiftedTag>::ProjectionGenerator(std::shared_ptr<const Task<LiftedTag>> task, PatternCollection patterns) :
+ProjectionGenerator<LiftedTag>::ProjectionGenerator(std::shared_ptr<const Task<LiftedTag>> task, PatternCollection patterns, ProjectionOptions options) :
     m_task(std::move(task)),
-    m_patterns(std::move(patterns))
+    m_patterns(std::move(patterns)),
+    m_options(options)
 {
 }
 
@@ -948,7 +994,7 @@ ProjectionAbstractionList<LiftedTag> ProjectionGenerator<LiftedTag>::generate()
     auto projections = ProjectionAbstractionList<LiftedTag> {};
 
     for (const auto& pattern : m_patterns)
-        projections.push_back(create_projection(pattern, *m_task));
+        projections.push_back(create_projection(pattern, *m_task, m_options));
 
     return projections;
 }
