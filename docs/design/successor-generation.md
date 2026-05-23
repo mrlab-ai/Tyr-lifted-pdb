@@ -12,19 +12,19 @@ The two specialisations diverge inside but converge at the output: both produce 
 
 ```mermaid
 graph LR
-  subgraph LiftedSG["SuccessorGenerator&lt;LiftedTag&gt;"]
+  subgraph LiftedSG["SuccessorGenerator for LiftedTag"]
     LS[state] --> LW[Datalog workspace]
     LW --> LBU[solve_bottom_up]
     LBU --> LB[satisfied bindings]
     LB --> LG[ground per binding]
     LG --> LV[GroundActionView]
   end
-  subgraph GroundSG["SuccessorGenerator&lt;GroundTag&gt;"]
+  subgraph GroundSG["SuccessorGenerator for GroundTag"]
     GS[state] --> GMT[MatchTree query]
-    GMT --> GL[IndexList&lt;GroundAction&gt;]
+    GMT --> GL[IndexList of GroundAction]
     GL --> GV[GroundActionView]
   end
-  LV --> LN["LabeledNode&lt;Kind&gt; { GroundActionView, Node&lt;Kind&gt; }"]
+  LV --> LN["LabeledNode { GroundActionView, Node }"]
   GV --> LN
 ```
 

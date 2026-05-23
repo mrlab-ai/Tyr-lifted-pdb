@@ -12,7 +12,7 @@ Lifecycle layers:
 
 ```mermaid
 graph LR
-  Task[planning::Task&lt;LiftedTag&gt;] -->|"build once at task init"| Program
+  Task["planning::Task (LiftedTag)"] -->|"build once at task init"| Program
   Program -->|"+ derived metadata"| Context["ProgramContext"]
   Context -->|"per state"| Workspace["ProgramWorkspace"]
   State[current state facts] -->|"insert_extended_state()"| Workspace

@@ -14,16 +14,16 @@ The end-to-end flow, traced through the reference planner in [exe/astar_eager.cp
 sequenceDiagram
   actor Caller
   participant Parser as formalism::Parser
-  participant Task as planning::Task&lt;Kind&gt;
-  participant SG as planning::SuccessorGenerator&lt;Kind&gt;
-  participant Heur as planning::Heuristic&lt;Kind&gt;
-  participant Search as planning::find_solution&lt;Kind&gt;
+  participant Task as planning::Task
+  participant SG as planning::SuccessorGenerator
+  participant Heur as planning::Heuristic
+  participant Search as planning::find_solution
   Caller->>Parser: parse(domain.pddl, problem.pddl)
   Parser-->>Caller: PlanningTask
   Caller->>Task: LiftedTask::create(planning_task)
   Note over Task: optional grounding:<br/>task.instantiate_ground_task()<br/>via analysis subsystem
   Caller->>SG: construct(task, execution_context)
-  Note over SG: SG owns StateRepository&lt;Kind&gt;<br/>(lifted: datalog workspace;<br/>ground: MatchTree)
+  Note over SG: SG owns StateRepository<br/>(lifted: datalog workspace;<br/>ground: MatchTree)
   Caller->>Heur: heuristic factory
   Caller->>Search: find_solution(task, sg, heur, opts)
   Search-->>Caller: SearchResult { plan }
