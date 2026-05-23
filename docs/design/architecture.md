@@ -41,6 +41,18 @@ flowchart LR
 
 Solid arrows show the in-pipeline relationships within and across `formalism` and `planning`. Dashed edges are conditional consumption: `SG`'s use of `datalog` is lifted-only (the lifted `SuccessorGenerator` evaluates a Datalog program per state; the ground one does not), and `Task`'s use of `analysis` happens only when grounding via `Task<LiftedTag>::instantiate_ground_task()`. State values themselves are never copied during search — they are registered once in the repository and referred to by `Index<State<Kind>>` everywhere else (see [Non-obvious things](#non-obvious-things)). The reference planner [exe/astar_eager.cpp](../../exe/astar_eager.cpp) shows a concrete top-to-bottom traversal through this topology.
 
+## Design philosophy
+
+The choices below cross subsystem boundaries; they are what makes the rest of the architecture make sense. Several are surfaced in the project [README's Technical Overview](../../README.md); the version here ties each principle to the design docs where it's implemented.
+
+- **Packed-integer representation, arena-style storage.** Every entity — Object, Predicate, Action, Atom, Literal, State — is addressed by a small `Index<T>` rather than a pointer or reference. The actual `Data<T>` payloads live in repository-owned pools. See [formalism](formalism.md).
+- **Cista zero-copy layout.** `Data<T>` payloads contain no raw pointers; strings are `cista::offset::string`. The Index→Data dereference is decoding-free, and `Data` is buffer-stable for memory-mapping or cross-task sharing. See [formalism](formalism.md).
+- **Tree-shaped state storage with structural sharing.** The default `TYR_STATE_STORAGE_POLICY=Tree` represents states as perfectly balanced binary trees, so states that share substructure share memory. Switchable to `Hashset` at build time. See [successor-generation](successor-generation.md), [CLAUDE.md](../../CLAUDE.md).
+- **Geometrically growing, hierarchical buffers.** Workspaces and repositories are arena-style: allocations grow geometrically and child buffers inherit from parent buffers without copying. Multiple tasks can share a domain; the lifted Datalog engine reuses workspace memory across states. See [datalog](datalog.md), [formalism](formalism.md).
+- **Strong typing of conceptually different entities.** Static, fluent, and derived atoms are distinct types; lifted and ground tasks diverge via the `Kind` template parameter; `Index<T>` is not interchangeable across `T`. The compiler catches category errors that would survive an `int`-based representation.
+- **Parallelism scoped where it pays.** TBB drives parallel rule evaluation within a stratum in the Datalog engine and parallel grounding; search itself is single-threaded per task. The `TYR_ENABLE_INNER_PARALLELISM` build flag enables finer-grained parallelism inside Datalog rule evaluation. See [datalog](datalog.md).
+- **Pretty-printers as a code-health investment.** Every `Data<T>`, view, and major planning entity has a Formatter producing human-readable output. The packed representations would be opaque without them; the formatters exist so that the people who have to debug and extend this code don't end up cursing the people who designed it.
+
 ## API
 
 Top-level entry points by subsystem. Each subsystem doc owns its own detailed API surface; this list is the cross-subsystem "how do I run Tyr" map.
