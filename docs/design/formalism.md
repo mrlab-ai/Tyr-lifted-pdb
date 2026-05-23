@@ -11,12 +11,12 @@ The formalism subsystem owns the type system for PDDL planning. Every entity —
 The Repository / View / Data triple is the entire conceptual pattern; the rest of formalism is variations on it. The pattern repeats verbatim for every PDDL entity — `ObjectData / ObjectIndex / ObjectView`, `PredicateData / …`, `ActionData / …`, and so on:
 
 ```mermaid
-erDiagram
-    Repository ||--o{ Data : "owns; dedupes by identifying_members()"
-    Repository ||--o| Repository : "optional parent (scoping)"
-    View }o--|| Repository : "borrows as context"
-    View }o--|| Index : "carries handle"
-    Index ||--|| Data : "addresses within a Repository"
+flowchart LR
+  Repo[Repository] -->|owns many| Data
+  Repo -.->|optional parent| Repo
+  View -->|borrows context| Repo
+  View -->|carries handle| Index
+  Index -->|addresses| Data
 ```
 
 `Data<T>` payloads are immutable and laid out for `cista::offset` zero-copy serialisation (e.g., `ObjectData` is `{ Index<Object>, cista::offset::string name }`). Views are cheap — they hold a Repository pointer and a small Index — and dereference lazily via `get_data()`. Repositories expose `find`, `get_or_create`, and `operator[]`; when a Repository has a parent, those lookups walk the chain upward. See [API](#api) for the concrete types.
