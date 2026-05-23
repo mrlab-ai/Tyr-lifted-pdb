@@ -21,9 +21,9 @@ sequenceDiagram
   Caller->>Parser: parse(domain.pddl, problem.pddl)
   Parser-->>Caller: PlanningTask
   Caller->>Task: LiftedTask::create(planning_task)
-  Note over Task: optional grounding:<br/>task.instantiate_ground_task()<br/>via analysis subsystem
+  Note over Task: optional grounding via task.instantiate_ground_task() (analysis subsystem)
   Caller->>SG: construct(task, execution_context)
-  Note over SG: SG owns StateRepository<br/>(lifted: datalog workspace;<br/>ground: MatchTree)
+  Note over SG: SG owns StateRepository (lifted uses datalog workspace, ground uses MatchTree)
   Caller->>Heur: heuristic factory
   Caller->>Search: find_solution(task, sg, heur, opts)
   Search-->>Caller: SearchResult { plan }
