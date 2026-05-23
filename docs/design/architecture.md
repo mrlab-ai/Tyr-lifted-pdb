@@ -8,28 +8,38 @@ Tyr turns PDDL domain + problem files into Plans. It is organised as six subsyst
 
 ### How it works
 
-The end-to-end flow, traced through the reference planner in [exe/astar_eager.cpp](../../exe/astar_eager.cpp):
+The subsystem topology, with major types per subsystem and ownership annotated inline:
 
 ```mermaid
-sequenceDiagram
-  actor Caller
-  participant Parser as formalism::Parser
-  participant Task as planning::Task
-  participant SG as planning::SuccessorGenerator
-  participant Heur as planning::Heuristic
-  participant Search as planning::find_solution
-  Caller->>Parser: parse(domain.pddl, problem.pddl)
-  Parser-->>Caller: PlanningTask
-  Caller->>Task: LiftedTask::create(planning_task)
-  Note over Task: optional grounding via task.instantiate_ground_task() (analysis subsystem)
-  Caller->>SG: construct(task, execution_context)
-  Note over SG: SG owns StateRepository (lifted uses datalog workspace, ground uses MatchTree)
-  Caller->>Heur: heuristic factory
-  Caller->>Search: find_solution(task, sg, heur, opts)
-  Search-->>Caller: SearchResult { plan }
+flowchart LR
+  subgraph formalism["formalism subsystem"]
+    Parser["Parser"]
+    PT["PlanningTask"]
+    Repo["Repository, Views, Data"]
+  end
+  subgraph planning["planning subsystem"]
+    Task["Task<br/>(owns parsed PDDL)"]
+    SG["SuccessorGenerator<br/>(owns StateRepository)"]
+    Heur["Heuristic"]
+    Search["find_solution<br/>(stateless)"]
+  end
+  subgraph datalog["datalog subsystem"]
+    DL["Program, ProgramWorkspace"]
+  end
+  subgraph analysis["analysis subsystem"]
+    AN["invariants, mutexes, stratification"]
+  end
+  Parser --> PT
+  PT --> Task
+  Task --> SG
+  Task --> Heur
+  SG --> Search
+  Heur --> Search
+  SG -. used by lifted SG .-> DL
+  Task -. used during grounding .-> AN
 ```
 
-Ownership is asymmetric and worth noting: `Task<Kind>` owns the parsed PDDL representation; `SuccessorGenerator<Kind>` owns the `StateRepository<Kind>` that holds the actual state values; the search algorithm owns *nothing* — it takes everything by reference, builds private search-node records locally, and returns a `SearchResult` with the goal node and plan. State values themselves are never copied during search: they are registered in the repository once and referred to by `Index<State<Kind>>` everywhere else (see [Non-obvious things](#non-obvious-things)).
+Solid arrows show the in-pipeline relationships within and across `formalism` and `planning`. Dashed edges are conditional consumption: `SG`'s use of `datalog` is lifted-only (the lifted `SuccessorGenerator` evaluates a Datalog program per state; the ground one does not), and `Task`'s use of `analysis` happens only when grounding via `Task<LiftedTag>::instantiate_ground_task()`. State values themselves are never copied during search — they are registered once in the repository and referred to by `Index<State<Kind>>` everywhere else (see [Non-obvious things](#non-obvious-things)). The reference planner [exe/astar_eager.cpp](../../exe/astar_eager.cpp) shows a concrete top-to-bottom traversal through this topology.
 
 ## API
 
