@@ -36,7 +36,9 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         # Must be in this form due to bug in .resolve() only fixed in Python 3.10+
         ext_fullpath = Path.cwd() / self.get_ext_fullpath(ext.name)
-        output_directory = ext_fullpath.parent.resolve()
+        # Climb one extra level per '.' in ext.name so cmake --install --prefix
+        # always lands at the package root, regardless of dotted-name depth.
+        output_directory = ext_fullpath.parents[ext.name.count(".")].resolve()
         temp_directory = Path.cwd() / self.build_temp
 
         print("ext_fullpath", ext_fullpath)
@@ -122,7 +124,7 @@ setup(
     install_requires=[],
     packages=find_packages(where="python/src"),
     package_dir={"": "python/src"},
-    ext_modules=[CMakeExtension("pytyr")],
+    ext_modules=[CMakeExtension("pytyr.pytyr")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
     extras_require={
