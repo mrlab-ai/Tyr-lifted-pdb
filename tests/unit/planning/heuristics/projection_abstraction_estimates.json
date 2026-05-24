@@ -1,10 +1,10 @@
 {
     "fd_git_hash": "ea49374554dcb92e1469a5c1084e960e48feb762",
     "agricola": {
-        "domain": "data/agricola/domain.pddl",
+        "domain": "data/tests/classical/agricola/domain.pddl",
         "instances": [
             {
-                "path": "data/agricola/test_problem.pddl",
+                "path": "data/tests/classical/agricola/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -18,30 +18,30 @@
         ]
     },
     "airport": {
-        "domain": "data/airport/domain.pddl",
+        "domain": "data/tests/classical/airport/domain.pddl",
         "instances": [
             {
-                "path": "data/airport/test_problem.pddl",
+                "path": "data/tests/classical/airport/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "assembly": {
-        "domain": "data/assembly/domain.pddl",
+        "domain": "data/tests/classical/assembly/domain.pddl",
         "instances": [
             {
-                "path": "data/assembly/test_problem.pddl",
+                "path": "data/tests/classical/assembly/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "barman": {
-        "domain": "data/barman/domain.pddl",
+        "domain": "data/tests/classical/barman/domain.pddl",
         "instances": [
             {
-                "path": "data/barman/test_problem.pddl",
+                "path": "data/tests/classical/barman/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -61,10 +61,10 @@
         ]
     },
     "blocks_3": {
-        "domain": "data/blocks_3/domain.pddl",
+        "domain": "data/tests/classical/blocks_3/domain.pddl",
         "instances": [
             {
-                "path": "data/blocks_3/test_problem.pddl",
+                "path": "data/tests/classical/blocks_3/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     0,
                     1,
@@ -100,95 +100,15 @@
                     1,
                     1,
                     1
-                ]
-            },
-            {
-                "path": "data/blocks_3/test_problem2.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    0,
-                    0,
-                    1,
-                    1,
-                    0,
-                    0
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    1,
-                    1,
-                    2,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    1,
-                    2,
-                    1,
-                    1,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
                 ]
             }
         ]
     },
     "blocks_4": {
-        "domain": "data/blocks_4/domain.pddl",
+        "domain": "data/tests/classical/blocks_4/domain.pddl",
         "instances": [
             {
-                "path": "data/blocks_4/test_problem.pddl",
+                "path": "data/tests/classical/blocks_4/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     0,
                     1,
@@ -234,10 +154,10 @@
         ]
     },
     "childsnack": {
-        "domain": "data/childsnack/domain.pddl",
+        "domain": "data/tests/classical/childsnack/domain.pddl",
         "instances": [
             {
-                "path": "data/childsnack/test_problem.pddl",
+                "path": "data/tests/classical/childsnack/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -249,10 +169,10 @@
         ]
     },
     "delivery": {
-        "domain": "data/delivery/domain.pddl",
+        "domain": "data/tests/classical/delivery/domain.pddl",
         "instances": [
             {
-                "path": "data/delivery/test_problem.pddl",
+                "path": "data/tests/classical/delivery/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -260,29 +180,14 @@
                     2,
                     4
                 ]
-            },
-            {
-                "path": "data/delivery/test_problem2.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1,
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    2,
-                    2,
-                    1,
-                    2,
-                    2
-                ]
             }
         ]
     },
     "driverlog": {
-        "domain": "data/driverlog/domain.pddl",
+        "domain": "data/tests/classical/driverlog/domain.pddl",
         "instances": [
             {
-                "path": "data/driverlog/test_problem.pddl",
+                "path": "data/tests/classical/driverlog/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1,
                     0,
@@ -302,10 +207,10 @@
         ]
     },
     "ferry": {
-        "domain": "data/ferry/domain.pddl",
+        "domain": "data/tests/classical/ferry/domain.pddl",
         "instances": [
             {
-                "path": "data/ferry/test_problem.pddl",
+                "path": "data/tests/classical/ferry/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1,
                     1
@@ -322,20 +227,20 @@
         ]
     },
     "fo-counters": {
-        "domain": "data/fo-counters/domain.pddl",
+        "domain": "data/tests/numeric/fo-counters/domain.pddl",
         "instances": [
             {
-                "path": "data/fo-counters/test_problem.pddl",
+                "path": "data/tests/numeric/fo-counters/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "grid": {
-        "domain": "data/grid/domain.pddl",
+        "domain": "data/tests/classical/grid/domain.pddl",
         "instances": [
             {
-                "path": "data/grid/test_problem.pddl",
+                "path": "data/tests/classical/grid/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -348,42 +253,10 @@
         ]
     },
     "gripper": {
-        "domain": "data/gripper/domain.pddl",
+        "domain": "data/tests/classical/gripper/domain.pddl",
         "instances": [
             {
-                "path": "data/gripper/p-1-0.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    1,
-                    1,
-                    2
-                ]
-            },
-            {
-                "path": "data/gripper/p-2-0.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1,
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    1,
-                    1,
-                    2,
-                    1,
-                    1,
-                    1,
-                    1,
-                    2
-                ]
-            },
-            {
-                "path": "data/gripper/test_problem.pddl",
+                "path": "data/tests/classical/gripper/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -392,33 +265,14 @@
                     2,
                     3
                 ]
-            },
-            {
-                "path": "data/gripper/test_problem2.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    2,
-                    2
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    1,
-                    1,
-                    2,
-                    1,
-                    1,
-                    1,
-                    1,
-                    2
-                ]
             }
         ]
     },
     "hiking": {
-        "domain": "data/hiking/domain.pddl",
+        "domain": "data/tests/classical/hiking/domain.pddl",
         "instances": [
             {
-                "path": "data/hiking/test_problem.pddl",
+                "path": "data/tests/classical/hiking/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -433,10 +287,10 @@
         ]
     },
     "logistics": {
-        "domain": "data/logistics/domain.pddl",
+        "domain": "data/tests/classical/logistics/domain.pddl",
         "instances": [
             {
-                "path": "data/logistics/test_problem.pddl",
+                "path": "data/tests/classical/logistics/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -448,10 +302,10 @@
         ]
     },
     "miconic": {
-        "domain": "data/miconic/domain.pddl",
+        "domain": "data/tests/classical/miconic/domain.pddl",
         "instances": [
             {
-                "path": "data/miconic/test_problem.pddl",
+                "path": "data/tests/classical/miconic/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     2,
                     2
@@ -462,44 +316,34 @@
                     3,
                     3
                 ]
-            },
-            {
-                "path": "data/miconic/test_problem_2.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    2,
-                    2
-                ]
             }
         ]
     },
     "miconic-fulladl": {
-        "domain": "data/miconic-fulladl/domain.pddl",
+        "domain": "data/tests/classical/miconic-fulladl/domain.pddl",
         "instances": [
             {
-                "path": "data/miconic-fulladl/test_problem.pddl",
+                "path": "data/tests/classical/miconic-fulladl/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "miconic-simpleadl": {
-        "domain": "data/miconic-simpleadl/domain.pddl",
+        "domain": "data/tests/classical/miconic-simpleadl/domain.pddl",
         "instances": [
             {
-                "path": "data/miconic-simpleadl/test_problem.pddl",
+                "path": "data/tests/classical/miconic-simpleadl/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "parcprinter": {
-        "domain": "data/parcprinter/domain.pddl",
+        "domain": "data/tests/classical/parcprinter/domain.pddl",
         "instances": [
             {
-                "path": "data/parcprinter/test_problem.pddl",
+                "path": "data/tests/classical/parcprinter/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     0,
                     8000,
@@ -532,10 +376,10 @@
         ]
     },
     "pathways": {
-        "domain": "data/pathways/domain.pddl",
+        "domain": "data/tests/classical/pathways/domain.pddl",
         "instances": [
             {
-                "path": "data/pathways/test_problem.pddl",
+                "path": "data/tests/classical/pathways/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -547,60 +391,60 @@
         ]
     },
     "philosophers": {
-        "domain": "data/philosophers/domain.pddl",
+        "domain": "data/tests/classical/philosophers/domain.pddl",
         "instances": [
             {
-                "path": "data/philosophers/test_problem.pddl",
+                "path": "data/tests/classical/philosophers/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "psr-middle": {
-        "domain": "data/psr-middle/domain.pddl",
+        "domain": "data/tests/classical/psr-middle/domain.pddl",
         "instances": [
             {
-                "path": "data/psr-middle/test_problem.pddl",
+                "path": "data/tests/classical/psr-middle/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "pushworld": {
-        "domain": "data/pushworld/domain.pddl",
+        "domain": "data/tests/classical/pushworld/domain.pddl",
         "instances": [
             {
-                "path": "data/pushworld/test_problem.pddl",
+                "path": "data/tests/classical/pushworld/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "refuel": {
-        "domain": "data/refuel/domain.pddl",
+        "domain": "data/tests/numeric/refuel/domain.pddl",
         "instances": [
             {
-                "path": "data/refuel/test_problem.pddl",
+                "path": "data/tests/numeric/refuel/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "refuel-adl": {
-        "domain": "data/refuel-adl/domain.pddl",
+        "domain": "data/tests/numeric/refuel-adl/domain.pddl",
         "instances": [
             {
-                "path": "data/refuel-adl/test_problem.pddl",
+                "path": "data/tests/numeric/refuel-adl/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": null,
                 "initial_projection_heuristic_estimates_sys_2": null
             }
         ]
     },
     "reward": {
-        "domain": "data/reward/domain.pddl",
+        "domain": "data/tests/classical/reward/domain.pddl",
         "instances": [
             {
-                "path": "data/reward/test_problem.pddl",
+                "path": "data/tests/classical/reward/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1,
                     1
@@ -615,10 +459,10 @@
         ]
     },
     "rovers": {
-        "domain": "data/rovers/domain.pddl",
+        "domain": "data/tests/classical/rovers/domain.pddl",
         "instances": [
             {
-                "path": "data/rovers/test_problem.pddl",
+                "path": "data/tests/classical/rovers/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -630,10 +474,10 @@
         ]
     },
     "satellite": {
-        "domain": "data/satellite/domain.pddl",
+        "domain": "data/tests/classical/satellite/domain.pddl",
         "instances": [
             {
-                "path": "data/satellite/test_problem.pddl",
+                "path": "data/tests/classical/satellite/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1,
                     1
@@ -650,10 +494,10 @@
         ]
     },
     "schedule": {
-        "domain": "data/schedule/domain.pddl",
+        "domain": "data/tests/classical/schedule/domain.pddl",
         "instances": [
             {
-                "path": "data/schedule/test_problem.pddl",
+                "path": "data/tests/classical/schedule/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1,
                     1
@@ -672,10 +516,10 @@
         ]
     },
     "sokoban": {
-        "domain": "data/sokoban/domain.pddl",
+        "domain": "data/tests/classical/sokoban/domain.pddl",
         "instances": [
             {
-                "path": "data/sokoban/test_problem.pddl",
+                "path": "data/tests/classical/sokoban/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1,
                     1,
@@ -716,46 +560,10 @@
         ]
     },
     "spanner": {
-        "domain": "data/spanner/domain.pddl",
+        "domain": "data/tests/classical/spanner/domain.pddl",
         "instances": [
             {
-                "path": "data/spanner/p-1-1-2-1(2).pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    2,
-                    4
-                ]
-            },
-            {
-                "path": "data/spanner/p-1-1-2-1.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    2,
-                    2
-                ]
-            },
-            {
-                "path": "data/spanner/p-1-1-3-1.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    2,
-                    2
-                ]
-            },
-            {
-                "path": "data/spanner/test_problem.pddl",
+                "path": "data/tests/classical/spanner/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1
                 ],
@@ -769,10 +577,10 @@
         ]
     },
     "transport": {
-        "domain": "data/transport/domain.pddl",
+        "domain": "data/tests/classical/transport/domain.pddl",
         "instances": [
             {
-                "path": "data/transport/test_problem.pddl",
+                "path": "data/tests/classical/transport/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1,
                     1
@@ -811,36 +619,10 @@
         ]
     },
     "visitall": {
-        "domain": "data/visitall/domain.pddl",
+        "domain": "data/tests/classical/visitall/domain.pddl",
         "instances": [
             {
-                "path": "data/visitall/instance1.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1,
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    2,
-                    1
-                ]
-            },
-            {
-                "path": "data/visitall/instance2.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1,
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    1,
-                    1
-                ]
-            },
-            {
-                "path": "data/visitall/test_problem.pddl",
+                "path": "data/tests/classical/visitall/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     1,
                     1,
@@ -863,30 +645,14 @@
                     1,
                     1
                 ]
-            },
-            {
-                "path": "data/visitall/test_problem2.pddl",
-                "initial_projection_heuristic_estimates_sys_1": [
-                    1,
-                    1,
-                    1
-                ],
-                "initial_projection_heuristic_estimates_sys_2": [
-                    1,
-                    1,
-                    1,
-                    2,
-                    1,
-                    1
-                ]
             }
         ]
     },
     "woodworking": {
-        "domain": "data/woodworking/domain.pddl",
+        "domain": "data/tests/classical/woodworking/domain.pddl",
         "instances": [
             {
-                "path": "data/woodworking/test_problem.pddl",
+                "path": "data/tests/classical/woodworking/test-1.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
                     5,
                     10,
