@@ -63,6 +63,15 @@ std::string format_values(const std::vector<float_t>& values)
     return out.str();
 }
 
+void PrintTo(const InstanceTestCase& test_case, std::ostream* os)
+{
+    *os << "{domain_name=\"" << test_case.domain_name
+        << "\", domain_path=\"" << test_case.domain_path.string()
+        << "\", instance_path=\"" << test_case.instance_path.string()
+        << "\", expected_sys1=" << format_values(test_case.expected_sys1)
+        << '}';
+}
+
 std::vector<float_t> sorted_values(const std::vector<float_t>& values)
 {
     auto sorted = values;

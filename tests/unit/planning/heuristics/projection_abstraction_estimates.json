@@ -1,5 +1,5 @@
 {
-    "fd_git_hash": "ea49374554dcb92e1469a5c1084e960e48feb762",
+    "fd_git_hash": "fd53f5473580362e47a3f07068194ae5af45ae7a",
     "agricola": {
         "domain": "data/agricola/domain.pddl",
         "instances": [
@@ -9,8 +9,8 @@
                     1
                 ],
                 "initial_projection_heuristic_estimates_sys_2": [
-                    2,
                     1,
+                    2,
                     1,
                     1
                 ]
@@ -257,8 +257,9 @@
                     1
                 ],
                 "initial_projection_heuristic_estimates_sys_2": [
+                    1,
                     2,
-                    4
+                    2
                 ]
             },
             {
@@ -307,8 +308,8 @@
             {
                 "path": "data/ferry/test_problem.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
-                    1,
-                    1
+                    2,
+                    2
                 ],
                 "initial_projection_heuristic_estimates_sys_2": [
                     1,
@@ -396,8 +397,8 @@
             {
                 "path": "data/gripper/test_problem2.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
-                    2,
-                    2
+                    1,
+                    1
                 ],
                 "initial_projection_heuristic_estimates_sys_2": [
                     1,
@@ -441,8 +442,7 @@
                     1
                 ],
                 "initial_projection_heuristic_estimates_sys_2": [
-                    2,
-                    1
+                    4
                 ]
             }
         ]
@@ -453,24 +453,23 @@
             {
                 "path": "data/miconic/test_problem.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
-                    2,
-                    2
+                    1,
+                    1
                 ],
                 "initial_projection_heuristic_estimates_sys_2": [
                     2,
                     2,
-                    3,
-                    3
+                    2,
+                    2
                 ]
             },
             {
                 "path": "data/miconic/test_problem_2.pddl",
                 "initial_projection_heuristic_estimates_sys_1": [
-                    1
+                    2
                 ],
                 "initial_projection_heuristic_estimates_sys_2": [
-                    2,
-                    2
+                    3
                 ]
             }
         ]
@@ -727,7 +726,7 @@
                     1,
                     1,
                     2,
-                    4
+                    2
                 ]
             },
             {
@@ -739,7 +738,7 @@
                     1,
                     1,
                     2,
-                    2
+                    4
                 ]
             },
             {
@@ -751,7 +750,7 @@
                     1,
                     1,
                     2,
-                    2
+                    5
                 ]
             },
             {
@@ -875,7 +874,10 @@
                     1,
                     1,
                     1,
-                    2,
+                    1,
+                    1,
+                    1,
+                    1,
                     1,
                     1
                 ]
@@ -900,7 +902,77 @@
                     10,
                     30
                 ],
-                "initial_projection_heuristic_estimates_sys_2": null
+                "initial_projection_heuristic_estimates_sys_2": [
+                    15,
+                    5,
+                    5,
+                    5,
+                    5,
+                    5,
+                    10,
+                    30,
+                    10,
+                    10,
+                    30,
+                    10,
+                    10,
+                    10,
+                    10,
+                    10,
+                    10,
+                    35,
+                    15,
+                    15,
+                    25,
+                    15,
+                    15,
+                    15,
+                    25,
+                    35,
+                    25,
+                    15,
+                    15,
+                    15,
+                    15,
+                    25,
+                    20,
+                    20,
+                    20,
+                    20,
+                    20,
+                    20,
+                    20,
+                    30,
+                    10,
+                    10,
+                    10,
+                    10,
+                    10,
+                    40,
+                    10,
+                    10,
+                    20,
+                    10,
+                    10,
+                    10,
+                    20,
+                    40,
+                    20,
+                    10,
+                    10,
+                    10,
+                    10,
+                    20,
+                    30,
+                    30,
+                    50,
+                    30,
+                    30,
+                    30,
+                    40,
+                    10,
+                    10
+                ]
             }
         ]
     }
