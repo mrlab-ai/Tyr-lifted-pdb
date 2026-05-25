@@ -198,11 +198,15 @@ class LiftedPatternGenerator:
                     for pred_j, pos_j in positions:
                         if (pred_i, pos_i) != (pred_j, pos_j):
                             pos_neighbors[(pred_i, pos_i)].add((pred_j, pos_j))
-                # Mark predicate pair as variable-linked
+                # Mark predicate pair as variable-linked.
+                # Use `!=` (calls __eq__ via identifying_members) rather than `is`,
+                # because the same C++ predicate can be returned through different
+                # Python wrapper instances — `is` falsely returns True iff the same
+                # wrapper is reused, which we cannot rely on.
                 preds_in_group = {pred for pred, _ in positions}
                 for p in preds_in_group:
                     for q in preds_in_group:
-                        if p is not q:
+                        if p != q:
                             pred_var_linked.add(frozenset([p, q]))
 
         return pos_neighbors, pred_cooccur, pred_var_linked
@@ -241,10 +245,15 @@ class LiftedPatternGenerator:
                     continue  # handled after this loop
 
                 if frozenset([pred, co_pred]) in self._pred_var_linked:
-                    # Tight filter: use position-based index
+                    # Tight filter: use position-based index.
+                    # Use `!=` instead of `is not`: PredicateView wrappers do not
+                    # preserve Python identity across access paths (different
+                    # wrapper instances may refer to the same C++ predicate),
+                    # so `is`-based filtering silently drops legitimate
+                    # candidates such as (clear b2) for (on b2 b1).
                     for pos, obj in enumerate(atom.get_objects()):
                         for (n_pred, n_pos) in self._pos_neighbors.get((pred, pos), ()):
-                            if n_pred is not co_pred:
+                            if n_pred != co_pred:
                                 continue
                             for candidate in self._fact_index.get((n_pred, n_pos, obj), ()):
                                 if candidate in pattern_facts_set or candidate in seen:

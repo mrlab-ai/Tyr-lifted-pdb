@@ -39,6 +39,8 @@ from pytyr.planning.lifted import (
     ProjectionOptions,
     FluentLiteralOrder,
     SrcAtomsIndex,
+    NegativeLiteralPushdown,
+    InequalityPropagation,
     ProjectionAbstractionHeuristic,
     CanonicalHeuristic,
     MaxHeuristic,
@@ -76,6 +78,21 @@ def main():
     arg_parser.add_argument("--projection-src-atoms-index",
                             choices=["off", "on"], default="on",
                             help="Phase 4b: per-src-state predicate index over visible fluent atoms (default: on).")
+    arg_parser.add_argument("--projection-negative-literal-pushdown",
+                            choices=["off", "on"], default="on",
+                            help="Phase 4c: push negative fluent literal checks down to the earliest "
+                                 "checkpoint where their parameters are bound (default: on).")
+    arg_parser.add_argument("--projection-inequality-propagation",
+                            choices=["off", "on"], default="on",
+                            help="Phase 4d: pull `(not (= ?x ?y))` constraints out of the static "
+                                 "join and check them via direct object-identity comparison at the "
+                                 "earliest checkpoint where both terms are bound (default: on).")
+    arg_parser.add_argument("--projection-dedup-stats",
+                            action="store_true", default=False,
+                            help="Diagnostic: emit [DEDUP-STATS] lines per pattern and per action "
+                                 "reporting how many emitted transitions collapse to distinct "
+                                 "(src, dst[, action]) edges. Used to size the potential gain of a "
+                                 "projected-enumeration redesign (Lauer-style regression substrate).")
     args = arg_parser.parse_args()
 
     projection_options = ProjectionOptions()
@@ -87,8 +104,18 @@ def main():
     projection_options.src_atoms_index = (
         SrcAtomsIndex.On if args.projection_src_atoms_index == "on" else SrcAtomsIndex.Off
     )
+    projection_options.negative_literal_pushdown = (
+        NegativeLiteralPushdown.On if args.projection_negative_literal_pushdown == "on" else NegativeLiteralPushdown.Off
+    )
+    projection_options.inequality_propagation = (
+        InequalityPropagation.On if args.projection_inequality_propagation == "on" else InequalityPropagation.Off
+    )
+    projection_options.collect_dedup_stats = bool(args.projection_dedup_stats)
     print(f"[PROJECT] fluent_literal_order={args.projection_fluent_literal_order} "
-          f"src_atoms_index={args.projection_src_atoms_index}", flush=True)
+          f"src_atoms_index={args.projection_src_atoms_index} "
+          f"negative_literal_pushdown={args.projection_negative_literal_pushdown} "
+          f"inequality_propagation={args.projection_inequality_propagation} "
+          f"dedup_stats={'on' if args.projection_dedup_stats else 'off'}", flush=True)
 
     domain_filepath : Path = args.domain_filepath
     task_filepath : Path = args.task_filepath
