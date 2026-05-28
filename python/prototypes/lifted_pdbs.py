@@ -93,6 +93,38 @@ def main():
                                  "reporting how many emitted transitions collapse to distinct "
                                  "(src, dst[, action]) edges. Used to size the potential gain of a "
                                  "projected-enumeration redesign (Lauer-style regression substrate).")
+    arg_parser.add_argument("--pattern-gen-fallback-bound",
+                            choices=["off", "on"], default="on",
+                            help="Phase 6.5: bound the schema-co-occurrence fallback in pattern "
+                                 "generation. Only consulted when --pattern-gen-static-csp=off. "
+                                 "When on, co-predicates that share no schema variable with the "
+                                 "pattern predicate contribute only their initial-state atoms, "
+                                 "or up to 32 reachable atoms if effect-only. When off, the "
+                                 "fallback enumerates every reachable atom (pre-2026-05-26).")
+    arg_parser.add_argument("--pattern-gen-static-csp",
+                            choices=["off", "on"], default="on",
+                            help="Phase 6.6: honour static preconditions in the causal-edge test "
+                                 "during pattern generation. When on (default), every candidate "
+                                 "neighbour is filtered by a static-CSP feasibility check — only "
+                                 "candidates for which some action grounding exists that maps the "
+                                 "effect atom to the goal, the precondition atom to the candidate, "
+                                 "and satisfies all the action's static preconditions are kept. "
+                                 "This subsumes --pattern-gen-fallback-bound and is the principled "
+                                 "alignment with Scorpion's interesting-pattern filter for sys2. "
+                                 "When off, the old var-linked / fallback split is used.")
+    arg_parser.add_argument("--pattern-gen-reachability",
+                            choices=["off", "on"], default="off",
+                            help="Phase 6.7: delete-relaxation reachability filter (only with "
+                                 "--pattern-gen-static-csp=on). When on, a candidate is kept only "
+                                 "if it AND every fluent precondition of the action are reachable "
+                                 "(in the delete-relaxation reachable atom set R+). This reproduces "
+                                 "Scorpion's operator-applicability pruning (e.g. drops logistics' "
+                                 "airplane patterns whose precondition at(airplane, non-airport) is "
+                                 "unreachable). Default off: the pure-Python R+ fixpoint is "
+                                 "grounding-level cost and does not scale to the largest HTG "
+                                 "instances (logistics-1000 ~2 min, rovers-1000 ~4 min); if it "
+                                 "exceeds the time budget the filter is silently disabled for the "
+                                 "task (sound fallback).")
     args = arg_parser.parse_args()
 
     projection_options = ProjectionOptions()
@@ -116,6 +148,12 @@ def main():
           f"negative_literal_pushdown={args.projection_negative_literal_pushdown} "
           f"inequality_propagation={args.projection_inequality_propagation} "
           f"dedup_stats={'on' if args.projection_dedup_stats else 'off'}", flush=True)
+    print(f"[PATTERN] fallback_bound={args.pattern_gen_fallback_bound} "
+          f"static_csp={args.pattern_gen_static_csp} "
+          f"reachability={args.pattern_gen_reachability}", flush=True)
+    pattern_gen_bounded_fallback = (args.pattern_gen_fallback_bound == "on")
+    pattern_gen_static_csp = (args.pattern_gen_static_csp == "on")
+    pattern_gen_reachability = (args.pattern_gen_reachability == "on")
 
     domain_filepath : Path = args.domain_filepath
     task_filepath : Path = args.task_filepath
@@ -131,7 +169,12 @@ def main():
 
     pattern_start = time.perf_counter_ns()
 
-    patterns = LiftedPatternGenerator(lifted_task).generate(
+    patterns = LiftedPatternGenerator(
+        lifted_task,
+        bounded_fallback=pattern_gen_bounded_fallback,
+        static_csp=pattern_gen_static_csp,
+        reachability=pattern_gen_reachability,
+    ).generate(
         args.max_pattern_size,
         args.max_pattern_count,
     )

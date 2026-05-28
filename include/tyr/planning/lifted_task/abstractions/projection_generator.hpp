@@ -51,10 +51,42 @@ enum class SrcAtomsIndex
     On,
 };
 
+// Phase 4c: whether to push down negative fluent literal checks during positive
+// enumeration. When On, each negative literal fires as soon as all its parameters
+// become bound (instead of once at the end of positive enumeration). On is the
+// optimized default.
+enum class NegativeLiteralPushdown
+{
+    Off,
+    On,
+};
+
+// Phase 4d: whether to specialise the handling of PDDL parameter inequality
+// constraints (negative `=`-predicate literals like `(not (= ?x ?y))`). When On,
+// inequalities are pulled out of the generic static_join and checked via direct
+// object-identity comparison at the earliest checkpoint where both terms are
+// ground — saving the O(|objects|) `contains_atom` scan over the reflexive `=`
+// atom set. On is the optimized default.
+enum class InequalityPropagation
+{
+    Off,
+    On,
+};
+
 struct ProjectionOptions
 {
     FluentLiteralOrder fluent_literal_order = FluentLiteralOrder::Selectivity;
     SrcAtomsIndex src_atoms_index = SrcAtomsIndex::On;
+    NegativeLiteralPushdown negative_literal_pushdown = NegativeLiteralPushdown::On;
+    InequalityPropagation inequality_propagation = InequalityPropagation::On;
+
+    // Diagnostic-only: when true, after each projection is built, emit
+    // [DEDUP-STATS] lines reporting how many transitions were emitted vs. how
+    // many distinct (src, dst[, action]) edges those collapse to. Lets us
+    // measure projection-induced redundancy (Source 2 in the Lauer-inspired
+    // analysis) per pattern and per action. Default off — the stats add a
+    // post-loop sort over the transition list per pattern.
+    bool collect_dedup_stats = false;
 };
 
 template<>

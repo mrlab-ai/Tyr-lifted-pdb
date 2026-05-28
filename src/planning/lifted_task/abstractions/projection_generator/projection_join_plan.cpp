@@ -21,6 +21,7 @@
 #include "tyr/planning/lifted_task.hpp"
 #include "tyr/planning/lifted_task/state_view.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <limits>
 
@@ -300,6 +301,149 @@ build_pattern_predicate_counts(const Pattern& pattern)
     return result;
 }
 
+// Phase 4c helper: schedule each negative fluent literal at the earliest checkpoint
+// at which its parameters are all bound by the positive fluent literals processed so far.
+//
+// Indexing convention: negatives_at_checkpoint[k] for k = 0..positive_fluent.size().
+// At runtime, enumerate_fluent_pos_rec checks the entries of index k on entry to its
+// recursion level pos == k (i.e. after positive_fluent[0..k-1] have applied their bindings).
+//
+// When pushdown is Off, all negative literals are placed at the final checkpoint
+// (index positive_fluent.size()) — this preserves the pre-pushdown semantics where
+// every negative was checked once after all positives had bound their parameters.
+std::vector<std::vector<size_t>>
+build_negative_checkpoints(const std::vector<fp::MutableLiteral<f::FluentTag>>& positive_fluent,
+                            const std::vector<fp::MutableLiteral<f::FluentTag>>& negative_fluent,
+                            size_t total_params,
+                            const ProjectionOptions& options)
+{
+    const size_t num_checkpoints = positive_fluent.size() + 1;
+    auto result = std::vector<std::vector<size_t>>(num_checkpoints);
+
+    if (options.negative_literal_pushdown == NegativeLiteralPushdown::Off)
+    {
+        result.back().reserve(negative_fluent.size());
+        for (size_t i = 0; i < negative_fluent.size(); ++i)
+            result.back().push_back(i);
+        return result;
+    }
+
+    // cumulative_bound[k] tracks which parameters are bound after positive_fluent[0..k-1].
+    auto cumulative_bound = std::vector<std::vector<bool>>(num_checkpoints, std::vector<bool>(total_params, false));
+    for (size_t k = 0; k < positive_fluent.size(); ++k)
+    {
+        cumulative_bound[k + 1] = cumulative_bound[k];
+        for (const auto& term : positive_fluent[k].atom.terms)
+        {
+            if (!u::is_parameter(term))
+                continue;
+            const auto idx = uint_t(u::get_parameter(term));
+            if (idx < total_params)
+                cumulative_bound[k + 1][idx] = true;
+        }
+    }
+
+    for (size_t i = 0; i < negative_fluent.size(); ++i)
+    {
+        // Collect the parameter indices the literal depends on. Constants are already ground.
+        auto needed = std::vector<uint_t> {};
+        for (const auto& term : negative_fluent[i].atom.terms)
+        {
+            if (u::is_parameter(term))
+                needed.push_back(uint_t(u::get_parameter(term)));
+        }
+
+        // Find the earliest k such that cumulative_bound[k] covers every needed param.
+        // If no positives bind one of the needed params, defer to the last checkpoint:
+        // the literal will be non-ground there and skipped by the existential rule.
+        size_t earliest = positive_fluent.size();
+        for (size_t k = 0; k < num_checkpoints; ++k)
+        {
+            const auto& bound = cumulative_bound[k];
+            const bool all_bound = std::all_of(needed.begin(), needed.end(),
+                [&](uint_t p) { return p < bound.size() && bound[p]; });
+            if (all_bound)
+            {
+                earliest = k;
+                break;
+            }
+        }
+        result[earliest].push_back(i);
+    }
+
+    return result;
+}
+
+// Phase 4d helper: identify a PDDL parameter-inequality literal — a negative-polarity
+// binary literal whose predicate is named "=". Loki/Tyr compile `(not (= ?x ?y))` into
+// exactly this shape; the static `=` predicate is reflexively populated with `(= o o)`
+// for every object, so the existing path checks satisfaction by an O(|objects|) scan.
+// We recognise these literals and route them through direct object-identity comparison
+// instead.
+bool is_inequality_literal(const fp::MutableLiteral<f::StaticTag>& lit)
+{
+    if (lit.polarity)
+        return false;  // a *positive* `=` literal is rare and not what we are after
+    if (lit.atom.terms.size() != 2)
+        return false;
+    return lit.atom.predicate.get_name() == "=";
+}
+
+// Phase 4d helper: schedule each pulled-out inequality at the earliest checkpoint
+// where both of its term-parameters are bound by upstream positive literals.
+// Constants (objects appearing literally in the term list) count as already bound.
+// If some term is a parameter that no positive literal ever binds, the constraint is
+// deferred to the final checkpoint (positive_fluent.size()), where it will remain
+// non-ground and pass via the existential rule.
+std::vector<std::vector<size_t>>
+build_inequality_checkpoints(const std::vector<fp::MutableLiteral<f::FluentTag>>& positive_fluent,
+                              const std::vector<fp::MutableLiteral<f::StaticTag>>& inequalities,
+                              size_t total_params)
+{
+    const size_t num_checkpoints = positive_fluent.size() + 1;
+    auto result = std::vector<std::vector<size_t>>(num_checkpoints);
+    if (inequalities.empty())
+        return result;
+
+    auto cumulative_bound = std::vector<std::vector<bool>>(num_checkpoints, std::vector<bool>(total_params, false));
+    for (size_t k = 0; k < positive_fluent.size(); ++k)
+    {
+        cumulative_bound[k + 1] = cumulative_bound[k];
+        for (const auto& term : positive_fluent[k].atom.terms)
+        {
+            if (!u::is_parameter(term))
+                continue;
+            const auto idx = uint_t(u::get_parameter(term));
+            if (idx < total_params)
+                cumulative_bound[k + 1][idx] = true;
+        }
+    }
+
+    for (size_t i = 0; i < inequalities.size(); ++i)
+    {
+        auto needed = std::vector<uint_t> {};
+        for (const auto& term : inequalities[i].atom.terms)
+        {
+            if (u::is_parameter(term))
+                needed.push_back(uint_t(u::get_parameter(term)));
+        }
+        size_t earliest = positive_fluent.size();
+        for (size_t k = 0; k < num_checkpoints; ++k)
+        {
+            const auto& bound = cumulative_bound[k];
+            const bool all_bound = std::all_of(needed.begin(), needed.end(),
+                [&](uint_t p) { return p < bound.size() && bound[p]; });
+            if (all_bound)
+            {
+                earliest = k;
+                break;
+            }
+        }
+        result[earliest].push_back(i);
+    }
+    return result;
+}
+
 // Build the ConditionJoinPlan for a single conjunctive condition.
 // total_params: the total number of parameter slots visible in this scope
 //   (for the main action condition this is action.num_variables;
@@ -315,11 +459,43 @@ ConditionJoinPlan build_condition_join_plan(const fp::MutableConjunctiveConditio
     if (options.fluent_literal_order == FluentLiteralOrder::Selectivity)
         pos = order_positive_fluent_selectivity(std::move(pos), pattern_atom_count, total_params);
 
+    auto negatives_at_checkpoint = build_negative_checkpoints(pos, neg, total_params, options);
+
+    // Phase 4d: optionally pull inequality literals out of static_literals so they
+    // bypass the generic static-join and use direct object-identity comparison.
+    auto static_literals_filtered = condition.static_literals;  // copy; we may shrink it
+    auto inequalities = std::vector<fp::MutableLiteral<f::StaticTag>> {};
+    auto inequalities_at_checkpoint = std::vector<std::vector<size_t>> {};
+
+    if (options.inequality_propagation == InequalityPropagation::On)
+    {
+        // Partition: keep non-inequality literals in static_literals_filtered, move
+        // inequality literals to `inequalities`.
+        auto kept = fp::MutableLiteralList<f::StaticTag> {};
+        kept.reserve(static_literals_filtered.size());
+        for (auto& lit : static_literals_filtered)
+        {
+            if (is_inequality_literal(lit))
+                inequalities.push_back(lit);
+            else
+                kept.push_back(lit);
+        }
+        static_literals_filtered = std::move(kept);
+        inequalities_at_checkpoint = build_inequality_checkpoints(pos, inequalities, total_params);
+    }
+
     auto initially_bound = collect_initially_bound(condition.fluent_literals, total_params);
 
-    auto static_join = build_join_steps(condition.static_literals, static_index, std::move(initially_bound));
+    auto static_join = build_join_steps(static_literals_filtered, static_index, std::move(initially_bound));
 
-    return ConditionJoinPlan { std::move(pos), std::move(neg), std::move(static_join) };
+    return ConditionJoinPlan {
+        std::move(pos),
+        std::move(neg),
+        std::move(negatives_at_checkpoint),
+        std::move(inequalities),
+        std::move(inequalities_at_checkpoint),
+        std::move(static_join),
+    };
 }
 
 }  // anonymous namespace

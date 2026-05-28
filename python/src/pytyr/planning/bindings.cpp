@@ -564,10 +564,23 @@ should not be used further.
         .value("On", SrcAtomsIndex::On)
         .export_values();
 
+    nb::enum_<NegativeLiteralPushdown>(m, "NegativeLiteralPushdown")
+        .value("Off", NegativeLiteralPushdown::Off)
+        .value("On", NegativeLiteralPushdown::On)
+        .export_values();
+
+    nb::enum_<InequalityPropagation>(m, "InequalityPropagation")
+        .value("Off", InequalityPropagation::Off)
+        .value("On", InequalityPropagation::On)
+        .export_values();
+
     nb::class_<ProjectionOptions>(m, "ProjectionOptions")
         .def(nb::init<>())
         .def_rw("fluent_literal_order", &ProjectionOptions::fluent_literal_order)
-        .def_rw("src_atoms_index", &ProjectionOptions::src_atoms_index);
+        .def_rw("src_atoms_index", &ProjectionOptions::src_atoms_index)
+        .def_rw("negative_literal_pushdown", &ProjectionOptions::negative_literal_pushdown)
+        .def_rw("inequality_propagation", &ProjectionOptions::inequality_propagation)
+        .def_rw("collect_dedup_stats", &ProjectionOptions::collect_dedup_stats);
 
     bind_projection_generator<LiftedTag>(m, "ProjectionGenerator");
 }

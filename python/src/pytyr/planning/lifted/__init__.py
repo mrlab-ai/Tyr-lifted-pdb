@@ -38,6 +38,8 @@ from pytyr.pytyr.planning.lifted import (
     ProjectionOptions,
     FluentLiteralOrder,
     SrcAtomsIndex,
+    NegativeLiteralPushdown,
+    InequalityPropagation,
 )
 
 from . import (

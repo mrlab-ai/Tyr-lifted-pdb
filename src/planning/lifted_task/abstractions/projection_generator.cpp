@@ -52,6 +52,7 @@
 #include "tyr/planning/lifted_task/successor_generator.hpp"
 #include "tyr/planning/lifted_task/unpacked_state.hpp"
 
+#include <iostream>
 #include <optional>
 
 namespace f = tyr::formalism;
@@ -254,23 +255,6 @@ void apply_effect_to_mask(const fp::MutableLiteral<f::FluentTag>& lit,
         dst_mask &= ~bit;
 }
 
-// Returns false if any ground negative fluent literal's atom is held in src_atoms.
-// Non-ground literals are skipped (existential, consistent with old code behaviour).
-bool check_negative_fluent(const std::vector<fp::MutableLiteral<f::FluentTag>>& negative_fluent,
-                            const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
-                            const u::SubstitutionFunction<Data<f::Term>>& sigma)
-{
-    for (const auto& lit0 : negative_fluent)
-    {
-        const auto lit = u::apply_substitution_fixpoint(lit0, sigma);
-        if (!is_ground(lit.atom))
-            continue;
-        if (contains_atom(src_atoms, lit.atom))
-            return false;
-    }
-    return true;
-}
-
 // Phase 4b: per-src-state index over visible fluent atoms, keyed by predicate.
 // nullptr means "index disabled" — caller falls back to linear scan over src_atoms.
 using SrcAtomsByPredicate = UnorderedMap<fp::PredicateView<f::FluentTag>, std::vector<fp::MutableAtom<f::FluentTag>>>;
@@ -283,21 +267,78 @@ SrcAtomsByPredicate build_src_atoms_index(const std::vector<fp::MutableAtom<f::F
     return index;
 }
 
-// Enumerate bindings satisfying the positive fluent precondition literals.
+// Phase 4c helper: returns false if the negative literal is ground and holds in
+// src_atoms (i.e. the negation is violated). Non-ground literals pass through
+// (existential treatment).
+bool check_one_negative(const fp::MutableLiteral<f::FluentTag>& lit,
+                        const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
+                        const u::SubstitutionFunction<Data<f::Term>>& sigma)
+{
+    const auto grounded = u::apply_substitution_fixpoint(lit, sigma);
+    if (!is_ground(grounded.atom))
+        return true;
+    return !contains_atom(src_atoms, grounded.atom);
+}
+
+// Phase 4d helper: check a `(not (= t1 t2))` constraint by direct object-identity
+// comparison. Returns false if both terms ground to the same object (constraint
+// violated). Non-ground after substitution → pass via existential rule. Callers
+// only schedule binary `=`-literals here (see is_inequality_literal in projection_join_plan.cpp).
+bool check_one_inequality(const fp::MutableLiteral<f::StaticTag>& lit,
+                          const u::SubstitutionFunction<Data<f::Term>>& sigma)
+{
+    const auto grounded = u::apply_substitution_fixpoint(lit, sigma);
+    const auto& t0 = grounded.atom.terms[0];
+    const auto& t1 = grounded.atom.terms[1];
+    if (!u::is_object(t0) || !u::is_object(t1))
+        return true;  // some term still unbound → existential pass
+    return u::get_object(t0) != u::get_object(t1);
+}
+
+// Enumerate bindings satisfying the positive fluent precondition literals, with
+// negative-literal pushdown (Phase 4c) interleaved: at each recursion level pos,
+// fire the negative-literal checks scheduled for that checkpoint before any
+// further work, pruning whole subtrees as soon as the negation is violated.
+//
 // Ground literals: exact check vs src_atoms.
-// Non-ground literals: enumerate from src_atoms AND allow existential (non-pattern binding)
-// to match the old code's treatment of unbound precondition params as existentially held.
+// Non-ground literals: enumerate from src_atoms AND allow existential (non-pattern
+// binding) to match the old code's treatment of unbound precondition params as
+// existentially held.
 //
 // When src_atoms_index is non-null (Phase 4b on), non-ground literals iterate
 // only the atoms whose predicate matches, instead of scanning all src_atoms.
 template<typename Callback>
 void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>>& positive_fluent,
+                              const std::vector<fp::MutableLiteral<f::FluentTag>>& negative_fluent,
+                              const std::vector<std::vector<size_t>>& negatives_at_checkpoint,
+                              const std::vector<fp::MutableLiteral<f::StaticTag>>& inequalities,
+                              const std::vector<std::vector<size_t>>& inequalities_at_checkpoint,
                               size_t pos,
                               const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
                               const SrcAtomsByPredicate* src_atoms_index,
                               const u::SubstitutionFunction<Data<f::Term>>& sigma,
                               Callback&& callback)
 {
+    // Fire any negative-literal checks scheduled at this checkpoint. With pushdown
+    // off, this is a no-op until pos == positive_fluent.size().
+    for (const auto neg_idx : negatives_at_checkpoint[pos])
+    {
+        if (!check_one_negative(negative_fluent[neg_idx], src_atoms, sigma))
+            return;
+    }
+
+    // Phase 4d: fire any inequality constraints scheduled at this checkpoint.
+    // The schedule vector is empty when inequality propagation is off (in which case
+    // the literals stay in static_join and are handled there).
+    if (!inequalities_at_checkpoint.empty())
+    {
+        for (const auto ineq_idx : inequalities_at_checkpoint[pos])
+        {
+            if (!check_one_inequality(inequalities[ineq_idx], sigma))
+                return;
+        }
+    }
+
     if (pos == positive_fluent.size())
     {
         callback(sigma);
@@ -309,7 +350,7 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
     if (is_ground(lit.atom))
     {
         if (contains_atom(src_atoms, lit.atom))
-            enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
+            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
         return;
     }
 
@@ -325,7 +366,7 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
                 const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
                 if (!matched)
                     continue;
-                enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, src_atoms_index, *matched, callback);
+                enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, *matched, callback);
             }
         }
     }
@@ -337,13 +378,13 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
             const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
             if (!matched)
                 continue;
-            enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, src_atoms_index, *matched, callback);
+            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, *matched, callback);
         }
     }
 
     // Existential: allow non-pattern concrete binding (leave param unbound).
     // This replicates the old code's "if (!is_ground) continue" logic.
-    enumerate_fluent_pos_rec(positive_fluent, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
+    enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
 }
 
 // Process static join steps using the pre-built StaticAtomIndex.
@@ -385,6 +426,8 @@ void join_static_v2(const std::vector<JoinStep>& steps,
 }
 
 // Enumerate all sigma extensions satisfying a conjunctive condition.
+// Negative fluent literals are checked inside enumerate_fluent_pos_rec via the
+// per-checkpoint schedule built at plan-construction time (Phase 4c).
 template<typename Callback>
 void enumerate_condition_v2(const ConditionJoinPlan& plan,
                              const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
@@ -393,11 +436,11 @@ void enumerate_condition_v2(const ConditionJoinPlan& plan,
                              const u::SubstitutionFunction<Data<f::Term>>& sigma,
                              Callback&& callback)
 {
-    enumerate_fluent_pos_rec(plan.positive_fluent, 0, src_atoms, src_atoms_index, sigma,
+    enumerate_fluent_pos_rec(plan.positive_fluent, plan.negative_fluent, plan.negatives_at_checkpoint,
+        plan.inequalities, plan.inequalities_at_checkpoint,
+        0, src_atoms, src_atoms_index, sigma,
         [&](const u::SubstitutionFunction<Data<f::Term>>& sigma1)
         {
-            if (!check_negative_fluent(plan.negative_fluent, src_atoms, sigma1))
-                return;
             join_static_v2(plan.static_join, 0, static_index, sigma1, std::forward<Callback>(callback));
         });
 }
@@ -957,7 +1000,59 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
     return std::make_pair(std::move(transitions), std::move(adj_lists));
 }
 
-auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_task, const ProjectionOptions& options)
+// Diagnostic: report projection-induced redundancy. For a given pattern, every
+// transition we emit lands at exactly one (src, dst) pair under exactly one
+// projected action. With pattern-irrelevant parameters in actions, many distinct
+// ground-action enumerations can produce the same (src, dst, projected_action)
+// triple — those are the "Source 2" redundancies that Phase 1–4 do not prune.
+// We print per-action and per-pattern totals so we can tell from logs whether
+// adding a regression-style projected-enumeration substrate would have a real
+// ceiling on a given domain.
+void emit_dedup_stats(size_t pattern_index, const TransitionList& transitions)
+{
+    using Pair = std::pair<uint_t, uint_t>;
+
+    UnorderedMap<fp::ActionView, std::vector<Pair>> per_action;
+    for (const auto& t : transitions)
+        per_action[t.projected_action].push_back({ t.src, t.dst });
+
+    size_t total_distinct_with_action = 0;
+    for (auto& [action, pairs] : per_action)
+    {
+        const size_t emitted = pairs.size();
+        std::sort(pairs.begin(), pairs.end());
+        pairs.erase(std::unique(pairs.begin(), pairs.end()), pairs.end());
+        const size_t distinct = pairs.size();
+        total_distinct_with_action += distinct;
+        const double ratio = distinct == 0 ? 1.0 : static_cast<double>(emitted) / static_cast<double>(distinct);
+        std::cout << "[DEDUP-STATS] pattern=" << pattern_index
+                  << " action=" << action.get_name()
+                  << " emitted=" << emitted
+                  << " distinct_src_dst=" << distinct
+                  << " redundancy=" << ratio
+                  << std::endl;
+    }
+
+    auto all_pairs = std::vector<Pair> {};
+    all_pairs.reserve(transitions.size());
+    for (const auto& t : transitions)
+        all_pairs.push_back({ t.src, t.dst });
+    std::sort(all_pairs.begin(), all_pairs.end());
+    all_pairs.erase(std::unique(all_pairs.begin(), all_pairs.end()), all_pairs.end());
+
+    const size_t total_emitted = transitions.size();
+    const size_t total_distinct = all_pairs.size();
+    const double total_ratio = total_distinct == 0 ? 1.0 : static_cast<double>(total_emitted) / static_cast<double>(total_distinct);
+
+    std::cout << "[DEDUP-STATS] pattern=" << pattern_index
+              << " total_emitted=" << total_emitted
+              << " total_distinct_src_dst=" << total_distinct
+              << " total_distinct_src_dst_action=" << total_distinct_with_action
+              << " redundancy=" << total_ratio
+              << std::endl;
+}
+
+auto create_projection(const Pattern& pattern, size_t pattern_index, const Task<LiftedTag>& original_task, const ProjectionOptions& options)
 {
     auto [projected_task, projected_to_original_action] = project_task(original_task, pattern);
 
@@ -970,6 +1065,9 @@ auto create_projection(const Pattern& pattern, const Task<LiftedTag>& original_t
     auto [astates, goal_vertices] = create_abstract_states(pattern, *projected_task, *state_repository);
     auto [transitions, adj_lists] =
         create_abstract_state_changing_transitions_v2(astates, pattern, projected_to_original_action, static_index, join_plans, options);
+
+    if (options.collect_dedup_stats)
+        emit_dedup_stats(pattern_index, transitions);
 
     auto result = ProjectionAbstraction(std::make_shared<const ForwardProjectionAbstraction<LiftedTag>>(ProjectionMapping<LiftedTag>(pattern),
                                                                                                         std::move(state_repository),
@@ -993,8 +1091,8 @@ ProjectionAbstractionList<LiftedTag> ProjectionGenerator<LiftedTag>::generate()
 {
     auto projections = ProjectionAbstractionList<LiftedTag> {};
 
-    for (const auto& pattern : m_patterns)
-        projections.push_back(create_projection(pattern, *m_task, m_options));
+    for (size_t i = 0; i < m_patterns.size(); ++i)
+        projections.push_back(create_projection(m_patterns[i], i, *m_task, m_options));
 
     return projections;
 }

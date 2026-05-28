@@ -77,6 +77,30 @@ struct ConditionJoinPlan
     std::vector<fp::MutableLiteral<f::FluentTag>> positive_fluent;
     // Negative fluent literals — verified absent in the abstract source state.
     std::vector<fp::MutableLiteral<f::FluentTag>> negative_fluent;
+    // Phase 4c: per-checkpoint negative-literal index lists.
+    // Size == positive_fluent.size() + 1. negatives_at_checkpoint[k] contains
+    // indices into negative_fluent that should be verified after positive_fluent[0..k-1]
+    // have been processed (i.e. on entry to enumerate_fluent_pos_rec with pos == k).
+    // With pushdown=Off, all indices live in negatives_at_checkpoint[positive_fluent.size()]
+    // (matching the pre-Phase-4c "check once at the end" behaviour).
+    // With pushdown=On, each literal is placed at the earliest checkpoint where its
+    // parameters are all bound by positive_fluent[0..k-1] (or at the final checkpoint
+    // if no such k exists, in which case the literal will be non-ground there and
+    // skipped by the existential rule).
+    std::vector<std::vector<size_t>> negatives_at_checkpoint;
+    // Phase 4d: PDDL parameter inequality constraints (negative `=`-predicate literals)
+    // pulled out of static_literals when InequalityPropagation::On. Each entry is the
+    // original literal `(not (= t1 t2))`; checked at runtime via direct object-identity
+    // comparison rather than the generic static_join scan. With InequalityPropagation::Off
+    // this is empty and the literals remain in static_join.
+    std::vector<fp::MutableLiteral<f::StaticTag>> inequalities;
+    // Per-checkpoint schedule for `inequalities`, indexed parallel to `negatives_at_checkpoint`
+    // (size positive_fluent.size() + 1). With propagation Off this vector is empty;
+    // with On, each constraint is placed at the earliest checkpoint where both of its
+    // terms are guaranteed bound by upstream positive literals (or at the final checkpoint
+    // if a term will never be bound from positives — it will remain non-ground there
+    // and pass via the existential rule).
+    std::vector<std::vector<size_t>> inequalities_at_checkpoint;
     // Static literals in greedy join order (most selective / most constrained first).
     std::vector<JoinStep> static_join;
 };
