@@ -36,6 +36,7 @@ from pytyr.pytyr.planning.lifted import (
     ProjectionAbstractionList,
     ProjectionGenerator,
     ProjectionOptions,
+    RelaxedReachability,
     FluentLiteralOrder,
     SrcAtomsIndex,
     NegativeLiteralPushdown,

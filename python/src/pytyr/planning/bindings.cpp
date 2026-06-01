@@ -421,6 +421,23 @@ void bind_projection_generator(nb::module_& m, const std::string& name)
         .def("generate", &T::generate);
 }
 
+template<TaskKind Kind>
+void bind_relaxed_reachability(nb::module_& m, const std::string& name);
+
+template<>
+void bind_relaxed_reachability<LiftedTag>(nb::module_& m, const std::string& name)
+{
+    using T = RelaxedReachability<LiftedTag>;
+
+    nb::class_<T>(m, name.c_str())  //
+        .def(nb::new_([](std::shared_ptr<Task<LiftedTag>> task, ExecutionContextPtr execution_context)
+                      { return T::create(std::move(task), std::move(execution_context)); }),
+             "task"_a,
+             "execution_context"_a)
+        .def("compute", &T::compute)
+        .def("compute_sorted", &T::compute_sorted);
+}
+
 }
 
 /**
@@ -583,6 +600,8 @@ should not be used further.
         .def_rw("collect_dedup_stats", &ProjectionOptions::collect_dedup_stats);
 
     bind_projection_generator<LiftedTag>(m, "ProjectionGenerator");
+
+    bind_relaxed_reachability<LiftedTag>(m, "RelaxedReachability");
 }
 
 namespace astar_eager

@@ -16,7 +16,10 @@ from pathlib import Path
 import sys
 import time
 
-from pattern_gen import LiftedPatternGenerator
+from pattern_gen import (
+    LiftedPatternGenerator,
+    LiftedInterestingPatternGenerator,
+)
 from pytyr.common import (
     ExecutionContext
 )
@@ -113,18 +116,39 @@ def main():
                                  "alignment with Scorpion's interesting-pattern filter for sys2. "
                                  "When off, the old var-linked / fallback split is used.")
     arg_parser.add_argument("--pattern-gen-reachability",
-                            choices=["off", "on"], default="off",
+                            choices=["off", "on"], default="on",
                             help="Phase 6.7: delete-relaxation reachability filter (only with "
-                                 "--pattern-gen-static-csp=on). When on, a candidate is kept only "
-                                 "if it AND every fluent precondition of the action are reachable "
-                                 "(in the delete-relaxation reachable atom set R+). This reproduces "
-                                 "Scorpion's operator-applicability pruning (e.g. drops logistics' "
-                                 "airplane patterns whose precondition at(airplane, non-airport) is "
-                                 "unreachable). Default off: the pure-Python R+ fixpoint is "
-                                 "grounding-level cost and does not scale to the largest HTG "
-                                 "instances (logistics-1000 ~2 min, rovers-1000 ~4 min); if it "
-                                 "exceeds the time budget the filter is silently disabled for the "
-                                 "task (sound fallback).")
+                                 "--pattern-gen-static-csp=on). When on (default), a candidate is "
+                                 "kept only if it AND every fluent precondition of the action are "
+                                 "reachable (in the delete-relaxation reachable atom set R+). This "
+                                 "reproduces Scorpion's operator-applicability pruning (e.g. drops "
+                                 "logistics' airplane patterns whose precondition at(airplane, "
+                                 "non-airport) is unreachable). R+ is computed natively via Tyr's "
+                                 "RelaxedReachability — same monotone-fixpoint engine successor "
+                                 "generation uses, sub-second on HTG-large.")
+    arg_parser.add_argument("--pattern-gen-scorpion-match",
+                            choices=["off", "on"], default="off",
+                            help="Phase 6.9: enable SAS+-style no-op simplification of the "
+                                 "action-edge CSP. When on, synthetic inequalities reject "
+                                 "action edges whose effect atom would collapse to one of the "
+                                 "action's other positive fluent preconditions under every "
+                                 "feasible binding. Mirrors Scorpion's SAS+ simplification (an "
+                                 "effect that already matches an existing precondition is "
+                                 "dropped, removing its causal edge). Fixes the +3 over-count "
+                                 "Tyr-SGA exhibits on organic-synthesis-alkene p12/p13. The 5 "
+                                 "UNDER tasks (p2/p6/p7/p8/p18) where Scorpion-SGA has more "
+                                 "patterns are NOT addressed; those extras are over unreachable "
+                                 "atoms and so are heuristically inert.")
+    arg_parser.add_argument("--pattern-gen-interesting",
+                            choices=["off", "on"], default="off",
+                            help="Phase 6.10: switch pattern generation from SGA "
+                                 "(`LiftedPatternGenerator`, default) to interesting "
+                                 "(`LiftedInterestingPatternGenerator`). Interesting extends SGA "
+                                 "with a disjoint-union step over (eff, eff) co-effect arcs, "
+                                 "matching Scorpion's `pattern_type=interesting` at sys2. "
+                                 "Implemented for paper-experiment ablation only — empirically "
+                                 "SGA dominates on HTG, so this flag is intended to *demonstrate* "
+                                 "that interesting does not help, not as a production setting.")
     args = arg_parser.parse_args()
 
     projection_options = ProjectionOptions()
@@ -150,10 +174,14 @@ def main():
           f"dedup_stats={'on' if args.projection_dedup_stats else 'off'}", flush=True)
     print(f"[PATTERN] fallback_bound={args.pattern_gen_fallback_bound} "
           f"static_csp={args.pattern_gen_static_csp} "
-          f"reachability={args.pattern_gen_reachability}", flush=True)
+          f"reachability={args.pattern_gen_reachability} "
+          f"scorpion_match={args.pattern_gen_scorpion_match} "
+          f"interesting={args.pattern_gen_interesting}", flush=True)
     pattern_gen_bounded_fallback = (args.pattern_gen_fallback_bound == "on")
     pattern_gen_static_csp = (args.pattern_gen_static_csp == "on")
     pattern_gen_reachability = (args.pattern_gen_reachability == "on")
+    pattern_gen_scorpion_match = (args.pattern_gen_scorpion_match == "on")
+    pattern_gen_interesting = (args.pattern_gen_interesting == "on")
 
     domain_filepath : Path = args.domain_filepath
     task_filepath : Path = args.task_filepath
@@ -169,11 +197,15 @@ def main():
 
     pattern_start = time.perf_counter_ns()
 
-    patterns = LiftedPatternGenerator(
+    pattern_gen_cls = (LiftedInterestingPatternGenerator
+                       if pattern_gen_interesting
+                       else LiftedPatternGenerator)
+    patterns = pattern_gen_cls(
         lifted_task,
         bounded_fallback=pattern_gen_bounded_fallback,
         static_csp=pattern_gen_static_csp,
         reachability=pattern_gen_reachability,
+        scorpion_match=pattern_gen_scorpion_match,
     ).generate(
         args.max_pattern_size,
         args.max_pattern_count,
@@ -253,6 +285,12 @@ def main():
     global_end = time.perf_counter_ns()
 
     print(f"Total time: {global_end - global_start} ns", flush=True)
+
+    # Resident-set high-water-mark (KB on Linux). Captured AFTER all
+    # processing so it includes pattern gen + projection + search.
+    import resource
+    peak_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print(f"[MEMORY] Peak memory usage {peak_kb} KB", flush=True)
 
 if __name__ == "__main__":
     main()

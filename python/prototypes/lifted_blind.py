@@ -121,5 +121,9 @@ def main():
 
     print(f"Total time: {global_end - global_start} ns", flush=True)
 
+    import resource
+    peak_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print(f"[MEMORY] Peak memory usage {peak_kb} KB", flush=True)
+
 if __name__ == "__main__":
     main()

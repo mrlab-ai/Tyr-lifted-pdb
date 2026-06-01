@@ -105,6 +105,35 @@ class _ActionEdge:
     param_domains: list                  # list[list[Object]]: typed domain per param
     fluent_pre_lits: list                # list[_StaticLit] (positive fluent preconditions,
                                          # is_static=False; consumed by the R^+ filter)
+    eff_polarity: bool = True            # True iff the action edge's effect atom appears
+                                         # with positive polarity. Negative-polarity effects
+                                         # (atom deletion) still establish a causal-graph edge,
+                                         # but they are NOT subject to SAS+ no-op simplification
+                                         # against positive preconditions — pre `(p)` + eff
+                                         # `(not p)` is a real value toggle, not a no-op.
+                                         # `scorpion_match` skips collision-avoidance when False.
+
+
+@dataclass
+class _CoEffEdge:
+    """One (effect, effect) coupling within a single action schema.
+
+    Represents: "this action has `pred1` at this effect atom *and*
+    `pred2` at that effect atom (both positive, both in the same ceff
+    scope)." Two ground atoms `g1, g2` are valid (g1, g2) under this
+    edge iff there exists an assignment of the action's parameters that
+    maps `eff1` onto `g1`, `eff2` onto `g2`, and satisfies every static
+    literal and positive fluent precondition of the action. Used by
+    `LiftedInterestingPatternGenerator` for the disjoint-union step
+    (Scorpion's interesting-pattern filter at sys2 reduces to adding
+    goal-pair patterns connected via co-effect arcs).
+    """
+    action_name: str
+    eff1_param_at_pos: list
+    eff2_param_at_pos: list
+    static_lits: list
+    param_domains: list
+    fluent_pre_lits: list
 
 
 class LiftedPatternGenerator:
@@ -124,22 +153,14 @@ class LiftedPatternGenerator:
     # while clipping rovers-1000-style enumeration of ~1000 reachable atoms.
     _BOUNDED_FALLBACK_EFFECT_ONLY_CAP = 32
 
-    # Wall-time budget (seconds) for the delete-relaxation R^+ fixpoint.
-    # If R^+ does not converge within this budget the reachability filter is
-    # disabled for the task (the generator falls back to static-CSP-only,
-    # which is sound — it merely prunes less). Pure-Python reachability does
-    # not scale to the largest HTG instances (logistics-1000 ~ 2 min,
-    # rovers-1000 ~ 4 min); the production path is Tyr's native C++ Datalog
-    # engine. See docs/lifted_pdb_projection_status.tex.
-    _REACHABILITY_TIME_BUDGET_S = 300.0
-
     def __init__(
         self,
         task: Task,
         *,
         bounded_fallback: bool = True,
         static_csp: bool = True,
-        reachability: bool = False,
+        reachability: bool = True,
+        scorpion_match: bool = False,
     ) -> None:
         """
         Parameters
@@ -163,7 +184,7 @@ class LiftedPatternGenerator:
             kept. Subsumes the bounded fallback. When False, falls back to
             the pre-Phase-6.6 schema-variable / fallback split. Exposed via
             `--pattern-gen-static-csp` for ablation.
-        reachability : bool, default False
+        reachability : bool, default True
             Phase 6.7 delete-relaxation reachability filter. Only meaningful
             with `static_csp=True`. When True, a candidate is additionally
             required to be reachable: the candidate atom and every fluent
@@ -172,12 +193,38 @@ class LiftedPatternGenerator:
             the operator-applicability pruning Scorpion's grounder performs
             (e.g. it drops logistics' airplane patterns, whose precondition
             `at(airplane, non-airport)` is unreachable). R^+ is computed once
-            per task by a least-fixpoint over the delete-free action rules.
-            NOTE: the pure-Python fixpoint is grounding-level cost and does
-            not scale to the largest HTG instances; if it exceeds
-            `_REACHABILITY_TIME_BUDGET_S` the filter is silently disabled for
-            the task (sound fallback). Default off for that reason; exposed
-            via `--pattern-gen-reachability` for opt-in / ablation.
+            per task via Tyr's native delete-free Datalog program
+            (`RelaxedReachability`), which evaluates the same least fixpoint
+            Fast Downward's grounder uses via `instantiate.explore`. Exposed
+            via `--pattern-gen-reachability` for ablation.
+        scorpion_match : bool, default False
+            Phase 6.9 Scorpion-SGA matching mode (Cause-B half only). When
+            True, each action edge is augmented with synthetic inequality
+            literals that prevent the effect atom from collapsing into one
+            of the action's other positive fluent preconditions under the
+            binding. This mirrors Scorpion's SAS+ no-op simplification (an
+            effect that matches an existing precondition is dropped at
+            the SAS+ level, removing the corresponding causal edge).
+            Removes the small Cause-B over-count Tyr-SGA exhibits on
+            organic-synthesis-alkene p12/p13 (+3 each).
+
+            The Cause-A direction (the 5 UNDER tasks p2/p6/p7/p8/p18 where
+            Scorpion-SGA has 19-84 more patterns than Tyr-SGA) is NOT
+            addressed by this flag. Those extras come from Scorpion's
+            `--keep-unreachable-facts` retaining unreachable atoms and the
+            ground operators that reference them; matching them at the
+            lifted level requires emulating that grounding-level behaviour
+            in a way that does not naively over-shoot (a previous
+            "candidate pre lit exempted from R^+" implementation
+            over-shot by ~3.7x on the matching task p5, accepting any
+            type-feasible candidate). The Cause-A extras are inert: each
+            such pattern contains an atom that is unreachable in every
+            relaxed state, so the corresponding PDB projection produces
+            no heuristic information. Heuristic equivalence between
+            Tyr-SGA and Scorpion-SGA on the Cause-A tasks follows from
+            this inertness; no flag is needed to demonstrate it.
+
+            Exposed via `--pattern-gen-scorpion-match` for ablation.
         """
         form_task = task.get_task()
         self._form_task = form_task
@@ -187,6 +234,18 @@ class LiftedPatternGenerator:
         self._bounded_fallback = bool(bounded_fallback)
         self._static_csp = bool(static_csp)
         self._reachability = bool(reachability)
+        self._scorpion_match = bool(scorpion_match)
+
+        # The `=` predicate object (if the domain declares :equality). Used
+        # by `scorpion_match` to synthesise pre-eff collision-avoidance
+        # inequalities — without it those inequalities can't be evaluated
+        # against `_static_index`, so the collision check silently degrades
+        # to a no-op for that action edge.
+        self._eq_pred = None
+        for pred in self._domain.get_static_predicates():
+            if pred.get_name() == '=' and pred.get_arity() == 2:
+                self._eq_pred = pred
+                break
 
         # Cache typed-argument domains per fluent predicate. This is just the
         # type-domain mapping; we do NOT enumerate ground atoms yet. The
@@ -276,13 +335,11 @@ class LiftedPatternGenerator:
         # ── Delete-relaxation reachable fluent atoms R^+ (Phase 6.7) ───────
         # `self._reachable`: dict[pred → set of (Object, ...)] of fluent atoms
         # reachable from the initial state under the delete relaxation, or
-        # None if the filter is off / did not converge within the time budget
-        # (in which case `_is_valid_candidate` skips the reachability check —
-        # a sound fallback that simply prunes less).
+        # None if the filter is off (in which case `_is_valid_candidate` skips
+        # the reachability check — a sound fallback that simply prunes less).
         self._reachable = None
         if self._reachability and self._static_csp:
-            self._reachable = self._compute_relaxed_reachable(
-                self._REACHABILITY_TIME_BUDGET_S)
+            self._reachable = self._compute_relaxed_reachable(task)
 
     # ──────────────────────────────────────────────────────────────────────────
     # Graph construction
@@ -377,7 +434,8 @@ class LiftedPatternGenerator:
                             param_at_pos.append(int(variant))
                         else:
                             param_at_pos.append(-1)
-                    entry = (pred, pos_vars, param_at_pos, scope_ceff)
+                    entry = (pred, pos_vars, param_at_pos, scope_ceff,
+                             bool(lit.get_polarity()))
                     if pre_atoms_out is not None:
                         pre_atoms_out.append(entry)
                     if eff_atoms_all_out is not None:
@@ -475,8 +533,8 @@ class LiftedPatternGenerator:
             # Legacy `eff_pre_shared`: uses ALL polarities (matches pre-CSP
             # behaviour exactly, including the contributions from negative
             # effects that the original code happened to record).
-            for eff_pred, eff_pv, _, _ in eff_atoms_all:
-                for pre_pred, pre_pv, _, _ in pre_atoms:
+            for eff_pred, eff_pv, _, _, _ in eff_atoms_all:
+                for pre_pred, pre_pv, _, _, _ in pre_atoms:
                     if eff_pred == pre_pred:
                         continue
                     shared: dict = {}
@@ -499,12 +557,12 @@ class LiftedPatternGenerator:
             # captures patterns like blocksworld {on(b2,b1), clear(b2)},
             # which exists via unstack's negative `on` effect with
             # precondition `clear(?x)`.
-            for eff_pred, eff_pv, eff_param_at_pos, eff_ceff in eff_atoms_all:
+            for eff_pred, eff_pv, eff_param_at_pos, eff_ceff, eff_polarity in eff_atoms_all:
                 edge_statics = top_static_lits + ceff_static_lits[eff_ceff]
                 edge_fluent_pres = (top_fluent_pre_lits
                                     + ceff_fluent_pre_lits[eff_ceff])
                 edge_param_dom = self._scope_param_domains[(action, eff_ceff)]
-                for pre_pred, pre_pv, pre_param_at_pos, pre_ceff in pre_atoms:
+                for pre_pred, pre_pv, pre_param_at_pos, pre_ceff, _ in pre_atoms:
                     if pre_ceff is not None and pre_ceff is not eff_ceff:
                         continue  # different ceff scopes — not comparable
                     action_edges[(eff_pred, pre_pred)].append(_ActionEdge(
@@ -514,6 +572,7 @@ class LiftedPatternGenerator:
                         static_lits=edge_statics,
                         param_domains=edge_param_dom,
                         fluent_pre_lits=edge_fluent_pres,
+                        eff_polarity=eff_polarity,
                     ))
 
         return (pos_neighbors, pred_cooccur, pred_var_linked,
@@ -603,6 +662,15 @@ class LiftedPatternGenerator:
                 if obj is None:
                     return None
                 resolved.append(obj)
+            elif isinstance(t, int):
+                # `scorpion_match` synthesises collision-avoidance lits whose
+                # arg_terms reference parameter slots by raw int (no
+                # ParameterIndex constructor exposed via the binding). Treat
+                # them the same way.
+                obj = binding.get(t)
+                if obj is None:
+                    return None
+                resolved.append(obj)
             else:
                 resolved.append(t)
         index = self._static_index if lit.is_static else self._reachable
@@ -630,8 +698,14 @@ class LiftedPatternGenerator:
                 continue
             if value is False:
                 return False
-            free = {int(t) for t in lit.arg_terms
-                    if isinstance(t, ParameterIndex) and int(t) not in binding}
+            free = set()
+            for t in lit.arg_terms:
+                if isinstance(t, ParameterIndex):
+                    pi = int(t)
+                    if pi not in binding:
+                        free.add(pi)
+                elif isinstance(t, int) and t not in binding:
+                    free.add(t)
             open_lits.append(lit)
             open_lit_params.append(free)
 
@@ -657,7 +731,8 @@ class LiftedPatternGenerator:
         return False
 
     def _is_valid_candidate(self, goal_fact, candidate_fact,
-                            edge: '_ActionEdge') -> bool:
+                            edge: '_ActionEdge',
+                            eff_pred=None, pre_pred=None) -> bool:
         """Feasibility check for one action-edge.
 
         True iff some assignment of `edge`'s action parameters maps the
@@ -669,6 +744,16 @@ class LiftedPatternGenerator:
         the one matched by the candidate — reachable (a member of R^+). This
         reproduces operator applicability: a candidate is kept only if some
         grounded operator that could create the goal atom can actually fire.
+
+        When `self._scorpion_match` is True, two adjustments are applied:
+          (a) The candidate's pre literal is removed from the R^+ check
+              (so candidates whose atom is itself outside R^+ are accepted,
+              mirroring `--keep-unreachable-facts`).
+          (b) Synthetic collision-avoidance inequalities are added so that
+              action edges whose effect atom would coincide with one of the
+              action's other positive fluent preconditions under every
+              feasible binding are rejected (mirroring SAS+ no-op
+              simplification).
         """
         binding: dict = {}
 
@@ -694,187 +779,159 @@ class LiftedPatternGenerator:
                 return False
             binding[param_idx] = obj
 
-        lits = edge.static_lits
+        lits = list(edge.static_lits)
         if self._reachable is not None:
-            # Require all positive fluent preconditions to be reachable too.
-            lits = lits + edge.fluent_pre_lits
+            lits.extend(edge.fluent_pre_lits)
+        if self._scorpion_match and eff_pred is not None:
+            # Add collision-avoidance inequalities so that bindings forcing
+            # a positive fluent pre atom to ground to the same atom as the
+            # eff atom are rejected. Mirrors SAS+ no-op simplification.
+            lits.extend(self._collision_avoidance_lits(edge, eff_pred))
         return self._satisfy_statics(binding, lits, edge.param_domains)
+
+    def _find_candidate_pre_lit_idx(self, edge: '_ActionEdge', pre_pred):
+        """Index in `edge.fluent_pre_lits` of the candidate atom's pre lit.
+
+        Matches by predicate (must equal `pre_pred`) and by lifted-parameter
+        structure (every position in `lit.arg_terms` must reference the same
+        ParameterIndex as `edge.pre_param_at_pos`). Returns None if no match
+        (e.g., the pre atom is negative-polarity and so wasn't harvested
+        into `fluent_pre_lits`).
+        """
+        for i, lit in enumerate(edge.fluent_pre_lits):
+            if lit.pred != pre_pred:
+                continue
+            if len(lit.arg_terms) != len(edge.pre_param_at_pos):
+                continue
+            match = True
+            for j, term in enumerate(lit.arg_terms):
+                edge_param = edge.pre_param_at_pos[j]
+                if isinstance(term, ParameterIndex):
+                    if edge_param < 0 or int(term) != edge_param:
+                        match = False
+                        break
+                else:
+                    if edge_param != -1:
+                        match = False
+                        break
+            if match:
+                return i
+        return None
+
+    def _collision_avoidance_lits(self, edge: '_ActionEdge', eff_pred):
+        """Synthetic inequalities preventing a positive fluent pre atom from
+        grounding to the same atom as the action's effect under the binding.
+
+        For each fluent pre lit P' with same predicate as the eff atom:
+          * Compare its arg_terms with `edge.eff_param_at_pos`.
+          * If they share the SAME ParameterIndex at every position, the two
+            atoms ground identically under any binding — the edge is
+            trivially SAS+-collapsed. We mark this by inserting a literal
+            that always evaluates False (an equality between two distinct
+            placeholder objects); the CSP will then reject this edge.
+          * If they differ at exactly one position, add an inequality
+            literal between the two ParameterIndices at that position.
+          * If they differ at multiple positions, the precise avoidance
+            condition is a disjunction over those positions, which our
+            CSP does not encode. We conservatively skip the constraint —
+            the corresponding action edge stays accepted as in normal SGA.
+
+        Requires `self._eq_pred` (the `=` predicate). Without it the
+        synthetic lits cannot be evaluated against the static atom index,
+        and the check degrades to a no-op.
+
+        Skipped entirely for negative-polarity effects: SAS+ no-op
+        simplification fires only when pre and eff write the same value to
+        the same variable. Tyr's `fluent_pre_lits` carries POSITIVE
+        preconditions only, so for a negative effect (`var := false`) the
+        only positive precs to compare against require `var = true` —
+        pre and eff disagree on the value, the effect is a real toggle,
+        not a no-op. Comparing them anyway is the cause of the
+        organic-synthesis-alkene over-removal we hit earlier (every goal
+        atom that is also an OH bond was getting all of its causal edges
+        wrongly cleared).
+        """
+        if self._eq_pred is None:
+            return []
+        if not edge.eff_polarity:
+            return []
+        extra: list = []
+        eff_params = edge.eff_param_at_pos
+        for lit in edge.fluent_pre_lits:
+            if lit.pred != eff_pred:
+                continue
+            if len(lit.arg_terms) != len(eff_params):
+                continue
+            diff_positions: list = []
+            for i, term in enumerate(lit.arg_terms):
+                eff_param = eff_params[i]
+                if eff_param < 0:
+                    # Eff has a constant at this slot; we lose the value
+                    # via `param_at_pos = -1`. Conservatively skip.
+                    diff_positions = None
+                    break
+                if isinstance(term, ParameterIndex) and int(term) == eff_param:
+                    continue  # same ParameterIndex → always-equal at this pos
+                diff_positions.append((i, term))
+            if diff_positions is None:
+                continue
+            if not diff_positions:
+                # Same ParameterIndex at every position → always collide.
+                # Reject this action edge by adding an unsatisfiable lit.
+                # We use a positive `=`-lit between two distinct constants:
+                # since `=` is reflexive only, this is always false.
+                objs = list(self._form_task.get_objects())
+                if len(objs) < 2:
+                    continue
+                extra.append(_StaticLit(
+                    pred=self._eq_pred,
+                    arg_terms=[objs[0], objs[1]],
+                    polarity=True,
+                    is_static=True,
+                ))
+                continue
+            if len(diff_positions) > 1:
+                # Multi-differing: skip (conservative).
+                continue
+            i, term = diff_positions[0]
+            eff_param = eff_params[i]
+            # Arg term for the eff side: raw int (treated as a ParameterIndex
+            # synonym by `_eval_static_lit` / `_satisfy_statics`). The pre
+            # side keeps the original ParameterIndex / Object from `lit`.
+            extra.append(_StaticLit(
+                pred=self._eq_pred,
+                arg_terms=[eff_param, term],
+                polarity=False,
+                is_static=True,
+            ))
+        return extra
 
     # ──────────────────────────────────────────────────────────────────────────
     # Delete-relaxation reachability R^+ (Phase 6.7)
     # ──────────────────────────────────────────────────────────────────────────
 
-    def _compute_relaxed_reachable(self, time_budget):
-        """Compute the delete-relaxation reachable fluent-atom set R^+.
-
-        Model: one Datalog rule per (action, conditional-effect):
-          body = the action's positive preconditions (fluent + static)
-                 + the ceff's positive condition literals (fluent + static)
-          head = the ceff's positive effect literals
-        Negative *static* literals are honoured as filters (constant facts);
-        negative *fluent* literals are dropped (standard delete relaxation).
-        Seeded with the initial fluent atoms, the least fixpoint is exactly
-        the set of atoms reachable under the delete relaxation — the same
-        quantity Fast Downward's grounder computes via `instantiate.explore`.
-
-        Returns a dict `pred -> set[(Object, ...)]`, or None if the fixpoint
-        does not converge within `time_budget` seconds (sound fallback: the
-        caller then skips reachability pruning). The join is indexed (hash
-        join) to avoid rescanning large static relations; even so the
-        pure-Python evaluation does not scale to the largest HTG instances.
+    def _compute_relaxed_reachable(self, task):
+        """Compute the delete-relaxation reachable fluent-atom set R^+ via
+        Tyr's native `RelaxedReachability` (the `RPGProgram`'s delete-free
+        Datalog program, evaluated to fixpoint). Same quantity Fast Downward
+        computes via `instantiate.explore`. Returns
+        `dict[Predicate → set[tuple of Object]]`.
         """
         import time as _time
-
-        # ── Build rules ────────────────────────────────────────────────────
-        def atom_terms(atom):
-            out = []
-            for t in atom.get_terms():
-                v = t.get_variant()
-                out.append(int(v) if isinstance(v, ParameterIndex) else v)
-            return out
-
-        rules = []   # (pos_body, neg_static_body, head)
-        for action in self._domain.get_actions():
-            top_pos, top_neg = [], []
-
-            def harvest(cond, pos_out, neg_out):
-                for lit in cond.get_static_literals():
-                    a = lit.get_atom()
-                    if lit.get_polarity():
-                        pos_out.append((a.get_predicate(), atom_terms(a), True))
-                    else:
-                        neg_out.append((a.get_predicate(), atom_terms(a)))
-                for lit in cond.get_fluent_literals():
-                    if lit.get_polarity():
-                        a = lit.get_atom()
-                        pos_out.append((a.get_predicate(), atom_terms(a), False))
-
-            harvest(action.get_condition(), top_pos, top_neg)
-            for ceff in action.get_effects():
-                cpos, cneg = list(top_pos), list(top_neg)
-                harvest(ceff.get_condition(), cpos, cneg)
-                head = [(lit.get_atom().get_predicate(),
-                         atom_terms(lit.get_atom()))
-                        for lit in ceff.get_effect().get_literals()
-                        if lit.get_polarity()]
-                if head:
-                    rules.append((cpos, cneg, head))
-
-        # ── Seed R^+ with the initial fluent atoms ─────────────────────────
-        R: DefaultDict = defaultdict(set)
-        for atom in self._form_task.get_fluent_atoms():
-            R[atom.get_predicate()].add(tuple(atom.get_objects()))
-
-        static_lists = {p: list(s) for p, s in self._static_index.items()}
-
-        class _IndexCache:
-            """Lazily hash-index a relation (list of tuples) by a position set."""
-            def __init__(self):
-                self.cache = {}
-
-            def lookup(self, rel, positions, keyvals):
-                rid = id(rel)
-                per = self.cache.setdefault(rid, {})
-                key = tuple(sorted(positions))
-                idx = per.get(key)
-                if idx is None:
-                    idx = defaultdict(list)
-                    for tup in rel:
-                        idx[tuple(tup[p] for p in key)].append(tup)
-                    per[key] = idx
-                return idx.get(tuple(keyvals[p] for p in key), ())
-
-        static_ic = _IndexCache()  # static relations never change across rounds
+        from pytyr.common import ExecutionContext
+        from pytyr.planning.lifted import RelaxedReachability
 
         t0 = _time.perf_counter()
-        R_frozen: dict = {}
+        reachable_atoms = RelaxedReachability(task, ExecutionContext(1)).compute()
 
-        def rel_list(pred, is_static):
-            return static_lists.get(pred, ()) if is_static else R_frozen.get(pred, ())
+        R: DefaultDict = defaultdict(set)
+        for atom in reachable_atoms:
+            R[atom.get_predicate()].add(tuple(atom.get_objects()))
 
-        state = {"changed": True}
-
-        def fire(pos_body, neg_body, head, fluent_ic):
-            def rec(remaining, binding):
-                if not remaining:
-                    for pred, terms in neg_body:
-                        if any(isinstance(t, int) and t not in binding for t in terms):
-                            continue  # unbound negative: optimistically skip
-                        resolved = tuple(binding[t] if isinstance(t, int) else t
-                                         for t in terms)
-                        if resolved in self._static_index.get(pred, ()):
-                            return  # negative static violated
-                    for pred, terms in head:
-                        atom = tuple(binding[t] if isinstance(t, int) else t
-                                     for t in terms)
-                        if atom not in R[pred]:
-                            R[pred].add(atom)
-                            state["changed"] = True
-                    return
-                # pick the most-bound conjunct (then smallest relation)
-                def bound_positions(c):
-                    _, terms, _ = c
-                    return [i for i, t in enumerate(terms)
-                            if not isinstance(t, int) or t in binding]
-                best = max(remaining,
-                           key=lambda c: (len(bound_positions(c)),
-                                          -len(rel_list(c[0], c[2]))))
-                rem2 = [c for c in remaining if c is not best]
-                pred, terms, is_static = best
-                rel = rel_list(pred, is_static)
-                bp = bound_positions(best)
-                if bp:
-                    keyvals = {i: (binding[terms[i]] if isinstance(terms[i], int)
-                                   else terms[i]) for i in bp}
-                    ic = static_ic if is_static else fluent_ic
-                    cand = ic.lookup(rel, bp, keyvals)
-                else:
-                    cand = rel
-                for tup in cand:
-                    if len(tup) != len(terms):
-                        continue
-                    added = []
-                    ok = True
-                    for i, t in enumerate(terms):
-                        if isinstance(t, int):
-                            if t in binding:
-                                if binding[t] != tup[i]:
-                                    ok = False
-                                    break
-                            else:
-                                binding[t] = tup[i]
-                                added.append(t)
-                        elif t != tup[i]:
-                            ok = False
-                            break
-                    if ok:
-                        rec(rem2, binding)
-                    for k in added:
-                        del binding[k]
-            rec(list(pos_body), {})
-
-        rounds = 0
-        while state["changed"]:
-            if _time.perf_counter() - t0 > time_budget:
-                print(f"[PATTERN] reachability: R+ did not converge within "
-                      f"{time_budget:.0f}s ({rounds} rounds); disabling the "
-                      f"reachability filter for this task (sound fallback).",
-                      flush=True)
-                return None
-            state["changed"] = False
-            rounds += 1
-            # freeze fluent relations for this round; heads write to live R
-            R_frozen.clear()
-            for pred, s in R.items():
-                R_frozen[pred] = tuple(s)
-            fluent_ic = _IndexCache()
-            for pos_body, neg_body, head in rules:
-                fire(pos_body, neg_body, head, fluent_ic)
-
-        total = sum(len(s) for s in R.values())
-        print(f"[PATTERN] reachability: R+ converged in {rounds} rounds, "
-              f"{total} reachable fluent atoms "
-              f"({(_time.perf_counter()-t0)*1000:.0f} ms).", flush=True)
+        elapsed_ms = (_time.perf_counter() - t0) * 1000
+        print(f"[PATTERN] reachability: R+ computed natively in "
+              f"{elapsed_ms:.0f} ms ({len(reachable_atoms)} reachable "
+              f"fluent atoms).", flush=True)
         return dict(R)
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -955,7 +1012,8 @@ class LiftedPatternGenerator:
                                     or candidate in seen:
                                 continue
                             if not self._is_valid_candidate(
-                                    fact, candidate, edge):
+                                    fact, candidate, edge,
+                                    eff_pred=pred, pre_pred=co_pred):
                                 continue
                             candidates.append(candidate)
                             seen.add(candidate)
@@ -1087,6 +1145,25 @@ class LiftedPatternGenerator:
         -------
         list[Pattern]
         """
+        fact_lists = self._generate_sga_fact_lists(
+            max_pattern_size, max_pattern_count)
+        print(f"[SysPDB] Generated {len(fact_lists)} patterns.", flush=True)
+        import os as _os
+        if _os.environ.get("DUMP_PATTERNS"):
+            for facts in fact_lists:
+                atoms_str = " | ".join(str(f.get_atom()) for f in facts
+                                       if f.get_atom() is not None)
+                print(f"[PATTERN_DUMP] | {atoms_str}", flush=True)
+        return [Pattern(facts) for facts in fact_lists]
+
+    def _generate_sga_fact_lists(
+        self, max_pattern_size: int, max_pattern_count: int
+    ) -> list[list]:
+        """SGA BFS over raw fact-lists. Returns `list[list[fact]]` ready to
+        be wrapped in `Pattern` objects. Factored out so that
+        `LiftedInterestingPatternGenerator` can call into the same BFS and
+        then post-process the result before wrapping.
+        """
         goal_facts: list = [
             f for f in self._form_task.get_goal().get_positive_facts()
             if f.get_atom() is not None
@@ -1140,7 +1217,297 @@ class LiftedPatternGenerator:
             current_level = next_level
             if not current_level:
                 break
+        return all_fact_lists
 
-        print(f"[SysPDB] Generated {len(all_fact_lists)} patterns.",
-              flush=True)
-        return [Pattern(facts) for facts in all_fact_lists]
+
+class LiftedInterestingPatternGenerator(LiftedPatternGenerator):
+    """Lifted equivalent of Scorpion's `pattern_type=interesting` systematic
+    pattern collection generator.
+
+    Extends `LiftedPatternGenerator`'s SGA output with the disjoint-union
+    step: for each pair of disjoint SGA patterns connected via a forward
+    (pre, eff) or co-effect (eff, eff) causal arc, emit the union.
+
+    At sys2 the disjoint-union step collapses to a single rule: for each
+    pair of goal singletons (g1, g2), emit {g1, g2} when some action has
+    both atoms in its positive effect set under a feasible binding. The
+    (pre, eff) "forward" direction is already covered by SGA itself (an
+    arc from g1 to g2 means g1 is a predecessor of g2, so SGA emits
+    {g1, g2} when extending from g2's singleton seed), so only the
+    (eff, eff) direction is new.
+
+    Following Scorpion's `compute_connection_points`, the disjoint-union
+    step also excludes pairs that are already in each other's predecessor
+    set (i.e., already in SGA); frozenset-keyed dedup handles this.
+    """
+
+    def __init__(self, task: Task, **kwargs) -> None:
+        super().__init__(task, **kwargs)
+        self._eff_eff_edges: dict = self._build_eff_eff_edges()
+
+    def _build_eff_eff_edges(self) -> dict:
+        """Build `(pred1, pred2) → list[_CoEffEdge]`.
+
+        Co-effect edges connect two positive effect atoms that the SAME
+        ground operator can have in its effect set. In our lifted setting
+        there are three sources:
+
+        (i)   Two distinct lifted eff atoms `(e_A, e_B)` in the same ceff
+              `C`: an A-firing of `C` produces both via a shared local
+              binding.
+        (ii)  Two distinct lifted eff atoms `(e_A, e_B)` in DIFFERENT ceffs
+              `(C_A, C_B)` of the same action: `C_A` and `C_B` fire
+              INDEPENDENTLY for a given top-level binding (PDDL forall
+              semantics), so their local-parameter scopes are independent.
+        (iii) The SAME lifted eff atom `e` instantiated TWICE (in the same
+              ceff `C` with two different local bindings): `C` fires once
+              per matching local-parameter tuple, so two distinct
+              instantiations co-occur in the ground op.
+
+        For (ii) and (iii) we double the ceff-local parameter scope by
+        renaming the SECOND copy's local params to a fresh range (offset
+        by `action_arity + max_ceff_local_arity`). Top-level params remain
+        shared. The action's preconditions get a fresh copy under the
+        renamed scope for the B side; the A-side copy is included unmodified.
+        """
+        edges: DefaultDict = defaultdict(list)
+
+        for action in self._domain.get_actions():
+            action_arity = action.get_arity()
+            # Pre-harvest per-ceff data: static_lits (ceff-local only),
+            # fluent_pre_lits (ceff-local only), positive effect atoms.
+            top_static, top_fluent = self._harvest_top_lits(action)
+            max_local_arity = 0
+            ceff_data: list = []
+            for ceff in action.get_effects():
+                ceff_static, ceff_fluent = self._harvest_ceff_lits(ceff)
+                eff_atoms: list = []
+                for lit in ceff.get_effect().get_literals():
+                    if not lit.get_polarity():
+                        continue
+                    atom = lit.get_atom()
+                    param_at_pos: list = []
+                    for term in atom.get_terms():
+                        variant = term.get_variant()
+                        if isinstance(variant, ParameterIndex):
+                            param_at_pos.append(int(variant))
+                        else:
+                            param_at_pos.append(-1)
+                    eff_atoms.append((atom.get_predicate(), param_at_pos))
+                ceff_data.append((ceff, ceff_static, ceff_fluent, eff_atoms))
+                max_local_arity = max(max_local_arity, ceff.get_arity())
+
+            # Offset used for the B-side renaming of ceff-local params.
+            # Adding `max_local_arity` guarantees B's renamed indices are
+            # disjoint from any A-side index, regardless of which (A, B)
+            # ceffs are paired.
+            offset = max_local_arity
+
+            for a_idx, (ceff_A, statics_A, fluent_A, effs_A) in enumerate(ceff_data):
+                for b_idx, (ceff_B, statics_B, fluent_B, effs_B) in enumerate(ceff_data):
+                    # Build the doubled scope's lits + param domains. We
+                    # always rename ceff_B's params (the "second copy");
+                    # ceff_A keeps original indices. When ceff_A == ceff_B
+                    # this gives two independent firings of the same ceff
+                    # (case iii); otherwise it's cross-ceff (case ii or i
+                    # depending on whether the chosen eff pair is in one
+                    # ceff or two).
+                    statics_B_renamed = [
+                        self._rename_lit(l, action_arity, offset)
+                        for l in statics_B]
+                    fluent_B_renamed = [
+                        self._rename_lit(l, action_arity, offset)
+                        for l in fluent_B]
+                    combined_statics = (top_static + statics_A
+                                        + statics_B_renamed)
+                    combined_fluent = (top_fluent + fluent_A
+                                       + fluent_B_renamed)
+
+                    # Combined param domains: top-level + A's locals +
+                    # B's renamed locals.
+                    dom_A = self._scope_param_domains[(action, ceff_A)]
+                    dom_B = self._scope_param_domains[(action, ceff_B)]
+                    combined_dom: dict = dict(dom_A)
+                    for p_idx, objs in dom_B.items():
+                        if p_idx >= action_arity:
+                            combined_dom[p_idx + offset] = objs
+                        else:
+                            # Top-level param; already in dom_A.
+                            combined_dom[p_idx] = objs
+
+                    for i, (pred_A, params_A) in enumerate(effs_A):
+                        for j, (pred_B, params_B) in enumerate(effs_B):
+                            if a_idx == b_idx and i == j:
+                                # Same ceff, same lifted eff atom: this is
+                                # the intra-atom case (iii). Continue
+                                # only if the atom has at least one
+                                # ceff-local position (so two distinct
+                                # bindings produce distinct atoms).
+                                if not any(p >= action_arity
+                                           for p in params_A):
+                                    continue
+                            params_B_renamed = [
+                                p + offset if p >= action_arity else p
+                                for p in params_B]
+                            edges[(pred_A, pred_B)].append(_CoEffEdge(
+                                action_name=action.get_name(),
+                                eff1_param_at_pos=params_A,
+                                eff2_param_at_pos=params_B_renamed,
+                                static_lits=combined_statics,
+                                param_domains=combined_dom,
+                                fluent_pre_lits=combined_fluent,
+                            ))
+        return dict(edges)
+
+    @staticmethod
+    def _harvest_top_lits(action):
+        """Action-top-level static and positive fluent precondition lits."""
+        statics: list = []
+        fluent: list = []
+        cond = action.get_condition()
+        for lit in cond.get_static_literals():
+            atom = lit.get_atom()
+            arg_terms = [t.get_variant() for t in atom.get_terms()]
+            statics.append(_StaticLit(atom.get_predicate(), arg_terms,
+                                      bool(lit.get_polarity())))
+        for lit in cond.get_fluent_literals():
+            if not lit.get_polarity():
+                continue
+            atom = lit.get_atom()
+            arg_terms = [t.get_variant() for t in atom.get_terms()]
+            fluent.append(_StaticLit(atom.get_predicate(), arg_terms,
+                                     True, is_static=False))
+        return statics, fluent
+
+    @staticmethod
+    def _harvest_ceff_lits(ceff):
+        """Ceff-local static and positive fluent precondition lits."""
+        statics: list = []
+        fluent: list = []
+        cond = ceff.get_condition()
+        for lit in cond.get_static_literals():
+            atom = lit.get_atom()
+            arg_terms = [t.get_variant() for t in atom.get_terms()]
+            statics.append(_StaticLit(atom.get_predicate(), arg_terms,
+                                      bool(lit.get_polarity())))
+        for lit in cond.get_fluent_literals():
+            if not lit.get_polarity():
+                continue
+            atom = lit.get_atom()
+            arg_terms = [t.get_variant() for t in atom.get_terms()]
+            fluent.append(_StaticLit(atom.get_predicate(), arg_terms,
+                                     True, is_static=False))
+        return statics, fluent
+
+    @staticmethod
+    def _rename_lit(lit: '_StaticLit', action_arity: int,
+                    offset: int) -> '_StaticLit':
+        """Shift every ceff-local ParameterIndex (index >= `action_arity`)
+        by `offset`. Top-level params and concrete Objects pass through
+        untouched. Returns a new `_StaticLit` with int-form arg terms for
+        any renamed slot (treated as a ParameterIndex synonym by the CSP).
+        """
+        new_arg_terms = []
+        for t in lit.arg_terms:
+            if isinstance(t, ParameterIndex):
+                idx = int(t)
+                if idx >= action_arity:
+                    new_arg_terms.append(idx + offset)
+                else:
+                    new_arg_terms.append(t)
+            elif isinstance(t, int):
+                if t >= action_arity:
+                    new_arg_terms.append(t + offset)
+                else:
+                    new_arg_terms.append(t)
+            else:
+                new_arg_terms.append(t)
+        return _StaticLit(lit.pred, new_arg_terms, lit.polarity,
+                          lit.is_static)
+
+    def _is_valid_coeff(self, g1_fact, g2_fact,
+                        edge: '_CoEffEdge') -> bool:
+        """Feasibility check for one co-effect edge.
+
+        True iff some assignment of `edge`'s action parameters maps
+        `eff1` onto `g1_fact` and `eff2` onto `g2_fact`, satisfying every
+        static literal and (when R^+ is active) every positive fluent
+        precondition of the action.
+        """
+        binding: dict = {}
+        for fact, param_at_pos in (
+                (g1_fact, edge.eff1_param_at_pos),
+                (g2_fact, edge.eff2_param_at_pos)):
+            objs = fact.get_atom().get_objects()
+            for pos, param_idx in enumerate(param_at_pos):
+                if param_idx < 0:
+                    continue
+                obj = objs[pos]
+                existing = binding.get(param_idx)
+                if existing is not None and existing != obj:
+                    return False
+                binding[param_idx] = obj
+        lits = list(edge.static_lits)
+        if self._reachable is not None:
+            lits.extend(edge.fluent_pre_lits)
+        return self._satisfy_statics(binding, lits, edge.param_domains)
+
+    def generate(
+        self, max_pattern_size: int = 2, max_pattern_count: int = 10
+    ) -> list[Pattern]:
+        """SGA + co-effect disjoint-union step.
+
+        Currently only the sys2 case is wired (the disjoint-union step at
+        sys2 collapses to goal-pair augmentation). For larger sizes the
+        general step is more involved and not implemented; we fall back
+        to SGA only.
+        """
+        sga_fact_lists = self._generate_sga_fact_lists(
+            max_pattern_size, max_pattern_count)
+        if max_pattern_size < 2:
+            print(f"[SysPDB] Generated {len(sga_fact_lists)} patterns.",
+                  flush=True)
+            return [Pattern(f) for f in sga_fact_lists]
+
+        existing: set = {frozenset(f) for f in sga_fact_lists}
+
+        goal_facts: list = [
+            f for f in self._form_task.get_goal().get_positive_facts()
+            if f.get_atom() is not None
+        ]
+
+        added_facts: list = []
+        for i in range(len(goal_facts)):
+            for j in range(i + 1, len(goal_facts)):
+                if len(sga_fact_lists) + len(added_facts) >= max_pattern_count:
+                    break
+                g1, g2 = goal_facts[i], goal_facts[j]
+                key = frozenset([g1, g2])
+                if key in existing:
+                    continue
+                pred1 = g1.get_atom().get_predicate()
+                pred2 = g2.get_atom().get_predicate()
+                feasible = False
+                # Try (pred1, pred2) orientation: bind g1↦eff1, g2↦eff2.
+                for edge in self._eff_eff_edges.get((pred1, pred2), ()):
+                    if self._is_valid_coeff(g1, g2, edge):
+                        feasible = True
+                        break
+                # Try (pred2, pred1) orientation: bind g2↦eff1, g1↦eff2.
+                # (Stored separately by `_build_eff_eff_edges`; a single
+                # `(pred1, pred2)` lookup misses edges whose lifted eff1 has
+                # `pred2` and eff2 has `pred1`.)
+                if not feasible and pred1 != pred2:
+                    for edge in self._eff_eff_edges.get((pred2, pred1), ()):
+                        if self._is_valid_coeff(g2, g1, edge):
+                            feasible = True
+                            break
+                if feasible:
+                    added_facts.append([g1, g2])
+                    existing.add(key)
+
+        total = len(sga_fact_lists) + len(added_facts)
+        print(f"[SysPDB] Interesting: +{len(added_facts)} co-effect "
+              f"goal-pair patterns (total: {total}).", flush=True)
+        print(f"[SysPDB] Generated {total} patterns.", flush=True)
+        return [Pattern(f) for f in sga_fact_lists + added_facts]
