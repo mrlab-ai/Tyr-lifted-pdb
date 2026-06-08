@@ -34,6 +34,13 @@ class ActionExecutor
 public:
     ActionExecutor() = default;
 
+    // When set, action application uses a unit cost (+1 per step) regardless
+    // of whether the task declares a `(:metric (total-cost) ...)` expression.
+    // Mirrors Scorpion's `cost_type=one`, used to align Tyr and Scorpion on
+    // the search objective for heuristic-strength comparisons.
+    void set_use_unit_cost(bool flag) noexcept { m_use_unit_cost = flag; }
+    bool get_use_unit_cost() const noexcept { return m_use_unit_cost; }
+
     // Ground action API
 
     template<TaskKind Kind>
@@ -60,6 +67,7 @@ private:
     DataList<formalism::planning::FDRFact<formalism::FluentTag>> m_add_effects;
     formalism::planning::EffectFamilyList m_effect_families;
     itertools::cartesian_set::Workspace<Index<formalism::Object>> m_cartesian_workspace;
+    bool m_use_unit_cost = false;
 };
 }
 

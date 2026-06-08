@@ -40,6 +40,10 @@ public:
 
     Node<GroundTag> get_initial_node();
 
+    // Forwards to the underlying `ActionExecutor`. See lifted variant for details.
+    void set_use_unit_cost(bool flag) noexcept { m_executor.set_use_unit_cost(flag); }
+    bool get_use_unit_cost() const noexcept { return m_executor.get_use_unit_cost(); }
+
     std::vector<LabeledNode<GroundTag>> get_labeled_successor_nodes(const Node<GroundTag>& node);
     void get_labeled_successor_nodes(const Node<GroundTag>& node, std::vector<LabeledNode<GroundTag>>& out_nodes);
 

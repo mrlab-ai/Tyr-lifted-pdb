@@ -19,6 +19,7 @@
 
 #include "projection_generator/projection_join_plan.hpp"
 #include "projection_generator/task_projection.hpp"
+#include "tyr/planning/lifted_task/abstractions/relaxed_reachability.hpp"
 #include "tyr/analysis/domains.hpp"
 #include "tyr/common/block_array_set.hpp"
 #include "tyr/common/declarations.hpp"
@@ -235,6 +236,159 @@ UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t> build_pattern_bit_index(cons
     return result;
 }
 
+// Predicate → set of reachable ground-atom object tuples. Populated from
+// `RelaxedReachability<LiftedTag>::compute()` when the `reachability_filter`
+// projection option is on. Used by `verify_pattern_preconditions` to drop
+// transitions whose ground non-pattern positive preconditions are absent
+// from R+ — emulating Scorpion's operator-level reachability pruning.
+using ReachableAtomIndex = UnorderedMap<fp::PredicateView<f::FluentTag>, UnorderedSet<std::vector<std::uint32_t>>>;
+
+// Build a hashable tuple from a ground atom's term list.
+inline std::vector<std::uint32_t> atom_to_obj_tuple(const fp::MutableAtom<f::FluentTag>& atom)
+{
+    auto tup = std::vector<std::uint32_t> {};
+    tup.reserve(atom.terms.size());
+    for (const auto& term : atom.terms)
+        tup.push_back(static_cast<std::uint32_t>(uint_t(u::get_object(term))));
+    return tup;
+}
+
+// Predicate-only lookup with empty fallback.
+inline bool atom_in_reachable_index(const fp::MutableAtom<f::FluentTag>& atom, const ReachableAtomIndex* index)
+{
+    if (index == nullptr)
+        return true;  // R+ filter disabled → over-approximate
+    const auto it = index->find(atom.predicate);
+    if (it == index->end())
+        return false;
+    return it->second.contains(atom_to_obj_tuple(atom));
+}
+
+// After the FULL substitution (precondition + effect-side bindings) is
+// determined, verify positive precondition literals.
+//
+// Two cases:
+//  (a) The grounded precondition is a pattern atom → must be set in src_mask;
+//      otherwise drop the transition.
+//  (b) The grounded precondition is NOT a pattern atom (or still non-ground)
+//      → *normally* over-approximate as satisfied. **Tightening (non-ground
+//      case)**: enumerate compatible pattern atoms (predicate match, bound
+//      terms agree). If at least one is true in src, satisfied. Otherwise,
+//      compute the typed-domain product over still-unbound positions; if it
+//      equals the count of compatible pattern atoms, every possible ground
+//      candidate is a pattern atom — since none are in src, no satisfying
+//      ground atom exists, drop. Otherwise some candidate would be a
+//      non-pattern atom (which the abstraction doesn't track), keep.
+//
+// `param_domain_sizes[i]` = size of the projected action's parameter `i`'s
+// typed domain. 0 is a sentinel "unknown" (e.g. ceff-local params); when
+// encountered, the tightening conservatively skips that literal.
+bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::FluentTag>>& positive_fluent,
+                                  const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                                  const std::vector<fp::MutableAtom<f::FluentTag>>& pattern_atoms,
+                                  const UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t>& atom_bit_index,
+                                  const std::vector<std::size_t>& param_domain_sizes,
+                                  const ReachableAtomIndex* reachable_index,
+                                  uint_t src_mask)
+{
+    for (const auto& lit : positive_fluent)
+    {
+        const auto grounded = u::apply_substitution_fixpoint(lit, sigma);
+        if (is_ground(grounded.atom))
+        {
+            const auto it = atom_bit_index.find(grounded.atom);
+            if (it == atom_bit_index.end())
+            {
+                // Ground non-pattern atom: standard PDB semantics says
+                // over-approximate as satisfied. With R+ filter on, do the
+                // operator-level reachability check Scorpion's grounder
+                // does — if the atom is not in R+ no real grounding can
+                // satisfy this precondition, so drop the transition.
+                if (reachable_index != nullptr && !atom_in_reachable_index(grounded.atom, reachable_index))
+                    return false;
+                continue;
+            }
+            const uint_t bit = uint_t(1) << it->second;
+            if ((src_mask & bit) == 0)
+                return false;
+            continue;
+        }
+
+        // Non-ground tightening.
+        bool any_in_src = false;
+        std::size_t compatible_count = 0;
+        for (const auto& pa : pattern_atoms)
+        {
+            if (pa.predicate.get_index() != grounded.atom.predicate.get_index())
+                continue;
+            if (pa.terms.size() != grounded.atom.terms.size())
+                continue;
+            bool compat = true;
+            for (std::size_t i = 0; i < grounded.atom.terms.size(); ++i)
+            {
+                if (u::is_object(grounded.atom.terms[i]))
+                {
+                    if (!u::is_object(pa.terms[i]) || u::get_object(pa.terms[i]) != u::get_object(grounded.atom.terms[i]))
+                    {
+                        compat = false;
+                        break;
+                    }
+                }
+            }
+            if (!compat)
+                continue;
+            ++compatible_count;
+            const auto it = atom_bit_index.find(pa);
+            if (it != atom_bit_index.end())
+            {
+                const uint_t bit = uint_t(1) << it->second;
+                if ((src_mask & bit) != 0)
+                {
+                    any_in_src = true;
+                    break;
+                }
+            }
+        }
+        if (any_in_src)
+            continue;
+
+        // Typed-domain product over still-unbound positions.
+        std::size_t candidate_count = 1;
+        bool unknown = false;
+        for (std::size_t i = 0; i < grounded.atom.terms.size(); ++i)
+        {
+            if (u::is_object(grounded.atom.terms[i]))
+                continue;
+            if (!u::is_parameter(grounded.atom.terms[i]))
+            {
+                unknown = true;
+                break;
+            }
+            const auto pi = static_cast<std::size_t>(uint_t(u::get_parameter(grounded.atom.terms[i])));
+            if (pi >= param_domain_sizes.size() || param_domain_sizes[pi] == 0)
+            {
+                unknown = true;
+                break;
+            }
+            const auto sz = param_domain_sizes[pi];
+            if (candidate_count != 0 && sz > std::numeric_limits<std::size_t>::max() / candidate_count)
+            {
+                unknown = true;
+                break;
+            }
+            candidate_count *= sz;
+        }
+        if (unknown)
+            continue;
+        if (candidate_count > compatible_count)
+            continue;
+
+        // All candidates are pattern atoms; none are in src → drop.
+        return false;
+    }
+    return true;
+}
+
 // Apply one effect literal (after substitution) to dst_mask.
 // Non-ground literals (params bound to non-pattern objects) are no-ops.
 void apply_effect_to_mask(const fp::MutableLiteral<f::FluentTag>& lit,
@@ -382,8 +536,16 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
         }
     }
 
-    // Existential: allow non-pattern concrete binding (leave param unbound).
-    // This replicates the old code's "if (!is_ground) continue" logic.
+    // Existential branch: leave the positive precondition unsatisfied here
+    // and recurse. This over-approximation is needed for lifted PDBs because
+    // the precondition's parameters may legitimately bind to non-pattern
+    // objects (then the grounded precondition is NOT a pattern atom and the
+    // abstract state doesn't track it, so we over-approximate as satisfied).
+    // **However**: when effect-side enumeration later binds the params to
+    // PATTERN objects — so the grounded precondition IS a pattern atom — the
+    // over-approximation is unsafe and produces spurious abstract transitions.
+    // The post-check `verify_pattern_preconditions` at transition-emit time
+    // (see `create_abstract_state_changing_transitions_v2`) catches that case.
     enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
 }
 
@@ -920,6 +1082,8 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
                                                     const ProjectionMapping<LiftedTag>::ActionMapping& projected_to_original_action,
                                                     const StaticAtomIndex& static_index,
                                                     const UnorderedMap<fp::ActionView, ActionJoinPlan>& join_plans,
+                                                    const UnorderedMap<fp::ActionView, std::vector<std::size_t>>& param_domain_sizes_per_action,
+                                                    const ReachableAtomIndex* reachable_index,
                                                     const ProjectionOptions& options)
 {
     auto transitions = TransitionList {};
@@ -955,6 +1119,21 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
                     enumerate_effect_params_v2(join_plan.effect_param_enums, 0, pattern_atoms, sigma_pre,
                         [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_full)
                         {
+                            // After effect-side bindings, verify positive
+                            // preconditions: drop transitions where a now-ground
+                            // pattern-atom precondition is absent from src
+                            // (basic post-check), or where a still-non-ground
+                            // precondition has only pattern atoms as candidate
+                            // groundings and none are in src (tightening).
+                            const auto pds_it = param_domain_sizes_per_action.find(projected_action);
+                            const auto& pds = (pds_it != param_domain_sizes_per_action.end())
+                                                  ? pds_it->second
+                                                  : std::vector<std::size_t> {};
+                            if (!verify_pattern_preconditions(join_plan.precondition.positive_fluent,
+                                                              sigma_full, pattern_atoms, atom_bit_index,
+                                                              pds, reachable_index, src_mask))
+                                return;
+
                             uint_t dst_mask = src_mask;
 
                             for (size_t ei = 0; ei < mutable_action.effects.size(); ++ei)
@@ -1052,7 +1231,8 @@ void emit_dedup_stats(size_t pattern_index, const TransitionList& transitions)
               << std::endl;
 }
 
-auto create_projection(const Pattern& pattern, size_t pattern_index, const Task<LiftedTag>& original_task, const ProjectionOptions& options)
+auto create_projection(const Pattern& pattern, size_t pattern_index, const Task<LiftedTag>& original_task,
+                       const ReachableAtomIndex* reachable_index, const ProjectionOptions& options)
 {
     auto [projected_task, projected_to_original_action] = project_task(original_task, pattern);
 
@@ -1060,11 +1240,43 @@ auto create_projection(const Pattern& pattern, size_t pattern_index, const Task<
     const auto static_index = build_static_atom_index(*projected_task);
     const auto join_plans = build_projection_join_plans(projected_to_original_action, pattern, static_index, options);
 
+    // Pre-compute per-projected-action typed-domain sizes for parameters.
+    // Used by `verify_pattern_preconditions`'s tightening pass: for a
+    // non-ground positive precondition literal, the typed-domain product
+    // over its unbound positions tells us how many ground candidates exist;
+    // if that product equals the count of compatible pattern atoms, every
+    // candidate is a pattern atom (so an absent-from-src check is exhaustive).
+    // Ceff-local parameter slots get the sentinel `0` (unknown) so the
+    // tightening conservatively skips them. Action-level params get their
+    // precondition_domain.objects.size().
+    auto param_domain_sizes_per_action = UnorderedMap<fp::ActionView, std::vector<std::size_t>> {};
+    {
+        const auto& var_domains = original_task.get_formalism_task().get_variable_domains_view();
+        for (const auto& [projected_action, info] : projected_to_original_action)
+        {
+            const auto orig_it = var_domains.action_domains.find(info.original_action);
+            if (orig_it == var_domains.action_domains.end())
+                continue;
+            const auto& orig_pre_doms = orig_it->second.payload.precondition_domain.payload;
+            const auto orig_arity = info.original_action.get_arity();
+            auto sizes = std::vector<std::size_t>(projected_action.get_arity(), 0);
+            for (std::size_t i = 0; i < projected_action.get_arity(); ++i)
+            {
+                const auto orig_p = uint_t(info.projected_to_original[i]);
+                if (orig_p < orig_arity && orig_p < orig_pre_doms.size())
+                    sizes[i] = orig_pre_doms[orig_p].objects.size();
+                // else ceff-local — leave 0 sentinel
+            }
+            param_domain_sizes_per_action.emplace(projected_action, std::move(sizes));
+        }
+    }
+
     auto state_repository = StateRepository<LiftedTag>::create(projected_task, ExecutionContext::create(1));
 
     auto [astates, goal_vertices] = create_abstract_states(pattern, *projected_task, *state_repository);
     auto [transitions, adj_lists] =
-        create_abstract_state_changing_transitions_v2(astates, pattern, projected_to_original_action, static_index, join_plans, options);
+        create_abstract_state_changing_transitions_v2(astates, pattern, projected_to_original_action, static_index,
+                                                       join_plans, param_domain_sizes_per_action, reachable_index, options);
 
     if (options.collect_dedup_stats)
         emit_dedup_stats(pattern_index, transitions);
@@ -1091,8 +1303,31 @@ ProjectionAbstractionList<LiftedTag> ProjectionGenerator<LiftedTag>::generate()
 {
     auto projections = ProjectionAbstractionList<LiftedTag> {};
 
+    // Compute R+ once per task when the reachability filter is enabled.
+    // R+ depends on the task, not on the pattern, so it's shared across all
+    // projections in this generator instance.
+    std::optional<ReachableAtomIndex> reachable_storage;
+    if (m_options.reachability_filter)
+    {
+        // `RelaxedReachability<LiftedTag>` takes a non-const shared_ptr<Task>;
+        // const_pointer_cast is safe because R+ only mutates an internal
+        // Datalog workspace, not the task's logical state.
+        auto task_nc = std::const_pointer_cast<Task<LiftedTag>>(m_task);
+        auto exec_ctx = std::make_shared<ExecutionContext>(1);
+        auto rr = RelaxedReachability<LiftedTag>(task_nc, exec_ctx);
+        reachable_storage.emplace();
+        for (const auto atom : rr.compute())
+        {
+            auto tup = std::vector<std::uint32_t> {};
+            for (const auto obj : atom.get_row().get_objects())
+                tup.push_back(static_cast<std::uint32_t>(uint_t(obj.get_index())));
+            (*reachable_storage)[atom.get_predicate()].insert(std::move(tup));
+        }
+    }
+    const ReachableAtomIndex* reachable_index = reachable_storage ? &(*reachable_storage) : nullptr;
+
     for (size_t i = 0; i < m_patterns.size(); ++i)
-        projections.push_back(create_projection(m_patterns[i], i, *m_task, m_options));
+        projections.push_back(create_projection(m_patterns[i], i, *m_task, reachable_index, m_options));
 
     return projections;
 }

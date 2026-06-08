@@ -50,6 +50,11 @@ public:
 
     Node<LiftedTag> get_initial_node();
 
+    // Forwards to the underlying `ActionExecutor`. See its declaration for
+    // the semantics (Scorpion `cost_type=one`-equivalent flag).
+    void set_use_unit_cost(bool flag) noexcept { m_executor.set_use_unit_cost(flag); }
+    bool get_use_unit_cost() const noexcept { return m_executor.get_use_unit_cost(); }
+
     // Ground action API (interning)
     std::vector<LabeledNode<LiftedTag>> get_labeled_successor_nodes(const Node<LiftedTag>& node);
 

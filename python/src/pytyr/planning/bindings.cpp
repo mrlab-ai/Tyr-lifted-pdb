@@ -180,7 +180,9 @@ void bind_successor_generator(nb::module_& m, const std::string& name)
              nb::call_guard<nb::gil_scoped_release>())
         .def("get_successor_node", nb::overload_cast<const Node<Kind>&, fp::GroundActionView>(&T::get_successor_node), "node"_a, "action"_a)
         .def("get_node", &T::get_node, nb::rv_policy::move, "state_index"_a)
-        .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy);
+        .def("get_state_repository", &T::get_state_repository, nb::rv_policy::copy)
+        .def("set_use_unit_cost", &T::set_use_unit_cost, "flag"_a)
+        .def("get_use_unit_cost", &T::get_use_unit_cost);
 }
 
 template<TaskKind Kind>
@@ -381,7 +383,8 @@ inline void bind_pattern(nb::module_& m, const std::string& name)
     using T = Pattern;
 
     nb::class_<T>(m, name.c_str())  //
-        .def(nb::init<formalism::planning::FDRFactViewList<formalism::FluentTag>>(), "facts"_a);
+        .def(nb::init<formalism::planning::FDRFactViewList<formalism::FluentTag>>(), "facts"_a)
+        .def_ro("facts", &T::facts);
 }
 
 template<TaskKind Kind>
@@ -436,6 +439,28 @@ void bind_relaxed_reachability<LiftedTag>(nb::module_& m, const std::string& nam
              "execution_context"_a)
         .def("compute", &T::compute)
         .def("compute_sorted", &T::compute_sorted);
+}
+
+inline void bind_lifted_systematic_pattern_generator(nb::module_& m, const std::string& options_name, const std::string& generator_name)
+{
+    nb::class_<LiftedSystematicPatternGeneratorOptions>(m, options_name.c_str())
+        .def(nb::init<>())
+        .def_rw("bounded_fallback", &LiftedSystematicPatternGeneratorOptions::bounded_fallback)
+        .def_rw("static_csp", &LiftedSystematicPatternGeneratorOptions::static_csp)
+        .def_rw("reachability", &LiftedSystematicPatternGeneratorOptions::reachability)
+        .def_rw("scorpion_match", &LiftedSystematicPatternGeneratorOptions::scorpion_match)
+        .def_rw("interesting", &LiftedSystematicPatternGeneratorOptions::interesting)
+        .def_rw("max_pattern_size", &LiftedSystematicPatternGeneratorOptions::max_pattern_size)
+        .def_rw("max_pattern_count", &LiftedSystematicPatternGeneratorOptions::max_pattern_count);
+
+    using T = LiftedSystematicPatternGenerator;
+
+    nb::class_<T, PatternGenerator<LiftedTag>>(m, generator_name.c_str())  //
+        .def(nb::new_([](std::shared_ptr<const Task<LiftedTag>> task, LiftedSystematicPatternGeneratorOptions options)
+                      { return T::create(std::move(task), options); }),
+             "task"_a,
+             "options"_a)
+        .def("num_action_edges", &T::num_action_edges);
 }
 
 }
@@ -597,11 +622,14 @@ should not be used further.
         .def_rw("src_atoms_index", &ProjectionOptions::src_atoms_index)
         .def_rw("negative_literal_pushdown", &ProjectionOptions::negative_literal_pushdown)
         .def_rw("inequality_propagation", &ProjectionOptions::inequality_propagation)
-        .def_rw("collect_dedup_stats", &ProjectionOptions::collect_dedup_stats);
+        .def_rw("collect_dedup_stats", &ProjectionOptions::collect_dedup_stats)
+        .def_rw("reachability_filter", &ProjectionOptions::reachability_filter);
 
     bind_projection_generator<LiftedTag>(m, "ProjectionGenerator");
 
     bind_relaxed_reachability<LiftedTag>(m, "RelaxedReachability");
+
+    bind_lifted_systematic_pattern_generator(m, "LiftedSystematicPatternGeneratorOptions", "LiftedSystematicPatternGenerator");
 }
 
 namespace astar_eager

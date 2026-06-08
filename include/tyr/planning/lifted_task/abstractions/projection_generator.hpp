@@ -87,6 +87,19 @@ struct ProjectionOptions
     // analysis) per pattern and per action. Default off — the stats add a
     // post-loop sort over the transition list per pattern.
     bool collect_dedup_stats = false;
+
+    // When true, compute the delete-relaxation reachable fluent atoms (R+)
+    // once per task and consult it during transition enumeration: drop
+    // abstract transitions whose ground non-pattern positive precondition
+    // atoms are not in R+. This emulates the operator-level reachability
+    // filter Scorpion's grounder applies (a ground operator with an
+    // unreachable precondition is dropped during grounding). Closes the
+    // residual heuristic-strength gap from the 03-06-03 head-to-head where
+    // a spurious `unload-airplane` transition fired under the abstraction
+    // because its non-pattern preconditions `at(a0, l0-330)` and
+    // `in(p4, a0)` were over-approximated as satisfied even though both
+    // are unreachable from the initial state.
+    bool reachability_filter = false;
 };
 
 template<>

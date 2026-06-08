@@ -20,6 +20,10 @@ from pattern_gen import (
     LiftedPatternGenerator,
     LiftedInterestingPatternGenerator,
 )
+from pytyr.planning.lifted import (
+    LiftedSystematicPatternGenerator,
+    LiftedSystematicPatternGeneratorOptions,
+)
 from pytyr.common import (
     ExecutionContext
 )
@@ -96,6 +100,24 @@ def main():
                                  "reporting how many emitted transitions collapse to distinct "
                                  "(src, dst[, action]) edges. Used to size the potential gain of a "
                                  "projected-enumeration redesign (Lauer-style regression substrate).")
+    arg_parser.add_argument("--projection-reachability-filter",
+                            choices=["off", "on"], default="off",
+                            help="When on, compute the delete-relaxation reachable fluent atoms (R+) "
+                                 "once per task and drop abstract transitions whose ground non-pattern "
+                                 "positive preconditions are not in R+. Emulates the operator-level "
+                                 "reachability pruning Scorpion's grounder applies. Closes the residual "
+                                 "heuristic-strength gap from the 03-06-03 head-to-head where the lifted "
+                                 "PDB over-approximated `unload-airplane`-style preconditions that are "
+                                 "unreachable from init. Default off — costs an extra R+ computation per "
+                                 "task plus a per-transition R+ membership check during projection build.")
+    arg_parser.add_argument("--cost-type",
+                            choices=["original", "one"], default="original",
+                            help="Action cost model used during A*. `original` (default) respects the "
+                                 "task's `(:metric (total-cost) ...)` expression. `one` forces unit cost "
+                                 "per action regardless of the metric, matching Scorpion's `cost_type=one` "
+                                 "configuration — required for valid heuristic-strength comparisons on "
+                                 "domains with non-uniform or zero-cost actions (e.g. genome-edit-distance "
+                                 "with its zero-cost `rotate`).")
     arg_parser.add_argument("--pattern-gen-fallback-bound",
                             choices=["off", "on"], default="on",
                             help="Phase 6.5: bound the schema-co-occurrence fallback in pattern "
@@ -149,6 +171,22 @@ def main():
                                  "Implemented for paper-experiment ablation only — empirically "
                                  "SGA dominates on HTG, so this flag is intended to *demonstrate* "
                                  "that interesting does not help, not as a production setting.")
+    arg_parser.add_argument("--pattern-gen-backend",
+                            choices=["cpp-systematic", "py-systematic", "py-interesting", "py-ipdb"],
+                            default="cpp-systematic",
+                            help="Which pattern generator implementation to use. "
+                                 "`cpp-systematic` (default): native C++ "
+                                 "LiftedSystematicPatternGenerator — fast, supports all "
+                                 "--pattern-gen-* flags (interesting, fallback-bound, etc). "
+                                 "`py-systematic`: legacy Python LiftedPatternGenerator "
+                                 "(pre-C++-port). `py-interesting`: legacy Python "
+                                 "LiftedInterestingPatternGenerator. `py-ipdb`: iPDB "
+                                 "hill-climbing (Haslum et al. 2007) adapted for lifted, "
+                                 "from lifted_ipdb.py. Used for paper-experiment ablation.")
+    arg_parser.add_argument("--ipdb-samples", type=int, default=1000,
+                            help="iPDB sampling budget (only with --pattern-gen-backend=py-ipdb).")
+    arg_parser.add_argument("--ipdb-walk-length", type=int, default=10,
+                            help="iPDB random walk length per sample.")
     args = arg_parser.parse_args()
 
     projection_options = ProjectionOptions()
@@ -167,11 +205,13 @@ def main():
         InequalityPropagation.On if args.projection_inequality_propagation == "on" else InequalityPropagation.Off
     )
     projection_options.collect_dedup_stats = bool(args.projection_dedup_stats)
+    projection_options.reachability_filter = (args.projection_reachability_filter == "on")
     print(f"[PROJECT] fluent_literal_order={args.projection_fluent_literal_order} "
           f"src_atoms_index={args.projection_src_atoms_index} "
           f"negative_literal_pushdown={args.projection_negative_literal_pushdown} "
           f"inequality_propagation={args.projection_inequality_propagation} "
-          f"dedup_stats={'on' if args.projection_dedup_stats else 'off'}", flush=True)
+          f"dedup_stats={'on' if args.projection_dedup_stats else 'off'} "
+          f"reachability_filter={args.projection_reachability_filter}", flush=True)
     print(f"[PATTERN] fallback_bound={args.pattern_gen_fallback_bound} "
           f"static_csp={args.pattern_gen_static_csp} "
           f"reachability={args.pattern_gen_reachability} "
@@ -186,30 +226,93 @@ def main():
     domain_filepath : Path = args.domain_filepath
     task_filepath : Path = args.task_filepath
 
+    # File-level shim: several HTG domain files use `(not (= ?x ?y))` for
+    # parameter inequality without declaring `:negative-preconditions`,
+    # which Loki rejects. When the requirements block lacks the relevant
+    # declaration (and isn't covered by :adl/:quantified-preconditions),
+    # inject `:negative-preconditions` and pass the patched file via a
+    # tempfile path. The string-content Parser overload is buggy in Loki
+    # for some domains, so we always use the filepath overload.
+    import re, tempfile, atexit, os
+    def _maybe_inject_neg_preconds(filepath):
+        text = filepath.read_text()
+        m = re.search(r'\(:requirements\s+([^)]*)\)', text)
+        if m is None:
+            return filepath
+        reqs = m.group(1)
+        if (':negative-preconditions' in reqs or
+            ':adl' in reqs or
+            ':quantified-preconditions' in reqs):
+            return filepath  # already declared directly or via implication
+        new_block = f'(:requirements {reqs.rstrip()} :negative-preconditions)'
+        new_text = text[:m.start()] + new_block + text[m.end():]
+        tmp = tempfile.NamedTemporaryFile(
+            mode='w', suffix='.pddl', delete=False,
+            prefix=f'_tyr_inject_{filepath.stem}_')
+        tmp.write(new_text)
+        tmp.close()
+        atexit.register(lambda p=tmp.name: os.unlink(p) if os.path.exists(p) else None)
+        return Path(tmp.name)
+
+    patched_domain = _maybe_inject_neg_preconds(domain_filepath)
+
     parser_options = ParserOptions()
-    parser = Parser(domain_filepath, parser_options)
+    parser = Parser(patched_domain, parser_options)
     lifted_task = Task(parser.parse_task(task_filepath, parser_options))
     execution_context = ExecutionContext(1)
     successor_generator = SuccessorGenerator(lifted_task, execution_context)
+    if args.cost_type == "one":
+        # Force unit cost per action regardless of the task's metric — see
+        # the `--cost-type` CLI doc for rationale.
+        successor_generator.set_use_unit_cost(True)
+    print(f"[SEARCH] cost_type={args.cost_type}", flush=True)
 
     # Use the lifted iPDB-style pattern generator with CLI-controlled limits.
     print("[PATTERN] Pattern generation started", flush=True)
 
     pattern_start = time.perf_counter_ns()
 
-    pattern_gen_cls = (LiftedInterestingPatternGenerator
-                       if pattern_gen_interesting
-                       else LiftedPatternGenerator)
-    patterns = pattern_gen_cls(
-        lifted_task,
-        bounded_fallback=pattern_gen_bounded_fallback,
-        static_csp=pattern_gen_static_csp,
-        reachability=pattern_gen_reachability,
-        scorpion_match=pattern_gen_scorpion_match,
-    ).generate(
-        args.max_pattern_size,
-        args.max_pattern_count,
-    )
+    backend = args.pattern_gen_backend
+    print(f"[PATTERN] backend={backend}", flush=True)
+    if backend == "cpp-systematic":
+        # Native C++ generator — supports all --pattern-gen-* flags.
+        cpp_opts = LiftedSystematicPatternGeneratorOptions()
+        cpp_opts.bounded_fallback   = pattern_gen_bounded_fallback
+        cpp_opts.static_csp         = pattern_gen_static_csp
+        cpp_opts.reachability       = pattern_gen_reachability
+        cpp_opts.scorpion_match     = pattern_gen_scorpion_match
+        cpp_opts.interesting        = pattern_gen_interesting
+        cpp_opts.max_pattern_size   = args.max_pattern_size
+        cpp_opts.max_pattern_count  = args.max_pattern_count
+        patterns = LiftedSystematicPatternGenerator(lifted_task, cpp_opts).generate()
+    elif backend == "py-systematic":
+        patterns = LiftedPatternGenerator(
+            lifted_task,
+            bounded_fallback=pattern_gen_bounded_fallback,
+            static_csp=pattern_gen_static_csp,
+            reachability=pattern_gen_reachability,
+            scorpion_match=pattern_gen_scorpion_match,
+        ).generate(max_pattern_size=args.max_pattern_size,
+                   max_pattern_count=args.max_pattern_count)
+    elif backend == "py-interesting":
+        patterns = LiftedInterestingPatternGenerator(
+            lifted_task,
+            bounded_fallback=pattern_gen_bounded_fallback,
+            static_csp=pattern_gen_static_csp,
+            reachability=pattern_gen_reachability,
+            scorpion_match=pattern_gen_scorpion_match,
+        ).generate(max_pattern_size=args.max_pattern_size,
+                   max_pattern_count=args.max_pattern_count)
+    elif backend == "py-ipdb":
+        from lifted_ipdb import LiftedIPDBPatternGenerator
+        patterns = LiftedIPDBPatternGenerator(
+            lifted_task,
+            num_samples=args.ipdb_samples,
+            walk_length=args.ipdb_walk_length,
+        ).generate(max_pattern_size=args.max_pattern_size,
+                   max_pattern_count=args.max_pattern_count)
+    else:
+        raise RuntimeError(f"unknown pattern-gen backend: {backend}")
 
     pattern_end = time.perf_counter_ns()
     pattern_time_ns = pattern_end - pattern_start
@@ -277,7 +380,19 @@ def main():
     plan = search_result.plan
 
     if plan is not None:
-        print(f"Found plan with length {plan.get_length()} and cost {plan.get_cost()}", flush=True)
+        length = plan.get_length()
+        cost = plan.get_cost()
+        if args.cost_type == "one":
+            # plan.get_cost() returns the unit-cost accumulation (= length).
+            # Replay the plan through a fresh successor generator in
+            # original-cost mode to report cost in original task units —
+            # matches Scorpion's behaviour under `cost_type=one`.
+            sgen_orig = SuccessorGenerator(lifted_task, execution_context)
+            cur_node = sgen_orig.get_initial_node()
+            for lsn in plan.get_labeled_succ_nodes():
+                cur_node = sgen_orig.get_successor_node(cur_node, lsn.label)
+            cost = cur_node.get_metric()
+        print(f"Found plan with length {length} and cost {cost}", flush=True)
         print(plan)
     else:
         print("No solution was found.", flush=True)

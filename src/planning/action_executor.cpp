@@ -134,6 +134,7 @@ Node<Kind> apply_action_impl(const StateContext<Kind>& state_context,
                              StateRepository<Kind>& state_repository,
                              DataList<fp::FDRFact<f::FluentTag>>& del_effects,
                              DataList<fp::FDRFact<f::FluentTag>>& add_effects,
+                             bool use_unit_cost,
                              ProcessEffects&& process_effects)
 {
     del_effects.clear();
@@ -158,7 +159,15 @@ Node<Kind> apply_action_impl(const StateContext<Kind>& state_context,
     auto succ_state = state_repository.register_state(succ_unpacked_state_ptr);
 
     auto succ_state_context = StateContext { task, succ_unpacked_state, tmp_state_context.auxiliary_value };
-    if (task.get_task().get_metric())
+    if (use_unit_cost)
+    {
+        // Force unit cost. `process_effects` may already have applied an
+        // auxiliary numeric effect like `(increase (total-cost) N)`, which
+        // mutated `tmp_state_context.auxiliary_value` to reflect the action's
+        // declared cost. Override with `original_input + 1` to bypass that.
+        succ_state_context.auxiliary_value = state_context.auxiliary_value + 1;
+    }
+    else if (task.get_task().get_metric())
         succ_state_context.auxiliary_value = evaluate(task.get_task().get_metric().value().get_fexpr(), succ_state_context);
     else
         ++succ_state_context.auxiliary_value;  // Assume unit cost if no metric is given
@@ -186,6 +195,7 @@ Node<Kind> ActionExecutor::apply_action(const StateContext<Kind>& state_context,
                              state_repository,
                              m_del_effects,
                              m_add_effects,
+                             m_use_unit_cost,
                              [&](auto& succ_unpacked_state, auto& tmp_state_context, auto& del_effects, auto& add_effects)
                              { process_effects(action, succ_unpacked_state, tmp_state_context, del_effects, add_effects); });
 }
@@ -223,6 +233,7 @@ Node<LiftedTag> ActionExecutor::apply_action(const StateContext<LiftedTag>& stat
                              state_repository,
                              m_del_effects,
                              m_add_effects,
+                             m_use_unit_cost,
                              [&](auto& succ_unpacked_state, auto& tmp_state_context, auto& del_effects, auto& add_effects)
                              {
                                  process_effects(action,
