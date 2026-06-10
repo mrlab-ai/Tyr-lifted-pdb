@@ -72,8 +72,39 @@ def main():
     domain_filepath : Path = args.domain_filepath
     task_filepath : Path = args.task_filepath
 
+    # File-level shim: several HTG domain files use `(not (= ?x ?y))` for
+    # parameter inequality without declaring `:negative-preconditions`,
+    # which Loki rejects. When the requirements block lacks the relevant
+    # declaration (and isn't covered by :adl/:quantified-preconditions),
+    # inject `:negative-preconditions` and pass the patched file via a
+    # tempfile path. The string-content Parser overload is buggy in Loki
+    # for some domains, so we always use the filepath overload. See
+    # docs/tyr-cli-flags-reference.tex "Parser shim" section.
+    import re, tempfile, atexit, os
+    def _maybe_inject_neg_preconds(filepath):
+        text = filepath.read_text()
+        m = re.search(r'\(:requirements\s+([^)]*)\)', text)
+        if m is None:
+            return filepath
+        reqs = m.group(1)
+        if (':negative-preconditions' in reqs or
+            ':adl' in reqs or
+            ':quantified-preconditions' in reqs):
+            return filepath
+        new_block = f'(:requirements {reqs.rstrip()} :negative-preconditions)'
+        new_text = text[:m.start()] + new_block + text[m.end():]
+        tmp = tempfile.NamedTemporaryFile(
+            mode='w', suffix='.pddl', delete=False,
+            prefix=f'_tyr_inject_{filepath.stem}_')
+        tmp.write(new_text)
+        tmp.close()
+        atexit.register(lambda p=tmp.name: os.unlink(p) if os.path.exists(p) else None)
+        return Path(tmp.name)
+
+    patched_domain = _maybe_inject_neg_preconds(domain_filepath)
+
     parser_options = ParserOptions()
-    parser = Parser(domain_filepath, parser_options)
+    parser = Parser(patched_domain, parser_options)
     lifted_task = Task(parser.parse_task(task_filepath, parser_options))
     execution_context = ExecutionContext(1)
     successor_generator = SuccessorGenerator(lifted_task, execution_context)
