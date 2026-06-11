@@ -1,0 +1,2 @@
+{"type":"config","name":"lifted-pdb-projection-build","metricName":"projection_ms","metricUnit":"ms","bestDirection":"lower"}
+{"run":1,"commit":"484e548","metric":9240.9962,"samples":[9240.9962,9340.6558,9163.4390],"confidence":null,"status":"keep","description":"baseline","timestamp":1781138056,"segment":0}

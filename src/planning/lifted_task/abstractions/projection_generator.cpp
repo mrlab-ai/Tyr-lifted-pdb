@@ -127,6 +127,22 @@ std::optional<u::SubstitutionFunction<Index<f::Object>>> to_object_substitution(
     return result;
 }
 
+// Build a compact, hashable dedup key from an object substitution. All object
+// substitutions produced for a given projected action share the same parameter
+// domain (from_range(0, arity)) and parameter ordering, so the bound-object
+// indices alone (positionally) uniquely identify the substitution — equivalent
+// to EqualTo over the full SubstitutionFunction but cheap to hash. 0 = unbound,
+// object index o is stored as o+1.
+inline std::vector<std::uint32_t> object_substitution_key(const u::SubstitutionFunction<Index<f::Object>>& s)
+{
+    const auto& data = std::get<1>(s.identifying_members());
+    auto key = std::vector<std::uint32_t>(data.size(), 0u);
+    for (std::size_t i = 0; i < data.size(); ++i)
+        if (data[i].has_value())
+            key[i] = static_cast<std::uint32_t>(uint_t(*data[i])) + 1u;
+    return key;
+}
+
 u::SubstitutionFunction<Index<f::Object>> lift_substitution_to_original(const u::SubstitutionFunction<Index<f::Object>>& projected_sigma,
                                                                         size_t original_arity,
                                                                         const std::vector<f::ParameterIndex>& projected_to_original)
@@ -1111,7 +1127,7 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
             const auto mutable_action = fp::MutableAction(projected_action);
             auto sigma0 = make_sigma(mutable_action);
 
-            auto seen = std::vector<u::SubstitutionFunction<Index<f::Object>>> {};
+            auto seen = UnorderedSet<std::vector<std::uint32_t>> {};
 
             enumerate_condition_v2(join_plan.precondition, src_atoms, src_index_ptr, static_index, sigma0,
                 [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_pre)
@@ -1159,11 +1175,8 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
                             if (!obj_sigma_opt)
                                 return;
 
-                            if (std::any_of(seen.begin(), seen.end(),
-                                [&](const auto& s)
-                                { return EqualTo<u::SubstitutionFunction<Index<f::Object>>> {}(s, *obj_sigma_opt); }))
+                            if (!seen.insert(object_substitution_key(*obj_sigma_opt)).second)
                                 return;
-                            seen.push_back(*obj_sigma_opt);
 
                             const auto sigma_original =
                                 lift_substitution_to_original(*obj_sigma_opt, info.original_action.get_arity(), info.projected_to_original);

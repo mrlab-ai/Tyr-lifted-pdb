@@ -1,0 +1,152 @@
+
+####### Expanded from @PACKAGE_INIT@ by configure_package_config_file() #######
+####### Any changes to this file will be overwritten by the next CMake run ####
+####### The input file was Config.cmake.in                            ########
+
+get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
+
+macro(set_and_check _var _file)
+  set(${_var} "${_file}")
+  if(NOT EXISTS "${_file}")
+    message(FATAL_ERROR "File or directory ${_file} referenced by variable ${_var} does not exist !")
+  endif()
+endmacro()
+
+####################################################################################
+
+include(CMakeFindDependencyMacro)
+
+
+##############################################################
+# Debug prints
+##############################################################
+
+message("CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+
+
+##############################################################
+# CMake modules and macro files
+##############################################################
+
+list(APPEND CMAKE_MODULE_PATH
+  "${CMAKE_CURRENT_LIST_DIR}/cmake"
+)
+include("configure_boost")
+
+##############################################################
+# Dependency Handling
+##############################################################
+
+# -----------
+# abseil
+# -----------
+
+find_dependency(absl CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(absl_FOUND)
+  message(STATUS "Found absl: ${absl_DIR} (found version ${absl_VERSION})")
+endif()
+
+
+# -----------
+# argparse
+# -----------
+
+find_dependency(argparse CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(argparse_FOUND)
+  message(STATUS "Found argparse: ${argparse_DIR} (found version ${argparse_VERSION})")
+endif()
+
+
+# -----
+# Boost
+# -----
+
+# Find Boost headers only according to https://cmake.org/cmake/help/latest/module/FindBoost.html
+configure_boost()
+find_dependency(Boost ${BOOST_MIN_VERSION} REQUIRED COMPONENTS iostreams json PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(Boost_FOUND)
+  message(STATUS "Found Boost: ${Boost_DIR} (found version ${Boost_VERSION})")
+endif()
+
+
+# -----------
+# cista
+# -----------
+
+find_dependency(cista CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(cista_FOUND)
+  message(STATUS "Found cista: ${cista_DIR} (found version ${cista_VERSION})")
+endif()
+
+
+
+# -----
+# Threads (pthreads)
+# -----
+
+# Prefer -pthread over -lpthread where applicable
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+find_dependency(Threads REQUIRED)
+if(Threads_FOUND)
+  message(STATUS "Found Threads (pthreads)")
+endif()
+
+
+# -----
+# Fmt
+# -----
+
+find_dependency(fmt REQUIRED)
+if(fmt_FOUND)
+  message(STATUS "Found fmt: ${fmt_DIR} (found version ${fmt_VERSION})")
+endif()
+
+
+# -----------
+# TBB
+# -----------
+
+find_dependency(TBB CONFIG REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(TBB_FOUND)
+  include_directories(${TBB_INCLUDE_DIRS})
+  message(STATUS "Found TBB: ${TBB_DIR} (found version ${TBB_VERSION})")
+endif()
+
+
+# -----------
+# valla
+# -----------
+
+find_dependency(valla CONFIG COMPONENTS core REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(valla_FOUND)
+  message(STATUS "Found valla: ${valla_DIR} (found version ${valla_VERSION})")
+endif()
+
+
+# -----------
+# Loki
+# -----------
+
+find_dependency(loki ${LOKI_MIN_VERSION} COMPONENTS parsers REQUIRED PATHS ${CMAKE_PREFIX_PATH} NO_DEFAULT_PATH)
+if(loki_FOUND)
+  message(STATUS "Found loki: ${loki_DIR} (found version ${loki_VERSION})")
+endif()
+
+
+############
+# Components
+############
+
+set(_tyr_supported_components core)
+
+foreach(_comp ${tyr_FIND_COMPONENTS})
+  if (NOT _comp IN_LIST _tyr_supported_components)
+    set(tyr_FOUND False)
+    set(tyr_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
+  endif()
+  include("${CMAKE_CURRENT_LIST_DIR}/tyr${_comp}Targets.cmake")
+endforeach()
+
+get_filename_component(tyr_CONFIG_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+message(STATUS "Found tyr: ${tyr_CONFIG_DIR} (found version ${tyr_VERSION})")
