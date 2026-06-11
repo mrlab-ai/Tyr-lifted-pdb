@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -38,11 +39,12 @@ class SubstitutionFunction
 public:
     using value_type = T;
 
-    SubstitutionFunction() = default;
+    SubstitutionFunction() : m_domain(empty_domain()) {}
 
-    explicit SubstitutionFunction(std::vector<ParameterIndex> parameters) : m_parameters(std::move(parameters)), m_data(m_parameters.size())
+    explicit SubstitutionFunction(std::vector<ParameterIndex> parameters) :
+        m_domain(std::make_shared<const Domain>(std::move(parameters))),
+        m_data(m_domain->parameters.size())
     {
-        rebuild_positions();
     }
 
     static SubstitutionFunction from_range(ParameterIndex offset, size_t size)
@@ -58,20 +60,20 @@ public:
 
     [[nodiscard]] size_t size() const noexcept { return m_data.size(); }
 
-    [[nodiscard]] const std::vector<ParameterIndex>& parameters() const noexcept { return m_parameters; }
+    [[nodiscard]] const std::vector<ParameterIndex>& parameters() const noexcept { return m_domain->parameters; }
 
-    [[nodiscard]] bool contains_parameter(ParameterIndex p) const noexcept { return m_positions.find(p) != m_positions.end(); }
+    [[nodiscard]] bool contains_parameter(ParameterIndex p) const noexcept { return m_domain->positions.find(p) != m_domain->positions.end(); }
 
     [[nodiscard]] bool is_bound(ParameterIndex p) const noexcept
     {
-        const auto it = m_positions.find(p);
-        return it != m_positions.end() && m_data[it->second].has_value();
+        const auto it = m_domain->positions.find(p);
+        return it != m_domain->positions.end() && m_data[it->second].has_value();
     }
 
     [[nodiscard]] bool is_unbound(ParameterIndex p) const noexcept
     {
-        const auto it = m_positions.find(p);
-        return it != m_positions.end() && !m_data[it->second].has_value();
+        const auto it = m_domain->positions.find(p);
+        return it != m_domain->positions.end() && !m_data[it->second].has_value();
     }
 
     [[nodiscard]] bool has_binding(ParameterIndex p) const noexcept
@@ -82,8 +84,8 @@ public:
 
     [[nodiscard]] const std::optional<T>* try_get(ParameterIndex p) const noexcept
     {
-        const auto it = m_positions.find(p);
-        if (it == m_positions.end())
+        const auto it = m_domain->positions.find(p);
+        if (it == m_domain->positions.end())
             return nullptr;
 
         return &m_data[it->second];
@@ -91,20 +93,20 @@ public:
 
     [[nodiscard]] std::optional<T>* try_get(ParameterIndex p) noexcept
     {
-        const auto it = m_positions.find(p);
-        if (it == m_positions.end())
+        const auto it = m_domain->positions.find(p);
+        if (it == m_domain->positions.end())
             return nullptr;
 
         return &m_data[it->second];
     }
 
-    const std::optional<T>& operator[](ParameterIndex p) const { return m_data[m_positions.at(p)]; }
+    const std::optional<T>& operator[](ParameterIndex p) const { return m_data[m_domain->positions.at(p)]; }
 
-    std::optional<T>& operator[](ParameterIndex p) { return m_data[m_positions.at(p)]; }
+    std::optional<T>& operator[](ParameterIndex p) { return m_data[m_domain->positions.at(p)]; }
 
     [[nodiscard]] bool assign(ParameterIndex p, const T& value)
     {
-        auto& slot = m_data[m_positions.at(p)];
+        auto& slot = m_data[m_domain->positions.at(p)];
         if (slot.has_value())
             return false;
         slot = value;
@@ -113,7 +115,7 @@ public:
 
     [[nodiscard]] bool assign_or_check(ParameterIndex p, const T& value)
     {
-        auto& slot = m_data[m_positions.at(p)];
+        auto& slot = m_data[m_domain->positions.at(p)];
         if (!slot.has_value())
         {
             slot = value;
@@ -131,31 +133,49 @@ public:
     template<typename F>
     void for_each_binding(F&& f) const
     {
-        for (size_t i = 0; i < m_parameters.size(); ++i)
+        const auto& params = m_domain->parameters;
+        for (size_t i = 0; i < params.size(); ++i)
         {
             if (m_data[i].has_value())
-                std::forward<F>(f)(m_parameters[i], *m_data[i]);
+                std::forward<F>(f)(params[i], *m_data[i]);
         }
     }
 
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), std::nullopt); }
 
-    auto identifying_members() const noexcept { return std::tie(m_parameters, m_data); }
+    auto identifying_members() const noexcept { return std::tie(m_domain->parameters, m_data); }
 
 private:
-    void rebuild_positions()
+    // The substitution's domain (parameter list + parameter->slot index) is
+    // immutable after construction and is identical across every copy derived
+    // from the same substitution. Storing it behind a shared_ptr lets copies
+    // share it instead of re-allocating and re-hashing the position map on every
+    // copy — the hot path of projection enumeration copies substitutions
+    // constantly, where this map copy was ~15-20% of total time.
+    struct Domain
     {
-        m_positions.clear();
-        for (size_t i = 0; i < m_parameters.size(); ++i)
+        std::vector<ParameterIndex> parameters;
+        UnorderedMap<ParameterIndex, size_t> positions;
+
+        explicit Domain(std::vector<ParameterIndex> ps) : parameters(std::move(ps))
         {
-            [[maybe_unused]] const auto [it, inserted] = m_positions.emplace(m_parameters[i], i);
-            assert(inserted && "Duplicate parameter in SubstitutionFunction domain");
+            positions.reserve(parameters.size());
+            for (size_t i = 0; i < parameters.size(); ++i)
+            {
+                [[maybe_unused]] const auto [it, inserted] = positions.emplace(parameters[i], i);
+                assert(inserted && "Duplicate parameter in SubstitutionFunction domain");
+            }
         }
+    };
+
+    static const std::shared_ptr<const Domain>& empty_domain()
+    {
+        static const std::shared_ptr<const Domain> instance = std::make_shared<const Domain>(std::vector<ParameterIndex> {});
+        return instance;
     }
 
-    std::vector<ParameterIndex> m_parameters;
+    std::shared_ptr<const Domain> m_domain;
     std::vector<std::optional<T>> m_data;
-    UnorderedMap<ParameterIndex, size_t> m_positions;
 };
 
 template<typename S, typename V>
