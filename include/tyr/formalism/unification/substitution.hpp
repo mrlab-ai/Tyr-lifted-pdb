@@ -62,18 +62,18 @@ public:
 
     [[nodiscard]] const std::vector<ParameterIndex>& parameters() const noexcept { return m_domain->parameters; }
 
-    [[nodiscard]] bool contains_parameter(ParameterIndex p) const noexcept { return m_domain->positions.find(p) != m_domain->positions.end(); }
+    [[nodiscard]] bool contains_parameter(ParameterIndex p) const noexcept { return m_domain->position_of(p) != Domain::npos; }
 
     [[nodiscard]] bool is_bound(ParameterIndex p) const noexcept
     {
-        const auto it = m_domain->positions.find(p);
-        return it != m_domain->positions.end() && m_data[it->second].has_value();
+        const auto pos = m_domain->position_of(p);
+        return pos != Domain::npos && m_data[pos].has_value();
     }
 
     [[nodiscard]] bool is_unbound(ParameterIndex p) const noexcept
     {
-        const auto it = m_domain->positions.find(p);
-        return it != m_domain->positions.end() && !m_data[it->second].has_value();
+        const auto pos = m_domain->position_of(p);
+        return pos != Domain::npos && !m_data[pos].has_value();
     }
 
     [[nodiscard]] bool has_binding(ParameterIndex p) const noexcept
@@ -84,29 +84,23 @@ public:
 
     [[nodiscard]] const std::optional<T>* try_get(ParameterIndex p) const noexcept
     {
-        const auto it = m_domain->positions.find(p);
-        if (it == m_domain->positions.end())
-            return nullptr;
-
-        return &m_data[it->second];
+        const auto pos = m_domain->position_of(p);
+        return pos != Domain::npos ? &m_data[pos] : nullptr;
     }
 
     [[nodiscard]] std::optional<T>* try_get(ParameterIndex p) noexcept
     {
-        const auto it = m_domain->positions.find(p);
-        if (it == m_domain->positions.end())
-            return nullptr;
-
-        return &m_data[it->second];
+        const auto pos = m_domain->position_of(p);
+        return pos != Domain::npos ? &m_data[pos] : nullptr;
     }
 
-    const std::optional<T>& operator[](ParameterIndex p) const { return m_data[m_domain->positions.at(p)]; }
+    const std::optional<T>& operator[](ParameterIndex p) const { return m_data[m_domain->position_of(p)]; }
 
-    std::optional<T>& operator[](ParameterIndex p) { return m_data[m_domain->positions.at(p)]; }
+    std::optional<T>& operator[](ParameterIndex p) { return m_data[m_domain->position_of(p)]; }
 
     [[nodiscard]] bool assign(ParameterIndex p, const T& value)
     {
-        auto& slot = m_data[m_domain->positions.at(p)];
+        auto& slot = m_data[m_domain->position_of(p)];
         if (slot.has_value())
             return false;
         slot = value;
@@ -115,7 +109,7 @@ public:
 
     [[nodiscard]] bool assign_or_check(ParameterIndex p, const T& value)
     {
-        auto& slot = m_data[m_domain->positions.at(p)];
+        auto& slot = m_data[m_domain->position_of(p)];
         if (!slot.has_value())
         {
             slot = value;
@@ -154,17 +148,54 @@ private:
     // constantly, where this map copy was ~15-20% of total time.
     struct Domain
     {
+        static constexpr size_t npos = static_cast<size_t>(-1);
+
         std::vector<ParameterIndex> parameters;
+        // Only built when the domain is NOT a contiguous ascending range; for the
+        // common case (from_range) `position_of` is pure arithmetic and this map
+        // stays empty. The m_positions hash lookups were ~13% of projection-build
+        // time on substitution-heavy domains (pipesworld).
         UnorderedMap<ParameterIndex, size_t> positions;
+        uint_t min_param = 0;
+        bool contiguous = true;
 
         explicit Domain(std::vector<ParameterIndex> ps) : parameters(std::move(ps))
         {
-            positions.reserve(parameters.size());
             for (size_t i = 0; i < parameters.size(); ++i)
             {
-                [[maybe_unused]] const auto [it, inserted] = positions.emplace(parameters[i], i);
-                assert(inserted && "Duplicate parameter in SubstitutionFunction domain");
+                const auto v = uint_t(parameters[i]);
+                if (i == 0)
+                    min_param = v;
+                else if (v != min_param + i)
+                {
+                    contiguous = false;
+                    break;
+                }
             }
+            if (!contiguous)
+            {
+                positions.reserve(parameters.size());
+                for (size_t i = 0; i < parameters.size(); ++i)
+                {
+                    [[maybe_unused]] const auto [it, inserted] = positions.emplace(parameters[i], i);
+                    assert(inserted && "Duplicate parameter in SubstitutionFunction domain");
+                }
+            }
+        }
+
+        // Slot index of parameter p, or npos if p is not in the domain.
+        [[nodiscard]] size_t position_of(ParameterIndex p) const noexcept
+        {
+            if (contiguous)
+            {
+                const auto v = uint_t(p);
+                if (v < min_param)
+                    return npos;
+                const size_t idx = v - min_param;
+                return idx < parameters.size() ? idx : npos;
+            }
+            const auto it = positions.find(p);
+            return it != positions.end() ? it->second : npos;
         }
     };
 
