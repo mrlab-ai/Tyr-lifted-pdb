@@ -65,9 +65,24 @@ template<TermUnifiableStructure T, TermSubstitution S>
 template<TermSubstitution S>
 [[nodiscard]] Data<Term> apply_substitution_fixpoint(const Data<Term>& term, const S& rho)
 {
-    auto current = term;
-    auto seen = std::vector<ParameterIndex> {};
+    // Fast path (the overwhelmingly common case in projection enumeration):
+    // a ground term, an unbound parameter, or a parameter that maps directly to
+    // an object in a single step. None of these need the cycle-detection `seen`
+    // set, so we avoid its heap allocation entirely here.
+    if (!is_parameter(term))
+        return term;
 
+    const auto p0 = get_parameter(term);
+    if (!rho.is_bound(p0))
+        return term;
+
+    auto current = Data<Term>(*rho[p0]);
+    if (!is_parameter(current))
+        return current;
+
+    // Rare multi-step chain (parameter -> parameter -> ...): fall back to the
+    // general fixpoint with cycle detection. `seen` already contains p0.
+    auto seen = std::vector<ParameterIndex> { p0 };
     while (is_parameter(current))
     {
         const auto p = get_parameter(current);
