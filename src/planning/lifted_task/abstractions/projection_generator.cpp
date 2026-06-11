@@ -87,6 +87,26 @@ bool atom_ground_under(const fp::MutableAtom<T>& atom, const u::SubstitutionFunc
     return true;
 }
 
+// Resolve `src`'s terms under `sigma` into the caller-provided `out` atom,
+// REUSING out's term-vector storage (no per-call heap allocation, unlike
+// apply_substitution_fixpoint which returns a fresh atom). Returns true iff the
+// result is fully ground. `out` is filled regardless, so callers that need the
+// partially-resolved atom (e.g. the non-ground tightening) can still use it.
+template<f::FactKind T>
+bool resolve_atom_into(const fp::MutableAtom<T>& src, const u::SubstitutionFunction<Data<f::Term>>& sigma, fp::MutableAtom<T>& out)
+{
+    out.predicate = src.predicate;
+    out.terms.resize(src.terms.size());
+    bool ground = true;
+    for (std::size_t i = 0; i < src.terms.size(); ++i)
+    {
+        out.terms[i] = u::apply_substitution_fixpoint(src.terms[i], sigma);
+        if (!u::is_object(out.terms[i]))
+            ground = false;
+    }
+    return ground;
+}
+
 template<f::FactKind T>
 bool contains_atom(const std::vector<fp::MutableAtom<T>>& atoms, const fp::MutableAtom<T>& atom)
 {
@@ -375,12 +395,17 @@ bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::Fluent
                                   const ReachableAtomIndex* reachable_index,
                                   uint_t src_mask)
 {
+    static thread_local std::optional<fp::MutableAtom<f::FluentTag>> scratch_opt;
     for (const auto& lit : positive_fluent)
     {
-        const auto grounded = u::apply_substitution_fixpoint(lit, sigma);
-        if (is_ground(grounded.atom))
+        // Resolve into the reused scratch atom (no per-literal allocation).
+        if (!scratch_opt)
+            scratch_opt.emplace(lit.atom.predicate, std::vector<Data<f::Term>> {});
+        auto& scratch = *scratch_opt;
+        const bool grounded_is_ground = resolve_atom_into(lit.atom, sigma, scratch);
+        if (grounded_is_ground)
         {
-            const auto it = atom_bit_index.find(grounded.atom);
+            const auto it = atom_bit_index.find(scratch);
             if (it == atom_bit_index.end())
             {
                 // Ground non-pattern atom: standard PDB semantics says
@@ -388,7 +413,7 @@ bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::Fluent
                 // operator-level reachability check Scorpion's grounder
                 // does — if the atom is not in R+ no real grounding can
                 // satisfy this precondition, so drop the transition.
-                if (reachable_index != nullptr && !atom_in_reachable_index(grounded.atom, reachable_index))
+                if (reachable_index != nullptr && !atom_in_reachable_index(scratch, reachable_index))
                     return false;
                 continue;
             }
@@ -403,16 +428,16 @@ bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::Fluent
         std::size_t compatible_count = 0;
         for (const auto& pa : pattern_atoms)
         {
-            if (pa.predicate.get_index() != grounded.atom.predicate.get_index())
+            if (pa.predicate.get_index() != scratch.predicate.get_index())
                 continue;
-            if (pa.terms.size() != grounded.atom.terms.size())
+            if (pa.terms.size() != scratch.terms.size())
                 continue;
             bool compat = true;
-            for (std::size_t i = 0; i < grounded.atom.terms.size(); ++i)
+            for (std::size_t i = 0; i < scratch.terms.size(); ++i)
             {
-                if (u::is_object(grounded.atom.terms[i]))
+                if (u::is_object(scratch.terms[i]))
                 {
-                    if (!u::is_object(pa.terms[i]) || u::get_object(pa.terms[i]) != u::get_object(grounded.atom.terms[i]))
+                    if (!u::is_object(pa.terms[i]) || u::get_object(pa.terms[i]) != u::get_object(scratch.terms[i]))
                     {
                         compat = false;
                         break;
@@ -439,16 +464,16 @@ bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::Fluent
         // Typed-domain product over still-unbound positions.
         std::size_t candidate_count = 1;
         bool unknown = false;
-        for (std::size_t i = 0; i < grounded.atom.terms.size(); ++i)
+        for (std::size_t i = 0; i < scratch.terms.size(); ++i)
         {
-            if (u::is_object(grounded.atom.terms[i]))
+            if (u::is_object(scratch.terms[i]))
                 continue;
-            if (!u::is_parameter(grounded.atom.terms[i]))
+            if (!u::is_parameter(scratch.terms[i]))
             {
                 unknown = true;
                 break;
             }
-            const auto pi = static_cast<std::size_t>(uint_t(u::get_parameter(grounded.atom.terms[i])));
+            const auto pi = static_cast<std::size_t>(uint_t(u::get_parameter(scratch.terms[i])));
             if (pi >= param_domain_sizes.size() || param_domain_sizes[pi] == 0)
             {
                 unknown = true;
@@ -480,14 +505,20 @@ void apply_effect_to_mask(const fp::MutableLiteral<f::FluentTag>& lit,
                           const UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t>& atom_bit_index,
                           uint_t& dst_mask)
 {
-    const auto grounded = u::apply_substitution_fixpoint(lit, sigma);
-    if (!is_ground(grounded.atom))
-        return;
-    const auto it = atom_bit_index.find(grounded.atom);
+    // Resolve into a reused scratch atom instead of allocating a fresh literal
+    // per call (this was a large share of projection-build time on pipesworld).
+    // MutableAtom has no default ctor (PredicateView), so hold it in an optional.
+    static thread_local std::optional<fp::MutableAtom<f::FluentTag>> scratch_opt;
+    if (!scratch_opt)
+        scratch_opt.emplace(lit.atom.predicate, std::vector<Data<f::Term>> {});
+    auto& scratch = *scratch_opt;
+    if (!resolve_atom_into(lit.atom, sigma, scratch))
+        return;  // not ground
+    const auto it = atom_bit_index.find(scratch);
     if (it == atom_bit_index.end())
         return;
     const uint_t bit = uint_t(1) << it->second;
-    if (grounded.polarity)
+    if (lit.polarity)
         dst_mask |= bit;
     else
         dst_mask &= ~bit;
