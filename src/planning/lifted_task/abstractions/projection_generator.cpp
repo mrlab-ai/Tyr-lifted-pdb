@@ -1108,6 +1108,28 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
     const auto pattern_atoms = collect_pattern_atoms(pattern);
     const auto atom_bit_index = build_pattern_bit_index(pattern);
 
+    // Per-action invariants that do not depend on the source state: the mutable
+    // action copy, its base substitution, and the typed-domain sizes used by the
+    // precondition post-check. Built once per action instead of once per
+    // (src state, action) pair.
+    struct PreAction
+    {
+        fp::MutableAction action;
+        u::SubstitutionFunction<Data<f::Term>> sigma0;
+        const std::vector<std::size_t>* pds;
+    };
+    static const std::vector<std::size_t> empty_pds {};
+    auto pre_actions = UnorderedMap<fp::ActionView, PreAction> {};
+    pre_actions.reserve(projected_to_original_action.size());
+    for (const auto& [projected_action, info] : projected_to_original_action)
+    {
+        auto ma = fp::MutableAction(projected_action);
+        auto s0 = make_sigma(ma);
+        const auto pds_it = param_domain_sizes_per_action.find(projected_action);
+        const auto* pds = (pds_it != param_domain_sizes_per_action.end()) ? &pds_it->second : &empty_pds;
+        pre_actions.emplace(projected_action, PreAction { std::move(ma), std::move(s0), pds });
+    }
+
     for (size_t src_idx = 0; src_idx < astates.size(); ++src_idx)
     {
         const auto& astate = astates[src_idx];
@@ -1124,8 +1146,9 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
         for (const auto& [projected_action, info] : projected_to_original_action)
         {
             const auto& join_plan = join_plans.at(projected_action);
-            const auto mutable_action = fp::MutableAction(projected_action);
-            auto sigma0 = make_sigma(mutable_action);
+            const auto& pre = pre_actions.at(projected_action);
+            const auto& mutable_action = pre.action;
+            const auto& sigma0 = pre.sigma0;
 
             auto seen = UnorderedSet<std::vector<std::uint32_t>> {};
 
@@ -1141,13 +1164,9 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
                             // (basic post-check), or where a still-non-ground
                             // precondition has only pattern atoms as candidate
                             // groundings and none are in src (tightening).
-                            const auto pds_it = param_domain_sizes_per_action.find(projected_action);
-                            const auto& pds = (pds_it != param_domain_sizes_per_action.end())
-                                                  ? pds_it->second
-                                                  : std::vector<std::size_t> {};
                             if (!verify_pattern_preconditions(join_plan.precondition.positive_fluent,
                                                               sigma_full, pattern_atoms, atom_bit_index,
-                                                              pds, reachable_index, src_mask))
+                                                              *pre.pds, reachable_index, src_mask))
                                 return;
 
                             uint_t dst_mask = src_mask;
