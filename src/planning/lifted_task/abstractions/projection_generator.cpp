@@ -71,6 +71,22 @@ bool is_ground(const fp::MutableAtom<T>& atom)
     return std::all_of(atom.terms.begin(), atom.terms.end(), [](const auto& term) { return u::is_object(term); });
 }
 
+// True iff every term of `atom` resolves to an object under `sigma`, i.e.
+// `is_ground(apply_substitution_fixpoint(atom, sigma))` — but computed per term
+// without materializing the substituted atom (the scalar fixpoint on a term does
+// not allocate). Lets the enumeration decide ground-vs-non-ground cheaply and
+// skip building a MutableLiteral on the non-ground (match) path.
+template<f::FactKind T>
+bool atom_ground_under(const fp::MutableAtom<T>& atom, const u::SubstitutionFunction<Data<f::Term>>& sigma)
+{
+    for (const auto& term : atom.terms)
+    {
+        if (!u::is_object(u::apply_substitution_fixpoint(term, sigma)))
+            return false;
+    }
+    return true;
+}
+
 template<f::FactKind T>
 bool contains_atom(const std::vector<fp::MutableAtom<T>>& atoms, const fp::MutableAtom<T>& atom)
 {
@@ -515,25 +531,29 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
         return;
     }
 
-    const auto lit = u::apply_substitution_fixpoint(positive_fluent[pos], sigma);
+    const auto& plit = positive_fluent[pos];
 
-    if (is_ground(lit.atom))
+    if (atom_ground_under(plit.atom, sigma))
     {
+        // Ground under sigma: materialize once and test exact membership in src.
+        const auto lit = u::apply_substitution_fixpoint(plit, sigma);
         if (contains_atom(src_atoms, lit.atom))
             enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
         return;
     }
 
-    // Non-ground: enumerate from visible src atoms.
+    // Non-ground: enumerate from visible src atoms. Match the ORIGINAL literal
+    // under sigma — match() resolves its parameters through sigma, so this is
+    // equivalent to matching the substituted literal but avoids materializing it.
     if (src_atoms_index)
     {
-        const auto it = src_atoms_index->find(lit.atom.predicate);
+        const auto it = src_atoms_index->find(plit.atom.predicate);
         if (it != src_atoms_index->end())
         {
             for (const auto& atom : it->second)
             {
                 auto sigma2 = sigma;
-                const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
+                const auto matched = match_literal_to_atom(plit, atom, std::move(sigma2));
                 if (!matched)
                     continue;
                 enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, *matched, callback);
@@ -545,7 +565,7 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
         for (const auto& atom : src_atoms)
         {
             auto sigma2 = sigma;
-            const auto matched = match_literal_to_atom(lit, atom, std::move(sigma2));
+            const auto matched = match_literal_to_atom(plit, atom, std::move(sigma2));
             if (!matched)
                 continue;
             enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, *matched, callback);
@@ -579,27 +599,30 @@ void join_static_v2(const std::vector<JoinStep>& steps,
         return;
     }
 
-    const auto& step = steps[pos];
-    const auto partial = u::apply_substitution_fixpoint(step.literal, sigma);
+    const auto& step_lit = steps[pos].literal;
 
-    if (is_ground(partial.atom))
+    if (atom_ground_under(step_lit.atom, sigma))
     {
-        // O(1) hash membership instead of a linear scan over the predicate's
-        // (possibly huge) static relation. `literal_holds` semantics: a positive
-        // literal holds iff present; a negative literal holds iff absent.
+        // Ground under sigma: materialize once and do O(1) hash membership.
+        // `literal_holds` semantics: a positive literal holds iff present; a
+        // negative literal holds iff absent.
+        const auto partial = u::apply_substitution_fixpoint(step_lit, sigma);
         const bool present = static_index.contains(partial.atom);
         if (partial.polarity ? present : !present)
             join_static_v2(steps, pos + 1, static_index, sigma, std::forward<Callback>(callback));
         return;
     }
 
-    if (!partial.polarity)
+    if (!step_lit.polarity)
         return;  // negative non-ground static: skip (matches old code)
 
-    for (const auto& atom : static_index.lookup(partial.atom.predicate))
+    // Match the ORIGINAL literal under sigma (predicate is unchanged by
+    // substitution; match() resolves its parameters through sigma), avoiding a
+    // per-node materialization of the substituted literal.
+    for (const auto& atom : static_index.lookup(step_lit.atom.predicate))
     {
         auto sigma2 = sigma;
-        const auto matched = match_literal_to_atom(partial, atom, std::move(sigma2));
+        const auto matched = match_literal_to_atom(step_lit, atom, std::move(sigma2));
         if (!matched)
             continue;
         join_static_v2(steps, pos + 1, static_index, *matched, callback);
