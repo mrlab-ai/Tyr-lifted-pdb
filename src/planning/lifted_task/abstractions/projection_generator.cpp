@@ -221,6 +221,58 @@ bool is_visible_atom(const fp::MutableAtom<f::FluentTag>& atom, const std::vecto
     return contains_atom(visible_atoms, atom);
 }
 
+// In-place unifier for projection enumeration: extend `sigma` so that the
+// (partially instantiated) `lit_atom` matches the GROUND `ground_atom`, binding
+// parameters directly to the ground atom's objects. Equivalent to
+// match_literal_to_atom (same DefaultMatchPolicy behaviour for the sigma-role /
+// object cases; `counted` is always empty in this code path), but binds into the
+// shared `sigma` instead of copying it per branch. Newly-bound parameters are
+// appended to `trail`; the caller undoes them after recursing (and also on
+// failure, since a partial match may have bound a prefix).
+template<f::FactKind T>
+bool match_in_place(const fp::MutableAtom<T>& lit_atom,
+                    const fp::MutableAtom<T>& ground_atom,
+                    u::SubstitutionFunction<Data<f::Term>>& sigma,
+                    std::vector<f::ParameterIndex>& trail)
+{
+    // Predicate/arity must match — match() rejects structural mismatch, and some
+    // callers iterate atoms not pre-filtered by predicate (src_atoms when the
+    // per-predicate index is disabled).
+    if (lit_atom.predicate.get_index() != ground_atom.predicate.get_index())
+        return false;
+    const std::size_t n = lit_atom.terms.size();
+    if (ground_atom.terms.size() != n)
+        return false;
+    for (std::size_t i = 0; i < n; ++i)
+    {
+        const auto& lt = lit_atom.terms[i];
+        const auto& gt = ground_atom.terms[i];  // always an object
+
+        if (u::is_object(lt))
+        {
+            if (u::get_object(lt) != u::get_object(gt))
+                return false;
+            continue;
+        }
+
+        const auto p = u::get_parameter(lt);
+        auto* slot = sigma.try_get(p);
+        if (slot == nullptr)
+            return false;  // p not in sigma's domain -> rigid -> no match
+        if (slot->has_value())
+        {
+            if (!EqualTo<Data<f::Term>> {}(**slot, gt))
+                return false;
+        }
+        else
+        {
+            *slot = gt;  // bind p to the ground object
+            trail.push_back(p);
+        }
+    }
+    return true;
+}
+
 template<f::FactKind T>
 bool literal_holds(const fp::MutableLiteral<T>& lit, const std::vector<fp::MutableAtom<T>>& atoms)
 {
@@ -502,7 +554,7 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
                               size_t pos,
                               const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
                               const SrcAtomsByPredicate* src_atoms_index,
-                              const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                              u::SubstitutionFunction<Data<f::Term>>& sigma,
                               Callback&& callback)
 {
     // Fire any negative-literal checks scheduled at this checkpoint. With pushdown
@@ -542,34 +594,33 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
         return;
     }
 
-    // Non-ground: enumerate from visible src atoms. Match the ORIGINAL literal
-    // under sigma — match() resolves its parameters through sigma, so this is
-    // equivalent to matching the substituted literal but avoids materializing it.
+    // Non-ground: enumerate from visible src atoms. Bind the literal's parameters
+    // into the shared sigma in place (trail) and undo after recursing, instead of
+    // copying sigma per candidate. Matching the original literal under sigma is
+    // equivalent to matching the substituted one (match() resolves params via sigma).
+    auto trail = std::vector<f::ParameterIndex> {};
+    const auto match_against = [&](const fp::MutableAtom<f::FluentTag>& atom)
+    {
+        trail.clear();
+        if (match_in_place(plit.atom, atom, sigma, trail))
+            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, sigma, callback);
+        for (const auto p : trail)
+            sigma.unbind(p);
+    };
+
     if (src_atoms_index)
     {
         const auto it = src_atoms_index->find(plit.atom.predicate);
         if (it != src_atoms_index->end())
         {
             for (const auto& atom : it->second)
-            {
-                auto sigma2 = sigma;
-                const auto matched = match_literal_to_atom(plit, atom, std::move(sigma2));
-                if (!matched)
-                    continue;
-                enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, *matched, callback);
-            }
+                match_against(atom);
         }
     }
     else
     {
         for (const auto& atom : src_atoms)
-        {
-            auto sigma2 = sigma;
-            const auto matched = match_literal_to_atom(plit, atom, std::move(sigma2));
-            if (!matched)
-                continue;
-            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, *matched, callback);
-        }
+            match_against(atom);
     }
 
     // Existential branch: leave the positive precondition unsatisfied here
@@ -590,7 +641,7 @@ template<typename Callback>
 void join_static_v2(const std::vector<JoinStep>& steps,
                     size_t pos,
                     const StaticAtomIndex& static_index,
-                    const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                    u::SubstitutionFunction<Data<f::Term>>& sigma,
                     Callback&& callback)
 {
     if (pos == steps.size())
@@ -619,13 +670,16 @@ void join_static_v2(const std::vector<JoinStep>& steps,
     // Match the ORIGINAL literal under sigma (predicate is unchanged by
     // substitution; match() resolves its parameters through sigma), avoiding a
     // per-node materialization of the substituted literal.
+    // Bind the literal's parameters into the shared sigma in place (trail) and
+    // undo after recursing, instead of copying sigma per candidate tuple.
+    auto trail = std::vector<f::ParameterIndex> {};
     for (const auto& atom : static_index.lookup(step_lit.atom.predicate))
     {
-        auto sigma2 = sigma;
-        const auto matched = match_literal_to_atom(step_lit, atom, std::move(sigma2));
-        if (!matched)
-            continue;
-        join_static_v2(steps, pos + 1, static_index, *matched, callback);
+        trail.clear();
+        if (match_in_place(step_lit.atom, atom, sigma, trail))
+            join_static_v2(steps, pos + 1, static_index, sigma, callback);
+        for (const auto p : trail)
+            sigma.unbind(p);
     }
     // No existential case for static literals (they are fully grounded in the task).
 }
@@ -638,13 +692,13 @@ void enumerate_condition_v2(const ConditionJoinPlan& plan,
                              const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
                              const SrcAtomsByPredicate* src_atoms_index,
                              const StaticAtomIndex& static_index,
-                             const u::SubstitutionFunction<Data<f::Term>>& sigma,
+                             u::SubstitutionFunction<Data<f::Term>> sigma,  // owned, mutated in place + restored
                              Callback&& callback)
 {
     enumerate_fluent_pos_rec(plan.positive_fluent, plan.negative_fluent, plan.negatives_at_checkpoint,
         plan.inequalities, plan.inequalities_at_checkpoint,
         0, src_atoms, src_atoms_index, sigma,
-        [&](const u::SubstitutionFunction<Data<f::Term>>& sigma1)
+        [&](u::SubstitutionFunction<Data<f::Term>>& sigma1)
         {
             join_static_v2(plan.static_join, 0, static_index, sigma1, std::forward<Callback>(callback));
         });

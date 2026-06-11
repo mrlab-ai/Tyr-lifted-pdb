@@ -137,6 +137,16 @@ public:
 
     void reset() noexcept { std::fill(m_data.begin(), m_data.end(), std::nullopt); }
 
+    // Clear the binding of a single parameter (no-op if p is not in the domain or
+    // already unbound). Enables mutate-and-undo (trail) enumeration without
+    // copying the whole substitution per branch.
+    void unbind(ParameterIndex p) noexcept
+    {
+        const auto pos = m_domain->position_of(p);
+        if (pos != Domain::npos)
+            m_data[pos].reset();
+    }
+
     auto identifying_members() const noexcept { return std::tie(m_domain->parameters, m_data); }
 
 private:
