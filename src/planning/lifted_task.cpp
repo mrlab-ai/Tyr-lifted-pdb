@@ -36,10 +36,9 @@ namespace tyr::planning
 Task<LiftedTag>::Task(formalism::planning::PlanningTask task) :
     m_task(std::move(task)),
     m_static_atoms_bitset(),
-    m_static_numeric_variables(),
-    m_axiom_program(get_task()),
-    m_action_program(get_task()),
-    m_rpg_program(get_task())
+    m_static_numeric_variables()
+    // The axiom/action/rpg datalog programs are built lazily on first access
+    // (see lifted_task.hpp) — per-pattern projected tasks never use them.
 {
     for (const auto atom : get_task().template get_atoms<f::StaticTag>())
         set(uint_t(atom.get_index()), true, m_static_atoms_bitset);

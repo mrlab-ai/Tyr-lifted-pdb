@@ -168,6 +168,11 @@ def main():
     projection_options = make_projection_options(args)
     patterns = generate_patterns(args, lifted_task)
 
+    # Progress marker (flushed) so external tools (e.g. attaching perf to profile
+    # ONLY the projection phase) can synchronize. Printed before the timed region;
+    # does not affect the measurement.
+    print("PATTERNS_DONE", flush=True)
+
     # ---- the measured region: projection build only ----
     t0 = time.perf_counter_ns()
     projections = ProjectionGenerator(lifted_task, patterns, projection_options).generate()

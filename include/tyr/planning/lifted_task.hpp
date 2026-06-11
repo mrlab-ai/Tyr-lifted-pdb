@@ -36,6 +36,8 @@
 #include <boost/dynamic_bitset.hpp>  // for dynamic_bitset
 #include <limits>                    // for numeric_limits
 #include <memory>                    // for shared_ptr
+#include <mutex>                     // for once_flag, call_once
+#include <optional>                  // for optional
 #include <vector>                    // for vector
 
 namespace tyr::planning
@@ -64,12 +66,17 @@ public:
     const auto& get_repository() const noexcept { return m_task.get_repository(); }
     bool has_axioms() const noexcept { return !get_task().get_axioms().empty() || !get_domain().get_domain().get_axioms().empty(); }
 
-    auto& get_axiom_program() noexcept { return m_axiom_program; }
-    const auto& get_axiom_program() const noexcept { return m_axiom_program; }
-    auto& get_action_program() noexcept { return m_action_program; }
-    const auto& get_action_program() const noexcept { return m_action_program; }
-    auto& get_rpg_program() noexcept { return m_rpg_program; }
-    const auto& get_rpg_program() const noexcept { return m_rpg_program; }
+    // The three datalog programs are constructed LAZILY on first access: tasks
+    // created as per-pattern projections (ProjectionGenerator) never use them,
+    // and building them eagerly re-merged the full static database into datalog
+    // form once per pattern — dominant on static-heavy domains (genome).
+    // std::call_once makes first access safe under the parallelized search.
+    AxiomEvaluatorProgram& get_axiom_program() { return ensure_axiom_program(); }
+    const AxiomEvaluatorProgram& get_axiom_program() const { return ensure_axiom_program(); }
+    ApplicableActionProgram& get_action_program() { return ensure_action_program(); }
+    const ApplicableActionProgram& get_action_program() const { return ensure_action_program(); }
+    RPGProgram& get_rpg_program() { return ensure_rpg_program(); }
+    const RPGProgram& get_rpg_program() const { return ensure_rpg_program(); }
 
     auto& get_grounder_cache() noexcept { return m_grounder_cache; }
     const auto& get_grounder_cache() const noexcept { return m_grounder_cache; }
@@ -83,16 +90,35 @@ public:
     }
 
 private:
+    AxiomEvaluatorProgram& ensure_axiom_program() const
+    {
+        std::call_once(m_axiom_program_once, [&] { m_axiom_program.emplace(get_task()); });
+        return *m_axiom_program;
+    }
+    ApplicableActionProgram& ensure_action_program() const
+    {
+        std::call_once(m_action_program_once, [&] { m_action_program.emplace(get_task()); });
+        return *m_action_program;
+    }
+    RPGProgram& ensure_rpg_program() const
+    {
+        std::call_once(m_rpg_program_once, [&] { m_rpg_program.emplace(get_task()); });
+        return *m_rpg_program;
+    }
+
     formalism::planning::PlanningTask m_task;
 
     boost::dynamic_bitset<> m_static_atoms_bitset;
     std::vector<float_t> m_static_numeric_variables;
 
-    AxiomEvaluatorProgram m_axiom_program;
+    mutable std::optional<AxiomEvaluatorProgram> m_axiom_program;
+    mutable std::once_flag m_axiom_program_once;
 
-    ApplicableActionProgram m_action_program;
+    mutable std::optional<ApplicableActionProgram> m_action_program;
+    mutable std::once_flag m_action_program_once;
 
-    RPGProgram m_rpg_program;
+    mutable std::optional<RPGProgram> m_rpg_program;
+    mutable std::once_flag m_rpg_program_once;
 
     formalism::planning::GrounderCache m_grounder_cache;
 };
