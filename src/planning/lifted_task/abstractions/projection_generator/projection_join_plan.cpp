@@ -37,7 +37,10 @@ namespace u = tyr::formalism::unification;
 void StaticAtomIndex::build(const Task<LiftedTag>& task)
 {
     for (const auto atom : task.get_task().get_atoms<f::StaticTag>())
+    {
         by_predicate[atom.get_predicate()].emplace_back(atom);
+        atom_set.emplace(atom);
+    }
 }
 
 const std::vector<fp::MutableAtom<f::StaticTag>>& StaticAtomIndex::lookup(fp::PredicateView<f::StaticTag> pred) const noexcept

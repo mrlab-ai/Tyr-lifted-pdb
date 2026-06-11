@@ -39,12 +39,20 @@ namespace fp = tyr::formalism::planning;
 struct StaticAtomIndex
 {
     UnorderedMap<fp::PredicateView<f::StaticTag>, std::vector<fp::MutableAtom<f::StaticTag>>> by_predicate;
+    // O(1) membership test over the (ground) static atoms. Used by the static
+    // join's ground-literal case, which otherwise linearly scans the whole
+    // relation per recursion node — ~70% of projection-build time on domains
+    // with large static relations (logistics in-city, rovers can_traverse/visible).
+    UnorderedSet<fp::MutableAtom<f::StaticTag>> atom_set;
 
     void build(const Task<LiftedTag>& task);
 
     const std::vector<fp::MutableAtom<f::StaticTag>>& lookup(fp::PredicateView<f::StaticTag> pred) const noexcept;
 
     size_t count(fp::PredicateView<f::StaticTag> pred) const noexcept;
+
+    // True iff `atom` (must be ground) is a static atom of the task.
+    bool contains(const fp::MutableAtom<f::StaticTag>& atom) const noexcept { return atom_set.find(atom) != atom_set.end(); }
 };
 
 /**

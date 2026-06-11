@@ -584,7 +584,11 @@ void join_static_v2(const std::vector<JoinStep>& steps,
 
     if (is_ground(partial.atom))
     {
-        if (literal_holds(partial, static_index.lookup(partial.atom.predicate)))
+        // O(1) hash membership instead of a linear scan over the predicate's
+        // (possibly huge) static relation. `literal_holds` semantics: a positive
+        // literal holds iff present; a negative literal holds iff absent.
+        const bool present = static_index.contains(partial.atom);
+        if (partial.polarity ? present : !present)
             join_static_v2(steps, pos + 1, static_index, sigma, std::forward<Callback>(callback));
         return;
     }
