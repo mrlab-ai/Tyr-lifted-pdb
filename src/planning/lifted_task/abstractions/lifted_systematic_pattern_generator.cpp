@@ -573,9 +573,16 @@ struct LiftedSystematicPatternGenerator::Impl
     /// context matches the Python prototype.
     void build_reachable_index()
     {
-        auto execution_context = std::make_shared<ExecutionContext>(1);
-        auto rr = RelaxedReachability<LiftedTag> { task_ptr_for_rr, execution_context };
-        for (const auto atom : rr.compute())
+        // Use the task-level R+ memo: the fixpoint is computed at most once per
+        // task and shared with other consumers (e.g. the projection generator's
+        // reachability filter).
+        const auto& reachable_atoms = task_ptr_for_rr->get_or_compute_relaxed_reachable_atoms(
+            [&]
+            {
+                auto execution_context = std::make_shared<ExecutionContext>(1);
+                return RelaxedReachability<LiftedTag> { task_ptr_for_rr, execution_context }.compute();
+            });
+        for (const auto atom : reachable_atoms)
         {
             auto objs = std::vector<std::uint32_t> {};
             for (const auto obj : atom.get_row().get_objects())

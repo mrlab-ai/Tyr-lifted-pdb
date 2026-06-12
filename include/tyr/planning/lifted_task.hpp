@@ -19,6 +19,7 @@
 #define TYR_PLANNING_LIFTED_TASK_HPP_
 
 #include "tyr/common/config.hpp"          // for float_t, uint_t
+#include "tyr/common/declarations.hpp"    // for UnorderedSet
 #include "tyr/common/dynamic_bitset.hpp"  // for test
 #include "tyr/common/onetbb.hpp"
 #include "tyr/common/vector.hpp"                    // for get
@@ -81,6 +82,21 @@ public:
     auto& get_grounder_cache() noexcept { return m_grounder_cache; }
     const auto& get_grounder_cache() const noexcept { return m_grounder_cache; }
 
+    // Task-level memo for the delete-relaxation reachable fluent atoms (R+).
+    // The fixpoint depends only on the task, but multiple components need it in
+    // one run (pattern generation's reachability filter AND the projection
+    // generator's reachability filter) — without the memo each recomputed the
+    // identical fixpoint. The first caller computes via `fn`; later callers get
+    // the cached set. call_once makes concurrent first access safe.
+    using RelaxedReachableAtomSet = UnorderedSet<formalism::planning::GroundAtomView<formalism::FluentTag>>;
+
+    template<typename ComputeFn>
+    const RelaxedReachableAtomSet& get_or_compute_relaxed_reachable_atoms(ComputeFn&& fn) const
+    {
+        std::call_once(m_reachable_atoms_once, [&] { m_reachable_atoms = std::forward<ComputeFn>(fn)(); });
+        return *m_reachable_atoms;
+    }
+
     const auto& get_static_atoms_bitset() const noexcept { return m_static_atoms_bitset; }
     const auto& get_static_numeric_variables() const noexcept { return m_static_numeric_variables; }
     bool test(Index<formalism::planning::GroundAtom<formalism::StaticTag>> index) const { return tyr::test(uint_t(index), m_static_atoms_bitset); }
@@ -119,6 +135,9 @@ private:
 
     mutable std::optional<RPGProgram> m_rpg_program;
     mutable std::once_flag m_rpg_program_once;
+
+    mutable std::optional<RelaxedReachableAtomSet> m_reachable_atoms;
+    mutable std::once_flag m_reachable_atoms_once;
 
     formalism::planning::GrounderCache m_grounder_cache;
 };

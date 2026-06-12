@@ -1482,20 +1482,25 @@ ProjectionAbstractionList<LiftedTag> ProjectionGenerator<LiftedTag>::generate()
 {
     auto projections = ProjectionAbstractionList<LiftedTag> {};
 
-    // Compute R+ once per task when the reachability filter is enabled.
-    // R+ depends on the task, not on the pattern, so it's shared across all
-    // projections in this generator instance.
+    // R+ (when the reachability filter is enabled): depends only on the task, so
+    // use the task-level memo — if another component (e.g. the pattern
+    // generator's reachability filter) already computed the fixpoint for this
+    // task, it is reused instead of recomputed.
     std::optional<ReachableAtomIndex> reachable_storage;
     if (m_options.reachability_filter)
     {
-        // `RelaxedReachability<LiftedTag>` takes a non-const shared_ptr<Task>;
-        // const_pointer_cast is safe because R+ only mutates an internal
-        // Datalog workspace, not the task's logical state.
-        auto task_nc = std::const_pointer_cast<Task<LiftedTag>>(m_task);
-        auto exec_ctx = std::make_shared<ExecutionContext>(1);
-        auto rr = RelaxedReachability<LiftedTag>(task_nc, exec_ctx);
+        const auto& reachable_atoms = m_task->get_or_compute_relaxed_reachable_atoms(
+            [&]
+            {
+                // `RelaxedReachability<LiftedTag>` takes a non-const shared_ptr<Task>;
+                // const_pointer_cast is safe because R+ only mutates an internal
+                // Datalog workspace, not the task's logical state.
+                auto task_nc = std::const_pointer_cast<Task<LiftedTag>>(m_task);
+                auto exec_ctx = std::make_shared<ExecutionContext>(1);
+                return RelaxedReachability<LiftedTag>(task_nc, exec_ctx).compute();
+            });
         reachable_storage.emplace();
-        for (const auto atom : rr.compute())
+        for (const auto atom : reachable_atoms)
         {
             auto tup = std::vector<std::uint32_t> {};
             for (const auto obj : atom.get_row().get_objects())
