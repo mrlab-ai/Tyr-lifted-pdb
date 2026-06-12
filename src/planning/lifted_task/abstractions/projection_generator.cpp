@@ -331,12 +331,47 @@ void push_unique(std::vector<fp::MutableAtom<f::FluentTag>>& atoms, const fp::Mu
 // ---------------------------------------------------------------------------
 
 // Maps each pattern atom to its bit index (== position in Pattern::facts).
-UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t> build_pattern_bit_index(const Pattern& pattern)
+// Patterns are tiny (<= max-pattern-size atoms), so a linear scan with cheap
+// predicate-index pre-filtering beats hashing the whole atom (hash_combine over
+// predicate view + term vector was ~7% of projection-build time on pipesworld).
+struct PatternBitIndex
 {
-    auto result = UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t> {};
-    result.reserve(pattern.facts.size());
+    static constexpr uint_t npos = static_cast<uint_t>(-1);
+
+    std::vector<fp::MutableAtom<f::FluentTag>> atoms;  // position == bit index
+
+    // Bit of `atom`, or npos if it is not a pattern atom.
+    [[nodiscard]] uint_t find_bit(const fp::MutableAtom<f::FluentTag>& atom) const noexcept
+    {
+        for (uint_t i = 0; i < uint_t(atoms.size()); ++i)
+        {
+            const auto& pa = atoms[i];
+            if (pa.predicate.get_index() != atom.predicate.get_index())
+                continue;
+            if (pa.terms.size() != atom.terms.size())
+                continue;
+            bool equal = true;
+            for (std::size_t t = 0; t < pa.terms.size(); ++t)
+            {
+                if (!EqualTo<Data<f::Term>> {}(pa.terms[t], atom.terms[t]))
+                {
+                    equal = false;
+                    break;
+                }
+            }
+            if (equal)
+                return i;
+        }
+        return npos;
+    }
+};
+
+PatternBitIndex build_pattern_bit_index(const Pattern& pattern)
+{
+    auto result = PatternBitIndex {};
+    result.atoms.reserve(pattern.facts.size());
     for (uint_t i = 0; i < uint_t(pattern.facts.size()); ++i)
-        result.emplace(fp::MutableAtom<f::FluentTag>(pattern.facts[i].get_atom().value()), i);
+        result.atoms.emplace_back(pattern.facts[i].get_atom().value());
     return result;
 }
 
@@ -390,7 +425,7 @@ inline bool atom_in_reachable_index(const fp::MutableAtom<f::FluentTag>& atom, c
 bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::FluentTag>>& positive_fluent,
                                   const u::SubstitutionFunction<Data<f::Term>>& sigma,
                                   const std::vector<fp::MutableAtom<f::FluentTag>>& pattern_atoms,
-                                  const UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t>& atom_bit_index,
+                                  const PatternBitIndex& atom_bit_index,
                                   const std::vector<std::size_t>& param_domain_sizes,
                                   const ReachableAtomIndex* reachable_index,
                                   uint_t src_mask)
@@ -405,8 +440,8 @@ bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::Fluent
         const bool grounded_is_ground = resolve_atom_into(lit.atom, sigma, scratch);
         if (grounded_is_ground)
         {
-            const auto it = atom_bit_index.find(scratch);
-            if (it == atom_bit_index.end())
+            const auto bit_idx = atom_bit_index.find_bit(scratch);
+            if (bit_idx == PatternBitIndex::npos)
             {
                 // Ground non-pattern atom: standard PDB semantics says
                 // over-approximate as satisfied. With R+ filter on, do the
@@ -417,7 +452,7 @@ bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::Fluent
                     return false;
                 continue;
             }
-            const uint_t bit = uint_t(1) << it->second;
+            const uint_t bit = uint_t(1) << bit_idx;
             if ((src_mask & bit) == 0)
                 return false;
             continue;
@@ -447,10 +482,10 @@ bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::Fluent
             if (!compat)
                 continue;
             ++compatible_count;
-            const auto it = atom_bit_index.find(pa);
-            if (it != atom_bit_index.end())
+            const auto pa_bit = atom_bit_index.find_bit(pa);
+            if (pa_bit != PatternBitIndex::npos)
             {
-                const uint_t bit = uint_t(1) << it->second;
+                const uint_t bit = uint_t(1) << pa_bit;
                 if ((src_mask & bit) != 0)
                 {
                     any_in_src = true;
@@ -502,7 +537,7 @@ bool verify_pattern_preconditions(const std::vector<fp::MutableLiteral<f::Fluent
 // Non-ground literals (params bound to non-pattern objects) are no-ops.
 void apply_effect_to_mask(const fp::MutableLiteral<f::FluentTag>& lit,
                           const u::SubstitutionFunction<Data<f::Term>>& sigma,
-                          const UnorderedMap<fp::MutableAtom<f::FluentTag>, uint_t>& atom_bit_index,
+                          const PatternBitIndex& atom_bit_index,
                           uint_t& dst_mask)
 {
     // Resolve into a reused scratch atom instead of allocating a fresh literal
@@ -514,10 +549,10 @@ void apply_effect_to_mask(const fp::MutableLiteral<f::FluentTag>& lit,
     auto& scratch = *scratch_opt;
     if (!resolve_atom_into(lit.atom, sigma, scratch))
         return;  // not ground
-    const auto it = atom_bit_index.find(scratch);
-    if (it == atom_bit_index.end())
+    const auto bit_idx = atom_bit_index.find_bit(scratch);
+    if (bit_idx == PatternBitIndex::npos)
         return;
-    const uint_t bit = uint_t(1) << it->second;
+    const uint_t bit = uint_t(1) << bit_idx;
     if (lit.polarity)
         dst_mask |= bit;
     else
