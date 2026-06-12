@@ -375,6 +375,57 @@ PatternBitIndex build_pattern_bit_index(const Pattern& pattern)
     return result;
 }
 
+// ---------------------------------------------------------------------------
+// Early self-loop subtree pruning.
+//
+// A binding subtree can only contribute a NON-self-loop transition if some
+// visible effect literal can still ground (under the current partial sigma,
+// with unbound parameters free) to a pattern atom whose truth in src would
+// actually change: an ADD must reach a pattern atom ABSENT from src, a DELETE
+// one PRESENT in src. Feasibility is anti-monotone under binding (extending
+// sigma can only invalidate candidates, never restore them), so the moment no
+// effect literal is feasible, the ENTIRE subtree yields only self-loops, which
+// the emit path discards anyway (dst_mask == src_mask) — pruning is exact.
+// ---------------------------------------------------------------------------
+struct EffectFeasibility
+{
+    // All visible effect literals of the projected action (across all ceffs).
+    std::vector<const fp::MutableLiteral<f::FluentTag>*> effect_literals;
+    const PatternBitIndex* bits = nullptr;
+};
+
+bool effect_change_feasible(const EffectFeasibility& fz, const u::SubstitutionFunction<Data<f::Term>>& sigma, uint_t src_mask)
+{
+    for (const auto* lit : fz.effect_literals)
+    {
+        for (uint_t i = 0; i < uint_t(fz.bits->atoms.size()); ++i)
+        {
+            const auto& pa = fz.bits->atoms[i];
+            const uint_t bit = uint_t(1) << i;
+            // ADD to a present atom / DELETE of an absent atom cannot change src.
+            if (lit->polarity ? ((src_mask & bit) != 0) : ((src_mask & bit) == 0))
+                continue;
+            if (pa.predicate.get_index() != lit->atom.predicate.get_index())
+                continue;
+            if (pa.terms.size() != lit->atom.terms.size())
+                continue;
+            bool compat = true;
+            for (std::size_t t = 0; t < pa.terms.size(); ++t)
+            {
+                const auto resolved = u::apply_substitution_fixpoint(lit->atom.terms[t], sigma);
+                if (u::is_object(resolved) && u::get_object(resolved) != u::get_object(pa.terms[t]))
+                {
+                    compat = false;
+                    break;
+                }
+            }
+            if (compat)
+                return true;
+        }
+    }
+    return false;
+}
+
 // Predicate → set of reachable ground-atom object tuples. Populated from
 // `RelaxedReachability<LiftedTag>::compute()` when the `reachability_filter`
 // projection option is on. Used by `verify_pattern_preconditions` to drop
@@ -620,9 +671,16 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
                               size_t pos,
                               const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
                               const SrcAtomsByPredicate* src_atoms_index,
+                              const EffectFeasibility* feas,
+                              uint_t src_mask,
                               u::SubstitutionFunction<Data<f::Term>>& sigma,
                               Callback&& callback)
 {
+    // Early self-loop pruning: if no visible effect can still change src under
+    // the current partial sigma, every completion of this subtree is a self-loop.
+    if (feas != nullptr && !effect_change_feasible(*feas, sigma, src_mask))
+        return;
+
     // Fire any negative-literal checks scheduled at this checkpoint. With pushdown
     // off, this is a no-op until pos == positive_fluent.size().
     for (const auto neg_idx : negatives_at_checkpoint[pos])
@@ -656,7 +714,7 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
         // Ground under sigma: materialize once and test exact membership in src.
         const auto lit = u::apply_substitution_fixpoint(plit, sigma);
         if (contains_atom(src_atoms, lit.atom))
-            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
+            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, feas, src_mask, sigma, std::forward<Callback>(callback));
         return;
     }
 
@@ -669,7 +727,7 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
     {
         trail.clear();
         if (match_in_place(plit.atom, atom, sigma, trail))
-            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, sigma, callback);
+            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, feas, src_mask, sigma, callback);
         for (const auto p : trail)
             sigma.unbind(p);
     };
@@ -699,7 +757,7 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
     // over-approximation is unsafe and produces spurious abstract transitions.
     // The post-check `verify_pattern_preconditions` at transition-emit time
     // (see `create_abstract_state_changing_transitions_v2`) catches that case.
-    enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, sigma, std::forward<Callback>(callback));
+    enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, feas, src_mask, sigma, std::forward<Callback>(callback));
 }
 
 // Process static join steps using the pre-built StaticAtomIndex.
@@ -707,9 +765,17 @@ template<typename Callback>
 void join_static_v2(const std::vector<JoinStep>& steps,
                     size_t pos,
                     const StaticAtomIndex& static_index,
+                    const EffectFeasibility* feas,
+                    uint_t src_mask,
                     u::SubstitutionFunction<Data<f::Term>>& sigma,
                     Callback&& callback)
 {
+    // Early self-loop pruning (see effect_change_feasible): once no visible
+    // effect can change src under the current bindings, the whole subtree is
+    // self-loops only.
+    if (feas != nullptr && !effect_change_feasible(*feas, sigma, src_mask))
+        return;
+
     if (pos == steps.size())
     {
         callback(sigma);
@@ -726,7 +792,7 @@ void join_static_v2(const std::vector<JoinStep>& steps,
         const auto partial = u::apply_substitution_fixpoint(step_lit, sigma);
         const bool present = static_index.contains(partial.atom);
         if (partial.polarity ? present : !present)
-            join_static_v2(steps, pos + 1, static_index, sigma, std::forward<Callback>(callback));
+            join_static_v2(steps, pos + 1, static_index, feas, src_mask, sigma, std::forward<Callback>(callback));
         return;
     }
 
@@ -743,7 +809,7 @@ void join_static_v2(const std::vector<JoinStep>& steps,
     {
         trail.clear();
         if (match_in_place(step_lit.atom, atom, sigma, trail))
-            join_static_v2(steps, pos + 1, static_index, sigma, callback);
+            join_static_v2(steps, pos + 1, static_index, feas, src_mask, sigma, callback);
         for (const auto p : trail)
             sigma.unbind(p);
     }
@@ -758,15 +824,17 @@ void enumerate_condition_v2(const ConditionJoinPlan& plan,
                              const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
                              const SrcAtomsByPredicate* src_atoms_index,
                              const StaticAtomIndex& static_index,
+                             const EffectFeasibility* feas,  // nullptr disables self-loop pruning
+                             uint_t src_mask,
                              u::SubstitutionFunction<Data<f::Term>> sigma,  // owned, mutated in place + restored
                              Callback&& callback)
 {
     enumerate_fluent_pos_rec(plan.positive_fluent, plan.negative_fluent, plan.negatives_at_checkpoint,
         plan.inequalities, plan.inequalities_at_checkpoint,
-        0, src_atoms, src_atoms_index, sigma,
+        0, src_atoms, src_atoms_index, feas, src_mask, sigma,
         [&](u::SubstitutionFunction<Data<f::Term>>& sigma1)
         {
-            join_static_v2(plan.static_join, 0, static_index, sigma1, std::forward<Callback>(callback));
+            join_static_v2(plan.static_join, 0, static_index, feas, src_mask, sigma1, std::forward<Callback>(callback));
         });
 }
 
@@ -1264,6 +1332,7 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
         fp::MutableAction action;
         u::SubstitutionFunction<Data<f::Term>> sigma0;
         const std::vector<std::size_t>* pds;
+        EffectFeasibility feas;  // filled in a second pass (stable addresses)
     };
     static const std::vector<std::size_t> empty_pds {};
     auto pre_actions = UnorderedMap<fp::ActionView, PreAction> {};
@@ -1274,7 +1343,16 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
         auto s0 = make_sigma(ma);
         const auto pds_it = param_domain_sizes_per_action.find(projected_action);
         const auto* pds = (pds_it != param_domain_sizes_per_action.end()) ? &pds_it->second : &empty_pds;
-        pre_actions.emplace(projected_action, PreAction { std::move(ma), std::move(s0), pds });
+        pre_actions.emplace(projected_action, PreAction { std::move(ma), std::move(s0), pds, EffectFeasibility {} });
+    }
+    // Second pass: collect pointers to the visible effect literals AFTER all map
+    // insertions, so the addresses are stable for the rest of this function.
+    for (auto& [projected_action, pre] : pre_actions)
+    {
+        pre.feas.bits = &atom_bit_index;
+        for (const auto& ceff : pre.action.effects)
+            for (const auto& lit : ceff.effect.literals)
+                pre.feas.effect_literals.push_back(&lit);
     }
 
     for (size_t src_idx = 0; src_idx < astates.size(); ++src_idx)
@@ -1299,8 +1377,8 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
 
             auto seen = UnorderedSet<std::vector<std::uint32_t>> {};
 
-            enumerate_condition_v2(join_plan.precondition, src_atoms, src_index_ptr, static_index, sigma0,
-                [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_pre)
+            enumerate_condition_v2(join_plan.precondition, src_atoms, src_index_ptr, static_index, &pre.feas, src_mask, sigma0,
+                [&](u::SubstitutionFunction<Data<f::Term>>& sigma_pre)
                 {
                     enumerate_effect_params_v2(join_plan.effect_param_enums, 0, pattern_atoms, sigma_pre,
                         [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_full)
@@ -1326,7 +1404,9 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
                                 const auto& ceff = mutable_action.effects[ei];
                                 const auto& ceff_plan = join_plan.effects[ei].condition_plan;
 
-                                enumerate_condition_v2(ceff_plan, src_atoms, src_index_ptr, static_index, sigma_full,
+                                // No self-loop pruning here: sigma_full is fixed and we are
+                                // computing which conditional effects fire for it.
+                                enumerate_condition_v2(ceff_plan, src_atoms, src_index_ptr, static_index, nullptr, src_mask, sigma_full,
                                     [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_ceff)
                                     {
                                         for (const auto& lit : ceff.effect.literals)
