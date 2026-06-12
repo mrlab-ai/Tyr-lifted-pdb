@@ -760,11 +760,37 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
     enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, feas, src_mask, sigma, std::forward<Callback>(callback));
 }
 
+// ---------------------------------------------------------------------------
+// Lazily-built hash-join indexes for the static join.
+//
+// The non-ground branch of join_static_v2 otherwise scans EVERY tuple of the
+// step's predicate per recursion node (O(|relation|) — dominant on domains with
+// large static relations, e.g. rovers can_traverse/visible). For a given step,
+// the positions of the literal that are resolved (objects, or params currently
+// bound) form a "mask"; tuples can only match if they agree on those positions.
+// We build, lazily per (step, mask), a hash index
+//     values-at-mask-positions -> [tuple indices]
+// over the relation, and look up exactly the agreeing tuples. The mask is
+// computed at runtime (the plan-time `already_bound` is optimistic: existential
+// fluent branches can leave those params unbound), and indexes are cached per
+// projected action across all src states and sigma branches, so each distinct
+// (step, mask) pays one O(|relation|) build instead of O(|relation|) per node.
+// ---------------------------------------------------------------------------
+struct StepJoinIndex
+{
+    // Key: object indices at the mask positions (in position order).
+    UnorderedMap<std::vector<std::uint32_t>, std::vector<std::uint32_t>> groups;
+};
+
+using StepJoinIndexCache = std::vector<UnorderedMap<std::uint64_t, StepJoinIndex>>;  // [step pos][mask]
+
 // Process static join steps using the pre-built StaticAtomIndex.
+// `index_cache` may be nullptr (fallback: linear scan; used for ceff conditions).
 template<typename Callback>
 void join_static_v2(const std::vector<JoinStep>& steps,
                     size_t pos,
                     const StaticAtomIndex& static_index,
+                    StepJoinIndexCache* index_cache,
                     const EffectFeasibility* feas,
                     uint_t src_mask,
                     u::SubstitutionFunction<Data<f::Term>>& sigma,
@@ -792,27 +818,77 @@ void join_static_v2(const std::vector<JoinStep>& steps,
         const auto partial = u::apply_substitution_fixpoint(step_lit, sigma);
         const bool present = static_index.contains(partial.atom);
         if (partial.polarity ? present : !present)
-            join_static_v2(steps, pos + 1, static_index, feas, src_mask, sigma, std::forward<Callback>(callback));
+            join_static_v2(steps, pos + 1, static_index, index_cache, feas, src_mask, sigma, std::forward<Callback>(callback));
         return;
     }
 
     if (!step_lit.polarity)
         return;  // negative non-ground static: skip (matches old code)
 
-    // Match the ORIGINAL literal under sigma (predicate is unchanged by
-    // substitution; match() resolves its parameters through sigma), avoiding a
-    // per-node materialization of the substituted literal.
-    // Bind the literal's parameters into the shared sigma in place (trail) and
-    // undo after recursing, instead of copying sigma per candidate tuple.
+    const auto& relation = static_index.lookup(step_lit.atom.predicate);
+
+    // Compute the runtime bound-position mask and key: positions of the literal
+    // whose term resolves to an object under the current sigma.
+    static thread_local std::vector<std::uint32_t> key_scratch;
+    std::uint64_t mask = 0;
+    key_scratch.clear();
+    if (index_cache != nullptr && step_lit.atom.terms.size() <= 64)
+    {
+        for (std::size_t i = 0; i < step_lit.atom.terms.size(); ++i)
+        {
+            const auto resolved = u::apply_substitution_fixpoint(step_lit.atom.terms[i], sigma);
+            if (u::is_object(resolved))
+            {
+                mask |= (std::uint64_t(1) << i);
+                key_scratch.push_back(static_cast<std::uint32_t>(uint_t(u::get_object(resolved))));
+            }
+        }
+    }
+
     auto trail = std::vector<f::ParameterIndex> {};
-    for (const auto& atom : static_index.lookup(step_lit.atom.predicate))
+    const auto try_atom = [&](const fp::MutableAtom<f::StaticTag>& atom)
     {
         trail.clear();
         if (match_in_place(step_lit.atom, atom, sigma, trail))
-            join_static_v2(steps, pos + 1, static_index, feas, src_mask, sigma, callback);
+            join_static_v2(steps, pos + 1, static_index, index_cache, feas, src_mask, sigma, callback);
         for (const auto p : trail)
             sigma.unbind(p);
+    };
+
+    if (index_cache == nullptr || mask == 0)
+    {
+        // Unconstrained (or caching disabled): full scan.
+        for (const auto& atom : relation)
+            try_atom(atom);
+        return;
     }
+
+    // Indexed path: build the (step, mask) group index lazily, then visit only
+    // the tuples agreeing with sigma on the resolved positions.
+    auto& per_mask = (*index_cache)[pos];
+    auto idx_it = per_mask.find(mask);
+    if (idx_it == per_mask.end())
+    {
+        auto index = StepJoinIndex {};
+        auto key = std::vector<std::uint32_t> {};
+        for (std::uint32_t a = 0; a < std::uint32_t(relation.size()); ++a)
+        {
+            key.clear();
+            for (std::size_t i = 0; i < relation[a].terms.size(); ++i)
+            {
+                if (mask & (std::uint64_t(1) << i))
+                    key.push_back(static_cast<std::uint32_t>(uint_t(u::get_object(relation[a].terms[i]))));
+            }
+            index.groups[key].push_back(a);
+        }
+        idx_it = per_mask.emplace(mask, std::move(index)).first;
+    }
+
+    const auto grp_it = idx_it->second.groups.find(key_scratch);
+    if (grp_it == idx_it->second.groups.end())
+        return;
+    for (const auto a : grp_it->second)
+        try_atom(relation[a]);
     // No existential case for static literals (they are fully grounded in the task).
 }
 
@@ -824,6 +900,7 @@ void enumerate_condition_v2(const ConditionJoinPlan& plan,
                              const std::vector<fp::MutableAtom<f::FluentTag>>& src_atoms,
                              const SrcAtomsByPredicate* src_atoms_index,
                              const StaticAtomIndex& static_index,
+                             StepJoinIndexCache* index_cache,  // nullptr -> linear-scan fallback
                              const EffectFeasibility* feas,  // nullptr disables self-loop pruning
                              uint_t src_mask,
                              u::SubstitutionFunction<Data<f::Term>> sigma,  // owned, mutated in place + restored
@@ -834,7 +911,7 @@ void enumerate_condition_v2(const ConditionJoinPlan& plan,
         0, src_atoms, src_atoms_index, feas, src_mask, sigma,
         [&](u::SubstitutionFunction<Data<f::Term>>& sigma1)
         {
-            join_static_v2(plan.static_join, 0, static_index, feas, src_mask, sigma1, std::forward<Callback>(callback));
+            join_static_v2(plan.static_join, 0, static_index, index_cache, feas, src_mask, sigma1, std::forward<Callback>(callback));
         });
 }
 
@@ -1333,6 +1410,10 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
         u::SubstitutionFunction<Data<f::Term>> sigma0;
         const std::vector<std::size_t>* pds;
         EffectFeasibility feas;  // filled in a second pass (stable addresses)
+        // Lazily-built per-step hash-join indexes for the precondition's static
+        // join; statics are state-independent, so the cache persists across all
+        // src states of this pattern.
+        StepJoinIndexCache static_join_cache;
     };
     static const std::vector<std::size_t> empty_pds {};
     auto pre_actions = UnorderedMap<fp::ActionView, PreAction> {};
@@ -1353,6 +1434,7 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
         for (const auto& ceff : pre.action.effects)
             for (const auto& lit : ceff.effect.literals)
                 pre.feas.effect_literals.push_back(&lit);
+        pre.static_join_cache.resize(join_plans.at(projected_action).precondition.static_join.size());
     }
 
     for (size_t src_idx = 0; src_idx < astates.size(); ++src_idx)
@@ -1371,13 +1453,13 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
         for (const auto& [projected_action, info] : projected_to_original_action)
         {
             const auto& join_plan = join_plans.at(projected_action);
-            const auto& pre = pre_actions.at(projected_action);
+            auto& pre = pre_actions.at(projected_action);  // non-const: static_join_cache fills lazily
             const auto& mutable_action = pre.action;
             const auto& sigma0 = pre.sigma0;
 
             auto seen = UnorderedSet<std::vector<std::uint32_t>> {};
 
-            enumerate_condition_v2(join_plan.precondition, src_atoms, src_index_ptr, static_index, &pre.feas, src_mask, sigma0,
+            enumerate_condition_v2(join_plan.precondition, src_atoms, src_index_ptr, static_index, &pre.static_join_cache, &pre.feas, src_mask, sigma0,
                 [&](u::SubstitutionFunction<Data<f::Term>>& sigma_pre)
                 {
                     enumerate_effect_params_v2(join_plan.effect_param_enums, 0, pattern_atoms, sigma_pre,
@@ -1405,8 +1487,9 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
                                 const auto& ceff_plan = join_plan.effects[ei].condition_plan;
 
                                 // No self-loop pruning here: sigma_full is fixed and we are
-                                // computing which conditional effects fire for it.
-                                enumerate_condition_v2(ceff_plan, src_atoms, src_index_ptr, static_index, nullptr, src_mask, sigma_full,
+                                // computing which conditional effects fire for it. No join-index
+                                // cache either (ceff conditions are small; fallback scan).
+                                enumerate_condition_v2(ceff_plan, src_atoms, src_index_ptr, static_index, nullptr, nullptr, src_mask, sigma_full,
                                     [&](const u::SubstitutionFunction<Data<f::Term>>& sigma_ceff)
                                     {
                                         for (const auto& lit : ceff.effect.literals)
