@@ -392,7 +392,24 @@ struct EffectFeasibility
     // All visible effect literals of the projected action (across all ceffs).
     std::vector<const fp::MutableLiteral<f::FluentTag>*> effect_literals;
     const PatternBitIndex* bits = nullptr;
+    // Bitset over parameter indices (< 64) occurring in any effect literal.
+    // Binding a parameter OUTSIDE this set cannot change feasibility, so checks
+    // are skipped unless a newly-bound parameter intersects it (incremental
+    // feasibility). Param index >= 64 sets all bits (always recheck; safe).
+    std::uint64_t effect_param_mask = 0;
 };
+
+// Did this trail bind any effect-relevant parameter?
+inline bool trail_hits_effect_params(const std::vector<f::ParameterIndex>& trail, std::uint64_t effect_param_mask)
+{
+    for (const auto p : trail)
+    {
+        const auto v = uint_t(p);
+        if (v >= 64 || (effect_param_mask & (std::uint64_t(1) << v)))
+            return true;
+    }
+    return false;
+}
 
 bool effect_change_feasible(const EffectFeasibility& fz, const u::SubstitutionFunction<Data<f::Term>>& sigma, uint_t src_mask)
 {
@@ -676,10 +693,10 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
                               u::SubstitutionFunction<Data<f::Term>>& sigma,
                               Callback&& callback)
 {
-    // Early self-loop pruning: if no visible effect can still change src under
-    // the current partial sigma, every completion of this subtree is a self-loop.
-    if (feas != nullptr && !effect_change_feasible(*feas, sigma, src_mask))
-        return;
+    // Self-loop pruning is INCREMENTAL: feasibility is re-checked at binding
+    // sites only when a newly-bound parameter occurs in some effect literal
+    // (see trail_hits_effect_params); entry needs no check — the parent
+    // recursed only while feasible, and non-binding branches cannot change it.
 
     // Fire any negative-literal checks scheduled at this checkpoint. With pushdown
     // off, this is a no-op until pos == positive_fluent.size().
@@ -727,7 +744,13 @@ void enumerate_fluent_pos_rec(const std::vector<fp::MutableLiteral<f::FluentTag>
     {
         trail.clear();
         if (match_in_place(plit.atom, atom, sigma, trail))
-            enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, feas, src_mask, sigma, callback);
+        {
+            // Incremental self-loop pruning: re-check feasibility only if this
+            // match bound an effect-relevant parameter.
+            if (feas == nullptr || !trail_hits_effect_params(trail, feas->effect_param_mask)
+                || effect_change_feasible(*feas, sigma, src_mask))
+                enumerate_fluent_pos_rec(positive_fluent, negative_fluent, negatives_at_checkpoint, inequalities, inequalities_at_checkpoint, pos + 1, src_atoms, src_atoms_index, feas, src_mask, sigma, callback);
+        }
         for (const auto p : trail)
             sigma.unbind(p);
     };
@@ -796,12 +819,8 @@ void join_static_v2(const std::vector<JoinStep>& steps,
                     u::SubstitutionFunction<Data<f::Term>>& sigma,
                     Callback&& callback)
 {
-    // Early self-loop pruning (see effect_change_feasible): once no visible
-    // effect can change src under the current bindings, the whole subtree is
-    // self-loops only.
-    if (feas != nullptr && !effect_change_feasible(*feas, sigma, src_mask))
-        return;
-
+    // Self-loop pruning is incremental (checked at binding sites; see
+    // trail_hits_effect_params) — no entry check needed.
     if (pos == steps.size())
     {
         callback(sigma);
@@ -850,7 +869,13 @@ void join_static_v2(const std::vector<JoinStep>& steps,
     {
         trail.clear();
         if (match_in_place(step_lit.atom, atom, sigma, trail))
-            join_static_v2(steps, pos + 1, static_index, index_cache, feas, src_mask, sigma, callback);
+        {
+            // Incremental self-loop pruning: re-check feasibility only if this
+            // tuple bound an effect-relevant parameter.
+            if (feas == nullptr || !trail_hits_effect_params(trail, feas->effect_param_mask)
+                || effect_change_feasible(*feas, sigma, src_mask))
+                join_static_v2(steps, pos + 1, static_index, index_cache, feas, src_mask, sigma, callback);
+        }
         for (const auto p : trail)
             sigma.unbind(p);
     };
@@ -1433,7 +1458,16 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
         pre.feas.bits = &atom_bit_index;
         for (const auto& ceff : pre.action.effects)
             for (const auto& lit : ceff.effect.literals)
+            {
                 pre.feas.effect_literals.push_back(&lit);
+                for (const auto& term : lit.atom.terms)
+                {
+                    if (!u::is_parameter(term))
+                        continue;
+                    const auto v = uint_t(u::get_parameter(term));
+                    pre.feas.effect_param_mask |= (v >= 64) ? ~std::uint64_t(0) : (std::uint64_t(1) << v);
+                }
+            }
         pre.static_join_cache.resize(join_plans.at(projected_action).precondition.static_join.size());
     }
 
@@ -1458,6 +1492,12 @@ auto create_abstract_state_changing_transitions_v2(const std::vector<StateView<L
             const auto& sigma0 = pre.sigma0;
 
             auto seen = UnorderedSet<std::vector<std::uint32_t>> {};
+
+            // Root feasibility check for this (state, action): with sigma0 empty,
+            // infeasibility means NO binding of this action can change src at all
+            // (e.g. only ADD effects and all candidate pattern atoms present).
+            if (!effect_change_feasible(pre.feas, sigma0, src_mask))
+                continue;
 
             enumerate_condition_v2(join_plan.precondition, src_atoms, src_index_ptr, static_index, &pre.static_join_cache, &pre.feas, src_mask, sigma0,
                 [&](u::SubstitutionFunction<Data<f::Term>>& sigma_pre)
