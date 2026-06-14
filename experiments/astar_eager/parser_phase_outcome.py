@@ -85,18 +85,26 @@ def determine_outcome(content, props):
         return
 
     props["coverage"] = 0
-    is_mem = signal == 6 or "bad_alloc" in err or "Cannot allocate memory" in err  # SIGABRT
-    is_sigkill = signal == 9 or "Killed" in err                                     # SIGKILL
-    is_sigterm = signal in (15, 24) or "Terminated" in err                          # SIGTERM/SIGXCPU
+    # OOM only on an actual allocation-failure signature. A SIGABRT (signal 6)
+    # alone is NOT memory: it is also raised by any uncaught C++ exception
+    # (e.g. loki parse errors), so we must look at the message.
+    is_badalloc = "bad_alloc" in err or "Cannot allocate memory" in err
+    is_sigkill = signal == 9 or "Killed" in err          # SIGKILL (cgroup OOM, or hard wall kill)
+    is_sigterm = signal in (15, 24) or "Terminated" in err  # SIGTERM / SIGXCPU
     near_limit = wall is not None and wall >= 0.95 * limit
+    exc = re.search(r"terminate called after throwing an instance of '([^']+)'", err)
 
-    if is_mem:
+    if is_badalloc:
         props["error"] = f"out of memory during {phase}"
     elif is_sigterm or (is_sigkill and near_limit):
         props["error"] = f"out of time during {phase}"
     elif is_sigkill:
         # SIGKILL well under the wall limit: cgroup out-of-memory kill.
         props["error"] = f"out of memory during {phase}"
+    elif exc:
+        # Uncaught C++ exception (e.g. loki::UndefinedRequirementError): a parse/
+        # translation error, not a resource limit.
+        props["error"] = f"exception {exc.group(1)} during {phase}"
     else:
         props["error"] = f"error (exit {exit_code}) during {phase}"
 
