@@ -106,10 +106,23 @@ for prefix, SUITE in SUITES:
         run.set_property("memory_limit", MEMORY_LIMIT)
         run.set_property("id", [ALGO, task.domain, task.problem])
 
+# Domains whose tasks use conditional effects (`(when ...)`), which the
+# projection/canonical heuristic does not support yet (it can produce a spurious
+# h=inf). The planner now aborts on these; they are excluded from the report.
+CONDITIONAL_EFFECT_DOMAINS = {"genome-edit-distance-positional"}
+
+
+def exclude_conditional_effects(run):
+    return run["domain"] not in CONDITIONAL_EFFECT_DOMAINS
+
+
 exp.add_step("build", exp.build)
 exp.add_step("start", exp.start_runs)
 exp.add_step("parse", exp.parse)
 exp.add_fetcher(name="fetch")
 exp.add_report(BaseReport(attributes=ATTRIBUTES), outfile="report.html")
+exp.add_report(
+    BaseReport(attributes=ATTRIBUTES, filter=exclude_conditional_effects),
+    outfile="report-no-conditional-effects.html")
 
 exp.run_steps()

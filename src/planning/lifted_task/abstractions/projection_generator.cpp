@@ -1685,6 +1685,27 @@ ProjectionAbstractionList<LiftedTag> ProjectionGenerator<LiftedTag>::generate()
 {
     auto projections = ProjectionAbstractionList<LiftedTag> {};
 
+    // Conditional effects are not supported yet. The abstract transition
+    // generation does not enumerate the effect-local variables of a conditional
+    // effect against the pattern atoms, so a conditional effect that targets a
+    // pattern atom can be silently dropped, yielding an unreachable abstract
+    // goal (spurious h = inf) and an unsound, inadmissible heuristic. Abort
+    // loudly instead of returning incorrect projections.
+    for (const auto action : m_task->get_domain().get_domain().get_actions())
+    {
+        const auto mutable_action = fp::MutableAction(action);
+        for (const auto& ceff : mutable_action.effects)
+        {
+            const bool is_conditional = !ceff.condition.static_literals.empty()
+                                        || !ceff.condition.fluent_literals.empty()
+                                        || ceff.num_variables > 0;
+            if (is_conditional)
+                throw std::runtime_error(
+                    "ProjectionGenerator: conditional effects are not supported yet "
+                    "(an action has a conditional or quantified effect).");
+        }
+    }
+
     // R+ (when the reachability filter is enabled): depends only on the task, so
     // use the task-level memo — if another component (e.g. the pattern
     // generator's reachability filter) already computed the fixpoint for this
