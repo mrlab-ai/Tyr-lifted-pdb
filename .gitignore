@@ -1,3 +1,5 @@
+experiments/*/data
+
 # Virtual environments
 .venv
 
