@@ -88,3 +88,6 @@ _deps
 *.exe
 *.out
 *.app
+
+# stray profiling build dir
+build-prof/
