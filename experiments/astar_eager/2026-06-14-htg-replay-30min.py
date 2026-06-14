@@ -75,6 +75,13 @@ else:
     ])]
     WALL_TIME_LIMIT = 120
 
+# ONLY_DOMAINS=a,b restricts the run to those domains (e.g. to re-run a single
+# family after a code change without redoing the whole suite).
+_only = os.environ.get("ONLY_DOMAINS")
+if _only:
+    keep = set(_only.split(","))
+    SUITES = [(prefix, [d for d in suite if d in keep]) for prefix, suite in SUITES]
+
 ATTRIBUTES = PhaseOutcomeParser.get_attributes()
 
 exp = Experiment(environment=ENV)

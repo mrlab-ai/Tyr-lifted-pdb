@@ -101,6 +101,9 @@ def determine_outcome(content, props):
     elif is_sigkill:
         # SIGKILL well under the wall limit: cgroup out-of-memory kill.
         props["error"] = f"out of memory during {phase}"
+    elif "conditional effects are not supported" in err:
+        # The projection generator's explicit guard (conditional effects).
+        props["error"] = "unsupported: conditional effects"
     elif exc:
         # Uncaught C++ exception (e.g. loki::UndefinedRequirementError): a parse/
         # translation error, not a resource limit.
