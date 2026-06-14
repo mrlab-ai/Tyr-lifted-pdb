@@ -24,6 +24,39 @@ from lab.environments import TetralithEnvironment, LocalEnvironment
 from lab.experiment import Experiment
 
 DIR = Path(__file__).resolve().parent
+
+# Several HTG domains use features (negation, total-cost) without declaring the
+# corresponding requirement, so loki rejects them at parse time. Inject a
+# permissive requirements superset (semantically neutral: declaring an unused
+# requirement has no effect) into a cached copy and run that instead.
+import hashlib
+
+_SAFE_REQS = [":strips", ":typing", ":negative-preconditions",
+              ":disjunctive-preconditions", ":existential-preconditions",
+              ":universal-preconditions", ":conditional-effects", ":equality",
+              ":action-costs"]
+_PATCH_DIR = Path(__file__).resolve().parent / "patched-domains"
+
+
+def ensure_requirements(domain_file):
+    text = Path(domain_file).read_text()
+    m = re.search(r"\(:requirements\b([^)]*)\)", text, re.S)
+    if m:
+        existing = m.group(1).split()
+        missing = [r for r in _SAFE_REQS if r not in existing]
+        if not missing:
+            return domain_file
+        patched = (text[:m.start()] + "(:requirements " + " ".join(existing + missing)
+                   + ")" + text[m.end():])
+    else:
+        dm = re.search(r"\(define\s*\(domain[^)]*\)", text)
+        patched = (text[:dm.end()] + "\n  (:requirements " + " ".join(_SAFE_REQS) + ")"
+                   + text[dm.end():])
+    _PATCH_DIR.mkdir(exist_ok=True)
+    out = _PATCH_DIR / (hashlib.md5(str(Path(domain_file).resolve()).encode()).hexdigest()[:12] + ".pddl")
+    if not out.exists() or out.read_text() != patched:
+        out.write_text(patched)
+    return out
 REPO = DIR.parent.parent
 sys.path.append(str(REPO))
 
@@ -96,7 +129,7 @@ ALGO = f"replay-canonical-lifted-{NUM_THREADS}"
 for prefix, SUITE in SUITES:
     for task in suites.build_suite(BENCHMARKS_DIR / prefix, SUITE):
         run = exp.add_run()
-        run.add_resource("domain", task.domain_file, symlink=True)
+        run.add_resource("domain", ensure_requirements(task.domain_file), symlink=True)
         run.add_resource("problem", task.problem_file, symlink=True)
         run.add_command(
             ALGO,
